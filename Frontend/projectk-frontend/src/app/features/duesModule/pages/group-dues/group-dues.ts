@@ -16,7 +16,7 @@ import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
-import { duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, sameQuarter, signedMoney } from '../../functions/dues-format.function';
+import { DEFAULT_CURRENCY, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, sameQuarter, signedMoney } from '../../functions/dues-format.function';
 import { fromQuarterOptions } from '../../functions/from-quarter-options.function';
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
 import {
@@ -66,11 +66,15 @@ export class GroupDuesComponent implements OnInit {
   private readonly dues = inject(DuesService);
   private readonly confirmation = inject(ConfirmationService);
 
-  readonly money = money;
-  readonly signedMoney = signedMoney;
   readonly quarterLabel = quarterLabel;
   readonly quarterShort = quarterShort;
   readonly methodLabels = DUES_PAYMENT_METHOD_LABELS;
+
+  /** What this kurin counts its вкладка in, from its край's profile. */
+  readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
+  readonly currencySymbol = computed(() => currencySymbol(this.currency()));
+  readonly money = (amount: number): string => money(amount, this.currency());
+  readonly signedMoney = (amount: number): string => signedMoney(amount, this.currency());
 
   groupKey = '';
 
@@ -210,7 +214,7 @@ export class GroupDuesComponent implements OnInit {
   }
 
   amountLabel(entry: DuesEntryDto): string {
-    return duesAmountLabel(entry);
+    return duesAmountLabel(entry, this.currency());
   }
 
   isIncoming(entry: DuesEntryDto): boolean | null {
@@ -255,7 +259,7 @@ export class GroupDuesComponent implements OnInit {
   confirmDelete(entry: DuesEntryDto): void {
     this.confirmation.confirm({
       header: 'Видалити операцію',
-      message: `${DUES_ENTRY_KIND_LABELS[entry.kind]} на ${money(entry.amount)} зникне з каси. Запис про неї лишиться в історії змін.`,
+      message: `${DUES_ENTRY_KIND_LABELS[entry.kind]} на ${this.money(entry.amount)} зникне з каси. Запис про неї лишиться в історії змін.`,
       icon: 'pi pi-exclamation-triangle',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },

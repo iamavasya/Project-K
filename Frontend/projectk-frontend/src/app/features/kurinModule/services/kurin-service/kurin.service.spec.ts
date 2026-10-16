@@ -66,8 +66,8 @@ describe('KurinService', () => {
     httpMock.expectNone(`${baseUrl}/kurins`);
   });
 
-  it('createKurin should POST to /kurin with kurin.number and return created entity', () => {
-    const input = { kurinKey: 'k1', number: 3 } as KurinDto;
+  it('createKurin should POST to /kurin with the number and край and return created entity', () => {
+    const input = { kurinKey: 'k1', number: 3, kraiCode: 'cz' } as KurinDto;
     const created = { kurinKey: 'k1', number: 3 } as KurinDto;
 
     let result: KurinDto | undefined;
@@ -75,12 +75,21 @@ describe('KurinService', () => {
 
     const req = httpMock.expectOne(`${baseUrl}`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toBe(input.number);
+    expect(req.request.body).toEqual({ number: 3, kraiCode: 'cz' });
     expect(req.request.headers.get('Content-Type')).toBe('application/json');
 
     req.flush(created);
 
     expect(result).toEqual(created);
+  });
+
+  it('setKurinKrai should PUT the край to /kurin/{key}/krai', () => {
+    service.setKurinKrai('k1', 'cz').subscribe();
+
+    const req = httpMock.expectOne(`${baseUrl}/k1/krai`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ kraiCode: 'cz' });
+    req.flush({ kurinKey: 'k1', number: 3, kraiCode: 'cz' });
   });
 
   it('downloadReportPdf should request report as blob', () => {

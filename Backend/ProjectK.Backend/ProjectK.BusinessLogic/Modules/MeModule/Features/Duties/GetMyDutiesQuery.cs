@@ -6,6 +6,7 @@ using ProjectK.BusinessLogic.Modules.ScoreModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
@@ -33,6 +34,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
     private readonly ScoreBookReader _books;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
     public GetMyDutiesQueryHandler(
         MeAgendaScopes scopes,
@@ -42,7 +44,8 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         IMemberProgressDirectory progress,
         ScoreBookReader books,
         ICurrentUserContext currentUser,
-        TimeProvider time)
+        TimeProvider time,
+        IKraiProfileProvider profiles)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;
@@ -52,6 +55,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         _books = books;
         _currentUser = currentUser;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<IReadOnlyList<MyDutyDto>>> Handle(GetMyDutiesQuery request, CancellationToken cancellationToken)
@@ -158,6 +162,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
         var now = _time.GetUtcNow().UtcDateTime;
         var from = now.AddDays(-AttendanceWindowDays);
         var book = await _books.OpenAsync(context.Membership.KurinKey, cancellationToken);
+        var zone = await _profiles.ForKurinAsync(context.Membership.KurinKey, cancellationToken);
         var marked = book.Attendances
             .Where(a => a.RemovedAtUtc is null)
             .Select(a => (a.AgendaItemKey, a.OccurrenceStartUtc))
@@ -173,7 +178,7 @@ public sealed class GetMyDutiesQueryHandler : IRequestHandler<GetMyDutiesQuery, 
                 continue;
             }
 
-            foreach (var occurrence in AgendaRecurrence.Expand(item, from, now))
+            foreach (var occurrence in AgendaRecurrence.Expand(item, from, now, zone))
             {
                 if (occurrence.StartUtc > now || marked.Contains((item.AgendaItemKey, occurrence.StartUtc)))
                 {

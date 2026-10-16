@@ -23,8 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 COPY --from=build /app/publish .
-# The probe and badge catalogue is downloaded and unpacked here at runtime: the only path the API
-# writes to, so the only one the non-root user owns.
-RUN mkdir -p /app/ProjectK.ProbeAndBadges && chown "$APP_UID" /app/ProjectK.ProbeAndBadges
+# The last catalogue fetched from the catalogue service is kept here, so a restart without the
+# network still has one: the only path the API writes to, so the only one the non-root user owns.
+RUN mkdir -p /app/catalog-cache && chown "$APP_UID" /app/catalog-cache
 USER $APP_UID
 ENTRYPOINT ["dotnet", "ProjectK.API.dll"]

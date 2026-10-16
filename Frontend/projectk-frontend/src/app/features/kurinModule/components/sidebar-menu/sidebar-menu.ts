@@ -10,7 +10,7 @@ import { catchError, combineLatest, defer, filter, map, Observable, of, startWit
 import { AuthState } from '../../../authModule/models/auth-state.model';
 import { AsyncPipe } from '@angular/common';
 import { environment } from '../../../../../environments/environment';
-import { accountRoleTag, AccountRoleTag, GENERIC_MEMBER_TAG } from '../../functions/account-role-tag.function';
+import { AccountRoleTag, GENERIC_MEMBER_TAG, signedInRoleTag } from '../../functions/account-role-tag.function';
 import { AccountSwitcherComponent } from '../../../authModule/components/account-switcher/account-switcher';
 import { InstallOnPhoneDialogComponent } from '../../../systemModule/components/install-on-phone-dialog/install-on-phone-dialog';
 import { InstallAppService } from '../../../systemModule/services/install-app-service/install-app.service';
@@ -365,6 +365,15 @@ export class SidebarMenuComponent implements OnChanges {
           }
         },
         {
+          label: 'Краї',
+          icon: 'pi pi-map',
+          routerLink: ['/krai'],
+          command: () => {
+            this.close();
+            this.router.navigate(['/krai']);
+          }
+        },
+        {
           label: 'Системні налаштування',
           icon: 'pi pi-sliders-h',
           routerLink: ['/system-settings'],
@@ -400,21 +409,24 @@ export class SidebarMenuComponent implements OnChanges {
     // The phone app is the PWA under /m/ on this origin: a page load, not a route of this app.
     // Its /install page offers the one-tap install or shows the steps for the phone at hand. A
     // computer gets a code for the phone instead: /m/ there read as «install it on this computer».
-    items.push(this.installApp.onPhone
-      ? {
-        label: 'Встановити на телефон',
-        icon: 'pi pi-mobile',
-        url: '/m/install',
-        command: () => this.close()
-      }
-      : {
-        label: 'Встановити на телефон',
-        icon: 'pi pi-mobile',
-        command: () => {
-          this.close();
-          this.installOnPhoneVisible.set(true);
+    // The demo on the docs site has no phone app next to it.
+    if (this.installApp.available) {
+      items.push(this.installApp.onPhone
+        ? {
+          label: 'Встановити на телефон',
+          icon: 'pi pi-mobile',
+          url: '/m/install',
+          command: () => this.close()
         }
-      });
+        : {
+          label: 'Встановити на телефон',
+          icon: 'pi pi-mobile',
+          command: () => {
+            this.close();
+            this.installOnPhoneVisible.set(true);
+          }
+        });
+    }
 
     items.push({
       label: 'Повідомити про проблему',
@@ -448,13 +460,6 @@ export class SidebarMenuComponent implements OnChanges {
    * fallback for accounts that hold no office.
    */
   private currentRoleTag(state: AuthState | null): AccountRoleTag {
-    let tier = GENERIC_MEMBER_TAG;
-    if (this.permissionService.canManageWholeKurin()) {
-      tier = { label: 'Провід куреня', severity: 'warn' };
-    } else if (this.permissionService.canLeadGroups()) {
-      tier = { label: 'Гуртковий провід', severity: 'success' };
-    }
-
-    return accountRoleTag(this.permissionService.isAdmin(), state?.roles ?? [], tier);
+    return signedInRoleTag(this.permissionService, state?.roles ?? []);
   }
 }

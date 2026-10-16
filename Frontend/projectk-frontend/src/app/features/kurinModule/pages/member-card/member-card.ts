@@ -32,6 +32,7 @@ import { MemberSkillItemView } from '../../models/probes-and-badges/member-skill
 import { BadgeProgressStatus } from '../../models/enums/badge-progress-status.enum';
 import { ProbeProgressStatus } from '../../models/enums/probe-progress-status.enum';
 import { SkillMiniCardComponent } from './components/skill-mini-card/skill-mini-card';
+import { BadgeDetailsDialogComponent } from '../../components/badge-details-dialog/badge-details-dialog';
 import { BadgeImageBlobService } from '../../services/probes-and-badges/badge-image-blob.service';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { BreadcrumbService } from '../../services/breadcrumb-service/breadcrumb.service';
@@ -56,6 +57,7 @@ import { PermissionService } from '../../../authModule/services/permission-servi
 import { getBadgeProgressStatusLabel, getProbeProgressStatusLabel } from '../../functions/progress-status-labels.function';
 import { isUsableKey } from '../../../../shared/functions/is-usable-key.function';
 import { KurinService } from '../../services/kurin-service/kurin.service';
+import { cardExtraLines, cardFieldMode, CardFieldsDto, DEFAULT_CARD_FIELDS, StandardCardField } from '../../models/card-fields.dto';
 import { GroupService } from '../../services/group-service/group.service';
 import { MembershipService } from '../../services/membership-service/membership.service';
 import { GroupDto } from '../../models/group.dto';
@@ -63,9 +65,13 @@ import { ProfileVerificationBadgeComponent } from '../../components/profile-veri
 import { formatUtcDateTime, parseUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.function';
+import { formatPhone } from '../../../../shared/functions/phone.function';
 import { TileBoardComponent } from '../../../../shared/tile-board/tile-board';
 import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directive';
 import { kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
+import { initials } from '../../../dashboardModule/functions/greeting.function';
+import { MemberWarningsDialogComponent } from './components/member-warnings-dialog/member-warnings-dialog';
+import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 
 @Component({
   selector: 'app-member-card',
@@ -84,9 +90,11 @@ import { kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.
     SelectModule,
     TooltipModule,
     SkillMiniCardComponent,
+    BadgeDetailsDialogComponent,
     MemberAwardsTileComponent,
     MemberMembershipsTileComponent,
     ProfileVerificationBadgeComponent,
+    MemberWarningsDialogComponent,
     TileBoardComponent,
     TileDefDirective,
     RouterLink
@@ -117,10 +125,14 @@ export class MemberCardComponent implements OnInit {
   memberAwardService = inject(MemberAwardService);
 
   member: MemberDto | null = null;
+  /** What the member's край asks of the card; the card as it always was until it loads. */
+  cardFields: CardFieldsDto = DEFAULT_CARD_FIELDS;
   memberKey: string | null = null;
   skillsSummary: MemberSkillsSummaryView = this.createEmptySkillsSummary();
   probeRows: MemberProbeRowView[] = this.createEmptyProbeRows();
   allBadgesCatalog: BadgeCatalogItemDto[] = [];
+  /** The вмілості the member's kurin is offered by its край; the whole catalogue stays for what they already have. */
+  offeredBadges: BadgeCatalogItemDto[] = [];
   memberships: MembershipDto[] = [];
   /** Інші курені того, хто дивиться, куди з членств можна перейти. Читаються, лише коли людина стоїть ще деінде. */
   reachableKurinKeys: string[] = [];
@@ -138,7 +150,7 @@ export class MemberCardComponent implements OnInit {
   /** Their вкладка here; null until read, and stays null when they have none or it is not ours to see. */
   dues: MemberDuesDto | null = null;
   isDuesLoading = false;
-  readonly money = money;
+  readonly money = (amount: number): string => money(amount, this.dues?.currency);
   readonly quarterLabel = quarterLabel;
   private memberLoaded = false;
   private membershipsSettled = false;
@@ -149,6 +161,8 @@ export class MemberCardComponent implements OnInit {
   probesLoadFailed = false;
   isAllSkillsDialogVisible = false;
   isAddSkillDialogVisible = false;
+  isBadgeDetailsVisible = false;
+  badgeDetailsId: string | null = null;
   isSubmittingSkill = false;
   submittingBadgeId: string | null = null;
   inlineModerationBadgeId: string | null = null;
@@ -161,6 +175,8 @@ export class MemberCardComponent implements OnInit {
   inlineModerationSeverity: 'success' | 'warn' | 'error' = 'success';
   canManageMemberActions = false;
   profileVerificationEnabled = false;
+  profileVerificationSubmitting = false;
+  isWarningsDialogVisible = false;
 
   readonly addSkillPageSize = 12;
   readonly warningLevels = [
@@ -195,6 +211,7 @@ export class MemberCardComponent implements OnInit {
         }
         this.updateMemberAccess(member.memberKey ?? this.memberKey);
         this.loadProfileVerificationToggle(member);
+        this.loadCardFields(member);
       },
       error: (error) => {
         console.error('Error fetching member:', error);
@@ -240,7 +257,7 @@ export class MemberCardComponent implements OnInit {
     return DUES_ENTRY_KIND_LABELS[entry.kind];
   }
 
-  readonly duesAmountLabel = duesAmountLabel;
+  readonly duesAmountLabel = (entry: DuesEntryDto): string => duesAmountLabel(entry, this.dues?.currency);
   readonly duesStandingLabels = DUES_STANDING_LABELS;
 
   /**
@@ -315,8 +332,33 @@ export class MemberCardComponent implements OnInit {
     });
   }
 
+  /** The phone as it reads: +420 777 123 456. */
+  get phoneText(): string {
+    return formatPhone(this.member?.phoneNumber);
+  }
+
   get phoneLink(): string | null {
     return phoneHref(this.member?.phoneNumber);
+  }
+
+  /** Mother's and father's lines on the card, only those with something filled in. */
+  get parentLines(): { label: string; name: string; phone: string; phoneLink: string | null }[] {
+    const member = this.member;
+    if (!member || !this.showsField('parents')) {
+      return [];
+    }
+
+    return [
+      { label: 'Мама', first: member.motherFirstName, last: member.motherLastName, phone: member.motherPhone },
+      { label: 'Тато', first: member.fatherFirstName, last: member.fatherLastName, phone: member.fatherPhone }
+    ]
+      .map(parent => ({
+        label: parent.label,
+        name: [parent.first, parent.last].filter(Boolean).join(' '),
+        phone: formatPhone(parent.phone),
+        phoneLink: phoneHref(parent.phone)
+      }))
+      .filter(parent => parent.name || parent.phone);
   }
 
   get emailLink(): string | null {
@@ -462,6 +504,80 @@ export class MemberCardComponent implements OnInit {
     return this.canManageMemberActions;
   }
 
+  /** The card of whoever is looking: nobody verifies or warns themselves. */
+  get isOwnCard(): boolean {
+    const auth = this.authService.getAuthStateValue?.();
+    return !!this.member
+      && ((!!auth?.memberKey && auth.memberKey === this.member.memberKey)
+        || (!!auth?.userKey && auth.userKey === this.member.userKey));
+  }
+
+  get currentUserKey(): string | null {
+    return this.authService.getAuthStateValue?.()?.userKey ?? null;
+  }
+
+  get canManageProfileVerification(): boolean {
+    return this.canEditMember && this.profileVerificationEnabled && !this.isOwnCard && this.permissionService.isReviewer();
+  }
+
+  get canManageWarnings(): boolean {
+    return this.canEditMember && !this.isOwnCard && this.permissionService.canManageWarnings();
+  }
+
+  get isProfileVerified(): boolean {
+    return this.member?.profileVerificationStatus === MemberProfileVerificationStatus.VerifiedCurrent;
+  }
+
+  onProfileVerificationAction(): void {
+    const member = this.member;
+    if (!member || !this.canManageProfileVerification || this.profileVerificationSubmitting) {
+      return;
+    }
+
+    const verified = this.isProfileVerified;
+    this.confirmationService.confirm({
+      header: verified ? 'Зняти верифікацію' : 'Верифікувати профіль',
+      message: verified
+        ? 'Профіль знову чекатиме перевірки.'
+        : 'Підтвердити, що дані в профілі правильні?',
+      icon: verified ? 'pi pi-exclamation-triangle' : 'pi pi-verified',
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', variant: 'text' },
+      acceptButtonProps: verified
+        ? { label: 'Зняти', severity: 'danger' }
+        : { label: 'Верифікувати' },
+      accept: () => {
+        this.profileVerificationSubmitting = true;
+        const request = verified
+          ? this.memberService.resetProfileVerification(member.memberKey)
+          : this.memberService.verifyProfile(member.memberKey, null);
+        request.pipe(finalize(() => this.profileVerificationSubmitting = false)).subscribe({
+          next: updated => {
+            this.member = { ...member, ...updated };
+            this.messageService.add({ severity: 'success', summary: verified ? 'Верифікацію знято.' : 'Профіль верифіковано.' });
+          },
+          error: (error: unknown) => this.messageService.add({
+            severity: 'error',
+            summary: verified ? 'Верифікацію не знято' : 'Профіль не верифіковано',
+            detail: (error as { status?: number })?.status === 400
+              ? 'Верифікацію профілів вимкнено для цього куреня.'
+              : failureDetail(error)
+          })
+        });
+      }
+    });
+  }
+
+  onWarningsChanged(): void {
+    if (!this.memberKey) {
+      return;
+    }
+    this.memberService.getByKey(this.memberKey).subscribe(member => this.member = member);
+  }
+
+  get photoInitials(): string {
+    return initials(this.member?.firstName, this.member?.lastName);
+  }
+
   /** Переводити в гурток і виводити з куреня — справа Звʼязкового, не впорядника. */
   get canManagePlacement(): boolean {
     return this.permissionService.canManageWholeKurin();
@@ -485,6 +601,22 @@ export class MemberCardComponent implements OnInit {
         this.canManageMemberActions = false;
       }
     });
+  }
+
+  private loadCardFields(member: MemberDto): void {
+    this.cardFields = DEFAULT_CARD_FIELDS;
+    if (isUsableKey(member.kurinKey)) {
+      this.kurinService.getCardFields(member.kurinKey!).subscribe(card => this.cardFields = card);
+    }
+  }
+
+  /** A field the member's край leaves off the card is not shown as «не вказано» either. */
+  showsField(field: StandardCardField): boolean {
+    return cardFieldMode(this.cardFields, field) !== 'hidden';
+  }
+
+  get cardExtras(): { key: string; label: string; value: string }[] {
+    return cardExtraLines(this.cardFields, this.member?.cardExtras);
   }
 
   private loadProfileVerificationToggle(member: MemberDto): void {
@@ -521,7 +653,7 @@ export class MemberCardComponent implements OnInit {
 
   get filteredAddSkillCandidates(): BadgeCatalogItemDto[] {
     const normalizedQuery = this.addSkillSearchTerm.trim().toLowerCase();
-    const source = [...this.allBadgesCatalog].sort((left, right) => left.title.localeCompare(right.title, 'uk'));
+    const source = [...this.offeredBadges].sort((left, right) => left.title.localeCompare(right.title, 'uk'));
 
     if (!normalizedQuery) {
       return source;
@@ -696,6 +828,11 @@ export class MemberCardComponent implements OnInit {
     }
 
     return 'Додати';
+  }
+
+  openBadgeDetails(badgeId: string): void {
+    this.badgeDetailsId = badgeId;
+    this.isBadgeDetailsVisible = true;
   }
 
   getCatalogBadgeImageUrl(imagePath: string): string | null {
@@ -875,6 +1012,13 @@ export class MemberCardComponent implements OnInit {
           return of([] as BadgeCatalogItemDto[]);
         })
       ),
+      offered: (isUsableKey(this.member?.kurinKey) ? this.badgesCatalogService.getForKurin(this.member!.kurinKey!) : of([] as BadgeCatalogItemDto[])).pipe(
+        catchError((error) => {
+          console.error('Error fetching the kurin badges:', error);
+          hasLoadError = true;
+          return of([] as BadgeCatalogItemDto[]);
+        })
+      ),
       progresses: this.memberProgressService.getBadgeProgresses(memberKey).pipe(
         catchError((error) => {
           console.error('Error fetching badge progresses:', error);
@@ -882,8 +1026,9 @@ export class MemberCardComponent implements OnInit {
           return of([] as BadgeProgressDto[]);
         })
       )
-    }).subscribe(({ badges, progresses }) => {
+    }).subscribe(({ badges, offered, progresses }) => {
       this.allBadgesCatalog = badges;
+      this.offeredBadges = offered;
       this.badgeProgresses = progresses;
       this.skillsSummary = buildMemberSkillsSummary(progresses, badges);
       this.skillsLoadFailed = hasLoadError;

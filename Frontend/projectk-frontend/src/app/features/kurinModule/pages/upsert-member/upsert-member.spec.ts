@@ -14,8 +14,10 @@ import { FormGroup } from '@angular/forms';
 import { Location } from '@angular/common';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { KurinService } from '../../services/kurin-service/kurin.service';
+import { CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
+import { PlastLevel } from '../../models/enums/plast-level.enum';
 
 describe('UpsertMemberComponent', () => {
   let fixture: ComponentFixture<UpsertMemberComponent>;
@@ -60,7 +62,9 @@ describe('UpsertMemberComponent', () => {
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     (routerSpy as unknown as { currentNavigation: WritableSignal<Navigation | null> }).currentNavigation = currentNavigationSignal;
     memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'create', 'update', 'delete', 'verifyProfile', 'resetProfileVerification', 'resendInvitation']);
-    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
+    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey', 'getCardFields', 'getPhoneCountry']);
+    kurinServiceSpy.getCardFields.and.returnValue(of(DEFAULT_CARD_FIELDS));
+    kurinServiceSpy.getPhoneCountry.and.returnValue(of('UA'));
     confirmationServiceSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
     messageServiceSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
     locationSpy = jasmine.createSpyObj<Location>('Location', ['back']);
@@ -302,38 +306,6 @@ describe('UpsertMemberComponent', () => {
       expect(component.canEditEmail()).toBeTrue();
     });
 
-    it('should verify profile from upsert member action', () => {
-      permissionServiceSpy.isReviewer.and.returnValue(true);
-      memberServiceSpy.getByKey.and.returnValue(of({
-        ...loadedMember,
-        profileVerificationStatus: MemberProfileVerificationStatus.Unverified
-      }));
-      create();
-
-      component.onProfileVerificationAction();
-
-      expect(memberServiceSpy.verifyProfile).toHaveBeenCalledWith(memberKey, null);
-      expect(component.member.profileVerificationStatus).toBe(MemberProfileVerificationStatus.VerifiedCurrent);
-    });
-
-    it('should reset profile verification from upsert member action when profile is current', () => {
-      permissionServiceSpy.isReviewer.and.returnValue(true);
-      memberServiceSpy.getByKey.and.returnValue(of({
-        ...loadedMember,
-        profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent
-      }));
-      create();
-      spyOn(component.confirmationService, 'confirm').and.callFake((options) => {
-        options.accept?.();
-        return component.confirmationService;
-      });
-
-      component.onProfileVerificationAction();
-
-      expect(component.confirmationService.confirm).toHaveBeenCalled();
-      expect(memberServiceSpy.resetProfileVerification).toHaveBeenCalledWith(memberKey);
-      expect(component.member.profileVerificationStatus).toBe(MemberProfileVerificationStatus.Unverified);
-    });
   });
 
   describe('submit - create mode', () => {
@@ -484,6 +456,69 @@ describe('UpsertMemberComponent', () => {
       expect(dto.email).toBe(loadedMember.email);
     });
 
+    it('should follow the card fields of the member\'s край', () => {
+      const prague: CardFieldsDto = {
+        fields: { middleName: 'hidden', phoneNumber: 'optional' },
+        extra: [
+          { key: 'visaType', label: 'Тип візи', type: 'text', required: true },
+          { key: 'visaUntil', label: 'Віза до', type: 'date', required: false }
+        ]
+      };
+      kurinServiceSpy.getCardFields.and.returnValue(of(prague));
+      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, cardExtras: { visaType: 'D', visaUntil: '2027-06-30' } }));
+      create();
+      fixture.detectChanges();
+
+      const page: HTMLElement = fixture.nativeElement;
+      expect(page.querySelector('#middleName')).toBeNull();
+      expect(page.textContent).toContain('Тип візи');
+      expect(component.cardExtras['visaUntil']).toEqual(new Date(2027, 5, 30));
+
+      component.cardExtras['visaUntil'] = null;
+      component.submit();
+
+      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      expect(dto.cardExtras).toEqual({ visaUntil: '' });
+    });
+
+    it('should leave address and school out when they were not touched, so the server keeps them', async () => {
+      memberServiceSpy.getByKey.and.returnValue(of({ ...loadedMember, address: 'вул. Січових Стрільців, 5', school: 'Ліцей №3' }));
+      create();
+      await fixture.whenStable();
+
+      component.submit();
+
+      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      expect(dto.address).toBeUndefined();
+      expect(dto.school).toBeUndefined();
+    });
+
+    it('should send address, school and parents once edited, an emptied one as empty', async () => {
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...loadedMember, address: 'вул. Січових Стрільців, 5', school: 'Ліцей №3', motherFirstName: 'Олена', motherPhone: '+380501234567'
+      }));
+      create();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      component.member.address = '  Praha 3, Seifertova 1 ';
+      component.form().controls['address'].markAsDirty();
+      component.member.school = null;
+      component.form().controls['school'].markAsDirty();
+      component.member.fatherFirstName = ' Петро ';
+      component.form().controls['fatherFirstName'].markAsDirty();
+      component.member.motherPhone = '';
+      component.form().controls['motherPhone'].markAsDirty();
+      component.submit();
+
+      const dto = memberServiceSpy.update.calls.mostRecent().args[1];
+      expect(dto.address).toBe('Praha 3, Seifertova 1');
+      expect(dto.school).toBe('');
+      expect(dto.fatherFirstName).toBe('Петро');
+      expect(dto.motherPhone).toBe('');
+      expect(dto.motherFirstName).toBeUndefined();
+    });
+
     it('should convert Date to yyyy-MM-dd format', () => {
       create();
       // Use noon to avoid timezone shifts
@@ -535,6 +570,120 @@ describe('UpsertMemberComponent', () => {
 
       expect(console.error).toHaveBeenCalledWith('Error updating member:', error);
       expect(routerSpy.navigate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('ступені', () => {
+    it('shows Пласт and УПЮ and offers the other улади', () => {
+      create();
+      expect(component.visibleLevelGroups.map(group => group.key)).toEqual(['base', 'upu']);
+      expect(component.hiddenLevelGroups.map(group => group.key)).toEqual(['usp', 'ups']);
+    });
+
+    it('keeps a улад with a saved date on screen', () => {
+      memberServiceSpy.getByKey.and.returnValue(of({
+        ...loadedMember,
+        plastLevelHistories: [{ plastLevel: PlastLevel.Senior, dateAchieved: '2020-01-01' }]
+      }));
+      create();
+      expect(component.visibleLevelGroups.map(group => group.key)).toEqual(['base', 'upu', 'ups']);
+    });
+
+    it('checks each date against birth, today and the ступінь before it', () => {
+      create();
+      component.member.dateOfBirth = new Date(2010, 0, 1);
+      component.plastLevelMap[PlastLevel.Entry].dateAchieved = '2009-12-31';
+      expect(component.levelDateIssue(PlastLevel.Entry)).toBe('Раніше за дату народження.');
+
+      component.plastLevelMap[PlastLevel.Entry].dateAchieved = new Date(Date.now() + 2 * 86_400_000);
+      expect(component.levelDateIssue(PlastLevel.Entry)).toBe('Ця дата ще не настала.');
+
+      component.plastLevelMap[PlastLevel.Entry].dateAchieved = '2018-05-01';
+      component.plastLevelMap[PlastLevel.Uchasnyk].dateAchieved = '2018-04-01';
+      expect(component.levelDateIssue(PlastLevel.Uchasnyk)).toBe('Раніше, ніж «Вступ до Пласту».');
+      expect(component.hasLevelDateIssues).toBeTrue();
+
+      component.plastLevelMap[PlastLevel.Uchasnyk].dateAchieved = '2019-04-01';
+      expect(component.levelDateIssue(PlastLevel.Uchasnyk)).toBeNull();
+      expect(component.hasLevelDateIssues).toBeFalse();
+    });
+
+    it('does not compare across улади', () => {
+      create();
+      component.plastLevelMap[PlastLevel.Uchasnyk].dateAchieved = '2019-04-01';
+      component.plastLevelMap[PlastLevel.Rozviduvach].dateAchieved = '2018-04-01';
+      expect(component.levelDateIssue(PlastLevel.Rozviduvach)).toBeNull();
+    });
+
+    it('adds a улад when asked', () => {
+      create();
+      component.showLevelGroup('usp');
+      expect(component.hiddenLevelGroups.map(group => group.key)).toEqual(['ups']);
+    });
+  });
+
+  describe('action bar', () => {
+    it('names the empty required fields in the order of the form', async () => {
+      setRouteParams({ groupKey });
+      create();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(component.missingFields).toEqual(['імʼя', 'по батькові', 'прізвище', 'дату народження', 'email', 'телефон']);
+    });
+
+    it('goes back to the card when an edit is cancelled', () => {
+      create();
+      component.cancel();
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', memberKey]);
+    });
+
+    it('goes back to the group when a new member is cancelled', () => {
+      setRouteParams({ groupKey });
+      create();
+      component.cancel();
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/group', groupKey]);
+    });
+  });
+
+  describe('leaving', () => {
+    function confirmation(answer: boolean): jasmine.Spy {
+      const service = fixture.debugElement.injector.get(ConfirmationService);
+      return spyOn(service, 'confirm').and.callFake(options => {
+        if (answer) {
+          options.accept?.();
+        } else {
+          options.reject?.();
+        }
+        return service;
+      });
+    }
+
+    it('lets go without asking when nothing changed', () => {
+      create();
+      expect(component.confirmLeave()).toBeTrue();
+    });
+
+    it('asks before throwing changes away', async () => {
+      create();
+      component.form().form.markAsDirty();
+
+      const confirm = confirmation(false);
+      expect(await component.confirmLeave()).toBeFalse();
+      expect(confirm).toHaveBeenCalled();
+    });
+
+    it('leaves when the person says so', async () => {
+      create();
+      component.form().form.markAsDirty();
+      confirmation(true);
+      expect(await component.confirmLeave()).toBeTrue();
+    });
+
+    it('does not ask after saving', () => {
+      create();
+      component.form().form.markAsDirty();
+      component.submit();
+      expect(component.confirmLeave()).toBeTrue();
     });
   });
 
@@ -733,7 +882,7 @@ describe('UpsertMemberComponent', () => {
     beforeEach(() => {
       setRouteParams({ groupKey });
       create();
-      mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsTouched']);
+      mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsDirty']);
     });
 
     it('should close cropper and use croppedFile', () => {
@@ -746,7 +895,7 @@ describe('UpsertMemberComponent', () => {
       expect(component.displayCropper).toBeFalse();
       expect(component.fileToUpload).toBe(component.croppedFile);
       expect(component.removeProfilePhoto).toBeFalse();
-      expect(mockForm.markAsTouched).toHaveBeenCalled();
+      expect(mockForm.markAsDirty).toHaveBeenCalled();
     });
 
     it('should convert base64 to blob when no croppedFile', () => {
@@ -758,7 +907,7 @@ describe('UpsertMemberComponent', () => {
       expect(component.fileToUpload).toBeTruthy();
       expect(component.fileToUpload).toBeInstanceOf(Blob);
       expect(component.removeProfilePhoto).toBeFalse();
-      expect(mockForm.markAsTouched).toHaveBeenCalled();
+      expect(mockForm.markAsDirty).toHaveBeenCalled();
     });
 
     it('should warn when no cropped image available', () => {
@@ -796,7 +945,7 @@ describe('UpsertMemberComponent', () => {
     beforeEach(() => {
       setRouteParams({ groupKey });
       create();
-      mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsTouched']);
+      mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsDirty']);
     });
 
     it('should clear all photo-related data', () => {
@@ -814,7 +963,7 @@ describe('UpsertMemberComponent', () => {
       expect(component.fileToUpload).toBeNull();
       expect(component.member.profilePhotoUrl).toBeNull();
       expect(component.removeProfilePhoto).toBeTrue();
-      expect(mockForm.markAsTouched).toHaveBeenCalled();
+      expect(mockForm.markAsDirty).toHaveBeenCalled();
     });
 
     it('should revoke object URL if exists', () => {
@@ -865,7 +1014,7 @@ describe('UpsertMemberComponent', () => {
       component.imageCropped(cropEvent);
 
       // Save cropped image
-      const mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsTouched']);
+      const mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsDirty']);
       component.save(mockForm);
       expect(component.displayCropper).toBeFalse();
       expect(component.fileToUpload).toBeTruthy();
@@ -883,7 +1032,7 @@ describe('UpsertMemberComponent', () => {
     it('should complete full update workflow with photo removal', () => {
       create();
       
-      const mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsTouched']);
+      const mockForm = jasmine.createSpyObj<FormGroup>('FormGroup', ['markAsDirty']);
       
       // Clear photo
       component.clearProfilePhoto(mockForm);

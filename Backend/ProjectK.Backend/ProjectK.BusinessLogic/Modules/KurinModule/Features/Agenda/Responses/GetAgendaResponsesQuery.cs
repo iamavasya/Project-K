@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -21,13 +22,15 @@ public sealed class GetAgendaResponsesQueryHandler : IRequestHandler<GetAgendaRe
     private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
     private readonly ICurrentUserContext _currentUser;
+    private readonly IKraiProfileProvider _profiles;
 
-    public GetAgendaResponsesQueryHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser)
+    public GetAgendaResponsesQueryHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, ICurrentUserContext currentUser, IKraiProfileProvider profiles)
     {
         _uow = uow;
         _members = members;
         _access = access;
         _currentUser = currentUser;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<AgendaResponsesResponse>> Handle(GetAgendaResponsesQuery request, CancellationToken cancellationToken)
@@ -56,7 +59,8 @@ public sealed class GetAgendaResponsesQueryHandler : IRequestHandler<GetAgendaRe
             return ServiceResult<AgendaResponsesResponse>.Failure(ResultType.Forbidden, "AGENDA_NOT_VISIBLE", "You cannot view this event.");
         }
 
-        if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, out var occurrenceKey))
+        var zone = await _profiles.ForKurinAsync(item.KurinKey, cancellationToken);
+        if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, zone, out var occurrenceKey))
         {
             return ServiceResult<AgendaResponsesResponse>.Failure(ResultType.BadRequest, "AGENDA_NOT_OCCURRENCE", "The event has no occurrence starting at that time.");
         }

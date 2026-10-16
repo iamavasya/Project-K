@@ -4,9 +4,11 @@ import { TableModule } from '@openng/optimus-ui/table';
 import { SplitButtonModule } from '@openng/optimus-ui/splitbutton';
 
 import { KurinDto } from '../../models/kurin.dto';
+import { KraiDto } from '../../models/krai.dto';
+import { of, switchMap } from 'rxjs';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { MenuItem, MessageService } from '@openng/optimus-ui/api';
-import { ManageAction, ManagePanelComponent, ManagePanelConfig } from '../../components/manage-panel/manage-panel';
+import { ManageAction, ManagePanelComponent, ManagePanelConfig, ManagePanelField } from '../../components/manage-panel/manage-panel';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
@@ -32,6 +34,7 @@ export class AdminPanelComponent implements OnInit {
   managePanelVisible = false;
   managePanelParameter: 'create' | 'update' | 'delete' | 'undef' = 'undef';
   data: KurinDto[] = [];
+  krais: KraiDto[] = [];
 
   actions: MenuItem[] = [];
 
@@ -54,13 +57,25 @@ export class AdminPanelComponent implements OnInit {
         placeholder: 'Наприклад: 101',
         required: true,
         hiddenOn: ['delete'],
-      }
+      },
+      AdminPanelComponent.kraiField([])
     ],
     displayName: (entity: KurinDto) => {
       const name = entity.number === null ? 'Підготовчий курінь' : `${entity.number} курінь`;
       return entity.namedAfter ? `${name} ім. ${entity.namedAfter}` : name;
     },
-    createFactory: () => ({ kurinKey: '', number: null }),
+    createFactory: () => ({ kurinKey: '', number: null, kraiCode: null }),
+  }
+
+  private static kraiField(krais: KraiDto[]): ManagePanelField {
+    return {
+      name: 'kraiCode',
+      label: 'Край',
+      type: 'select',
+      placeholder: 'Типовий край інстансу',
+      hiddenOn: ['delete'],
+      options: krais.map(krai => ({ label: krai.name, value: krai.code }))
+    };
   }
 
   prepareItemActions(item: KurinDto): void {
@@ -80,6 +95,16 @@ export class AdminPanelComponent implements OnInit {
 
   ngOnInit(): void {
     this.refreshData();
+    this.kurinService.getKrais().subscribe((krais: KraiDto[]) => {
+      this.krais = krais ?? [];
+      this.data = this.sortedByKrai(this.data);
+      // A new config object, so the panel rebuilds its form with the choices in it.
+      this.managePanelConfig = {
+        ...this.managePanelConfig,
+        fields: this.managePanelConfig.fields.map(field =>
+          field.name === 'kraiCode' ? AdminPanelComponent.kraiField(this.krais) : field)
+      };
+    });
     this.waitlistAttention.refresh();
   }
 
@@ -97,9 +122,27 @@ export class AdminPanelComponent implements OnInit {
         // Звʼязковий" field posted to a route the API never had.
         this.kurinService.createKurin(e.entity).subscribe(() => { this.refreshData(); });
         break;
-      case 'update':
-        this.kurinService.updateKurin(e.entity).subscribe(() => this.refreshData());
+      case 'update': {
+        // The край moves through its own admin-only call, after the rest of the record is saved.
+        const previousKrai = this.selectedItem?.kraiCode;
+        const nextKrai = e.entity.kraiCode;
+        this.kurinService.updateKurin(e.entity).pipe(
+          switchMap(() => nextKrai && nextKrai !== previousKrai
+            ? this.kurinService.setKurinKrai(e.entity.kurinKey, nextKrai)
+            : of(null))
+        ).subscribe({
+          next: () => this.refreshData(),
+          error: (error: unknown) => {
+            this.refreshData();
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Не вдалося зберегти курінь',
+              detail: failureDetail(error)
+            });
+          }
+        });
         break;
+      }
       case 'delete':
         this.kurinService.deleteKurin(e.entity.kurinKey).subscribe(() => this.refreshData());
         break;
@@ -108,8 +151,24 @@ export class AdminPanelComponent implements OnInit {
 
   refreshData(): void {
     this.kurinService.getKurins().subscribe((data: KurinDto[]) => {
-      this.data = data ?? [];
+      this.data = this.sortedByKrai(data ?? []);
     });
+  }
+
+  /** The kurins grouped by край: Україна first, then the rest by name; by number inside a край. */
+  private sortedByKrai(kurins: KurinDto[]): KurinDto[] {
+    const rank = (code?: string) => code === 'ua' ? '' : this.kraiName(code);
+    return [...kurins].sort((a, b) =>
+      rank(a.kraiCode).localeCompare(rank(b.kraiCode), 'uk')
+      || (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER));
+  }
+
+  kraiName(code?: string): string {
+    return this.krais.find(krai => krai.code === code)?.name ?? code ?? '';
+  }
+
+  kurinCountInKrai(code?: string): number {
+    return this.data.filter(kurin => kurin.kraiCode === code).length;
   }
 
   onOpenClick(kurinKey: string): void {

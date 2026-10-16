@@ -1,0 +1,79 @@
+@for (item of standardFields; track item.field) {
+  <div class="krai-field">
+    <label [for]="'card-' + item.field">{{ item.label }}</label>
+    <p-select
+      [inputId]="'card-' + item.field"
+      [options]="modeOptions"
+      optionLabel="label"
+      optionValue="mode"
+      [showClear]="true"
+      [ngModel]="mode(item.field)"
+      (ngModelChange)="setMode(item.field, $event ?? null)"
+      [placeholder]="defaultLabel(item.field)"
+      [disabled]="disabled()"
+      appendTo="body" />
+  </div>
+}
+
+<h3 class="krai-subtitle">Поля краю</h3>
+<p class="krai-muted">Додаткові поля, які заповнюють у картці кожного члена куреня цього краю, як-от тип візи.</p>
+
+<ul class="krai-extra" data-testid="krai-extra">
+  @for (field of extra(); track $index; let index = $index) {
+    <li class="krai-extra__row">
+      <div class="krai-field">
+        <label [for]="'extra-label-' + index">Назва</label>
+        <input
+          pInputText
+          [id]="'extra-label-' + index"
+          [ngModel]="field.label"
+          (ngModelChange)="updateField(index, { label: $event })"
+          maxlength="80"
+          [disabled]="disabled()" />
+      </div>
+      <div class="krai-field">
+        <label [for]="'extra-key-' + index">Ключ</label>
+        <input
+          pInputText
+          [id]="'extra-key-' + index"
+          [ngModel]="field.key"
+          (ngModelChange)="updateField(index, { key: $event })"
+          maxlength="40"
+          [disabled]="disabled()" />
+      </div>
+      <div class="krai-field">
+        <label [for]="'extra-type-' + index">Тип</label>
+        <p-select
+          [inputId]="'extra-type-' + index"
+          [options]="typeOptions"
+          optionLabel="label"
+          optionValue="type"
+          [ngModel]="field.type"
+          (ngModelChange)="updateField(index, { type: $event })"
+          [disabled]="disabled()"
+          appendTo="body" />
+      </div>
+      <div class="krai-extra__actions">
+        <label [for]="'extra-required-' + index">Обовʼязкове</label>
+        <p-toggleswitch
+          [inputId]="'extra-required-' + index"
+          [ngModel]="field.required"
+          (ngModelChange)="updateField(index, { required: $event })"
+          [disabled]="disabled()" />
+        <p-button
+          icon="pi pi-trash"
+          severity="danger"
+          variant="text"
+          [ariaLabel]="'Прибрати поле ' + (field.label || field.key)"
+          [disabled]="disabled()"
+          (onClick)="removeField(index)" />
+      </div>
+    </li>
+  } @empty {
+    <li class="krai-muted">Край не додає своїх полів.</li>
+  }
+</ul>
+<small class="krai-muted">Ключ — латиницею, з малої літери, як visaType. Значення в картках тримаються під ним, тож після збереження його не міняють.</small>
+<div>
+  <p-button label="Додати поле" icon="pi pi-plus" severity="secondary" variant="text" [disabled]="disabled()" (onClick)="addField()" />
+</div>

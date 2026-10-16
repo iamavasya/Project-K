@@ -1,11 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
+import { CountryCode } from 'libphonenumber-js';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
+import { phoneCountryOfKrai } from '../../core/phone';
 import { apiUrl } from '../../runtime-config';
 import {
   BadgeCatalogItemDto,
   BadgeProgressDto,
+  CardFields,
   GroupDto,
   GroupRequest,
   GroupedProbeDto,
@@ -16,7 +19,6 @@ import {
   MemberDuesDto,
   MemberLookupDto,
   MemberWarningDto,
-  MembershipCandidateDto,
   MembershipDto,
   MentorAssignmentDto,
   ProbeProgressDto,
@@ -25,7 +27,7 @@ import {
   UpsertLeadershipRequest,
   WarningLevel,
 } from './kurin.models';
-import { NewMemberPlacement } from './member-edit';
+import { KraiProfileCardFields, NewMemberPlacement, cardFieldsOf } from './member-edit';
 import { browserTimeZone } from './kurin-profile';
 
 /**
@@ -52,6 +54,16 @@ export class KurinApi {
   /** The kurin's record (web kurin-panel «Редагування даних куреня»); the whole record goes back. */
   updateKurin(kurin: KurinDto): Promise<KurinDto> {
     return this.api.put(`kurin/${kurin.kurinKey}`, kurin);
+  }
+
+  /** What the kurin's край asks on a member's card (its profile's `cardFields`, or the default without one). */
+  async cardFields(kurinKey: string): Promise<CardFields> {
+    return cardFieldsOf(await this.api.get<KraiProfileCardFields>(`kurin/${kurinKey}/profile`));
+  }
+
+  /** The country a number typed without «+» is read in: the kurin's край's (CZ for cz). */
+  async phoneCountry(kurinKey: string): Promise<CountryCode> {
+    return phoneCountryOfKrai((await this.api.get<{ kraiCode?: string }>(`kurin/${kurinKey}/profile`)).kraiCode);
   }
 
   /** The kurin's report as a PDF (web «Експорт звіту куреня»), dated in the reader's zone. */
@@ -113,6 +125,11 @@ export class KurinApi {
 
   badgeCatalog(): Promise<BadgeCatalogItemDto[]> {
     return this.api.get('catalog/badges', { take: 1000 });
+  }
+
+  /** Only the вмілості the kurin's край offers for a new start; what a member already has comes from badgeCatalog. */
+  kurinBadgeCatalog(kurinKey: string): Promise<BadgeCatalogItemDto[]> {
+    return this.api.get(`kurin/${kurinKey}/catalog/badges`);
   }
 
   badgeProgress(memberKey: string): Promise<BadgeProgressDto[]> {
@@ -244,20 +261,6 @@ export class KurinApi {
     this.membersChanged.update((n) => n + 1);
   }
 
-  /**
-   * The person a public code names (web join-by-code-dialog): an exact match on a code they handed
-   * over, never a search. 400 for a malformed code, 404 for one nobody has.
-   */
-  findCandidate(kurinKey: string, publicId: string): Promise<MembershipCandidateDto> {
-    return this.api.get(`kurin/${kurinKey}/memberships/candidate`, { publicId });
-  }
-
-  /** Into this kurin as юнацтво, by the code (web joinByPublicId); their other kurins stay. */
-  async joinByPublicId(kurinKey: string, publicId: string): Promise<void> {
-    await this.api.post(`kurin/${kurinKey}/memberships`, { publicId, kind: 'Youth' });
-    this.membersChanged.update((n) => n + 1);
-  }
-
   /** Closes the membership in this kurin (web «Вивести»); the person and their history stay. */
   async leaveKurin(kurinKey: string, memberKey: string): Promise<void> {
     await this.api.delete(`kurin/${kurinKey}/memberships/${memberKey}`);
@@ -333,10 +336,15 @@ export class ProtectedImages {
   private readonly urls = signal<Record<string, string | null>>({});
   private readonly pending = new Set<string>();
 
-  /** A catalogue badge's picture (its path is relative to the API origin's /badges_images). */
+  /**
+   * A catalogue badge's picture. The catalogue serves it publicly, so it loads as is: fetching it here
+   * would send the access token to another host.
+   */
   badge(imagePath: string | null | undefined): string | null {
     if (!imagePath) return null;
-    if (/^(https?:|data:)/.test(imagePath)) return this.resolve(imagePath);
+    if (/^(https?:|data:)/.test(imagePath)) {
+      return imagePath.startsWith(`${this.origin}/`) ? this.resolve(imagePath) : imagePath;
+    }
     const path = imagePath.replace(/^\//, '');
     return this.resolve(`${this.origin}/${path.startsWith('badges_images/') ? path : `badges_images/${path}`}`);
   }

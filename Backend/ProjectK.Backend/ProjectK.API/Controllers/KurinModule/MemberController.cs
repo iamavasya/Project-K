@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -177,12 +178,16 @@ public class MemberController : ControllerBase
             Email = request.Email,
             PhoneNumber = request.PhoneNumber,
             DateOfBirth = request.DateOfBirth,
+            Address = request.Address,
+            School = request.School,
             PlastLevelHistories = request.PlastLevelHistories,
+            CardExtras = request.CardExtras,
+            ApplyCardFields = true,
             CreateUserAccount = request.CreateUserAccount,
             BlobContent = request.Blob is { Length: > 0 } ? request.Blob.OpenReadStream() : null,
             BlobFileName = request.Blob?.FileName,
             BlobContentType = request.Blob?.ContentType
-        };
+        }.WithParentsOf(request);
         var response = await _mediator.Send(command, cancellationToken);
         return response.ToActionResult(this);
     }
@@ -217,12 +222,16 @@ public class MemberController : ControllerBase
             Email = request.Email,
             PhoneNumber = request.PhoneNumber,
             DateOfBirth = request.DateOfBirth,
+            Address = request.Address,
+            School = request.School,
             PlastLevelHistories = request.PlastLevelHistories,
+            CardExtras = request.CardExtras,
+            ApplyCardFields = true,
             CreateUserAccount = request.CreateUserAccount,
             BlobContent = request.Blob is { Length: > 0 } ? request.Blob.OpenReadStream() : null,
             BlobFileName = request.Blob?.FileName,
             BlobContentType = request.Blob?.ContentType
-        };
+        }.WithParentsOf(request);
 
         var response = await _mediator.Send(command, cancellationToken);
         return response.ToActionResult(this);
@@ -263,13 +272,17 @@ public class MemberController : ControllerBase
             Email = request.Email,
             PhoneNumber = request.PhoneNumber,
             DateOfBirth = request.DateOfBirth,
+            Address = request.Address,
+            School = request.School,
             PlastLevelHistories = request.PlastLevelHistories,
+            CardExtras = request.CardExtras,
+            ApplyCardFields = true,
             RemoveProfilePhoto = request.RemoveProfilePhoto ?? false,
             CreateUserAccount = request.CreateUserAccount,
             BlobContent = request.Blob is { Length: > 0 } ? request.Blob.OpenReadStream() : null,
             BlobFileName = request.Blob?.FileName,
             BlobContentType = request.Blob?.ContentType
-        };
+        }.WithParentsOf(request);
         var response = await _mediator.Send(command, cancellationToken);
         return response.ToActionResult(this);
     }

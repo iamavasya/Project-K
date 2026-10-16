@@ -1,10 +1,9 @@
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Records;
-using ProjectK.ProbeAndBadges.Abstractions;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 
-/// <summary>Answers <see cref="IProgressCatalogReader"/> straight from the catalogue package.</summary>
+/// <summary>Answers <see cref="IProgressCatalogReader"/> straight from the catalogue.</summary>
 public sealed class ProgressCatalogReader : IProgressCatalogReader
 {
     private readonly IProbesCatalog _probes;

@@ -99,6 +99,12 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
       margin: 8px 16px 8px 10px;
       font-size: 16px;
     }
+    .account ion-label.saved h3,
+    .account ion-label.saved p {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .account h3 {
       font-size: 16px;
       font-weight: 600;
@@ -163,7 +169,8 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
                   {{ row.monogram }}
                 }
               </ion-avatar>
-              <ion-label class="ion-text-wrap">
+              <!-- One line each, cut short: a long address wrapped mid-word beside the role tag. -->
+              <ion-label class="saved">
                 <h3>{{ row.title }}</h3>
                 @if (row.subtitle) {
                   <p>{{ row.subtitle }}</p>

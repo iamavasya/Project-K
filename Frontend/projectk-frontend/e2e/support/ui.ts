@@ -72,27 +72,12 @@ export function submitButton(scope: Locator): Locator {
  * blanks the field, which is exactly the case worth retrying rather than reporting as a failure.
  */
 /**
- * Types into a masked input and makes sure the mask filled up.
- *
- * `fill` sets the value in one shot, which the mask sometimes takes and sometimes leaves as its
- * placeholder — the flaky onboarding run failed with "+38 (0__) ___-__-__" still in the field. Typing
- * drives the mask the way a person does; the check catches the run where it did not take.
- *
- * Pass the bare digits the mask has slots for, not the formatted string: its fixed parts (the "+38 "
- * prefix) are already on screen, and retyping them pushes real digits out of place.
+ * Types the national part of a phone into the phone field (the country is picked beside it) and
+ * leaves the box, which is when the field spaces the number out.
  */
-export async function fillMaskedInput(input: Locator, value: string): Promise<void> {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await input.click();
-    await input.fill('');
-    await input.pressSequentially(value, { delay: 40 });
-
-    if (!(await input.inputValue()).includes('_')) {
-      return;
-    }
-  }
-
-  await expect(input).not.toHaveValue(/_/);
+export async function fillPhone(input: Locator, national: string): Promise<void> {
+  await input.fill(national);
+  await input.blur();
 }
 
 export async function fillDatePicker(input: Locator, value: string): Promise<void> {
@@ -124,22 +109,15 @@ export async function fillMemberRequiredFields(page: Page, data: {
   await page.locator('input[name="lastName"]').fill(data.lastName);
   await page.locator('input[name="email"]').fill(data.email);
 
-  await fillMaskedInput(page.locator('input[name="phoneNumber"]'), data.phone ?? '1234567890');
+  await fillPhone(page.locator('input#phoneNumber'), data.phone ?? '501234567');
 
-  await fillDatePicker(page.locator('input[name="dateOfBirth"]'), data.dateOfBirth ?? '2000-12-12');
+  await fillDatePicker(page.locator('input[name="dateOfBirth"]'), data.dateOfBirth ?? '12.12.2000');
 }
 
 export async function openWarningPanel(page: Page): Promise<void> {
-  const warningPanel = page.locator('p-accordion-panel').filter({
-    has: page.locator('#warning-Level1')
-  });
-  const warningSection = warningPanel.locator('.warning-section');
-
-  if (!(await warningSection.isVisible())) {
-    await warningPanel.getByRole('button').first().click();
-  }
-
-  await expect(warningSection).toBeVisible();
+  // Перестороги live on the member card, in a dialog behind their own button.
+  await page.locator('.member-actions').getByRole('button', { name: 'Перестороги' }).click();
+  await expect(page.getByRole('dialog', { name: 'Перестороги' })).toBeVisible();
 }
 
 export async function acceptBrowserConfirm(page: Page): Promise<void> {

@@ -36,6 +36,15 @@ export class BadgesCatalogService {
     );
   }
 
+  /** Only what the kurin's край offers for a new start; anything a member already has is read by id or from getAll. */
+  getForKurin(kurinKey: string): Observable<BadgeCatalogItemDto[]> {
+    return this.cache.get(
+      `${BADGES_CATALOG_CACHE_PREFIX}kurin:${kurinKey}`,
+      CATALOG_CACHE_TTL_MS,
+      () => this.http.get<BadgeCatalogItemDto[]>(`${environment.apiUrl}/kurin/${kurinKey}/catalog/badges`)
+    );
+  }
+
   getById(badgeId: string): Observable<BadgeCatalogItemDto> {
     return this.cache.get(
       `${BADGES_CATALOG_CACHE_PREFIX}by-id:${badgeId}`,

@@ -242,11 +242,13 @@ describe('MemberProbePageComponent', () => {
     });
   });
 
-  it('getProbePointSignerLabel should fallback to userKey + role when signer name is absent', () => {
+  // A system role is shown by its Ukrainian office name; a bare pre-офіс name like «Mentor» has none,
+  // so it is left out rather than shown in English.
+  it('getProbePointSignerLabel should fallback to userKey + office when signer name is absent', () => {
     createComponent();
     fixture.detectChanges();
 
-    const label = component.getProbePointSignerLabel({
+    const point = {
       sectionId: 'sec-1',
       sectionCode: 'A',
       sectionTitle: 'Розділ A',
@@ -255,11 +257,13 @@ describe('MemberProbePageComponent', () => {
       isSigned: true,
       signedByUserKey: '4f36d9a1-7b8a-4faf-ae0d-f4d38a9fd111',
       signedByName: null,
-      signedByRole: 'Mentor',
+      signedByRole: 'KV.Zvyazkovyi',
       signedAtUtc: null
-    });
+    };
 
-    expect(label).toBe('4f36d9a1-7b8a-4faf-ae0d-f4d38a9fd111 (Mentor)');
+    expect(component.getProbePointSignerLabel(point)).toMatch(/^4f36d9a1-7b8a-4faf-ae0d-f4d38a9fd111 \([^A-Za-z)]+\)$/);
+    expect(component.getProbePointSignerLabel({ ...point, signedByRole: 'Mentor' }))
+      .toBe('4f36d9a1-7b8a-4faf-ae0d-f4d38a9fd111');
   });
 
   it('onUnsignPoint should show conflict message when API returns 409', () => {
@@ -324,6 +328,40 @@ describe('MemberProbePageComponent', () => {
     fixture.detectChanges();
 
     expect(component.canCloseProbe).toBeTrue();
+  });
+
+  it('keeps points signed under earlier requirements as signed earlier', () => {
+    memberProgressServiceSpy.getProbeProgress.and.returnValue(of({
+      ...createProbeProgress(ProbeProgressStatus.InProgress),
+      pointSignatures: [
+        {
+          probePointProgressKey: 'pp1',
+          pointId: 'point-1',
+          isSigned: true,
+          signedAtUtc: '2026-04-16T10:00:00Z',
+          signedByUserKey: 'user-1',
+          signedByName: 'Впорядник',
+          signedByRole: 'Mentor'
+        },
+        {
+          probePointProgressKey: 'pp-old',
+          pointId: 'old-point',
+          isSigned: true,
+          signedAtUtc: '2025-09-01T10:00:00Z',
+          signedByUserKey: 'user-1',
+          signedByName: 'Впорядник',
+          signedByRole: 'Mentor'
+        }
+      ]
+    }));
+
+    createComponent();
+    fixture.detectChanges();
+
+    expect(component.signedEarlierPoints.map(point => point.pointId)).toEqual(['old-point']);
+    expect(component.getSignedEarlierLabel(component.signedEarlierPoints[0])).toContain('Точка old-point · Впорядник');
+    expect(component.canCloseProbe).toBeFalse();
+    expect(fixture.nativeElement.textContent).toContain('Підписано раніше');
   });
 
   it('onCloseProbe should call updateProbeProgressStatus with Completed', () => {

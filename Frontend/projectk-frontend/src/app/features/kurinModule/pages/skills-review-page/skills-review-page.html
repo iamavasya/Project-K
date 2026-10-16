@@ -80,6 +80,13 @@
             <td class="skills-review__actions-col" data-mobile-label="Дії">
               <div class="skills-review__row-actions">
                 <p-button
+                  label="Деталі"
+                  icon="pi pi-info-circle"
+                  size="small"
+                  severity="secondary"
+                  [text]="true"
+                  (onClick)="openBadgeDetails(item.badgeId)" />
+                <p-button
                   label="Підтвердити"
                   icon="pi pi-check"
                   size="small"
@@ -170,4 +177,6 @@
       </div>
     }
   </p-dialog>
+
+  <app-badge-details-dialog [(visible)]="isBadgeDetailsVisible" [badgeId]="badgeDetailsId" />
 </section>

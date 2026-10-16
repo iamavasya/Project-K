@@ -166,8 +166,6 @@
         @if (canManageMembers) {
             <div class="mt-3">
                 <p-button label="Додати учасника куреня" (onClick)="onMemberCreate()" icon="pi pi-plus" />
-                <p-button label="Прийняти за кодом" (onClick)="isJoinByCodeVisible = true" icon="pi pi-id-card"
-                    severity="secondary" variant="text" />
             </div>
         }
     </section>
@@ -179,8 +177,3 @@
   [entity]="selectedGroup"
   [config]="groupPanelConfig"
   (actionPerformed)="onGroupManage($event)" />
-
-<app-join-by-code-dialog
-  [(visible)]="isJoinByCodeVisible"
-  [kurinKey]="kurinKey"
-  (joined)="onMembershipsChanged()" />

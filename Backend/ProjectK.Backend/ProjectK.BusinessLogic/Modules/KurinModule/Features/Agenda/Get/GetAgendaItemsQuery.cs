@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -27,15 +28,18 @@ public sealed class GetAgendaItemsQueryHandler
     private readonly IAgendaAccess _access;
     private readonly UserManager<AppUser> _userManager;
     private readonly TimeProvider _timeProvider;
+    private readonly IKraiProfileProvider _profiles;
 
     public GetAgendaItemsQueryHandler(IUnitOfWork uow,
-        IMemberDirectory members, IAgendaAccess access, UserManager<AppUser> userManager, TimeProvider timeProvider)
+        IMemberDirectory members, IAgendaAccess access, UserManager<AppUser> userManager, TimeProvider timeProvider,
+        IKraiProfileProvider profiles)
     {
         _uow = uow;
         _members = members;
         _access = access;
         _userManager = userManager;
         _timeProvider = timeProvider;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<IEnumerable<AgendaItemResponse>>> Handle(GetAgendaItemsQuery request, CancellationToken cancellationToken)
@@ -60,11 +64,12 @@ public sealed class GetAgendaItemsQueryHandler
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var windowFrom = request.FromUtc ?? now.AddMonths(-6);
         var windowTo = request.ToUtc ?? now.AddMonths(12);
+        var zone = await _profiles.ForKurinAsync(request.KurinKey, cancellationToken);
 
         var responses = items
             .SelectMany(item => item.RecurrenceFrequency == RecurrenceFrequency.None
                 ? new[] { AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.LeadershipLabels, lookups.Categories, roster) }
-                : AgendaRecurrence.Expand(item, windowFrom, windowTo)
+                : AgendaRecurrence.Expand(item, windowFrom, windowTo, zone)
                     .Select(occ => AgendaItemResponseFactory.Create(item, viewer, AgendaLookups.KurinLabel, lookups.GroupNames, lookups.MemberNames, creatorNames, lookups.LeadershipLabels, lookups.Categories, roster, occ.StartUtc, occ.EndUtc)))
             .Where(r => request.IncludeKurinSchedules || r.Audience != AgendaAudience.Schedule)
             .OrderBy(r => r.StartUtc)

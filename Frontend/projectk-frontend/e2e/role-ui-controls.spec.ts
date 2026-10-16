@@ -37,28 +37,33 @@ describeRole('manager', 'Manager role UI controls', ({ user }) => {
     });
 
     await expect(saveButton).toBeEnabled();
+
+    // Leaving with the form filled in asks first, and staying keeps what was typed.
+    await page.getByRole('button', { name: 'Скасувати', exact: true }).click();
+    const leave = page.getByRole('alertdialog', { name: 'Вийти без збереження?' });
+    await expect(leave).toBeVisible();
+    await leave.getByRole('button', { name: 'Лишитися' }).click();
+    await expect(page).toHaveURL(new RegExp(`/group/${groupKey}/member/upsert$`));
+    await expect(page.locator('input[name="firstName"]')).toHaveValue('E2EValidationFirst');
   });
 
-  test('manager warning checkboxes unlock in order on member edit', async ({ page, request }) => {
+  test('manager gives перестороги in order from the member card', async ({ page, request }) => {
     const memberKey = await getFirstSeededGroupMemberKey(request, user);
 
     await page.goto(`/member/${memberKey}`);
-    await expect(page.locator('.member-actions').getByRole('button')).toBeVisible();
-    await page.locator('.member-actions button').click();
-
-    const level1 = page.locator('#warning-Level1');
-    const level2 = page.locator('#warning-Level2');
-    const level3 = page.locator('#warning-Level3');
-
     await openWarningPanel(page);
-    await expect(level1).toBeEnabled();
-    await expect(level3).toBeDisabled();
 
-    if (await level2.isDisabled()) {
-      await level1.check({ force: true });
-      await expect(level2).toBeEnabled();
-      await level2.check({ force: true });
-      await expect(level3).toBeEnabled();
+    const dialog = page.getByRole('dialog', { name: 'Перестороги' });
+    const give = dialog.getByRole('button', { name: /^Дати:/ });
+    // Only one can be given at a time: the first that does not stand yet.
+    await expect(give).toHaveCount(1);
+
+    if (await dialog.locator('#warning-Level1').getByRole('button', { name: /^Дати:/ }).count()) {
+      await expect(dialog.locator('#warning-Level3')).toHaveCount(0);
+      await give.click();
+      await page.getByRole('alertdialog').getByRole('button', { name: 'Дати', exact: true }).click();
+      await expect(dialog.locator('#warning-Level2').getByRole('button', { name: /^Дати:/ })).toBeVisible();
+      await expect(dialog.locator('#warning-Level1').getByRole('button', { name: /^Скасувати:/ })).toBeVisible();
     }
   });
 });

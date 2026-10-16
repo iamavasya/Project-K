@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY } from '../../me/labels';
 import { Component, ElementRef, OnDestroy, OnInit, afterRenderEffect, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -519,6 +520,7 @@ const DUES_ERRORS: Record<string, string> = {
       <ion-modal [isOpen]="entryOpen()" [canDismiss]="!saving()" (didDismiss)="entryOpen.set(false)">
         <ng-template>
           <app-dues-entry-form
+            [currency]="currency()"
             [kinds]="kinds"
             [people]="data()?.people ?? []"
             [entry]="entryToEdit()"
@@ -540,6 +542,7 @@ const DUES_ERRORS: Record<string, string> = {
         <ng-template>
           @if (data(); as d) {
             <app-dues-kurin-rate-form
+              [currency]="currency()"
               [rates]="d.rates"
               [quarters]="fromQuarters()"
               [current]="d.currentQuarter"
@@ -568,8 +571,10 @@ export class KurinDuesPage implements OnInit, OnDestroy {
   protected readonly backText = inject(Config).get('mode') === 'ios' ? 'Курінь' : undefined;
   protected readonly kinds = KURIN_KINDS;
   protected readonly kindLabels = KIND_LABELS;
-  protected readonly money = duesMoney;
-  protected readonly amount = amountLabel;
+  /** What this kurin counts its вкладка in, from its край's profile. */
+  protected readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
+  protected readonly money = (amount: number): string => duesMoney(amount, this.currency());
+  protected readonly amount = (entry: DuesEntryDto): string => amountLabel(entry, this.currency());
   protected readonly signed = signedAmount;
   protected readonly key = quarterKey;
 
@@ -683,12 +688,12 @@ export class KurinDuesPage implements OnInit, OnDestroy {
   }
 
   protected handoverLine(group: KurinGroupHandoverDto): string {
-    const confirmed = `підтверджено ${duesMoney(group.received)}`;
-    return group.inTransit > 0 ? `${confirmed} · в дорозі ${duesMoney(group.inTransit)}` : confirmed;
+    const confirmed = `підтверджено ${this.money(group.received)}`;
+    return group.inTransit > 0 ? `${confirmed} · в дорозі ${this.money(group.inTransit)}` : confirmed;
   }
 
   protected quarterLine(row: KurinDuesQuarterGroupDto): string {
-    return `Юнаків ${row.youthCount} · здали ${duesMoney(row.collectedUp)} з ${duesMoney(row.expectedUp)}`;
+    return `Юнаків ${row.youthCount} · здали ${this.money(row.collectedUp)} з ${this.money(row.expectedUp)}`;
   }
 
   protected transferLine(transfer: DuesTransferDto): string {
@@ -743,7 +748,7 @@ export class KurinDuesPage implements OnInit, OnDestroy {
 
   protected async transferActions(transfer: DuesTransferDto): Promise<void> {
     const sheet = await this.sheets.create({
-      header: `${transfer.groupName} · +${duesMoney(transfer.amount)}`,
+      header: `${transfer.groupName} · +${this.money(transfer.amount)}`,
       subHeader: transfer.isReceived && transfer.receivedByName ? `Підтвердив ${transfer.receivedByName}` : undefined,
       buttons: [
         transfer.isReceived ? { text: 'Зняти підтвердження', data: 'undo' } : { text: 'Отримано', data: 'received' },
@@ -770,7 +775,7 @@ export class KurinDuesPage implements OnInit, OnDestroy {
       buttons.push({ text: 'Змінити', data: 'edit' }, { text: 'Видалити', role: 'destructive', data: 'delete' });
     }
     buttons.push({ text: 'Скасувати', role: 'cancel' });
-    const sheet = await this.sheets.create({ header: `${KIND_LABELS[entry.kind]} · ${amountLabel(entry)}`, buttons });
+    const sheet = await this.sheets.create({ header: `${KIND_LABELS[entry.kind]} · ${this.amount(entry)}`, buttons });
     await sheet.present();
     const { data } = await sheet.onWillDismiss<string>();
     if (data === 'verify' || data === 'unverify') await this.setVerified(entry, data === 'verify');
@@ -833,7 +838,7 @@ export class KurinDuesPage implements OnInit, OnDestroy {
   private async confirmDelete(entry: DuesEntryDto): Promise<void> {
     const sheet = await this.sheets.create({
       header: 'Видалити операцію?',
-      subHeader: `${KIND_LABELS[entry.kind]} на ${duesMoney(entry.amount)} зникне з каси. Запис про неї лишиться в історії змін.`,
+      subHeader: `${KIND_LABELS[entry.kind]} на ${this.money(entry.amount)} зникне з каси. Запис про неї лишиться в історії змін.`,
       buttons: [
         { text: 'Видалити', role: 'destructive', data: 'delete' },
         { text: 'Скасувати', role: 'cancel' },

@@ -1,0 +1,107 @@
+.badge-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding-top: 1.25rem;
+}
+
+.badge-details__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.badge-details__image {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 6rem;
+    height: 6rem;
+    overflow: hidden;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: var(--lil-radius-lg);
+    background: var(--lil-paper);
+    color: var(--lil-faint);
+}
+
+.badge-details__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.badge-details__headline {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.badge-details__title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: var(--lil-weight-heading);
+    line-height: var(--lil-leading-heading);
+}
+
+.badge-details__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.badge-details__chip {
+    padding: 0.125rem 0.5rem;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: var(--lil-radius);
+    background: var(--p-surface-ground);
+    font-size: var(--lil-text-caption);
+    font-weight: var(--lil-weight-ui);
+}
+
+.badge-details__section-title {
+    margin: 0 0 0.5rem;
+    color: var(--lil-faint);
+    font-size: var(--lil-text-micro);
+    font-weight: 700;
+    letter-spacing: var(--lil-tracking-micro);
+    text-transform: uppercase;
+}
+
+.badge-details__requirements {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin: 0;
+    padding-left: 1.5rem;
+    list-style: decimal;
+    white-space: pre-line;
+    line-height: var(--lil-leading-body);
+}
+
+.badge-details__text {
+    margin: 0;
+    line-height: var(--lil-leading-body);
+    white-space: pre-line;
+}
+
+.badge-details__footnote {
+    margin: 0;
+    color: var(--p-text-muted-color);
+    font-size: var(--lil-text-caption);
+}
+
+.badge-details__actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 480px) {
+    .badge-details__head {
+        flex-direction: column;
+    }
+}

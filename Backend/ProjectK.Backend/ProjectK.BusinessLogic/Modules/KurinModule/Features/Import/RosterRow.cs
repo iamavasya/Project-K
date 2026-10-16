@@ -1,3 +1,4 @@
+using ProjectK.Common.Phones;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
@@ -107,7 +108,8 @@ internal sealed class RosterRow
             LevelDate = RosterValues.Date(Of(RosterField.PlastLevelDate)),
             GroupName = Of(RosterField.GroupName),
             KurinNumber = RosterValues.KurinNumber(Of(RosterField.KurinNumber)),
-            PhoneNumber = Of(RosterField.PhoneNumber),
+            // A number that is not one (or not one the file says plainly) is left out, not the row.
+            PhoneNumber = PhoneNumbers.NormalizeLegacy(Of(RosterField.PhoneNumber)) is { Length: > 0 } phone ? phone : null,
             Email = Of(RosterField.Email),
             Address = Of(RosterField.Address),
             School = Of(RosterField.School)

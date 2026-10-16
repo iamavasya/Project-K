@@ -15,7 +15,7 @@ const kurin = { kurinKey: 'k1', number: 7, branch: 'UPYu', namedAfter: 'Іван
 
 const card = (memberKey: string, firstName: string, lastName: string, extra: Record<string, unknown> = {}) => ({
   memberKey, userKey: `u-${memberKey}`, accountStatus: 'Active', userRole: 'Kurin.Member', firstName, middleName: 'Петрович', lastName,
-  email: `${memberKey}@example.com`, phoneNumber: '+380 67 000 00 00', dateOfBirth: '2012-03-14', kurinKey: 'k1', groupKey: 'g1',
+  email: `${memberKey}@example.com`, phoneNumber: '+380670000000', dateOfBirth: '2012-03-14', kurinKey: 'k1', groupKey: 'g1',
   address: 'Львів, вул. Франка, 1', school: null, profilePhotoUrl: null, latestPlastLevel: 'Uchasnyk',
   plastLevelHistories: [{ plastLevelHistoryKey: `pl-${memberKey}`, memberKey, plastLevel: 'Uchasnyk', dateAchieved: '2022-04-23' }],
   profileVerificationStatus: 'Unverified', profileVerifiedAtUtc: null, warnings: [], awards: [], leadershipHistories: [], mentoredGroupNames: [],
@@ -34,17 +34,22 @@ function cards(): Record<string, Record<string, unknown>> {
     }),
     m2: card('m2', 'Марта', 'Шевчук', { accountStatus: 'PendingActivation', warnings: [warning('w1', 'Level1', 'u-other')] }),
     m3: card('m3', 'Андрій', 'Мельник', {
+      cardExtras: { visaType: 'D' },
       profileVerificationStatus: 'VerifiedCurrent', profileVerifiedAtUtc: '2026-09-15T09:00:00Z', warnings: [warning('w9', 'Level1', me)],
     }),
   };
 }
 
-function memberApi(canUpdate: (memberKey: string) => boolean): ExtraApi {
+/** The край's card fields as the server resolves them: without a profile, both fields asked and nothing more. */
+const DEFAULT_CARD = { fields: { middleName: 'required', phoneNumber: 'required' }, extra: [] };
+
+function memberApi(canUpdate: (memberKey: string) => boolean, cardFields: unknown = DEFAULT_CARD): ExtraApi {
   const all = cards();
   return ({ method, path, body }): Answer | null => {
     const match = /^member\/(m\d)(\/.*)?$/.exec(path);
     if (method === 'GET') {
       if (path === 'kurin/k1') return ok(kurin);
+      if (path === 'kurin/k1/profile') return ok({ cardFields });
       if (path === 'catalog/badges' || path === 'catalog/probes') return ok([]);
       if (!match) return null;
       const [, key, rest] = match;
@@ -78,7 +83,8 @@ const ZVYAZKOVYI = ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Leaders
 const VYKHOVNYK = ['Group:Update:OwnGroups', 'BadgeProgress:Update:OwnGroups'];
 
 const sheetOf = (page: Page) => page.locator('ion-modal app-profile-edit-sheet');
-const input = (scope: Locator, testId: string) => scope.locator(`[data-testid=${testId}] input`);
+// Not the copy Ionic's scroll assist puts in for a moment while a field takes the focus.
+const input = (scope: Locator, testId: string) => scope.locator(`[data-testid=${testId}] input:not(.cloned-input)`);
 const sentBody = (log: { writes: { method: string; path: string; body: any }[] }, method: string, path: string) =>
   String(log.writes.find((w) => w.method === method && w.path === path)?.body ?? '');
 
@@ -177,7 +183,8 @@ test('lets the Звʼязковий change a card in full: photo, email, сту�
   expect(sent).toMatch(/name="plastLevelHistories\[1\]\.plastLevel"\r\n\r\nRozviduvach/);
   expect(sent).toMatch(/name="plastLevelHistories\[0\]\.plastLevelHistoryKey"\r\n\r\npl-m2/);
   expect(sent).toMatch(/name="removeProfilePhoto"\r\n\r\nfalse/);
-  expect(sent).toMatch(/name="address"\r\n\r\nЛьвів, вул\. Франка, 1/);
+  // The address was not touched, so it is left out and the server keeps it.
+  expect(sent).not.toMatch(/name="address"/);
   await expect.poll(() => log.writes.find((w) => w.method === 'POST' && w.path === 'member/m2/warnings')?.body).toEqual({ level: 'Level2' });
   // Somebody else's пересторога is not touched.
   expect(log.writes.some((w) => w.method === 'DELETE' && w.path.startsWith('member/m2/warnings'))).toBe(false);
@@ -211,6 +218,42 @@ test('lets a Виховник check and warn but not touch an account’s email 
   // The email goes back as it was.
   expect(sentBody(log, 'PUT', 'member/m3')).toMatch(/name="email"\r\n\r\nm3@example\.com/);
   await shot(page, info.project.name, 'member-after-edit');
+});
+
+test('asks what the край asks: no middle name, an optional phone and a visa', async ({ page }) => {
+  const visaCard = {
+    fields: { middleName: 'hidden', phoneNumber: 'optional' },
+    extra: [
+      { key: 'visaType', label: 'Тип візи', type: 'text', required: true },
+      { key: 'visaUntil', label: 'Віза до', type: 'date', required: false },
+      { key: 'visaNote', label: 'Примітка', type: 'text', required: false },
+    ],
+  };
+  const log = await signIn(page, member, memberApi(() => true, visaCard), VYKHOVNYK);
+  await page.goto('./tabs/kurin/member/m3');
+  await expect(page.getByTestId('card-extra-visaType')).toContainText('Тип візи');
+  await expect(page.getByTestId('card-extra-visaType')).toContainText('D');
+  await expect(page.getByTestId('card-extra-visaUntil')).toHaveCount(0);
+
+  await page.getByTestId('edit-profile').click();
+  const sheet = sheetOf(page);
+  await expect(input(sheet, 'profile-extra-visaType')).toHaveValue('D');
+  await expect(sheet.getByTestId('profile-middleName')).toHaveCount(0);
+  await input(sheet, 'profile-phoneNumber').fill('');
+  await input(sheet, 'profile-extra-visaType').fill('');
+  await expect(sheet.getByTestId('save-profile')).toHaveAttribute('disabled', '');
+  await input(sheet, 'profile-extra-visaType').fill('C');
+  await input(sheet, 'profile-extra-visaUntil').fill('2027-03-01');
+  await sheet.getByTestId('save-profile').click();
+  await expect.poll(() => sentBody(log, 'PUT', 'member/m3')).toContain('cardExtras[visaType]');
+  const sent = sentBody(log, 'PUT', 'member/m3');
+  expect(sent).toMatch(/name="cardExtras\[visaType\]"\r\n\r\nC\r\n/);
+  expect(sent).toMatch(/name="cardExtras\[visaUntil\]"\r\n\r\n2027-03-01/);
+  // Only what changed goes: a value this viewer was not shown is not wiped.
+  expect(sent).not.toContain('cardExtras[visaNote]');
+  // The hidden middle name goes back as it was read; the server keeps it either way.
+  expect(sent).toMatch(/name="middleName"\r\n\r\nПетрович/);
+  expect(sent).toMatch(/name="phoneNumber"\r\n\r\n\r\n/);
 });
 
 test('lets the Звʼязковий delete a profile after asking', async ({ page }) => {

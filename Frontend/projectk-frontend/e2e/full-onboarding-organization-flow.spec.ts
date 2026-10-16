@@ -14,7 +14,7 @@ import {
 } from './support/api-client';
 import { e2eUsers } from './support/test-users';
 import { loginThroughUi } from './support/login';
-import { fillDatePicker, fillMaskedInput } from './support/ui';
+import { fillDatePicker, fillPhone } from './support/ui';
 import { createActivatedMemberAccount, memberFullName, scenarioEmail, scenarioSuffix } from './support/scenarios';
 
 test.describe.configure({ mode: 'serial' });
@@ -42,9 +42,7 @@ test.describe('Full onboarding organization workflow', () => {
       await page.locator('#email').fill(managerEmail);
       await page.locator('#stanytsia').fill('Flow Stanytsia');
       await page.locator('#regionOrCountry').fill('Flow Region');
-      const phoneInput = page.locator('#phone input, input#phone');
-      await fillMaskedInput(phoneInput, '501112233');
-      await expect(phoneInput).toHaveValue('+380 50 111 22 33');
+      await fillPhone(page.locator('input#phone'), '501112233');
 
       const dateOfBirth = page.locator('#dob input');
       await fillDatePicker(dateOfBirth, '01.01.2000');

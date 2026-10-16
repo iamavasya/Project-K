@@ -45,9 +45,9 @@ sidebar:
 
 - **ProbeProgress** / **ProbePointProgress** — проба і її окремі точки.
 - **BadgeProgress** — вмілість.
-- **ProbeProgressAuditEvent** / **BadgeProgressAuditEvent** — журнал змін поступу.
+- **ProbeProgressAuditEvent** / **BadgeProgressAuditEvent** — журнал змін у складанні проб і здобутті вмілостей.
 
-Каталог самих проб і вмілостей у базі не живе — його віддає пакет `ProjectK.ProbeAndBadges`.
+Каталог самих проб і вмілостей у базі не живе — його віддає сервіс каталогу по API.
 
 ## Infrastructure
 

@@ -33,7 +33,7 @@ describe('AdminPanelComponent', () => {
 
   beforeEach(async () => {
     const kurinServiceSpy = jasmine.createSpyObj('KurinService',
-      ['getKurins', 'createKurin', 'updateKurin', 'deleteKurin']);
+      ['getKurins', 'createKurin', 'updateKurin', 'deleteKurin', 'getKrais', 'setKurinKrai']);
     const authServiceSpy = jasmine.createSpyObj('AuthService',
       ['setKurinKey', 'setKurinScope']);
 
@@ -56,6 +56,58 @@ describe('AdminPanelComponent', () => {
     authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
 
     kurinService.getKurins.and.returnValue(of(mockKurins));
+    kurinService.getKrais.and.returnValue(of([
+      { code: 'cz', name: 'Чехія', kurinCount: 1 },
+      { code: 'ua', name: 'Україна', kurinCount: 2 }
+    ]));
+  });
+
+  describe('краї', () => {
+    it('groups the kurins with Україна first and by number inside a край', () => {
+      kurinService.getKurins.and.returnValue(of([
+        { kurinKey: 'c', number: 3, kraiCode: 'cz' },
+        { kurinKey: 'b', number: 12, kraiCode: 'ua' },
+        { kurinKey: 'a', number: 5, kraiCode: 'ua' }
+      ]));
+
+      component.ngOnInit();
+
+      expect(component.data.map(k => k.kurinKey)).toEqual(['a', 'b', 'c']);
+      expect(component.kraiName('cz')).toBe('Чехія');
+      expect(component.kurinCountInKrai('ua')).toBe(2);
+    });
+
+    it('offers the краї as choices in the kurin form', () => {
+      component.ngOnInit();
+
+      const field = component.managePanelConfig.fields.find(f => f.name === 'kraiCode')!;
+      expect(field.type).toBe('select');
+      expect(field.options).toEqual([
+        { label: 'Чехія', value: 'cz' },
+        { label: 'Україна', value: 'ua' }
+      ]);
+    });
+
+    it('moves the kurin when the admin picks another край', () => {
+      component.ngOnInit();
+      kurinService.updateKurin.and.returnValue(of({ kurinKey: '1', number: 101 }));
+      kurinService.setKurinKrai.and.returnValue(of({ kurinKey: '1', number: 101, kraiCode: 'cz' }));
+      component.onActionClick({ kurinKey: '1', number: 101, kraiCode: 'ua' }, 'update');
+
+      component.onManageAction({ action: 'update', entity: { kurinKey: '1', number: 101, kraiCode: 'cz' }, entityType: 'kurin' });
+
+      expect(kurinService.setKurinKrai).toHaveBeenCalledWith('1', 'cz');
+    });
+
+    it('leaves the край alone when it did not change', () => {
+      component.ngOnInit();
+      kurinService.updateKurin.and.returnValue(of({ kurinKey: '1', number: 102 }));
+      component.onActionClick({ kurinKey: '1', number: 101, kraiCode: 'ua' }, 'update');
+
+      component.onManageAction({ action: 'update', entity: { kurinKey: '1', number: 102, kraiCode: 'ua' }, entityType: 'kurin' });
+
+      expect(kurinService.setKurinKrai).not.toHaveBeenCalled();
+    });
   });
 
   it('should create', () => {

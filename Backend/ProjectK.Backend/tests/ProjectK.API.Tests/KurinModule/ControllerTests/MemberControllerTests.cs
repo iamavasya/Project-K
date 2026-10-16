@@ -221,6 +221,9 @@ public class MemberControllerTests
             Email = "upd@example.com",
             PhoneNumber = "555",
             DateOfBirth = new DateOnly(1995, 2, 2),
+            Address = "Praha 3",
+            School = "",
+            MotherPhone = "+420777000222",
             RemoveProfilePhoto = false
         };
 
@@ -249,7 +252,8 @@ public class MemberControllerTests
         Assert.Equal(memberKey, data.MemberKey);
 
         _mediatorMock.Verify(m => m.Send(
-            It.Is<UpsertMemberCommand>(c => c.MemberKey == memberKey && c.FirstName == request.FirstName),
+            It.Is<UpsertMemberCommand>(c => c.MemberKey == memberKey && c.FirstName == request.FirstName
+                && c.Address == "Praha 3" && c.School == "" && c.MotherPhone == "+420777000222"),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }

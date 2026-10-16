@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.Common.Entities.KraiModule;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Hosting;
 using ProjectK.BusinessLogic.Modules.AuthModule.Features.DevTools.Impersonate;
@@ -57,7 +58,7 @@ public sealed class EnterDemoCommandHandler : IRequestHandler<EnterDemoCommand, 
             return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, "NotDemo", "There is no demo here.");
         }
 
-        var kurin = await _unitOfWork.Kurins.GetByNumberAsync(DemoKurinNumber, cancellationToken);
+        var kurin = await _unitOfWork.Kurins.GetByNumberAsync(Krai.Ukraine, DemoKurinNumber, cancellationToken);
         if (kurin is null)
         {
             return ServiceResult<LoginUserResponse>.Failure(ResultType.NotFound, "NoDemoKurin", "The demo kurin is not seeded.");

@@ -1,66 +1,306 @@
-.upsert-member-actions {
-    display: flex;
-    flex-direction: column;
-    margin-top: 1rem;
+/* The member form (BRANDBOOK §5): a page head, tiles by subject, one action bar that stays on
+   screen. Labels sit over the fields; three columns on a desktop, one on a phone. */
+.member-form {
+    --lil-page-width: 64rem;
+    padding-bottom: 0;
 }
 
-.upsert-profile-header {
+.member-form__title {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 0.75rem;
-    margin: 1rem 1.25rem 0;
-}
-
-.upsert-profile-name {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    min-width: 0;
-    color: var(--p-text-color);
-    font-size: 1rem;
-    font-weight: 650;
-    line-height: 1.35rem;
-}
-
-
-.upsert-profile-verification-message {
-    margin: 0.5rem 1.25rem 0;
-    font-size: 0.875rem;
-}
-
-.upsert-profile-verification-message--success {
-    color: color-mix(in srgb, var(--p-green-700) 82%, var(--p-text-color) 18%);
-}
-
-.upsert-profile-verification-message--warn {
-    color: color-mix(in srgb, var(--p-amber-700) 82%, var(--p-text-color) 18%);
-}
-
-.upsert-profile-verification-message--error {
-    color: color-mix(in srgb, var(--p-red-700) 82%, var(--p-text-color) 18%);
-}
-
-.upsert-profile-verification-action {
-    width: 2rem;
-    height: 2rem;
-}
-
-.warning-section {
-    padding: 0.5rem 0;
-}
-
-.warning-item {
-    align-items: center;
-}
-
-.warning-hint {
-    color: var(--p-text-muted-color);
-}
-
-.account-pending {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
     gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.member-form__cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 15rem;
+    gap: var(--lil-page-gap);
+    align-items: start;
+}
+
+.member-form__main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--lil-page-gap);
+    min-width: 0;
+}
+
+.member-form__tile {
+    display: grid;
+    gap: 1rem;
+}
+
+.member-form__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.member-form__grid--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* The phone takes a country picker, so it gets more room than a name. */
+.member-form__grid--parents {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr);
+}
+
+.member-form__field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.375rem;
+    align-content: start;
+    min-width: 0;
+}
+
+.member-form__field--wide {
+    grid-column: span 2;
+}
+
+.member-form__field--full {
+    grid-column: 1 / -1;
+}
+
+.member-form__field > label {
+    color: var(--lil-faint);
+    font-size: var(--lil-text-caption);
+    font-weight: 600;
+}
+
+.member-form__field input[pInputText] {
+    width: 100%;
+}
+
+.member-form__optional {
+    font-weight: 400;
+}
+
+.member-form__hint {
+    color: var(--p-text-muted-color);
+    font-size: var(--lil-text-caption);
+}
+
+.member-form__error {
+    color: var(--p-red-600);
+    font-size: var(--lil-text-caption);
+}
+
+.member-form__account {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Ступені: a line of marks down the left, a date on the right of each. */
+.member-form__levels {
+    display: grid;
+    gap: 1rem;
+}
+
+.member-form__level-group {
+    display: grid;
+}
+
+.member-form__level-title {
+    margin: 0 0 0.25rem;
+    color: var(--lil-faint);
+    font-size: var(--lil-text-micro);
+    font-weight: 700;
+    letter-spacing: var(--lil-tracking-micro);
+    text-transform: uppercase;
+}
+
+.member-form__level {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.125rem minmax(0, 1fr) 11rem;
+    gap: 0.75rem;
+    align-items: center;
+    min-height: 3rem;
+}
+
+.member-form__level::before {
+    content: "";
+    position: absolute;
+    left: calc(0.5625rem - 0.5px);
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--lil-line);
+}
+
+.member-form__level:first-of-type::before {
+    top: 50%;
+}
+
+.member-form__level:last-child::before {
+    bottom: 50%;
+}
+
+.member-form__level-mark {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 1px solid var(--lil-line);
+    border-radius: 50%;
+    background: var(--p-content-background);
+    color: var(--p-primary-contrast-color);
+    font-size: 0.625rem;
+}
+
+.member-form__level--done .member-form__level-mark {
+    border-color: var(--p-primary-color);
+    background: var(--p-primary-color);
+}
+
+.member-form__level-name {
+    font-weight: 600;
+}
+
+.member-form__level-issue {
+    grid-column: 2 / -1;
+    margin-top: -0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.member-form__level-more {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Фото */
+.member-form__photo {
+    display: grid;
+    justify-items: center;
+    gap: 0.75rem;
+    text-align: center;
+}
+
+.member-form__avatar {
+    width: 8rem;
+    height: 8rem;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.member-form__avatar--empty {
+    display: grid;
+    place-items: center;
+    background: var(--p-primary-50);
+    color: var(--p-primary-color);
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: var(--lil-tracking-h2);
+}
+
+.member-form__file {
+    display: none;
+}
+
+.member-form__photo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.member-form__danger {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.member-form__danger p {
+    margin: 0;
+    color: var(--p-text-muted-color);
+    font-size: var(--lil-text-caption);
+}
+
+/* The action bar sits on the bottom edge of the screen while the form scrolls under it. */
+.member-form__bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-inline: calc(-1 * var(--lil-page-gutter));
+    padding: 0.75rem var(--lil-page-gutter) calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--lil-line);
+    background: var(--p-content-background);
+}
+
+.member-form__state {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    margin-right: auto;
+    color: var(--p-text-muted-color);
+    font-size: var(--lil-text-caption);
+}
+
+.member-form__pip {
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--p-primary-color);
+}
+
+@media (max-width: 900px) {
+    .member-form__cols {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .member-form__photo {
+        order: -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .member-form__grid,
+    .member-form__grid--two,
+    .member-form__grid--parents {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .member-form__field--wide {
+        grid-column: auto;
+    }
+
+    .member-form__level {
+        grid-template-columns: 1.125rem minmax(0, 1fr);
+        row-gap: 0.25rem;
+        padding-block: 0.375rem;
+    }
+
+    .member-form__level-date {
+        grid-column: 2;
+    }
+
+    .member-form__level-mark {
+        grid-row: 1;
+    }
+
+    .member-form__avatar {
+        width: 6rem;
+        height: 6rem;
+    }
+
+    .member-form__state {
+        display: none;
+    }
+
+    .member-form__submit {
+        flex: 1;
+    }
 }

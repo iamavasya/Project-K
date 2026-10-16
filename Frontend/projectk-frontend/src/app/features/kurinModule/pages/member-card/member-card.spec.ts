@@ -22,7 +22,9 @@ import { BadgeCatalogItemDto } from '../../models/probes-and-badges/badge-catalo
 import { BadgeProgressDto } from '../../models/probes-and-badges/badge-progress.dto';
 import { ProbeSummaryDto } from '../../models/probes-and-badges/probe-summary.dto';
 import { KurinService } from '../../services/kurin-service/kurin.service';
+import { CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { KurinDto } from '../../models/kurin.dto';
+import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 
@@ -59,9 +61,10 @@ describe('MemberCardComponent', () => {
   };
 
   beforeEach(async () => {
-    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships']);
-    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey']);
-    badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll']);
+    memberServiceSpy = jasmine.createSpyObj<MemberService>('MemberService', ['getByKey', 'getMemberships', 'verifyProfile', 'resetProfileVerification']);
+    kurinServiceSpy = jasmine.createSpyObj<KurinService>('KurinService', ['getByKey', 'getCardFields']);
+    kurinServiceSpy.getCardFields.and.returnValue(of(DEFAULT_CARD_FIELDS));
+    badgesCatalogServiceSpy = jasmine.createSpyObj<BadgesCatalogService>('BadgesCatalogService', ['getAll', 'getForKurin']);
     probesCatalogServiceSpy = jasmine.createSpyObj<ProbesCatalogService>('ProbesCatalogService', ['getAll']);
     memberProgressServiceSpy = jasmine.createSpyObj<MemberProgressService>('MemberProgressService', ['getBadgeProgresses', 'submitBadgeProgress', 'reviewBadgeProgress', 'getProbeProgress']);
     badgeImageBlobServiceSpy = jasmine.createSpyObj<BadgeImageBlobService>('BadgeImageBlobService', ['resolveBadgeImageForDisplay']);
@@ -83,6 +86,7 @@ describe('MemberCardComponent', () => {
     });
 
     badgesCatalogServiceSpy.getAll.and.returnValue(of([]));
+    badgesCatalogServiceSpy.getForKurin.and.returnValue(of([]));
     kurinServiceSpy.getByKey.and.returnValue(of({
       kurinKey: member.kurinKey,
       number: 1,
@@ -256,6 +260,40 @@ describe('MemberCardComponent', () => {
     createComponent();
     fixture.detectChanges();
     expect(component.member).toEqual(member);
+  });
+
+  it('should list the parents with something filled in, and none when the край hides them', () => {
+    memberServiceSpy.getByKey.and.returnValue(of({
+      ...member, motherFirstName: 'Олена', motherLastName: 'Петренко', motherPhone: '+380501234567', fatherFirstName: ''
+    }));
+    createComponent();
+    fixture.detectChanges();
+
+    expect(component.parentLines.map(line => [line.label, line.name, line.phoneLink]))
+      .toEqual([['Мама', 'Олена Петренко', 'tel:+380501234567']]);
+
+    component.cardFields = { fields: { parents: 'hidden' }, extra: [] } as CardFieldsDto;
+    expect(component.parentLines).toEqual([]);
+  });
+
+  it('should show the край\'s own fields and leave out the ones it hides', () => {
+    kurinServiceSpy.getCardFields.and.returnValue(of({
+      fields: { middleName: 'hidden', phoneNumber: 'required' },
+      extra: [
+        { key: 'visaType', label: 'Тип візи', type: 'text', required: true },
+        { key: 'visaUntil', label: 'Віза до', type: 'date', required: false },
+        { key: 'permit', label: 'Дозвіл', type: 'text', required: false }
+      ]
+    } as CardFieldsDto));
+    memberServiceSpy.getByKey.and.returnValue(of({ ...member, cardExtras: { visaType: 'D', visaUntil: '2027-06-30' } }));
+    createComponent();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Тип візи: D');
+    expect(text).toContain('Віза до: 30.06.2027');
+    expect(text).not.toContain('Дозвіл');
+    expect(text).not.toContain('По батькові не вказано');
   });
 
   it('should display profile verification timestamp without timezone as local time from UTC', () => {
@@ -448,6 +486,21 @@ describe('MemberCardComponent', () => {
     memberServiceSpy.getByKey.and.returnValue(of(member));
     badgesCatalogServiceSpy.getAll.and.returnValue(of([
       {
+        id: 'pl-badge',
+        title: 'Rescue Badge PL',
+        imagePath: 'badges/pl.png',
+        country: 'PL',
+        specialization: 'Scout',
+        status: 'active',
+        level: 1,
+        lastUpdated: '2026-04-01',
+        seekerRequirements: '',
+        instructorRequirements: '',
+        fixNotes: []
+      }
+    ]));
+    badgesCatalogServiceSpy.getForKurin.and.returnValue(of([
+      {
         id: 'badge-1',
         title: 'Rescue Badge',
         imagePath: 'badges/a.png',
@@ -483,6 +536,7 @@ describe('MemberCardComponent', () => {
     component.onAddSkillSearchTermChange();
 
     expect(component.addSkillVisibleCount).toBe(component.addSkillPageSize);
+    expect(badgesCatalogServiceSpy.getForKurin).toHaveBeenCalledWith(member.kurinKey);
     expect(component.filteredAddSkillCandidates.map(item => item.id)).toEqual(['badge-1']);
   });
 
@@ -740,6 +794,7 @@ describe('MemberCardComponent', () => {
     const dues = (over: Partial<MemberDuesDto>): MemberDuesDto => ({
       hasAccount: true,
       kurinKey: member.kurinKey,
+      currency: 'UAH',
       currentQuarter: { year: 2026, number: 4 },
       balance: -300,
       quarterRate: { stanytsia: 240, kurin: 15, group: 45, total: 300 },
@@ -832,6 +887,64 @@ describe('MemberCardComponent', () => {
       fixture.detectChanges();
 
       expect(renderedText()).toContain('Впорядник гуртка:');
+    });
+  });
+
+  describe('verification and перестороги', () => {
+    function createAsReviewer(loaded: MemberDto) {
+      memberServiceSpy.getByKey.and.returnValue(of(loaded));
+      createComponent();
+      spyOn(component.permissionService, 'isReviewer').and.returnValue(true);
+      spyOn(component.permissionService, 'canManageWarnings').and.returnValue(true);
+      fixture.detectChanges();
+    }
+
+    it('offers both to a reviewer who may edit the member', () => {
+      createAsReviewer(member);
+      expect(component.canManageProfileVerification).toBeTrue();
+      expect(component.canManageWarnings).toBeTrue();
+    });
+
+    it('offers neither on the reviewer’s own card', () => {
+      createAsReviewer({ ...member, memberKey: 'test-member-key' });
+      expect(component.canManageProfileVerification).toBeFalse();
+      expect(component.canManageWarnings).toBeFalse();
+    });
+
+    it('offers neither to someone who may not edit the member', () => {
+      entityServiceSpy.checkEntityAccess.and.returnValue(of(false));
+      createAsReviewer(member);
+      expect(component.canManageProfileVerification).toBeFalse();
+      expect(component.canManageWarnings).toBeFalse();
+    });
+
+    it('verifies the profile after asking', () => {
+      memberServiceSpy.verifyProfile.and.returnValue(of({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent }));
+      createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.Unverified });
+      const confirm = spyOn(component.confirmationService, 'confirm').and.callFake(options => {
+        options.accept?.();
+        return component.confirmationService;
+      });
+
+      component.onProfileVerificationAction();
+
+      expect(confirm).toHaveBeenCalled();
+      expect(memberServiceSpy.verifyProfile).toHaveBeenCalledWith(memberKey, null);
+      expect(component.isProfileVerified).toBeTrue();
+    });
+
+    it('removes the verification after asking', () => {
+      memberServiceSpy.resetProfileVerification.and.returnValue(of({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.Unverified }));
+      createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent });
+      spyOn(component.confirmationService, 'confirm').and.callFake(options => {
+        options.accept?.();
+        return component.confirmationService;
+      });
+
+      component.onProfileVerificationAction();
+
+      expect(memberServiceSpy.resetProfileVerification).toHaveBeenCalledWith(memberKey);
+      expect(component.isProfileVerified).toBeFalse();
     });
   });
 });

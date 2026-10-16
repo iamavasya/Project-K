@@ -3,6 +3,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -29,12 +30,14 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
     private readonly MeAgendaScopes _scopes;
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
-    public SetMyEventResponseCommandHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, TimeProvider time)
+    public SetMyEventResponseCommandHandler(MeAgendaScopes scopes, IUnitOfWork unitOfWork, TimeProvider time, IKraiProfileProvider profiles)
     {
         _scopes = scopes;
         _unitOfWork = unitOfWork;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<object>> Handle(SetMyEventResponseCommand request, CancellationToken cancellationToken)
@@ -51,7 +54,8 @@ public sealed class SetMyEventResponseCommandHandler : IRequestHandler<SetMyEven
             return ServiceResult<object>.Failure(ResultType.Forbidden, "AGENDA_NOT_VISIBLE", "You cannot respond to this event.");
         }
 
-        if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, out var occurrenceKey))
+        var zone = await _profiles.ForKurinAsync(item.KurinKey, cancellationToken);
+        if (!AgendaOccurrences.TryResolveKey(item, request.OccurrenceStartUtc, zone, out var occurrenceKey))
         {
             return ServiceResult<object>.Failure(ResultType.BadRequest, "AGENDA_NOT_OCCURRENCE", "The event has no occurrence starting at that time.");
         }

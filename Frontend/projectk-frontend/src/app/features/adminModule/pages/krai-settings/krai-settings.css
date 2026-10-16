@@ -1,0 +1,135 @@
+.krai-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.krai-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.krai-field p-multiselect,
+.krai-field p-select,
+.krai-field input {
+  width: 100%;
+  max-width: 560px;
+}
+
+.krai-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.krai-muted {
+  color: var(--p-text-muted-color);
+  font-size: 0.875rem;
+}
+
+.krai-badges,
+.krai-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.krai-badge {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.krai-badge__title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.krai-save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.krai-save input {
+  flex: 1 1 240px;
+}
+
+.krai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.krai-revision {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.krai-current {
+  margin-left: 0.5rem;
+  color: var(--p-primary-color);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 640px) {
+  .krai-badge {
+    grid-template-columns: 1fr auto;
+  }
+
+  .krai-badge .krai-muted {
+    display: none;
+  }
+}
+
+.krai-subtitle {
+  margin: 1.5rem 0 0.25rem;
+  font-size: 1rem;
+}
+
+.krai-extra {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+}
+
+.krai-extra__row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  align-items: end;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.krai-extra__row .krai-field {
+  margin-bottom: 0;
+}
+
+.krai-extra__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .krai-extra__row {
+    grid-template-columns: 1fr;
+  }
+}

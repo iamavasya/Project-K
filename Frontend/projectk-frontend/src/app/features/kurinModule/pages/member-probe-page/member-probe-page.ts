@@ -20,12 +20,15 @@ import { memberBranchHere } from '../../functions/member-branch.function';
 import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 import { GroupedProbeDto } from '../../models/probes-and-badges/grouped-probe.dto';
 import { ProbeProgressDto } from '../../models/probes-and-badges/probe-progress.dto';
+import { ProbePointProgressDto } from '../../models/probes-and-badges/probe-point-progress.dto';
 import { MemberProbeDetailPointRowView } from '../../models/probes-and-badges/member-probe-detail-point-row.view';
 import { buildMemberProbeDetailPointRows } from '../../functions/member-probe-details-view-mapper.function';
 import { ProbeProgressStatus } from '../../models/enums/probe-progress-status.enum';
 import { normalizeProbeProgressStatus } from '../../functions/member-probe-rows-view-mapper.function';
 import { formatUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
+import { parseOfficeRole } from '../../functions/system-role.function';
+import { leadershipRoleDisplayName } from '../../functions/leadership-role-display.function';
 
 interface ProbeDetailSectionView {
   sectionId: string;
@@ -124,27 +127,47 @@ export class MemberProbePageComponent implements OnInit {
     }
 
     const name = point.signedByName?.trim();
-    if (name && point.signedByRole) {
-      return `${name} (${point.signedByRole})`;
+    const role = signerRoleLabel(point.signedByRole);
+    if (name && role) {
+      return `${name} (${role})`;
     }
 
     if (name) {
       return name;
     }
 
-    if (point.signedByUserKey && point.signedByRole) {
-      return `${point.signedByUserKey} (${point.signedByRole})`;
+    if (point.signedByUserKey && role) {
+      return `${point.signedByUserKey} (${role})`;
     }
 
     if (point.signedByUserKey) {
       return point.signedByUserKey;
     }
 
-    if (point.signedByRole) {
-      return `Невідомий користувач (${point.signedByRole})`;
+    if (role) {
+      return `Невідомий користувач (${role})`;
     }
 
     return 'Підписант не вказаний';
+  }
+
+  /**
+   * Точки, підписані за вимогами, яких у пробі вже немає. Підпис не знімається, коли вимоги
+   * змінились: людина бачить чинні вимоги, а давніші підписи лишаються тут.
+   */
+  get signedEarlierPoints(): ProbePointProgressDto[] {
+    if (!this.groupedProbe) {
+      return [];
+    }
+
+    const current = new Set(this.groupedProbe.sections.flatMap(section => section.points.map(point => point.id)));
+    return (this.probeProgress?.pointSignatures ?? []).filter(point => point.isSigned && !current.has(point.pointId));
+  }
+
+  getSignedEarlierLabel(point: ProbePointProgressDto): string {
+    const date = point.signedAtUtc ? this.formatDate(point.signedAtUtc) : null;
+    const name = point.signedByName?.trim() || null;
+    return [`Точка ${point.pointId}`, name, date].filter(Boolean).join(' · ');
   }
 
   getProbePointSignedAtLabel(point: MemberProbeDetailPointRowView): string {
@@ -470,4 +493,20 @@ export class MemberProbePageComponent implements OnInit {
 
     return null;
   }
+}
+
+/** The signer's office as people say it («Впорядник»), not the system role it is stored as («KV.Vykhovnyk»). */
+function signerRoleLabel(systemRole: string | null | undefined): string | null {
+  if (!systemRole) {
+    return null;
+  }
+  const office = parseOfficeRole(systemRole);
+  if (office) {
+    return leadershipRoleDisplayName(office.role);
+  }
+  if (systemRole === 'Admin') {
+    return 'Адміністратор';
+  }
+  // Older signatures already carry the office's name.
+  return /^[A-Za-z.]+$/.test(systemRole) ? null : systemRole;
 }

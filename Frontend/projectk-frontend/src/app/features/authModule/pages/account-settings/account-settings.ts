@@ -14,7 +14,9 @@ import { AuthService } from '../../services/auth-service/auth.service';
 import { MfaEnforcerService } from '../../services/mfa-enforcer-service/mfa-enforcer.service';
 import { PermissionService } from '../../services/permission-service/permission.service';
 import { PasswordRulesComponent } from '../../../../shared/password-rules/password-rules';
+import { PhoneInputComponent } from '../../../../shared/phone-input/phone-input';
 import { passwordMeetsRules } from '../../../../shared/functions/password-rules.function';
+import { AccountRoleTag, signedInRoleTag } from '../../../kurinModule/functions/account-role-tag.function';
 
 @Component({
   selector: 'app-account-settings',
@@ -26,8 +28,9 @@ import { passwordMeetsRules } from '../../../../shared/functions/password-rules.
     DividerModule,
     TagModule,
     MfaSetupDialogComponent,
-    PasswordRulesComponent
-],
+    PasswordRulesComponent,
+    PhoneInputComponent
+  ],
   templateUrl: './account-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './account-settings.css'
@@ -67,6 +70,11 @@ export class AccountSettingsComponent implements OnInit {
   recoveryCodesPassword = '';
   recoveryCodes: string[] = [];
   rotatingRecoveryCodes = false;
+
+  /** The same tag the sidebar footer shows, not the raw role name the settings endpoint answers with. */
+  get roleTag(): AccountRoleTag {
+    return signedInRoleTag(this.permissionService, this.authService.getAuthStateValue()?.roles ?? []);
+  }
 
   get canSaveProfile(): boolean {
     return this.profileForm.email.trim().length > 0
@@ -205,7 +213,7 @@ export class AccountSettingsComponent implements OnInit {
         this.messageService.add({
           severity: 'success',
           summary: 'MFA',
-          detail: 'MFA скинуто. Налаштуйте authenticator заново.'
+          detail: 'MFA скинуто. Налаштуйте застосунок-автентифікатор заново.'
         });
 
         if (this.isPrivileged) {
@@ -236,7 +244,7 @@ export class AccountSettingsComponent implements OnInit {
         this.messageService.add({
           severity: 'success',
           summary: 'MFA',
-          detail: 'MFA disabled.'
+          detail: 'MFA вимкнено.'
         });
       },
       error: () => {

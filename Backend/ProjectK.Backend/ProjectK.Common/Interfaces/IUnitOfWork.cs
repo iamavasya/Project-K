@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 
@@ -12,6 +13,7 @@ namespace ProjectK.Common.Interfaces;
 
 public interface IUnitOfWork
 {
+    IKraiRepository Krais { get; }
     IKurinRepository Kurins { get; }
     IGroupRepository Groups { get; }
     IMembershipRepository Memberships { get; }

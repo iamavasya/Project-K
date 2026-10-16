@@ -18,8 +18,8 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Catalog;
 using ProjectK.Common.Models.Enums;
-using ProjectK.ProbeAndBadges.Abstractions;
 
 namespace ProjectK.API.Tests.Security;
 
@@ -28,7 +28,6 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
     [Theory]
     [InlineData("/api/catalog/badges/meta")]
     [InlineData("/api/catalog/probes")]
-    [InlineData("/badges_images/test.png")]
     public async Task Anonymous_Request_ShouldReturn401(string route)
     {
         await using var host = await CatalogSecurityTestHost.StartAsync(roleClaim: null);
@@ -68,25 +67,13 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact]
-    public async Task AuthenticatedUser_BadgesImage_ShouldReturn200()
-    {
-        await using var host = await CatalogSecurityTestHost.StartAsync("Member");
-
-        var response = await host.Client.GetAsync("/badges_images/test.png");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
     private sealed class CatalogSecurityTestHost : IAsyncDisposable
     {
         private readonly WebApplication _app;
-        private readonly string _assetsDirectory;
 
-        private CatalogSecurityTestHost(WebApplication app, string assetsDirectory)
+        private CatalogSecurityTestHost(WebApplication app)
         {
             _app = app;
-            _assetsDirectory = assetsDirectory;
             Client = app.GetTestClient();
         }
 
@@ -94,17 +81,13 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
 
         public static async Task<CatalogSecurityTestHost> StartAsync(string? roleClaim)
         {
-            var assetsDirectory = Path.Combine(Path.GetTempPath(), "projectk-badges-assets", Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(assetsDirectory);
-            await File.WriteAllBytesAsync(Path.Combine(assetsDirectory, "test.png"), [0x89, 0x50, 0x4E, 0x47]);
-
             var badgesCatalogService = new Mock<IBadgesCatalogService>();
             var probesCatalogService = new Mock<IProbesCatalogService>();
 
             var testBadge = new Badge(
                 Id: "badge-1",
                 Title: "Badge 1",
-                ImagePath: "/badges_images/test.png",
+                ImagePath: "https://catalog.example.invalid/v1/images/badge-1.png",
                 Country: "UA",
                 Specialization: "Default",
                 Status: "active",
@@ -112,7 +95,10 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
                 LastUpdated: "2026-04-15",
                 SeekerRequirements: "Do requirements",
                 InstructorRequirements: "Confirm requirements",
-                FixNotes: []);
+                FixNotes: [],
+                Requirements: [new BadgeRequirement("1", "Do requirements")],
+                Author: string.Empty,
+                Ulady: ["УПЮ"]);
 
             badgesCatalogService.Setup(x => x.GetBadgesMetadata())
                 .Returns(new BadgesMetadata(
@@ -168,7 +154,6 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
 
             builder.Services.AddSingleton(badgesCatalogService.Object);
             builder.Services.AddSingleton(probesCatalogService.Object);
-            builder.Services.AddSingleton<IBadgesAssetsStore>(new TestBadgesAssetsStore(assetsDirectory));
 
             builder.Services.AddControllers()
                 .AddApplicationPart(typeof(BadgesCatalogController).Assembly);
@@ -178,23 +163,17 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseBadgesImagesStaticFiles();
             app.MapControllers();
 
             await app.StartAsync();
 
-            return new CatalogSecurityTestHost(app, assetsDirectory);
+            return new CatalogSecurityTestHost(app);
         }
 
         public async ValueTask DisposeAsync()
         {
             await _app.StopAsync();
             await _app.DisposeAsync();
-
-            if (Directory.Exists(_assetsDirectory))
-            {
-                Directory.Delete(_assetsDirectory, recursive: true);
-            }
         }
     }
 
@@ -242,14 +221,5 @@ public class ProbesAndBadgesAuthorizationHttpIntegrationTests
             Response.StatusCode = StatusCodes.Status403Forbidden;
             return Task.CompletedTask;
         }
-    }
-
-    private sealed class TestBadgesAssetsStore(string assetsDirectoryPath) : IBadgesAssetsStore
-    {
-        public string? AssetsDirectoryPath { get; } = assetsDirectoryPath;
-
-        public bool HasAssets => true;
-
-        public BadgesAssetsSnapshotInfo? AssetsSnapshot => null;
     }
 }

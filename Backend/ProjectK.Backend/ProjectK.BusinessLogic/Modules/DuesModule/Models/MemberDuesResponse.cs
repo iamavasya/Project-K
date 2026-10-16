@@ -10,6 +10,8 @@ public sealed class MemberDuesResponse
     public bool HasAccount { get; init; }
 
     public Guid KurinKey { get; init; }
+    /// <summary>ISO 4217 code of what the amounts are counted in: the край's currency.</summary>
+    public string Currency { get; init; } = "UAH";
     public QuarterDto CurrentQuarter { get; init; } = new();
 
     /// <summary>Across every гурток of this kurin: negative is debt, positive a surplus.</summary>

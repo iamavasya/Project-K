@@ -23,15 +23,18 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular';
+import { CountryCode } from 'libphonenumber-js';
 import { addIcons } from 'ionicons';
 import { checkmarkCircle, ellipseOutline } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
 import { apiErrorText } from '../../core/api';
 import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
+import { DEFAULT_PHONE_COUNTRY, formatPhone, toStoredPhone } from '../../core/phone';
 import { Toasts } from '../../core/toast';
 import { PASSWORD_RULES, isPrivileged, passwordMeetsRules } from './account.labels';
 import { AccountSettings } from './account.models';
 import { AccountService } from './account.service';
+import { KurinApi } from '../kurin/kurin.service';
 
 const CONTACT_ERRORS: Record<string, string> = {
   InvalidEmail: 'Перевір email.',
@@ -180,7 +183,7 @@ type Sheet = 'contacts' | 'password' | 'codes' | null;
                 }
                 <ion-item [button]="true" [detail]="true" (click)="openContacts()">
                   <ion-label>Телефон</ion-label>
-                  <ion-note slot="end">{{ me.phoneNumber || 'не вказано' }}</ion-note>
+                  <ion-note slot="end">{{ formatPhone(me.phoneNumber) || 'не вказано' }}</ion-note>
                 </ion-item>
               </ion-item-group>
             </ion-list>
@@ -418,11 +421,15 @@ export class AccountPage implements OnInit {
   private readonly router = inject(Router);
   private readonly alerts = inject(AlertController);
   private readonly toasts = inject(Toasts);
+  private readonly kurins = inject(KurinApi);
+  /** Where a number typed without «+» is read: the signed-in kurin's край. */
+  private phoneCountry: CountryCode = DEFAULT_PHONE_COUNTRY;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   protected readonly failedText = FAILED_TEXT;
 
   protected readonly settings = signal<Loaded<AccountSettings>>({ state: 'loading' });
   protected readonly account = computed(() => valueOf(this.settings()));
+  protected readonly formatPhone = formatPhone;
   protected readonly privileged = computed(() => isPrivileged(this.auth.user()));
   protected readonly sheet = signal<Sheet>(null);
   protected readonly busy = signal(false);
@@ -482,7 +489,9 @@ export class AccountPage implements OnInit {
     const me = this.account();
     if (!me) return;
     this.email.set(me.email);
-    this.phone.set(me.phoneNumber ?? '');
+    this.phone.set(formatPhone(me.phoneNumber));
+    const kurinKey = this.auth.user()?.kurinKey;
+    if (kurinKey) void this.kurins.phoneCountry(kurinKey).then((country) => (this.phoneCountry = country), () => undefined);
     this.contactPassword.set('');
     this.error.set(null);
     this.sheet.set('contacts');
@@ -505,6 +514,12 @@ export class AccountPage implements OnInit {
     this.sheet.set(null);
   }
 
+  /** The phone as it is sent: +420777123456, or as it was when left untouched. */
+  private storedPhone(): string {
+    const before = this.account()?.phoneNumber ?? '';
+    return this.phone().trim() === formatPhone(before) ? before : toStoredPhone(this.phone(), this.phoneCountry);
+  }
+
   protected async saveContacts(): Promise<void> {
     if (!this.canSaveContacts()) return;
     this.busy.set(true);
@@ -512,7 +527,7 @@ export class AccountPage implements OnInit {
     try {
       const settings = await this.service.updateProfile({
         email: this.email().trim(),
-        phoneNumber: this.phone().trim() || null,
+        phoneNumber: this.storedPhone() || null,
         currentPassword: this.emailChanged() ? this.contactPassword() : null,
       });
       this.settings.set({ state: 'ready', value: settings });

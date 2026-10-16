@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.Common.Entities.KraiModule;
 using Microsoft.AspNetCore.Identity;
 using ProjectK.BusinessLogic.Modules.AuthModule.Models;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
@@ -75,7 +76,7 @@ public class ImpersonateRoleCommandHandler : IRequestHandler<ImpersonateRoleComm
         var kurinKey = request.KurinKey ?? _currentUser.KurinKey;
         if (kurinKey is null)
         {
-            var demoKurin = await _unitOfWork.Kurins.GetByNumberAsync(1, cancellationToken);
+            var demoKurin = await _unitOfWork.Kurins.GetByNumberAsync(Krai.Ukraine, 1, cancellationToken);
             kurinKey = demoKurin?.KurinKey;
         }
 

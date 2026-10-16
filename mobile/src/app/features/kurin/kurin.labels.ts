@@ -1,4 +1,5 @@
 import { AuthState } from '../../auth/auth.models';
+import { currencySymbol, DEFAULT_CURRENCY } from '../../me/labels';
 import {
   AwardLevel,
   BadgeCatalogItemDto,
@@ -617,10 +618,21 @@ export function probeSections(probe: GroupedProbeDto | null, progress: ProbeProg
 export function signerLabel(point: ProbePointView): string {
   if (!point.isSigned) return 'Не підписано';
   const name = point.signedByName?.trim();
-  if (name) return point.signedByRole ? `${name} (${point.signedByRole})` : name;
-  if (point.signedByUserKey) return point.signedByRole ? `${point.signedByUserKey} (${point.signedByRole})` : point.signedByUserKey;
-  if (point.signedByRole) return `Невідомий користувач (${point.signedByRole})`;
+  const role = signerRole(point.signedByRole);
+  if (name) return role ? `${name} (${role})` : name;
+  if (point.signedByUserKey) return role ? `${point.signedByUserKey} (${role})` : point.signedByUserKey;
+  if (role) return `Невідомий користувач (${role})`;
   return 'Підписант не вказаний';
+}
+
+/** The office as people say it («Впорядник»), not the stored system role («KV.Vykhovnyk»). */
+function signerRole(systemRole: string | null | undefined): string | null {
+  if (!systemRole) return null;
+  const parts = systemRole.split('.');
+  if (parts.length === 2 && ['Kurin', 'Group', 'KV'].includes(parts[0])) return roleName(parts[1]);
+  if (systemRole === 'Admin') return 'Адміністратор';
+  // Older signatures already carry the office's name.
+  return /^[A-Za-z.]+$/.test(systemRole) ? null : systemRole;
 }
 
 export function isProbeClosed(progress: ProbeProgressDto | null): boolean {
@@ -677,9 +689,9 @@ export function awardGroups(awards: MemberAwardDto[] | null | undefined): AwardG
 
 const hryvnia = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
-/** «1 240 ₴», «−300 ₴» with a real minus (web dues-format money). */
-export function duesMoney(amount: number): string {
-  return `${amount < 0 ? '−' : ''}${hryvnia.format(Math.abs(amount))} ₴`;
+/** «1 240 ₴», «−300 Kč» with a real minus (web dues-format money). */
+export function duesMoney(amount: number, currency: string = DEFAULT_CURRENCY): string {
+  return `${amount < 0 ? '−' : ''}${hryvnia.format(Math.abs(amount))} ${currencySymbol(currency)}`;
 }
 
 /** «II кв. 2026» */
@@ -699,10 +711,10 @@ export const DUES_KIND_LABELS: Record<string, string> = {
 };
 
 /** Signed as the history shows it: in is plus, out is minus, an exchange bare. */
-export function duesAmountLabel(entry: { kind: string; amount: number }): string {
-  if (entry.kind === 'Exchange') return duesMoney(entry.amount);
+export function duesAmountLabel(entry: { kind: string; amount: number }, currency: string = DEFAULT_CURRENCY): string {
+  if (entry.kind === 'Exchange') return duesMoney(entry.amount, currency);
   const signed = entry.kind === 'Correction' ? entry.amount : ['Contribution', 'OtherIncome'].includes(entry.kind) ? entry.amount : -entry.amount;
-  return signed > 0 ? `+${duesMoney(signed)}` : duesMoney(signed);
+  return signed > 0 ? `+${duesMoney(signed, currency)}` : duesMoney(signed, currency);
 }
 
 // ── Memberships ──────────────────────────────────────────────────────────────────────────────────

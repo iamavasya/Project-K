@@ -15,6 +15,7 @@ using ProjectK.Common.Models.Dtos.InfrastructureModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.MappingProfiles;
@@ -29,6 +30,7 @@ public class KurinModuleProfile : Profile
         CreateMap<UpsertKurinCommand, Kurin>(MemberList.None)
             .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
             .ForMember(dest => dest.Number, opt => opt.Ignore())
+            .ForMember(dest => dest.KraiCode, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 
         // Group Mapping
@@ -47,7 +49,8 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.MemberKey, opt => opt.Ignore())
             .ForMember(dest => dest.UserKey, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow))
-            .ForMember(dest => dest.PlastLevelHistory, opt => opt.Ignore());
+            .ForMember(dest => dest.PlastLevelHistory, opt => opt.Ignore())
+            .ForMember(dest => dest.CardExtras, opt => opt.Ignore());
 
         CreateMap<Member, MemberResponse>()
             .ForMember(dest => dest.LatestPlastLevel, opt => opt.MapFrom(src =>
@@ -56,6 +59,7 @@ public class KurinModuleProfile : Profile
                     .Select(history => (PlastLevel?)history.PlastLevel)
                     .FirstOrDefault() ?? src.LatestPlastLevel))
             .ForMember(dest => dest.PlastLevelHistories, opt => opt.MapFrom(src => src.PlastLevelHistory))
+            .ForMember(dest => dest.CardExtras, opt => opt.MapFrom(src => MemberCardExtras.Read(src.CardExtras)))
             .ForMember(dest => dest.Warnings, opt => opt.MapFrom(src => src.MemberWarnings))
             .ForMember(dest => dest.Awards, opt => opt.MapFrom(src => src.MemberAwards))
             .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>())
@@ -84,6 +88,14 @@ public class KurinModuleProfile : Profile
             // A list never carries anyone's public code: it is answered for a whole kurin, and
             // the code is something one person hands over, not something a roster hands out.
             .ForMember(dest => dest.PublicId, opt => opt.Ignore())
+            .ForMember(dest => dest.CardExtras, opt => opt.Ignore())
+            // Parents' contacts are read on one member's card, never with a roster.
+            .ForMember(dest => dest.MotherFirstName, opt => opt.Ignore())
+            .ForMember(dest => dest.MotherLastName, opt => opt.Ignore())
+            .ForMember(dest => dest.MotherPhone, opt => opt.Ignore())
+            .ForMember(dest => dest.FatherFirstName, opt => opt.Ignore())
+            .ForMember(dest => dest.FatherLastName, opt => opt.Ignore())
+            .ForMember(dest => dest.FatherPhone, opt => opt.Ignore())
             .ForMember(dest => dest.Awards, opt => opt.Ignore())
             .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
             .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())

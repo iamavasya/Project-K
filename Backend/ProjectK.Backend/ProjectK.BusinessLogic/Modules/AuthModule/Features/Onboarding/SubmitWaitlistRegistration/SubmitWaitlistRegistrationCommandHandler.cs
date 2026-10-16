@@ -1,3 +1,4 @@
+using ProjectK.Common.Phones;
 using System;
 using System.Linq;
 using System.Threading;
@@ -66,7 +67,7 @@ public class SubmitWaitlistRegistrationCommandHandler : IRequestHandler<SubmitWa
         entry.FirstName = request.FirstName;
         entry.LastName = request.LastName;
         entry.Email = request.Email;
-        entry.PhoneNumber = request.PhoneNumber;
+        entry.PhoneNumber = PhoneNumbers.Normalize(request.PhoneNumber) ?? request.PhoneNumber;
         entry.DateOfBirth = request.DateOfBirth;
         entry.Stanytsia = stanytsia;
         entry.RegionOrCountry = regionOrCountry;

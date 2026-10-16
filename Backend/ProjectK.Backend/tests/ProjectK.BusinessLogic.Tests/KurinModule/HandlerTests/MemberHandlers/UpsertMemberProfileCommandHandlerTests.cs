@@ -1,3 +1,4 @@
+using ProjectK.Common.Phones;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using AutoMapper;
 using FluentAssertions;
@@ -11,10 +12,12 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Events;
+using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
 using Xunit;
@@ -31,6 +34,7 @@ public class UpsertMemberProfileCommandHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUserContextMock;
     private readonly Mock<IDomainEventPublisher> _eventsMock;
     private readonly Mock<IAccountProvisioningService> _accountsMock = new();
+    private readonly Mock<IKraiProfileProvider> _profilesMock = new();
     private readonly UpsertMemberProfileCommandHandler _handler;
 
     public UpsertMemberProfileCommandHandlerTests()
@@ -64,7 +68,8 @@ public class UpsertMemberProfileCommandHandlerTests
             mapperConfig.CreateMapper(),
             _currentUserContextMock.Object,
             _eventsMock.Object,
-            _accountsMock.Object);
+            _accountsMock.Object,
+            _profilesMock.Object);
     }
 
     private void AccountIs(Guid userKey, OnboardingStatus status) =>
@@ -85,7 +90,7 @@ public class UpsertMemberProfileCommandHandlerTests
             MiddleName = "M",
             LastName = "Name",
             Email = "old@example.com",
-            PhoneNumber = "111",
+            PhoneNumber = "+380501111111",
             DateOfBirth = new DateOnly(1990, 1, 1),
             ProfilePhotoBlobName = "old.png"
         };
@@ -124,7 +129,7 @@ public class UpsertMemberProfileCommandHandlerTests
             MiddleName = "I",
             LastName = "Petrenko",
             Email = "ivan@example.com",
-            PhoneNumber = "123",
+            PhoneNumber = "+380501234567",
             DateOfBirth = new DateOnly(2001, 2, 3)
         };
 
@@ -143,6 +148,107 @@ public class UpsertMemberProfileCommandHandlerTests
         created!.FirstName.Should().Be("Ivan");
         created.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.Unverified);
         _memberRepoMock.Verify(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("+420 777 123 456", "+420777123456")]
+    [InlineData(null, "")]
+    public async Task Handle_Create_StoresThePhoneWithoutSeparators(string? sent, string stored)
+    {
+        var cmd = NewMemberInAGroup(sent!);
+        var created = CaptureCreated();
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        created()!.PhoneNumber.Should().Be(stored);
+    }
+
+    private UpsertMemberProfileCommand NewMemberInAGroup(string phone)
+    {
+        var group = MakeGroup();
+        var cmd = new UpsertMemberProfileCommand
+        {
+            GroupKey = group.GroupKey,
+            FirstName = "Ivan",
+            LastName = "Petrenko",
+            Email = "ivan@example.com",
+            PhoneNumber = phone,
+            DateOfBirth = new DateOnly(2001, 2, 3)
+        };
+        ExistingMemberIs(null, cmd.MemberKey);
+        GroupIs(group);
+        return cmd;
+    }
+
+    private Func<Member?> CaptureCreated()
+    {
+        Member? created = null;
+        _memberRepoMock.Setup(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()))
+            .Callback<Member, CancellationToken>((m, _) => created = m);
+        return () => created;
+    }
+
+    [Fact]
+    public async Task Handle_Create_StoresParentsPhones_AndRefusesABadOne()
+    {
+        var cmd = NewMemberInAGroup("+380501234567");
+        cmd.MotherFirstName = "Olena";
+        cmd.MotherPhone = "+420 777 000 222";
+        var created = CaptureCreated();
+
+        (await _handler.Handle(cmd, CancellationToken.None)).Type.Should().Be(ResultType.Success);
+        created()!.MotherFirstName.Should().Be("Olena");
+        created()!.MotherPhone.Should().Be("+420777000222");
+
+        cmd.FatherPhone = "0501234567";
+        var refused = await _handler.Handle(cmd, CancellationToken.None);
+        refused.ErrorCode.Should().Be(PhoneNumbers.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Handle_Create_RefusesAPhoneWithoutCountryCode()
+    {
+        var cmd = NewMemberInAGroup("0501234567");
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        result.ErrorCode.Should().Be(PhoneNumbers.ErrorCode);
+    }
+
+    [Fact]
+    public async Task Handle_FromTheForm_RefusesAMissingRequiredCardField()
+    {
+        var group = MakeGroup();
+        _profilesMock.Setup(p => p.GetForKurinAsync(group.KurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new KraiProfile("cz", "Чехія", 1, new KraiCatalogSettings(["cz"], []), new KraiLocaleSettings("CZK", "Europe/Prague", "uk-UA"),
+                new KraiCardFieldsSettings(KraiCardFields.Configurable, [new KraiCardExtraField { Key = "visaType", Label = "Тип візи", Required = true }])));
+        var cmd = new UpsertMemberProfileCommand
+        {
+            GroupKey = group.GroupKey,
+            FirstName = "Ivan",
+            MiddleName = "I",
+            LastName = "Petrenko",
+            Email = "ivan@example.com",
+            PhoneNumber = "+380501234567",
+            DateOfBirth = new DateOnly(2001, 2, 3),
+            ApplyCardFields = true
+        };
+        ExistingMemberIs(null, cmd.MemberKey);
+        GroupIs(group);
+
+        var refused = await _handler.Handle(cmd, CancellationToken.None);
+        cmd.CardExtras = new Dictionary<string, string> { ["visaType"] = "D" };
+        Member? created = null;
+        _memberRepoMock.Setup(r => r.Create(It.IsAny<Member>(), It.IsAny<CancellationToken>()))
+            .Callback<Member, CancellationToken>((m, _) => created = m);
+        var saved = await _handler.Handle(cmd, CancellationToken.None);
+
+        refused.Type.Should().Be(ResultType.BadRequest);
+        refused.ErrorCode.Should().Be(MemberCardFields.ErrorCode);
+        saved.Type.Should().Be(ResultType.Success);
+        created!.CardExtras.Should().Be("""{"visaType":"D"}""");
     }
 
     /// <summary>
@@ -164,7 +270,7 @@ public class UpsertMemberProfileCommandHandlerTests
             FirstName = "Ivan",
             LastName = "Petrenko",
             Email = "ivan@example.com",
-            PhoneNumber = "123",
+            PhoneNumber = "+380501234567",
             DateOfBirth = new DateOnly(2010, 3, 12),
             PlastLevelHistories =
             [
@@ -199,7 +305,7 @@ public class UpsertMemberProfileCommandHandlerTests
             FirstName = "Kurin",
             LastName = "Member",
             Email = "kurin.member@example.com",
-            PhoneNumber = "123",
+            PhoneNumber = "+380501234567",
             DateOfBirth = new DateOnly(2002, 2, 3)
         };
 
@@ -296,7 +402,7 @@ public class UpsertMemberProfileCommandHandlerTests
         var group = MakeGroup();
         var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
         existing.UserKey = Guid.NewGuid();
-        var cmd = ProfileCommandFor(existing, group, firstName: "NewName", email: "different@example.com", phone: "222");
+        var cmd = ProfileCommandFor(existing, group, firstName: "NewName", email: "different@example.com", phone: "+380502222222");
 
         _currentUserContextMock.Setup(x => x.IsInRole("KV.Vykhovnyk")).Returns(true);
         _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "KV.Vykhovnyk" });
@@ -310,7 +416,7 @@ public class UpsertMemberProfileCommandHandlerTests
         result.Data!.AccountEmailToFollow.Should().BeFalse();
         existing.FirstName.Should().Be("NewName");
         existing.Email.Should().Be("old@example.com");
-        existing.PhoneNumber.Should().Be("222");
+        existing.PhoneNumber.Should().Be("+380502222222");
         _memberRepoMock.Verify(r => r.Update(existing, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -363,7 +469,7 @@ public class UpsertMemberProfileCommandHandlerTests
         var group = MakeGroup();
         var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
         existing.UserKey = Guid.NewGuid();
-        var cmd = ProfileCommandFor(existing, group, firstName: "NewName", email: "admin.changed@example.com", phone: "222");
+        var cmd = ProfileCommandFor(existing, group, firstName: "NewName", email: "admin.changed@example.com", phone: "+380502222222");
 
         _currentUserContextMock.Setup(x => x.IsInRole("Admin")).Returns(true);
         _currentUserContextMock.Setup(x => x.Roles).Returns(new[] { "Admin" });
@@ -376,7 +482,7 @@ public class UpsertMemberProfileCommandHandlerTests
         result.Type.Should().Be(ResultType.Success);
         result.Data!.AccountEmailToFollow.Should().BeTrue();
         existing.Email.Should().Be("admin.changed@example.com");
-        existing.PhoneNumber.Should().Be("222");
+        existing.PhoneNumber.Should().Be("+380502222222");
     }
 
     [Fact]
@@ -386,7 +492,7 @@ public class UpsertMemberProfileCommandHandlerTests
         var ownerUserKey = Guid.NewGuid();
         var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
         existing.UserKey = ownerUserKey;
-        var cmd = ProfileCommandFor(existing, group, firstName: "SelfUpdated", email: "different@example.com", phone: "222");
+        var cmd = ProfileCommandFor(existing, group, firstName: "SelfUpdated", email: "different@example.com", phone: "+380502222222");
 
         _currentUserContextMock.SetupGet(x => x.UserId).Returns(ownerUserKey);
         ExistingMemberIs(existing, existing.MemberKey);
@@ -397,7 +503,7 @@ public class UpsertMemberProfileCommandHandlerTests
         result.Type.Should().Be(ResultType.Success);
         existing.FirstName.Should().Be("SelfUpdated");
         existing.Email.Should().Be("old@example.com");
-        existing.PhoneNumber.Should().Be("222");
+        existing.PhoneNumber.Should().Be("+380502222222");
     }
 
     [Fact]
@@ -451,7 +557,7 @@ public class UpsertMemberProfileCommandHandlerTests
         var group = MakeGroup();
         var existing = MakeExistingMember(group.GroupKey, group.KurinKey);
         existing.UserKey = Guid.NewGuid();
-        var cmd = ProfileCommandFor(existing, group, firstName: "NewName", email: "different@example.com", phone: "222");
+        var cmd = ProfileCommandFor(existing, group, firstName: "NewName", email: "different@example.com", phone: "+380502222222");
 
         ExistingMemberIs(existing, existing.MemberKey);
         GroupIs(group);
@@ -461,7 +567,7 @@ public class UpsertMemberProfileCommandHandlerTests
         result.Type.Should().Be(ResultType.BadRequest);
         result.ErrorCode.Should().Be("ContactInfoLinked");
         existing.Email.Should().Be("old@example.com");
-        existing.PhoneNumber.Should().Be("111");
+        existing.PhoneNumber.Should().Be("+380501111111");
         _memberRepoMock.Verify(r => r.Update(It.IsAny<Member>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 

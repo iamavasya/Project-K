@@ -111,7 +111,6 @@ export interface MemberAwardDto {
 
 /** `GET member/{memberKey}`: the card. */
 export interface MemberDto extends MemberLookupDto {
-  publicId?: string;
   /** Where the account stands; sent only to those who see the person's private details. */
   accountStatus?: AccountStatus | null;
   /** Only on a write: false when the invitation letter did not go out. */
@@ -120,9 +119,17 @@ export interface MemberDto extends MemberLookupDto {
   email: string;
   address?: string | null;
   school?: string | null;
+  motherFirstName?: string | null;
+  motherLastName?: string | null;
+  motherPhone?: string | null;
+  fatherFirstName?: string | null;
+  fatherLastName?: string | null;
+  fatherPhone?: string | null;
   mentoredGroups?: { groupKey: string; name: string }[];
   awards?: MemberAwardDto[];
   profileVerifiedAtUtc?: string | null;
+  /** The край's extra card fields by key (dates as «YYYY-MM-DD»); empty to who may not see private details. */
+  cardExtras?: Record<string, string>;
 }
 
 export interface MembershipDto {
@@ -140,22 +147,6 @@ export interface MembershipDto {
   isCurrent: boolean;
 }
 
-/**
- * Who a public code names, as the провід sees them before taking them in (API MemberCard): no
- * kurins and no contacts, only enough to be sure it is the right person.
- */
-export interface MembershipCandidateDto {
-  member: {
-    memberKey: string;
-    publicId: string;
-    firstName: string;
-    lastName: string;
-    fullName: string;
-    profilePhotoBlobName?: string | null;
-    currentMembershipCount: number;
-  };
-  alreadyInThisKurin: boolean;
-}
 
 export interface MentorAssignmentDto {
   mentorAssignmentKey: string;
@@ -165,6 +156,23 @@ export interface MentorAssignmentDto {
   assignedAtUtc: string;
   revokedAtUtc: string | null;
   member: MemberLookupDto | null;
+}
+
+// ── The край's card fields (`kurin/{k}/profile`, KraiProfile.cardFields) ────────────────────────────
+
+export type CardFieldMode = 'required' | 'optional' | 'hidden';
+
+/** One field the край adds to its members' cards. */
+export interface CardExtraField {
+  key: string;
+  label: string;
+  type: 'text' | 'date';
+  required: boolean;
+}
+
+export interface CardFields {
+  fields: { middleName: CardFieldMode; phoneNumber: CardFieldMode; address: CardFieldMode; school: CardFieldMode; parents: CardFieldMode };
+  extra: CardExtraField[];
 }
 
 // ── Skills and probes (ProbesAndBadgesModule) ────────────────────────────────────────────────────
@@ -243,6 +251,8 @@ export interface DuesEntryDto {
 export interface MemberDuesDto {
   hasAccount: boolean;
   kurinKey: string;
+  /** ISO 4217 code of what the amounts are counted in: the край's currency. */
+  currency: string;
   currentQuarter: QuarterDto;
   balance: number;
   quarterRate: { total: number } | null;

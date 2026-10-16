@@ -104,7 +104,7 @@ function meAnswer(state: MockState, path: string): Answer | null {
     case 'member/m1':
       return ok({
         memberKey: 'm1', firstName: 'Остап', middleName: 'Петрович', lastName: 'Коваль', email: state.session,
-        phoneNumber: '+380 67 000 00 00', dateOfBirth: '2012-03-14', groupName: 'Соколи',
+        phoneNumber: '+380670000000', dateOfBirth: '2012-03-14', groupName: 'Соколи',
         latestPlastLevelDisplay: 'Учасник', profilePhotoUrl: null,
       });
     case 'me/events':

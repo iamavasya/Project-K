@@ -12,11 +12,13 @@ using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories;
 using ProjectK.Infrastructure.Repositories.AuthModule;
+using ProjectK.Infrastructure.Repositories.KraiModule;
 using ProjectK.Infrastructure.Repositories.DuesModule;
 using ProjectK.Infrastructure.Repositories.ScoreModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
@@ -71,6 +73,9 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IPrivateScoreCriterionRepository _privateScoreCriteria;
     private IPrivateScoreEntryRepository _privateScoreEntries;
 
+    private IKraiRepository _krais;
+
+    public IKraiRepository Krais => _krais ??= new KraiRepository(_context);
     public IKurinRepository Kurins => _kurins ??= new KurinRepository(_context);
     public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
     public IMembershipRepository Memberships => _memberships ??= new MembershipRepository(_context);

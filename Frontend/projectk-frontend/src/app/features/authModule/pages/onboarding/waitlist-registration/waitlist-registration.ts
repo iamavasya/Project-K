@@ -5,13 +5,12 @@ import { KurinNumberRange, OnboardingService } from '../../../services/onboardin
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { CheckboxModule } from '@openng/optimus-ui/checkbox';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
-import { InputMaskModule } from '@openng/optimus-ui/inputmask';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { CardModule } from '@openng/optimus-ui/card';
 import { MessageModule } from '@openng/optimus-ui/message';
 import { MessageService } from '@openng/optimus-ui/api';
 import { RouterLink } from '@angular/router';
-import { UKRAINIAN_PHONE_MASK, UKRAINIAN_PHONE_PLACEHOLDER } from '../../../../../shared/functions/ukrainian-phone.function';
+import { PhoneInputComponent } from '../../../../../shared/phone-input/phone-input';
 
 @Component({
   selector: 'app-waitlist-registration',
@@ -20,7 +19,7 @@ import { UKRAINIAN_PHONE_MASK, UKRAINIAN_PHONE_PLACEHOLDER } from '../../../../.
     InputTextModule,
     CheckboxModule,
     DatePickerModule,
-    InputMaskModule,
+    PhoneInputComponent,
     ButtonModule,
     CardModule,
     MessageModule,
@@ -61,12 +60,7 @@ import { UKRAINIAN_PHONE_MASK, UKRAINIAN_PHONE_PLACEHOLDER } from '../../../../.
 
           <div class="flex flex-col gap-2">
             <label for="phone">Номер телефону</label>
-            <p-inputMask id="phone"
-              formControlName="phoneNumber"
-              [mask]="phoneMask"
-              [placeholder]="phonePlaceholder"
-              autocomplete="tel"
-             />
+            <app-phone-input inputId="phone" formControlName="phoneNumber" />
           </div>
 
           <div class="flex flex-col gap-2">
@@ -155,8 +149,6 @@ export class WaitlistRegistrationComponent {
   loading = false;
   submitted = false;
   maxDate = new Date();
-  readonly phoneMask = UKRAINIAN_PHONE_MASK;
-  readonly phonePlaceholder = UKRAINIAN_PHONE_PLACEHOLDER;
   /** The server says the real range; this is its default until it answers. */
   numberRange: KurinNumberRange = { min: 1, max: 200 };
 

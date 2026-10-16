@@ -852,6 +852,100 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("WebPushSubscriptions");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.KraiModule.Krai", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.HasKey("Code");
+
+                    b.ToTable("Krais");
+
+                    b.HasData(
+                        new
+                        {
+                            Code = "ua",
+                            CreatedAtUtc = new DateTime(2026, 10, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Україна"
+                        },
+                        new
+                        {
+                            Code = "cz",
+                            CreatedAtUtc = new DateTime(2026, 10, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Чехія"
+                        });
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KraiModule.KraiProfileRevision", b =>
+                {
+                    b.Property<Guid>("KraiProfileRevisionKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Json")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("KraiCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("int");
+
+                    b.HasKey("KraiProfileRevisionKey");
+
+                    b.HasIndex("KraiCode", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("KraiProfileRevisions");
+
+                    b.HasData(
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a01"),
+                            CreatedAtUtc = new DateTime(2026, 10, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{}",
+                            KraiCode = "ua",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        },
+                        new
+                        {
+                            KraiProfileRevisionKey = new Guid("6f0c1a52-3d4e-4b8a-9a71-2f3c4d5e6a02"),
+                            CreatedAtUtc = new DateTime(2026, 10, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Json = "{}",
+                            KraiCode = "cz",
+                            Note = "Початковий профіль",
+                            Revision = 1,
+                            SchemaVersion = 1
+                        });
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Agenda.AgendaAssignment", b =>
                 {
                     b.Property<Guid>("AgendaAssignmentKey")
@@ -1160,6 +1254,16 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
+                    b.Property<string>("HiddenCardFields")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("KraiCode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)")
+                        .HasDefaultValue("ua");
+
                     b.Property<string>("NamedAfter")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -1189,7 +1293,7 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.HasKey("KurinKey");
 
-                    b.HasIndex("Number")
+                    b.HasIndex("KraiCode", "Number")
                         .IsUnique()
                         .HasFilter("[Number] IS NOT NULL");
 
@@ -1272,6 +1376,9 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("CardExtras")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -1280,6 +1387,15 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FatherFirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FatherLastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FatherPhone")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FirstName")
@@ -1294,6 +1410,15 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("MiddleName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MotherFirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MotherLastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MotherPhone")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
@@ -2488,6 +2613,17 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.KraiModule.KraiProfileRevision", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KraiModule.Krai", "Krai")
+                        .WithMany("ProfileRevisions")
+                        .HasForeignKey("KraiCode")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Krai");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Agenda.AgendaAssignment", b =>
                 {
                     b.HasOne("ProjectK.Common.Entities.KurinModule.Agenda.AgendaItem", "AgendaItem")
@@ -2559,6 +2695,15 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Kurin");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Kurin", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KraiModule.Krai", null)
+                        .WithMany()
+                        .HasForeignKey("KraiCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Leadership", b =>
@@ -2727,6 +2872,11 @@ namespace ProjectK.Infrastructure.Migrations
             modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.DuesEntry", b =>
                 {
                     b.Navigation("Events");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KraiModule.Krai", b =>
+                {
+                    b.Navigation("ProfileRevisions");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Agenda.AgendaAssignment", b =>

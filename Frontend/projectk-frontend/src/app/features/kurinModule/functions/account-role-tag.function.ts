@@ -36,3 +36,25 @@ export function accountRoleTag(isAdmin: boolean, systemRoles: string[], fallback
     ? { label: leadershipRoleDisplayName(office), severity: leadershipRoleSeverityForRole(office) }
     : fallback;
 }
+
+/** What the role tag needs to know about the signed-in account beyond its offices. */
+export interface RoleTier {
+  isAdmin(): boolean;
+  canManageWholeKurin(): boolean;
+  canLeadGroups(): boolean;
+}
+
+/**
+ * The signed-in account's tag, as the sidebar footer and the account page show it: its office first,
+ * else the tier its permissions give it ("Провід куреня", "Гуртковий провід"), else a member.
+ */
+export function signedInRoleTag(tier: RoleTier, systemRoles: string[]): AccountRoleTag {
+  let fallback = GENERIC_MEMBER_TAG;
+  if (tier.canManageWholeKurin()) {
+    fallback = { label: 'Провід куреня', severity: 'warn' };
+  } else if (tier.canLeadGroups()) {
+    fallback = { label: 'Гуртковий провід', severity: 'success' };
+  }
+
+  return accountRoleTag(tier.isAdmin(), systemRoles, fallback);
+}

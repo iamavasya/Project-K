@@ -7,10 +7,12 @@ using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
 using ProjectK.API.Models.Requests;
+using ProjectK.BusinessLogic.Modules.KraiModule.Features.Profile;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.ExportReportPdf;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.SetKrai;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Former;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
@@ -24,6 +26,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.Common.Extensions;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Reports;
 
@@ -209,18 +212,94 @@ public class KurinController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a kurin from its number alone.
+    /// Creates a kurin from its number and, optionally, its край (the instance default otherwise).
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
     [HttpPost]
     [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Create([FromBody] int kurinNumber)
+    public async Task<IActionResult> Create([FromBody] CreateKurinRequest body)
     {
-        var request = new UpsertKurinCommand(kurinNumber);
+        var request = new UpsertKurinCommand(body.Number, body.KraiCode);
         var response = await _mediator.Send(request);
         return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Returns the край profile the kurin works under: which вмілості and проби it sees, its
+    /// currency and time zone. Every value is filled in, from the край's profile or from code.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("{kurinKey}/profile")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(typeof(KraiProfile), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProfile(Guid kurinKey)
+    {
+        var response = await _mediator.Send(new GetKurinProfileQuery(kurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// The card fields the kurin may leave off: what its край makes optional or adds without
+    /// requiring. Each says whether the kurin hides it.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("{kurinKey}/card-fields")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(IReadOnlyList<KurinCardFieldResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetCardFields(Guid kurinKey)
+    {
+        var response = await _mediator.Send(new GetKurinCardFieldsQuery(kurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Sets which of those fields the kurin hides; a field it may not hide is ignored.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpPut("{kurinKey}/card-fields")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(IReadOnlyList<KurinCardFieldResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetCardFields(Guid kurinKey, [FromBody] SetKurinCardFieldsRequest body)
+    {
+        var response = await _mediator.Send(new SetKurinCardFieldsCommand(kurinKey, body.Hidden ?? []));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Body of <c>PUT {kurinKey}/card-fields</c>.</summary>
+    public sealed class SetKurinCardFieldsRequest
+    {
+        public List<string>? Hidden { get; set; }
+    }
+
+    /// <summary>
+    /// Moves a kurin to another край. Admin-only; the number must be free in that край.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
+    [HttpPut("{kurinKey}/krai")]
+    [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SetKrai(Guid kurinKey, [FromBody] SetKurinKraiRequest body)
+    {
+        var response = await _mediator.Send(new SetKurinKraiCommand(kurinKey, body.KraiCode));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Body of <c>POST api/kurin</c>.</summary>
+    public sealed class CreateKurinRequest
+    {
+        public int Number { get; set; }
+        public string? KraiCode { get; set; }
+    }
+
+    /// <summary>Body of <c>PUT {kurinKey}/krai</c>.</summary>
+    public sealed class SetKurinKraiRequest
+    {
+        public string KraiCode { get; set; } = string.Empty;
     }
 
     /// <summary>

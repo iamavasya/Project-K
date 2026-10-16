@@ -5,11 +5,15 @@
     (click)="onCardClick($event)"
     (keydown.enter)="onCardClick($event)">
     <div class="mini-member-card__photo-shell relative overflow-hidden rounded-xl">
+        @if (member().profilePhotoUrl; as photo) {
         <img
-            src="{{ member().profilePhotoUrl || 'https://placehold.co/480x360?text=Member+Photo' }}"
+            [src]="photo"
             alt="{{ member().firstName }} {{ member().lastName }}"
             class="h-full w-full object-cover"
         />
+        } @else {
+        <span class="mini-member-card__initials h-full w-full" aria-hidden="true">{{ photoInitials() }}</span>
+        }
 
         <div class="mini-member-card__overlay absolute inset-0 flex items-end justify-end p-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <p-button label="Перейти"
@@ -58,9 +62,9 @@
 
         <p class="mini-member-card__meta text-sm">
             @if (phoneLink; as href) {
-                <a [href]="href">{{ member().phoneNumber }}</a>
+                <a [href]="href">{{ phoneText }}</a>
             } @else {
-                {{ member().phoneNumber || 'Телефон не вказано' }}
+                {{ phoneText || 'Телефон не вказано' }}
             }
         </p>
 

@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Members;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace ProjectK.Common.Entities.KurinModule;
 /// all. Everything here is theirs and outlives any of those: leaving a kurin, or the kurin
 /// itself being deleted, leaves this record and its history untouched.
 /// </summary>
-public class Member : Entity
+public class Member : Entity, IHasParentContacts
 {
     public Guid MemberKey { get; set; } = Guid.NewGuid();
 
@@ -35,6 +36,20 @@ public class Member : Entity
     public DateOnly DateOfBirth { get; set; }
     public string? Address { get; set; }
     public string? School { get; set; }
+
+    // Parents' contacts, as a kurin reaches a child's family. Private like the address.
+    public string? MotherFirstName { get; set; }
+    public string? MotherLastName { get; set; }
+    public string? MotherPhone { get; set; }
+    public string? FatherFirstName { get; set; }
+    public string? FatherLastName { get; set; }
+    public string? FatherPhone { get; set; }
+
+    /// <summary>
+    /// Values of the card fields a край adds, as a JSON object by field key; see
+    /// <c>MemberCardExtras</c>. Kept when the край drops a field, so bringing it back loses nothing.
+    /// </summary>
+    public string? CardExtras { get; set; }
     public string? ProfilePhotoBlobName { get; set; }
     public MemberProfileVerificationStatus ProfileVerificationStatus { get; set; } = MemberProfileVerificationStatus.Unverified;
     public DateTime? ProfileVerifiedAtUtc { get; set; }

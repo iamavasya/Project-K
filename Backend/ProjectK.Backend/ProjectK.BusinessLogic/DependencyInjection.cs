@@ -1,3 +1,5 @@
+using ProjectK.BusinessLogic.Modules.KraiModule.Services;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -32,6 +34,8 @@ public static class DependencyInjection
         services.AddScoped<ISavedSessionList, SavedSessionList>();
         services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
         services.AddScoped<ISystemSettingsService, SystemSettingsService>();
+        services.AddScoped<IKraiProfileProvider, KraiProfileProvider>();
+        services.AddScoped<KraiProfileEditor>();
         services.AddScoped<IMfaEnforcementPolicy, MfaEnforcementPolicy>();
         services.AddScoped<ResourceAccessService>();
         services.AddScoped<IResourceAccessService>(sp =>
@@ -59,6 +63,7 @@ public static class DependencyInjection
         services.AddScoped<IBadgesCatalogService, BadgesCatalogService>();
         services.AddScoped<IProbesCatalogService, ProbesCatalogService>();
         services.AddScoped<IProgressCatalogReader, ProgressCatalogReader>();
+        services.AddScoped<IKurinCatalog, KurinCatalog>();
 
         services.AddScoped<IMembershipDirectory, MembershipDirectory>();
         services.AddScoped<IOfficeDirectory, OfficeDirectory>();

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProjectK.Common.Entities;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
 using ProjectK.Common.Models.Enums;
@@ -19,6 +20,8 @@ public class Kurin(int? number) : Entity
     /// its plaque renders empty until a number is set in the kurin's settings.
     /// </summary>
     public int? Number { get; set; } = number;
+    /// <summary>The край this kurin belongs to; its number is unique within that край only.</summary>
+    public string KraiCode { get; set; } = Krai.Ukraine;
     public string? Stanytsia { get; set; }
     public string? RegionOrCountry { get; set; }
     public string? NamedAfter { get; set; }
@@ -33,6 +36,12 @@ public class Kurin(int? number) : Entity
 
     /// <summary>Days an archived task is kept before it is deleted for good; null keeps the archive forever.</summary>
     public int? TaskArchivePurgeAfterDays { get; set; } = 365;
+
+    /// <summary>
+    /// Card fields this kurin leaves off, as a JSON array of keys: only what its край lets a kurin
+    /// drop (see <c>KraiCardFieldsSettings.Hideable</c>). A kurin can narrow its край's card, never widen it.
+    /// </summary>
+    public string? HiddenCardFields { get; set; }
     public ICollection<Group> Groups { get; set; } = new List<Group>();
     public ICollection<Membership> Memberships { get; set; } = new List<Membership>();
     public ICollection<Leadership> Leaderships { get; set; } = new List<Leadership>();

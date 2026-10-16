@@ -1,3 +1,4 @@
+import { currencySymbol, DEFAULT_CURRENCY } from '../../me/labels';
 import {
   DuesAccountStanding,
   DuesEntryDto,
@@ -51,9 +52,9 @@ const INCOMING: ReadonlySet<DuesEntryKind> = new Set<DuesEntryKind>(['Contributi
 const hryvnia = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const ROMAN = ['I', 'II', 'III', 'IV'];
 
-/** «1 240 ₴», «−300 ₴»: a real minus, not a hyphen. */
-export function duesMoney(amount: number): string {
-  return `${amount < 0 ? '−' : ''}${hryvnia.format(Math.abs(amount))} ₴`;
+/** «1 240 ₴», «−300 Kč»: a real minus, not a hyphen. */
+export function duesMoney(amount: number, currency: string = DEFAULT_CURRENCY): string {
+  return `${amount < 0 ? '−' : ''}${hryvnia.format(Math.abs(amount))} ${currencySymbol(currency)}`;
 }
 
 /** What an operation does to the box: plus in, minus out, a correction as entered, null for an exchange. */
@@ -64,10 +65,10 @@ export function signedAmount(entry: Pick<DuesEntryDto, 'kind' | 'amount'>): numb
 }
 
 /** The amount as the history shows it: signed, or bare for an exchange. */
-export function amountLabel(entry: Pick<DuesEntryDto, 'kind' | 'amount'>): string {
+export function amountLabel(entry: Pick<DuesEntryDto, 'kind' | 'amount'>, currency: string = DEFAULT_CURRENCY): string {
   const signed = signedAmount(entry);
-  if (signed === null) return duesMoney(entry.amount);
-  return signed > 0 ? `+${duesMoney(signed)}` : duesMoney(signed);
+  if (signed === null) return duesMoney(entry.amount, currency);
+  return signed > 0 ? `+${duesMoney(signed, currency)}` : duesMoney(signed, currency);
 }
 
 /** A person's balance: «сплачено», «+20 ₴» ahead, «−150 ₴» owed. */

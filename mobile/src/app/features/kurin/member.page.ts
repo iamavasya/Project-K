@@ -27,6 +27,7 @@ import {
 import { addIcons } from 'ionicons';
 import { add, alertCircle, checkmarkCircle, gitNetwork, lockClosed, logOut, medal, ribbon } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
+import { formatPhone } from '../../core/phone';
 import { apiErrorText } from '../../core/api';
 import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
@@ -69,6 +70,7 @@ import {
 import {
   BadgeCatalogItemDto,
   BadgeProgressDto,
+  CardFields,
   GroupDto,
   MemberAwardDto,
   MemberDto,
@@ -77,6 +79,7 @@ import {
 } from './kurin.models';
 import { KurinApi, ProtectedImages } from './kurin.service';
 import { MemberAvatar } from './member-avatar';
+import { DEFAULT_CARD_FIELDS, cardExtraRows } from './member-edit';
 import { RoleTags } from './role-tags';
 import { ProfileEditResult, ProfileEditSheet } from './profile-edit.sheet';
 import { SkillsSheet } from './skills.sheet';
@@ -84,6 +87,8 @@ import { inKurin, kurinLabel } from '../../core/kurin-label';
 
 interface Skills {
   catalog: BadgeCatalogItemDto[];
+  /** What the kurin's край offers for a new start; the whole catalogue stays for what the member has. */
+  offered: BadgeCatalogItemDto[];
   progress: BadgeProgressDto[];
 }
 
@@ -291,16 +296,20 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
                   <ion-label><h3>Email</h3><p>{{ m.email || 'Не вказано' }}</p></ion-label>
                 </ion-item>
                 <ion-item [href]="phoneHref(m.phoneNumber)" [detail]="false">
-                  <ion-label><h3>Телефон</h3><p>{{ m.phoneNumber || 'Не вказано' }}</p></ion-label>
+                  <ion-label><h3>Телефон</h3><p>{{ formatPhone(m.phoneNumber) || 'Не вказано' }}</p></ion-label>
                 </ion-item>
                 <ion-item>
                   <ion-label><h3>Дата народження</h3><p>{{ birthDate() }}</p></ion-label>
                 </ion-item>
-                @if (m.school) {
-                  <ion-item><ion-label class="ion-text-wrap"><h3>Школа</h3><p>{{ m.school }}</p></ion-label></ion-item>
+                @for (row of privateRows(); track row.key) {
+                  <ion-item [attr.data-testid]="'card-' + row.key">
+                    <ion-label class="ion-text-wrap"><h3>{{ row.label }}</h3><p>{{ row.value }}</p></ion-label>
+                  </ion-item>
                 }
-                @if (m.address) {
-                  <ion-item><ion-label class="ion-text-wrap"><h3>Адреса</h3><p>{{ m.address }}</p></ion-label></ion-item>
+                @for (row of extraRows(); track row.key) {
+                  <ion-item [attr.data-testid]="'card-extra-' + row.key">
+                    <ion-label class="ion-text-wrap"><h3>{{ row.label }}</h3><p>{{ row.value }}</p></ion-label>
+                  </ion-item>
                 }
                 @if (verificationEnabled() && m.profileVerifiedAtUtc) {
                   <ion-item><ion-label><h3>Верифіковано</h3><p>{{ when(m.profileVerifiedAtUtc) }}</p></ion-label></ion-item>
@@ -545,7 +554,8 @@ export class MemberPage implements OnInit {
   protected readonly dateOnly = dateOnly;
   protected readonly emailHref = emailHref;
   protected readonly phoneHref = phoneHref;
-  protected readonly money = duesMoney;
+  protected readonly formatPhone = formatPhone;
+  protected readonly money = (amount: number): string => duesMoney(amount, this.dues()?.currency);
   protected readonly period = membershipPeriod;
 
   protected readonly key = signal<string | null>(null);
@@ -557,6 +567,8 @@ export class MemberPage implements OnInit {
   protected readonly dues = signal<MemberDuesDto | null>(null);
   protected readonly canUpdate = signal(false);
   protected readonly verificationEnabled = signal(false);
+  /** What the kurin's край asks on the card; null until read (the edit sheet then reads it itself). */
+  private readonly cardFields = signal<CardFields | null>(null);
   protected readonly placing = signal(false);
 
   protected readonly memberValue = computed(() => valueOf(this.member()));
@@ -578,6 +590,24 @@ export class MemberPage implements OnInit {
     return (m && plastLevelLabel(m)) || 'Ступінь не вказано';
   });
   protected readonly warning = computed(() => activeWarning(this.memberValue()?.warnings));
+  /** Address and school when known and the край keeps them on the card. */
+  protected readonly privateRows = computed(() => {
+    const card = this.cardFields() ?? DEFAULT_CARD_FIELDS;
+    const m = this.memberValue();
+    const rows = ([['address', 'Адреса'], ['school', 'Школа']] as const)
+      .filter(([key]) => card.fields[key] !== 'hidden' && !!m?.[key])
+      .map(([key, label]) => ({ key: key as string, label, value: m![key]! }));
+    if (!m || card.fields.parents === 'hidden') return rows;
+    const parents = [
+      { key: 'mother', label: 'Мама', first: m.motherFirstName, last: m.motherLastName, phone: m.motherPhone },
+      { key: 'father', label: 'Тато', first: m.fatherFirstName, last: m.fatherLastName, phone: m.fatherPhone },
+    ]
+      .map((p) => ({ key: p.key, label: p.label, value: [[p.first, p.last].filter(Boolean).join(' '), formatPhone(p.phone)].filter(Boolean).join(', ') }))
+      .filter((p) => !!p.value);
+    return [...rows, ...parents];
+  });
+  /** The край's own fields that have a value on this card. */
+  protected readonly extraRows = computed(() => cardExtraRows(this.cardFields() ?? DEFAULT_CARD_FIELDS, this.memberValue()?.cardExtras));
   protected readonly birthDate = computed(() => {
     const born = dateOnly(this.memberValue()?.dateOfBirth);
     return born ? dateLabel(born) : 'Не вказано';
@@ -644,7 +674,7 @@ export class MemberPage implements OnInit {
 
   protected balanceTitle(d: MemberDuesDto): string {
     if (d.balance === 0) return 'Сплачено';
-    return d.balance < 0 ? duesMoney(d.balance) : `+${duesMoney(d.balance)}`;
+    return d.balance < 0 ? this.money(d.balance) : `+${this.money(d.balance)}`;
   }
 
   protected balanceHint(d: MemberDuesDto): string {
@@ -653,7 +683,7 @@ export class MemberPage implements OnInit {
   }
 
   protected duesLine(d: MemberDuesDto): string {
-    return [quarterLabel(d.currentQuarter), d.quarterRate ? `${duesMoney(d.quarterRate.total)} за квартал` : null, d.currentGroupName]
+    return [quarterLabel(d.currentQuarter), d.quarterRate ? `${this.money(d.quarterRate.total)} за квартал` : null, d.currentGroupName]
       .filter(Boolean)
       .join(' · ');
   }
@@ -668,7 +698,7 @@ export class MemberPage implements OnInit {
   }
 
   protected amountLabel(entry: { kind: string; amount: number }): string {
-    return duesAmountLabel(entry);
+    return duesAmountLabel(entry, this.dues()?.currency);
   }
 
   protected kurinTitle(m: MembershipDto): string {
@@ -781,7 +811,7 @@ export class MemberPage implements OnInit {
     if (!key || !s) return;
     const modal = await this.modals.create({
       component: SkillsSheet,
-      componentProps: { memberKey: key, canEdit: this.canEdit(), canReview: this.canModerate(), catalog: s.catalog, progress: s.progress },
+      componentProps: { memberKey: key, canEdit: this.canEdit(), canReview: this.canModerate(), catalog: s.catalog, offered: s.offered, progress: s.progress },
       presentingElement: this.presenting(),
     });
     await modal.present();
@@ -808,7 +838,7 @@ export class MemberPage implements OnInit {
     if (!key || !member) return;
     const modal = await this.modals.create({
       component: ProfileEditSheet,
-      componentProps: { member, own: this.isOwnCard(), verificationEnabled: this.verificationEnabled() },
+      componentProps: { member, own: this.isOwnCard(), verificationEnabled: this.verificationEnabled(), cardFields: this.cardFields() },
       presentingElement: this.presenting(),
     });
     await modal.present();
@@ -837,7 +867,7 @@ export class MemberPage implements OnInit {
         (dues) => this.dues.set(dues?.hasAccount ? dues : null),
         () => this.dues.set(null),
       ),
-      member.then(() => this.loadVerificationToggle()),
+      member.then(() => Promise.all([this.loadVerificationToggle(), this.loadCardFields()])),
       // Skills and probes wait for both: the branch comes from the ступінь and the kurin.
       Promise.all([member, memberships]).then(() => (this.youth() ? Promise.all([this.loadSkills(key), this.loadProbes(key)]) : null)),
     ]);
@@ -853,11 +883,24 @@ export class MemberPage implements OnInit {
     }
   }
 
+  private async loadCardFields(): Promise<void> {
+    const kurinKey = this.memberValue()?.kurinKey;
+    if (!kurinKey) return;
+    try {
+      this.cardFields.set(await this.data.cardFields(kurinKey));
+    } catch {
+      this.cardFields.set(null);
+    }
+  }
+
   private loadSkills(key: string): Promise<void> {
+    const kurinKey = this.memberValue()?.kurinKey;
     return settle(
-      Promise.all([this.data.badgeCatalog().catch(() => [] as BadgeCatalogItemDto[]), this.data.badgeProgress(key)]).then(
-        ([catalog, progress]) => ({ catalog, progress }),
-      ),
+      Promise.all([
+        this.data.badgeCatalog().catch(() => [] as BadgeCatalogItemDto[]),
+        kurinKey ? this.data.kurinBadgeCatalog(kurinKey).catch(() => [] as BadgeCatalogItemDto[]) : Promise.resolve([] as BadgeCatalogItemDto[]),
+        this.data.badgeProgress(key),
+      ]).then(([catalog, offered, progress]) => ({ catalog, offered, progress })),
       this.skills,
     );
   }

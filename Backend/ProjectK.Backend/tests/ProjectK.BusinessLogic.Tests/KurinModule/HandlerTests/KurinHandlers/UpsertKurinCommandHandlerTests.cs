@@ -13,6 +13,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Settings;
@@ -24,6 +25,7 @@ public class UpsertKurinHandlerTests
 {
     private readonly IMapper _mapper;
     private readonly Mock<IKurinRepository> _kurinRepositoryMock;
+    private readonly Mock<IKraiRepository> _kraiRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IBackendCache> _cacheMock;
     private readonly UpsertKurinCommandHandler _handler;
@@ -42,9 +44,13 @@ public class UpsertKurinHandlerTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _cacheMock = new Mock<IBackendCache>();
 
-        _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
+        _kraiRepositoryMock = new Mock<IKraiRepository>();
+        _kraiRepositoryMock.Setup(r => r.ExistsAsync(It.IsIn("ua", "cz"), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        _handler = new UpsertKurinCommandHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions()));
+        _unitOfWorkMock.Setup(uow => uow.Kurins).Returns(_kurinRepositoryMock.Object);
+        _unitOfWorkMock.Setup(uow => uow.Krais).Returns(_kraiRepositoryMock.Object);
+
+        _handler = new UpsertKurinCommandHandler(_unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions()));
     }
 
     [Fact]
@@ -224,7 +230,7 @@ public class UpsertKurinHandlerTests
     public async Task Handle_WhenTheRangeIsRaised_ShouldAcceptTheHigherNumber()
     {
         var handler = new UpsertKurinCommandHandler(
-            _unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions { MaxNumber = 350 }));
+            _unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions { MaxNumber = 350 }), Options.Create(new KraiOptions()));
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
 
         var result = await handler.Handle(new UpsertKurinCommand(300), default);
@@ -269,7 +275,7 @@ public class UpsertKurinHandlerTests
         var kurinKey = Guid.NewGuid();
         var preparatory = new Kurin(null) { KurinKey = kurinKey };
         _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default)).ReturnsAsync(preparatory);
-        _kurinRepositoryMock.Setup(r => r.GetByNumberAsync(47, default)).ReturnsAsync(new Kurin(47));
+        _kurinRepositoryMock.Setup(r => r.GetByNumberAsync("ua", 47, default)).ReturnsAsync(new Kurin(47));
 
         var result = await _handler.Handle(new UpsertKurinCommand(kurinKey, 47), default);
 
@@ -292,5 +298,61 @@ public class UpsertKurinHandlerTests
         result.Type.Should().Be(ResultType.Success);
         result.Data!.IsPreparatory.Should().BeTrue();
         kurin.Number.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_WhenCreatingWithoutAKrai_ShouldUseTheDefault()
+    {
+        Kurin savedKurin = null!;
+        _kurinRepositoryMock.Setup(r => r.Create(It.IsAny<Kurin>(), default))
+            .Callback<Kurin, CancellationToken>((k, _) => savedKurin = k);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+        var handler = new UpsertKurinCommandHandler(
+            _unitOfWorkMock.Object, _mapper, _cacheMock.Object, Options.Create(new KurinNumberOptions()), Options.Create(new KraiOptions { Default = "cz" }));
+
+        var result = await handler.Handle(new UpsertKurinCommand(12), default);
+
+        result.Type.Should().Be(ResultType.Created);
+        savedKurin.KraiCode.Should().Be("cz");
+        result.Data!.KraiCode.Should().Be("cz");
+    }
+
+    [Fact]
+    public async Task Handle_WhenTheNumberIsTakenInAnotherKrai_ShouldStillCreate()
+    {
+        _kurinRepositoryMock.Setup(r => r.GetByNumberAsync("ua", 12, default)).ReturnsAsync(new Kurin(12));
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+        var result = await _handler.Handle(new UpsertKurinCommand(12, "cz"), default);
+
+        result.Type.Should().Be(ResultType.Created);
+        result.Data!.KraiCode.Should().Be("cz");
+        _kurinRepositoryMock.Verify(r => r.GetByNumberAsync("cz", 12, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenTheKraiIsUnknown_ShouldReturnBadRequest()
+    {
+        var result = await _handler.Handle(new UpsertKurinCommand(12, "xx"), default);
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        result.ErrorCode.Should().Be("UnknownKrai");
+        _kurinRepositoryMock.Verify(r => r.Create(It.IsAny<Kurin>(), default), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenUpdating_ShouldCheckTheNumberWithinTheKurinsOwnKrai()
+    {
+        var kurinKey = Guid.NewGuid();
+        var kurin = new Kurin(5) { KurinKey = kurinKey, KraiCode = "cz" };
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default)).ReturnsAsync(kurin);
+        _kurinRepositoryMock.Setup(r => r.GetByNumberAsync("ua", 47, default)).ReturnsAsync(new Kurin(47));
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+        var result = await _handler.Handle(new UpsertKurinCommand(kurinKey, 47), default);
+
+        result.Type.Should().Be(ResultType.Success);
+        kurin.Number.Should().Be(47);
+        kurin.KraiCode.Should().Be("cz");
     }
 }

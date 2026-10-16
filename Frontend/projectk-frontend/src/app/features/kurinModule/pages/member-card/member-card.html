@@ -6,12 +6,16 @@
         <section class="member-tile member-profile-tile rounded-2xl p-4 md:p-5">
             <div class="grid gap-4 md:grid-cols-[210px_1fr_auto] md:items-start">
                 <div class="member-photo-frame flex items-center justify-center p-2">
+                    @if (member.profilePhotoUrl) {
                     <img
                         width="320"
-                        src="{{ member.profilePhotoUrl || 'https://placehold.co/560x560?text=Member+Image' }}"
+                        [src]="member.profilePhotoUrl"
                         alt="{{ member.firstName }} {{ member.lastName }}"
                         class="member-photo h-48 w-full rounded-xl object-cover md:w-48"
                     />
+                    } @else {
+                    <span class="member-photo member-photo--initials h-48 w-full rounded-xl md:w-48" aria-hidden="true">{{ photoInitials }}</span>
+                    }
                 </div>
 
                 <div class="min-w-0">
@@ -45,48 +49,65 @@
 
                     </div>
 
+                    @if (showsField('middleName')) {
                     <p class="member-middle-name mt-1 text-sm">
                         {{ member.middleName || 'По батькові не вказано' }}
                     </p>
+                    }
 
                     <div class="member-summary mt-3 grid gap-x-5 gap-y-1.5 sm:grid-cols-2">
                         <p class="member-summary-line text-sm">
-                            <span class="member-summary-label">Email:</span>
+                            <span class="member-summary-label">Email: </span>
                             <span class="member-summary-value">
                                 @if (emailLink; as href) { <a [href]="href">{{ member.email }}</a> } @else { Не вказано }
                             </span>
                         </p>
 
+                        @if (showsField('phoneNumber')) {
                         <p class="member-summary-line text-sm">
-                            <span class="member-summary-label">Телефон:</span>
+                            <span class="member-summary-label">Телефон: </span>
                             <span class="member-summary-value">
-                                @if (phoneLink; as href) { <a [href]="href">{{ member.phoneNumber }}</a> } @else { {{ member.phoneNumber || 'Не вказано' }} }
+                                @if (phoneLink; as href) { <a [href]="href">{{ phoneText }}</a> } @else { {{ phoneText || 'Не вказано' }} }
                             </span>
-                        </p>
-
-                        <p class="member-summary-line text-sm">
-                            <span class="member-summary-label">Дата народження:</span>
-                            <span class="member-summary-value">
-                                {{ member.dateOfBirth ? (member.dateOfBirth | date:'yyyy-MM-dd') : 'Не вказано' }}
-                            </span>
-                        </p>
-
-                        @if (member.school) {
-                        <p class="member-summary-line text-sm">
-                            <span class="member-summary-label">Школа:</span>
-                            <span class="member-summary-value"> {{ member.school }}</span>
                         </p>
                         }
 
-                        @if (member.address) {
-                        <p class="member-summary-line text-sm sm:col-span-2">
-                            <span class="member-summary-label">Адреса:</span>
-                            <span class="member-summary-value"> {{ member.address }}</span>
+                        <p class="member-summary-line text-sm">
+                            <span class="member-summary-label">Дата народження: </span>
+                            <span class="member-summary-value">
+                                {{ member.dateOfBirth ? (member.dateOfBirth | date:'dd.MM.yyyy') : 'Не вказано' }}
+                            </span>
+                        </p>
+                        @if (showsField('address') && member.address) {
+                        <p class="member-summary-line text-sm">
+                            <span class="member-summary-label">Адреса: </span>
+                            <span class="member-summary-value">{{ member.address }}</span>
+                        </p>
+                        }
+                        @if (showsField('school') && member.school) {
+                        <p class="member-summary-line text-sm">
+                            <span class="member-summary-label">Школа: </span>
+                            <span class="member-summary-value">{{ member.school }}</span>
+                        </p>
+                        }
+                        @for (parent of parentLines; track parent.label) {
+                        <p class="member-summary-line text-sm">
+                            <span class="member-summary-label">{{ parent.label }}: </span>
+                            <span class="member-summary-value">
+                                {{ parent.name }}@if (parent.name && parent.phone) {, }
+                                @if (parent.phoneLink; as href) { <a [href]="href">{{ parent.phone }}</a> } @else { {{ parent.phone }} }
+                            </span>
+                        </p>
+                        }
+                        @for (line of cardExtras; track line.key) {
+                        <p class="member-summary-line text-sm">
+                            <span class="member-summary-label">{{ line.label }}: </span>
+                            <span class="member-summary-value">{{ line.value }}</span>
                         </p>
                         }
                         @if (profileVerificationEnabled && profileVerifiedAtDisplay) {
                         <p class="member-summary-line text-sm sm:col-span-2">
-                            <span class="member-summary-label">Верифіковано:</span>
+                            <span class="member-summary-label">Верифіковано: </span>
                             <span class="member-summary-value"> {{ profileVerifiedAtDisplay }}</span>
                         </p>
                         }
@@ -102,6 +123,25 @@
                         severity="secondary"
                         styleClass="!rounded-lg !px-4 !py-2 !text-sm !font-semibold"
                      />
+                    @if (canManageProfileVerification) {
+                    <p-button (onClick)="onProfileVerificationAction()"
+                        [label]="isProfileVerified ? 'Зняти верифікацію' : 'Верифікувати'"
+                        [icon]="isProfileVerified ? 'pi pi-undo' : 'pi pi-verified'"
+                        severity="secondary"
+                        variant="text"
+                        size="small"
+                        [loading]="profileVerificationSubmitting"
+                     />
+                    }
+                    @if (canManageWarnings) {
+                    <p-button (onClick)="isWarningsDialogVisible = true"
+                        label="Перестороги"
+                        icon="pi pi-exclamation-triangle"
+                        severity="secondary"
+                        variant="text"
+                        size="small"
+                     />
+                    }
                 </div>
                 }
             </div>
@@ -402,21 +442,30 @@
 
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-semibold">{{ skill.title }}</p>
-                                    <p class="dialog-skill-meta text-xs">Підтверджено: {{ skill.reviewedAtUtc || 'Дата відсутня' }}</p>
+                                    <p class="dialog-skill-meta text-xs">Підтверджено: {{ skill.reviewedAtUtc ? (skill.reviewedAtUtc | date:'dd.MM.yyyy') : 'Дата відсутня' }}</p>
                                 </div>
                             </div>
 
-                            @if (canInlineModerateSkills) {
-                            <p-button (onClick)="removeConfirmedSkill(skill)"
-                                icon="pi pi-times"
-                                severity="danger"
-                                [rounded]="true"
-                                [text]="true"
-                                [loading]="isInlineModerationInProgress(skill.badgeId)"
-                                [disabled]="isInlineModerationBusy"
-                                styleClass="dialog-inline-action-btn"
-                             />
-                            }
+                            <div class="flex shrink-0 items-center gap-1">
+                                <p-button (onClick)="openBadgeDetails(skill.badgeId)"
+                                    label="Деталі"
+                                    icon="pi pi-info-circle"
+                                    severity="secondary"
+                                    [text]="true"
+                                    styleClass="!rounded-lg !px-2 !py-1.5 !text-xs"
+                                 />
+                                @if (canInlineModerateSkills) {
+                                <p-button (onClick)="removeConfirmedSkill(skill)"
+                                    icon="pi pi-times"
+                                    severity="danger"
+                                    [rounded]="true"
+                                    [text]="true"
+                                    [loading]="isInlineModerationInProgress(skill.badgeId)"
+                                    [disabled]="isInlineModerationBusy"
+                                    styleClass="dialog-inline-action-btn"
+                                 />
+                                }
+                            </div>
                         </div>
                     </div>
                     }
@@ -447,21 +496,30 @@
 
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-semibold">{{ skill.title }}</p>
-                                    <p class="dialog-skill-meta text-xs">Подано: {{ skill.submittedAtUtc || 'Дата відсутня' }}</p>
+                                    <p class="dialog-skill-meta text-xs">Подано: {{ skill.submittedAtUtc ? (skill.submittedAtUtc | date:'dd.MM.yyyy') : 'Дата відсутня' }}</p>
                                 </div>
                             </div>
 
-                            @if (canInlineModerateSkills) {
-                            <p-button (onClick)="approvePendingSkill(skill)"
-                                icon="pi pi-check"
-                                severity="success"
-                                [rounded]="true"
-                                [text]="true"
-                                [loading]="isInlineModerationInProgress(skill.badgeId)"
-                                [disabled]="isInlineModerationBusy"
-                                styleClass="dialog-inline-action-btn"
-                             />
-                            }
+                            <div class="flex shrink-0 items-center gap-1">
+                                <p-button (onClick)="openBadgeDetails(skill.badgeId)"
+                                    label="Деталі"
+                                    icon="pi pi-info-circle"
+                                    severity="secondary"
+                                    [text]="true"
+                                    styleClass="!rounded-lg !px-2 !py-1.5 !text-xs"
+                                 />
+                                @if (canInlineModerateSkills) {
+                                <p-button (onClick)="approvePendingSkill(skill)"
+                                    icon="pi pi-check"
+                                    severity="success"
+                                    [rounded]="true"
+                                    [text]="true"
+                                    [loading]="isInlineModerationInProgress(skill.badgeId)"
+                                    [disabled]="isInlineModerationBusy"
+                                    styleClass="dialog-inline-action-btn"
+                                 />
+                                }
+                            </div>
                         </div>
                     </div>
                     }
@@ -568,13 +626,22 @@
                         </div>
                     </div>
 
-                    <p-button (onClick)="submitBadge(badge.id)"
-                        [label]="getSubmitBadgeButtonLabel(badge.id)"
-                        icon="pi pi-plus"
-                        [disabled]="!canSubmitBadge(badge.id) || isSubmittingSkill"
-                        severity="secondary"
-                        styleClass="!rounded-lg !px-3 !py-2 !text-xs"
-                     />
+                    <div class="flex shrink-0 items-center gap-1">
+                        <p-button (onClick)="openBadgeDetails(badge.id)"
+                            label="Деталі"
+                            icon="pi pi-info-circle"
+                            severity="secondary"
+                            [text]="true"
+                            styleClass="!rounded-lg !px-2 !py-2 !text-xs"
+                         />
+                        <p-button (onClick)="submitBadge(badge.id)"
+                            [label]="getSubmitBadgeButtonLabel(badge.id)"
+                            icon="pi pi-plus"
+                            [disabled]="!canSubmitBadge(badge.id) || isSubmittingSkill"
+                            severity="secondary"
+                            styleClass="!rounded-lg !px-3 !py-2 !text-xs"
+                         />
+                    </div>
                 </div>
                 }
             </div>
@@ -593,6 +660,8 @@
             }
         </div>
     </p-dialog>
+
+    <app-badge-details-dialog [(visible)]="isBadgeDetailsVisible" [badgeId]="badgeDetailsId" />
     } @else {
     <section class="member-tile mx-auto w-full max-w-6xl rounded-2xl p-4 md:p-5">
         <div class="grid gap-4 md:grid-cols-[210px_1fr_auto] md:items-start">
@@ -636,3 +705,11 @@
         <p-button label="Перевести" [loading]="isMovingToGroup" (onClick)="saveMoveToGroup()" />
     </ng-template>
 </p-dialog>
+
+@if (member && canManageWarnings) {
+<app-member-warnings-dialog [(visible)]="isWarningsDialogVisible"
+    [memberKey]="member.memberKey"
+    [warnings]="member.warnings ?? []"
+    [currentUserKey]="currentUserKey"
+    (changed)="onWarningsChanged()" />
+}

@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY } from '../../me/labels';
 import { Component, ElementRef, OnDestroy, OnInit, afterRenderEffect, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -434,6 +435,7 @@ interface PersonRow {
       <ion-modal [isOpen]="entryOpen()" [canDismiss]="!saving()" (didDismiss)="entryOpen.set(false)">
         <ng-template>
           <app-dues-entry-form
+            [currency]="currency()"
             [accounts]="data()?.accounts ?? []"
             [people]="data()?.people ?? []"
             [entry]="entryToEdit()"
@@ -456,6 +458,7 @@ interface PersonRow {
           @if (quarterForm(); as form) {
             @if (data(); as d) {
               <app-dues-quarter-form
+                [currency]="currency()"
                 [mode]="form.mode"
                 [quarters]="fromQuarters()"
                 [current]="d.currentQuarter"
@@ -484,6 +487,7 @@ interface PersonRow {
         <ng-template>
           @if (data(); as d) {
             <app-dues-kurin-rate-form
+              [currency]="currency()"
               [rates]="d.kurinRates"
               [quarters]="fromQuarters()"
               [current]="d.currentQuarter"
@@ -510,9 +514,11 @@ export class GroupDuesPage implements OnInit, OnDestroy {
   protected readonly backText = inject(Config).get('mode') === 'ios' ? 'Гурток' : undefined;
   protected readonly kinds = GROUP_KINDS;
   protected readonly kindLabels = KIND_LABELS;
-  protected readonly money = duesMoney;
+  /** What this kurin counts its вкладка in, from its край's profile. */
+  protected readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
+  protected readonly money = (amount: number): string => duesMoney(amount, this.currency());
   protected readonly balance = balanceLabel;
-  protected readonly amount = amountLabel;
+  protected readonly amount = (entry: DuesEntryDto): string => amountLabel(entry, this.currency());
   protected readonly signed = signedAmount;
   protected readonly key = quarterKey;
 
@@ -602,13 +608,13 @@ export class GroupDuesPage implements OnInit, OnDestroy {
     const group = this.groupRateNow();
     if (kurin) {
       if (group === null) {
-        return `Станиця ${duesMoney(kurin.stanytsiaFull)} · курінь ${duesMoney(kurin.kurinShare)}. Гурткову частину ще не задано, поки вона нуль.`;
+        return `Станиця ${this.money(kurin.stanytsiaFull)} · курінь ${this.money(kurin.kurinShare)}. Гурткову частину ще не задано, поки вона нуль.`;
       }
-      const reduced = kurin.stanytsiaReduced !== kurin.stanytsiaFull ? ` (пільгова ${duesMoney(kurin.stanytsiaReduced)})` : '';
+      const reduced = kurin.stanytsiaReduced !== kurin.stanytsiaFull ? ` (пільгова ${this.money(kurin.stanytsiaReduced)})` : '';
       const total = kurin.stanytsiaFull + kurin.kurinShare + group;
-      return `Квартальна вкладка ${duesMoney(total)} = станиця ${duesMoney(kurin.stanytsiaFull)}${reduced} · курінь ${duesMoney(kurin.kurinShare)} · гурток ${duesMoney(group)}`;
+      return `Квартальна вкладка ${this.money(total)} = станиця ${this.money(kurin.stanytsiaFull)}${reduced} · курінь ${this.money(kurin.kurinShare)} · гурток ${this.money(group)}`;
     }
-    const tail = group !== null ? `Гурток свою задав: ${duesMoney(group)} за квартал.` : 'Нарахувань поки немає.';
+    const tail = group !== null ? `Гурток свою задав: ${this.money(group)} за квартал.` : 'Нарахувань поки немає.';
     return `Курінь ще не задав станичної та курінної частини вкладки. ${tail}`;
   });
 
@@ -644,7 +650,7 @@ export class GroupDuesPage implements OnInit, OnDestroy {
 
   protected cellLine(cell: DuesAccountQuarterDto | null): string {
     if (!cell) return 'У цьому кварталі не нараховано';
-    return `Сплачено ${duesMoney(cell.paid.total)} з ${duesMoney(cell.charged.total)}${cell.isConcession ? ', пільгова' : ''}`;
+    return `Сплачено ${this.money(cell.paid.total)} з ${this.money(cell.charged.total)}${cell.isConcession ? ', пільгова' : ''}`;
   }
 
   protected entryLine(entry: DuesEntryDto): string {
@@ -696,7 +702,7 @@ export class GroupDuesPage implements OnInit, OnDestroy {
     }
     buttons.push({ text: 'Скасувати', role: 'cancel' });
     const sheet = await this.sheets.create({
-      header: `${KIND_LABELS[entry.kind]} · ${amountLabel(entry)}`,
+      header: `${KIND_LABELS[entry.kind]} · ${this.amount(entry)}`,
       subHeader: entry.memberName ?? undefined,
       buttons,
     });
@@ -792,7 +798,7 @@ export class GroupDuesPage implements OnInit, OnDestroy {
   private async confirmDelete(entry: DuesEntryDto): Promise<void> {
     const sheet = await this.sheets.create({
       header: 'Видалити операцію?',
-      subHeader: `${KIND_LABELS[entry.kind]} на ${duesMoney(entry.amount)} зникне з каси. Запис про неї лишиться в історії змін.`,
+      subHeader: `${KIND_LABELS[entry.kind]} на ${this.money(entry.amount)} зникне з каси. Запис про неї лишиться в історії змін.`,
       buttons: [
         { text: 'Видалити', role: 'destructive', data: 'delete' },
         { text: 'Скасувати', role: 'cancel' },

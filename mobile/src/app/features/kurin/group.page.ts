@@ -78,7 +78,7 @@ const SEARCH_FROM = 9;
  * for whoever the server lets create in this гурток; «Налаштувати провід» for whoever seats a
  * гурток's провід; and for the Звʼязковий alone (placement and виховники are his, web
  * canManageWholeKurin / canManageMentors) «Додати з куреня», moving a person to another гурток or
- * out of this one, and «Виховники».
+ * out of this one, and «Впорядники».
  */
 @Component({
   selector: 'app-group',
@@ -288,7 +288,7 @@ const SEARCH_FROM = 9;
 
       @if (manager()) {
         <ion-list [inset]="true" data-testid="group-mentors">
-          <ion-list-header><ion-label>Виховники</ion-label></ion-list-header>
+          <ion-list-header><ion-label>Впорядники</ion-label></ion-list-header>
           <ion-item-group>
             @switch (mentors().state) {
               @case ('loading') { <ion-item><ion-skeleton-text [animated]="true" style="height: 24px" /></ion-item> }
@@ -300,11 +300,11 @@ const SEARCH_FROM = 9;
                     <ion-label class="ion-text-wrap"><h3>{{ name(mentor) }}</h3></ion-label>
                   </ion-item>
                 } @empty {
-                  <ion-item><ion-label class="ion-text-wrap">Виховників ще не призначено.</ion-label></ion-item>
+                  <ion-item><ion-label class="ion-text-wrap">Впорядників ще не призначено.</ion-label></ion-item>
                 }
                 <ion-item [button]="true" [detail]="false" [disabled]="busy() !== null" (click)="chooseMentors()" data-testid="choose-mentors">
                   <ion-icon slot="start" name="people-outline" color="primary" aria-hidden="true" />
-                  <ion-label color="primary">Обрати виховників</ion-label>
+                  <ion-label color="primary">Обрати впорядників</ion-label>
                   @if (busy() === 'mentors') { <ion-spinner slot="end" name="crescent" /> }
                 </ion-item>
               }
@@ -526,7 +526,7 @@ export class GroupPage implements OnInit {
     if (!this.canCreate()) return;
     const modal = await this.modals.create({
       component: ProfileEditSheet,
-      componentProps: { member: null, placement: { groupKey: this.groupKey } },
+      componentProps: { member: null, placement: { groupKey: this.groupKey }, kurinKey: this.groupValue()?.kurinKey ?? null },
       presentingElement: this.presenting(),
     });
     await modal.present();
@@ -643,7 +643,7 @@ export class GroupPage implements OnInit {
     await this.place(member, kurinKey, null, `${member.firstName} ${member.lastName} більше не в гуртку.`);
   }
 
-  /** «Виховники» (web group-panel's dialog): the КВ people with access to this гурток. */
+  /** «Впорядники» (web group-panel's dialog): the КВ people with access to this гурток. */
   protected async chooseMentors(): Promise<void> {
     const kurinKey = this.groupValue()?.kurinKey;
     if (!kurinKey || this.busy()) return;
@@ -661,13 +661,13 @@ export class GroupPage implements OnInit {
     const modal = await this.modals.create({
       component: PeoplePickSheet,
       componentProps: {
-        title: 'Виховники',
+        title: 'Впорядники',
         people: candidates.map((member): PickPerson => ({ key: member.userKey!, member })),
         selected: before,
         multiple: true,
         doneLabel: 'Зберегти',
         emptyText: 'У КВ ще нікого немає.',
-        hint: 'Обери виховників із КВ, які матимуть доступ до цього гуртка.',
+        hint: 'Обери впорядників із КВ, які матимуть доступ до цього гуртка.',
       },
       presentingElement: this.presenting(),
     });
@@ -679,9 +679,9 @@ export class GroupPage implements OnInit {
     this.busy.set('mentors');
     try {
       await this.data.saveMentors(this.groupKey, changes);
-      await this.toasts.show('Виховників збережено.');
+      await this.toasts.show('Впорядників збережено.');
     } catch (error) {
-      await this.toasts.show(apiErrorText(error, 'Не вдалося зберегти виховників. Спробуй ще раз.'), 'danger');
+      await this.toasts.show(apiErrorText(error, 'Не вдалося зберегти впорядників. Спробуй ще раз.'), 'danger');
     } finally {
       await settle(this.data.groupMentors(this.groupKey), this.mentors);
       this.busy.set(null);

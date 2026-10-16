@@ -102,11 +102,28 @@ public class KurinRepositoryIntegrationTests
             unitOfWork.Kurins.Create(kurin);
             await unitOfWork.SaveChangesAsync();
             // Act
-            var fetched = await unitOfWork.Kurins.GetByNumberAsync(15);
+            var fetched = await unitOfWork.Kurins.GetByNumberAsync("ua", 15);
             // Assert
             Assert.NotNull(fetched);
             Assert.Equal(15, fetched!.Number);
         }
+    }
+
+    [Fact]
+    public async Task GetByNumberAsync_ShouldLookOnlyInTheNamedKrai()
+    {
+        using var context = CreateInMemoryDbContext();
+        var unitOfWork = new UnitOfWork(context);
+        var ukrainian = new Kurin(15);
+        var czech = new Kurin(15) { KraiCode = "cz" };
+        unitOfWork.Kurins.Create(ukrainian);
+        unitOfWork.Kurins.Create(czech);
+        await unitOfWork.SaveChangesAsync();
+
+        var fetched = await unitOfWork.Kurins.GetByNumberAsync("cz", 15);
+
+        Assert.Equal(czech.KurinKey, fetched!.KurinKey);
+        Assert.False(await unitOfWork.Kurins.ExistsAsync("pl", 15));
     }
 
     [Fact]
@@ -155,7 +172,7 @@ public class KurinRepositoryIntegrationTests
             unitOfWork.Kurins.Create(kurin);
             await unitOfWork.SaveChangesAsync();
             // Act
-            var exists = await unitOfWork.Kurins.ExistsAsync(4);
+            var exists = await unitOfWork.Kurins.ExistsAsync("ua", 4);
             // Assert
             Assert.True(exists);
         }

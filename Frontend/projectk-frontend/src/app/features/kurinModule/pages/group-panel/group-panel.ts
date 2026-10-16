@@ -158,7 +158,7 @@ export class GroupPanelComponent implements OnInit {
 
     if (this.canManageMentors) {
       items.push({
-        label: 'Виховники',
+        label: 'Впорядники',
         icon: 'pi pi-users',
         command: () => this.openMentorDialog()
       });

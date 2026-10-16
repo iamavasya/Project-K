@@ -1,17 +1,37 @@
 import { DuesEntryKind, INCOMING_DUES_KINDS } from '../models/dues.enums';
 import { DuesEntryDto, QuarterDto } from '../models/group-dues.dto';
 
-const hryvnia = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+/** Lilejka counted in гривні before краї had profiles; a response without a currency is still that. */
+export const DEFAULT_CURRENCY = 'UAH';
 
-/** «1 240 ₴», «−300 ₴». A real minus, not a hyphen. */
-export function money(amount: number): string {
+const amounts = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const symbols = new Map<string, string>();
+
+/** «₴», «Kč», «zł»: how the край's currency is written after an amount. */
+export function currencySymbol(currency: string = DEFAULT_CURRENCY): string {
+  let symbol = symbols.get(currency);
+  if (symbol === undefined) {
+    try {
+      symbol = new Intl.NumberFormat('uk-UA', { style: 'currency', currency, currencyDisplay: 'narrowSymbol' })
+        .formatToParts(0)
+        .find(part => part.type === 'currency')?.value ?? currency;
+    } catch {
+      symbol = currency;
+    }
+    symbols.set(currency, symbol);
+  }
+  return symbol;
+}
+
+/** «1 240 ₴», «−300 Kč». A real minus, not a hyphen. */
+export function money(amount: number, currency: string = DEFAULT_CURRENCY): string {
   const sign = amount < 0 ? '−' : '';
-  return `${sign}${hryvnia.format(Math.abs(amount))} ₴`;
+  return `${sign}${amounts.format(Math.abs(amount))} ${currencySymbol(currency)}`;
 }
 
 /** The same with an explicit plus, for movements in and out of the box. */
-export function signedMoney(amount: number): string {
-  return amount > 0 ? `+${money(amount)}` : money(amount);
+export function signedMoney(amount: number, currency: string = DEFAULT_CURRENCY): string {
+  return amount > 0 ? `+${money(amount, currency)}` : money(amount, currency);
 }
 
 /**
@@ -29,9 +49,9 @@ export function signedDuesAmount(entry: Pick<DuesEntryDto, 'kind' | 'amount'>): 
 }
 
 /** The amount as the history shows it: signed, or bare for an exchange. */
-export function duesAmountLabel(entry: Pick<DuesEntryDto, 'kind' | 'amount'>): string {
+export function duesAmountLabel(entry: Pick<DuesEntryDto, 'kind' | 'amount'>, currency: string = DEFAULT_CURRENCY): string {
   const signed = signedDuesAmount(entry);
-  return signed === null ? money(entry.amount) : signedMoney(signed);
+  return signed === null ? money(entry.amount, currency) : signedMoney(signed, currency);
 }
 
 /** Whether the history paints the amount as coming in; null for an exchange. */

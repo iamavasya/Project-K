@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.MeModule.Models;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -22,13 +23,15 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
     private readonly DuesLedgerReader _ledgers;
     private readonly ICurrentUserContext _currentUser;
     private readonly TimeProvider _time;
+    private readonly IKraiProfileProvider _profiles;
 
-    public GetMyDuesQueryHandler(MePerson me, DuesLedgerReader ledgers, ICurrentUserContext currentUser, TimeProvider time)
+    public GetMyDuesQueryHandler(MePerson me, DuesLedgerReader ledgers, ICurrentUserContext currentUser, TimeProvider time, IKraiProfileProvider profiles)
     {
         _me = me;
         _ledgers = ledgers;
         _currentUser = currentUser;
         _time = time;
+        _profiles = profiles;
     }
 
     public async Task<ServiceResult<IReadOnlyList<MyDuesDto>>> Handle(GetMyDuesQuery request, CancellationToken cancellationToken)
@@ -55,6 +58,7 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
             {
                 Kurin = MeKurins.Ref(membership, _currentUser.KurinKey),
                 GroupName = membership.GroupName,
+                Currency = await _profiles.CurrencyForKurinAsync(membership.KurinKey, cancellationToken),
                 QuarterYear = quarter.Year,
                 QuarterNumber = quarter.Number,
                 Balance = accounts.Sum(a => a.Balance),

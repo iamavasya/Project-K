@@ -40,7 +40,7 @@ public class EnterDemoCommandHandlerTests
         unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
         unitOfWork.Setup(u => u.Leaderships).Returns(_leaderships.Object);
         _unitOfWork = unitOfWork.Object;
-        _kurins.Setup(k => k.GetByNumberAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(_demoKurin);
+        _kurins.Setup(k => k.GetByNumberAsync("ua", 1, It.IsAny<CancellationToken>())).ReturnsAsync(_demoKurin);
         _loginResponses
             .Setup(f => f.CreateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((AppUser user, CancellationToken _) => new LoginUserResponse { UserKey = user.Id, Email = user.Email! });

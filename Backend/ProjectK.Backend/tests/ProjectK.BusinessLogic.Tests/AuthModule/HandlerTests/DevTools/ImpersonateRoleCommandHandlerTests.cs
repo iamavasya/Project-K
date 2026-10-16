@@ -138,7 +138,7 @@ public class ImpersonateRoleCommandHandlerTests
     {
         _currentUser.SetupGet(c => c.KurinKey).Returns((Guid?)null);
         var demo = new Kurin(1) { KurinKey = Guid.NewGuid() };
-        _kurins.Setup(r => r.GetByNumberAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(demo);
+        _kurins.Setup(r => r.GetByNumberAsync("ua", 1, It.IsAny<CancellationToken>())).ReturnsAsync(demo);
         var holder = Account("k@example.com");
         _leaderships
             .Setup(r => r.GetActiveOfficeMemberKeysAsync(It.IsAny<IReadOnlyCollection<LeadershipRole>>(), demo.KurinKey, null, It.IsAny<CancellationToken>()))
