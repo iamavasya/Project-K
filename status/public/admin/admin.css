@@ -45,3 +45,4 @@ td code { font-size: 12px; }
 @media (max-width: 760px) {
   .notice-form { grid-template-columns: minmax(0, 1fr); }
 }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

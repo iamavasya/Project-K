@@ -48,7 +48,7 @@ export function parsePing(input: unknown): { ping: Ping } | { error: string } {
     if (typeof v !== "number" || !Number.isInteger(v) || v < 0 || v > MAX_COUNT) return { error: `${key}: ціле від 0 до ${MAX_COUNT}` };
     counts[key] = v;
   }
-  return { ping: { instanceId: id, version: o.version, kind, krais: [...new Set(krais as string[])].sort(), ...counts } };
+  return { ping: { instanceId: id, version: o.version, kind, krais: [...new Set(krais as string[])].sort((a, b) => a.localeCompare(b)), ...counts } };
 }
 
 const meta = (env: Env, key: string) => env.DB.prepare("SELECT value FROM meta WHERE key = ?").bind(key).first<string>("value");
