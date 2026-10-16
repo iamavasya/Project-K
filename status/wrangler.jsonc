@@ -1,0 +1,45 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "projectk-status",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  // The public page and /admin are static files; only the API runs the Worker.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/v1/*", "/health"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "status",
+      // `wrangler d1 create status` prints the id; put it here before the first deploy.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // One trigger of the five a Free account has. Every 2 minutes keeps D1 writes near 9k a day
+  // for four targets; the daily housekeeping runs on the 03:00 UTC tick.
+  "triggers": { "crons": ["*/2 * * * *"] },
+  "vars": {
+    // What the cron checks. kind "health" reads Lilejka's /health JSON (status + version);
+    // "http" only needs a 2xx. Ids are stored in D1, so renaming one starts a new history.
+    "TARGETS": [
+      { "id": "api", "name": "API", "url": "https://api-projectk.rostyslav-mukha.dev/health", "kind": "health" },
+      { "id": "web", "name": "Вебзастосунок", "url": "https://projectk.rostyslav-mukha.dev/", "kind": "http" },
+      { "id": "catalog", "name": "Каталог вмілостей", "url": "https://catalog.rostyslav-mukha.dev/health", "kind": "health" },
+      { "id": "docs", "name": "Документація", "url": "https://docs-projectk.rostyslav-mukha.dev/", "kind": "http" }
+    ],
+    // Same Access team as the catalog; the AUD is the application guarding /admin and /v1/admin.
+    "ACCESS_TEAM_DOMAIN": "https://billowing-lake-958a.cloudflareaccess.com",
+    "ACCESS_AUD": "",
+    "OWNER_EMAILS": "snowyfl1cker@gmail.com",
+    // Where "the latest Lilejka" comes from for the ping reply.
+    "RELEASES_REPO": "iamavasya/Project-K",
+    // Alerts go here when TELEGRAM_BOT_TOKEN is set (`wrangler secret put TELEGRAM_BOT_TOKEN`).
+    "TELEGRAM_CHAT_ID": ""
+  },
+  // Cache API only works on a custom domain, not on *.workers.dev.
+  "routes": [{ "pattern": "status.rostyslav-mukha.dev", "custom_domain": true }],
+  "observability": { "enabled": true }
+}

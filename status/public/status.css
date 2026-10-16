@@ -1,0 +1,67 @@
+/* Status colours: green is the brand primary, red the brand danger; yellow is the one extra. */
+:root { --warn: #b7791f; --warn-50: #fdf3e1; --none: var(--line); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --warn: #e3b04b; --warn-50: #2c2414; } }
+:root[data-theme="dark"] { --warn: #e3b04b; --warn-50: #2c2414; }
+
+[data-state="up"] { --state: var(--primary); --state-50: var(--primary-50); }
+[data-state="degraded"], [data-state="maintenance"] { --state: var(--warn); --state-50: var(--warn-50); }
+[data-state="down"] { --state: var(--danger); --state-50: var(--danger-50); }
+[data-state="none"] { --state: var(--faint); --state-50: var(--surface); }
+
+.page { max-width: 56rem; }
+
+.overall { display: flex; align-items: center; gap: 16px; background: var(--state-50); border-color: transparent; }
+.overall h1 { font-size: 22px; }
+.overall p { font-size: 13px; margin-top: 2px; }
+.dot { width: 14px; height: 14px; border-radius: 50%; background: var(--state); flex: none; box-shadow: 0 0 0 6px color-mix(in srgb, var(--state) 18%, transparent); }
+
+.tile-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
+.tile-head h2 { margin: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; font-size: 12px; color: var(--muted); }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; background: var(--state); }
+.swatch[data-state="none"] { background: var(--none); }
+
+.targets { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.target { padding: 16px 0; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.target:first-child { border-top: 0; padding-top: 4px; }
+.target-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.target-head h3 { font-size: 15px; }
+.target-head .state { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--state); }
+
+.bars { display: flex; gap: 2px; height: 32px; align-items: stretch; }
+.bars span { flex: 1 1 0; min-width: 0; border-radius: 2px; background: var(--state); cursor: default; }
+.bars span[data-state="none"] { background: var(--none); }
+.bars span:hover, .bars span.active { opacity: 0.7; }
+.scale { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+.scale .uptime { color: var(--ink-soft); font-weight: 600; }
+.scale .from-30 { display: none; }
+.caption { min-height: 18px; font-size: 12px; color: var(--muted); }
+
+.hours { display: flex; gap: 2px; height: 28px; align-items: flex-end; }
+.hours span { flex: 1 1 0; min-width: 0; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--state) 55%, transparent); }
+.hours span[data-state="none"] { background: var(--none); height: 3px !important; }
+.hours-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+
+.notices { display: grid; gap: 12px; }
+.notice { border-left: 4px solid var(--state); display: grid; gap: 6px; }
+.notice h2 { margin: 0; font-size: 17px; }
+.notice .meta { font-size: 12px; color: var(--muted); }
+.notice p { white-space: pre-line; }
+
+.history { list-style: none; margin: 0; padding: 0; display: grid; }
+.history li { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 4px 16px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.history li:first-child { border-top: 0; }
+.history time { color: var(--muted); font-size: 13px; }
+.history .what { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.history .what::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--state); flex: none; transform: translateY(-1px); }
+.history .detail { grid-column: 2; color: var(--muted); font-size: 13px; white-space: pre-line; }
+
+@media (max-width: 640px) {
+  /* 90 bars on a phone are a millimetre each; the last 30 days carry the point. */
+  .bars span:nth-child(-n + 60) { display: none; }
+  .scale .from-90 { display: none; }
+  .scale .from-30 { display: inline; }
+  .history li { grid-template-columns: minmax(0, 1fr); }
+  .history .detail { grid-column: 1; }
+}

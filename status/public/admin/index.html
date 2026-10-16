@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Адмінка статусу · Лілейка</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/brand.css">
+  <link rel="stylesheet" href="/status.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+  <script src="/theme.js"></script>
+  <script src="/admin/admin.js" defer></script>
+</head>
+<body>
+  <header class="toolbar">
+    <a class="lockup" href="/admin" aria-label="Лілейка, адмінка статусу">
+      <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(45 50 50)"><path d="M50 44 C54 33 62 28 71 33 C79 38 80 48 73 53 C68 56 62 55 60 51"/><path d="M50 44 C46 33 38 28 29 33 C21 38 20 48 27 53 C32 56 38 55 40 51"/><path d="M33 60 H67"/><path d="M50 88 C46 80 46 71 50 65 C54 71 54 80 50 88 Z"/><path class="mark-center" d="M50 7 C45 24 45 43 50 57 C55 43 55 24 50 7 Z"/></g></svg><span class="wordmark">Лілейка</span><span class="sub">статус · адмінка</span>
+    </a>
+    <nav>
+      <a class="navlink" href="/">Публічна сторінка</a>
+      <button class="btn btn-secondary" id="check-now" type="button">Перевірити зараз</button>
+      <button class="btn btn-text" data-theme-toggle type="button">Темна тема</button>
+    </nav>
+  </header>
+
+  <main class="page wide">
+    <header class="page-head">
+      <h1>Телеметрія інстансів</h1>
+      <p id="who">Перевіряю вхід…</p>
+    </header>
+
+    <p id="error" class="tile error" hidden></p>
+
+    <section class="stats" id="stats" aria-label="Підсумки за живими інстансами"></section>
+
+    <section class="tile">
+      <h2>За 90 днів</h2>
+      <div class="charts" id="charts"></div>
+    </section>
+
+    <div class="split">
+      <section class="tile"><h2>Версії</h2><ul class="counts" id="by-version"></ul></section>
+      <section class="tile"><h2>Тип</h2><ul class="counts" id="by-kind"></ul></section>
+      <section class="tile"><h2>Краї</h2><ul class="counts" id="by-krai"></ul></section>
+      <section class="tile"><h2>Країни</h2><ul class="counts" id="by-country"></ul></section>
+    </div>
+
+    <section class="tile">
+      <h2>Інстанси</h2>
+      <p class="muted small">Живі пінгували за останні 7 днів. Прибрати варто лише сміття: справжній інстанс з'явиться знову з наступним пінгом.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Інстанс</th><th>Тип</th><th>Версія</th><th>Краї</th><th>Країна</th><th class="num">Куренів</th><th class="num">Членів</th><th class="num">Активні 7 д</th><th class="num">Запити 24 г</th><th class="num">5xx 24 г</th><th>Останній пінг</th><th></th></tr></thead>
+          <tbody id="instances"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="tile" aria-labelledby="notices-title">
+      <h2 id="notices-title">Оголошення на сторінці статусу</h2>
+      <form id="notice-form" class="notice-form">
+        <label class="field">Тип<select name="kind">
+          <option value="incident">Збій</option>
+          <option value="maintenance">Планові роботи</option>
+          <option value="notice">Оголошення</option>
+        </select></label>
+        <label class="field grow">Заголовок<input name="title" required maxlength="140" placeholder="Наприклад: не працює вхід через Google"></label>
+        <label class="field">Початок<input name="startsAt" type="datetime-local"></label>
+        <label class="field full">Текст<textarea name="body" rows="3" maxlength="4000" placeholder="Що сталося, кого стосується, коли чекати виправлення"></textarea></label>
+        <fieldset class="field full targets-pick" id="targets-pick"><legend>Сервіси (нічого не вибрано = усі)</legend></fieldset>
+        <div class="full"><button class="btn" type="submit">Опублікувати</button></div>
+      </form>
+      <ul class="admin-notices" id="admin-notices"></ul>
+    </section>
+  </main>
+</body>
+</html>

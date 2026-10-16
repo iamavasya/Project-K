@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Статус · Лілейка</title>
+  <meta name="description" content="Чи працюють Лілейка, її API, каталог вмілостей і документація, і як вони працювали останні 90 днів.">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/manrope-var-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/brand.css">
+  <link rel="stylesheet" href="/status.css">
+  <script src="/theme.js"></script>
+  <script src="/status.js" defer></script>
+</head>
+<body>
+  <header class="toolbar">
+    <a class="lockup" href="/" aria-label="Лілейка, статус">
+      <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(45 50 50)"><path d="M50 44 C54 33 62 28 71 33 C79 38 80 48 73 53 C68 56 62 55 60 51"/><path d="M50 44 C46 33 38 28 29 33 C21 38 20 48 27 53 C32 56 38 55 40 51"/><path d="M33 60 H67"/><path d="M50 88 C46 80 46 71 50 65 C54 71 54 80 50 88 Z"/><path class="mark-center" d="M50 7 C45 24 45 43 50 57 C55 43 55 24 50 7 Z"/></g></svg><span class="wordmark">Лілейка</span><span class="sub">статус</span>
+    </a>
+    <nav>
+      <a class="navlink" href="https://projectk.rostyslav-mukha.dev">До Лілейки</a>
+      <button class="btn btn-text" data-theme-toggle type="button">Темна тема</button>
+    </nav>
+  </header>
+
+  <main class="page">
+    <section class="tile overall" id="overall" data-state="none" aria-live="polite">
+      <span class="dot" aria-hidden="true"></span>
+      <div>
+        <h1 id="overall-title">Завантажую стан…</h1>
+        <p class="muted" id="updated"></p>
+      </div>
+    </section>
+
+    <div id="notices" class="notices"></div>
+
+    <section class="tile" aria-labelledby="services-title">
+      <div class="tile-head">
+        <h2 id="services-title">Сервіси</h2>
+        <ul class="legend" aria-label="Кольори">
+          <li><span class="swatch" data-state="up"></span>працює</li>
+          <li><span class="swatch" data-state="degraded"></span>повільно або збої</li>
+          <li><span class="swatch" data-state="down"></span>лежав</li>
+          <li><span class="swatch" data-state="none"></span>немає даних</li>
+        </ul>
+      </div>
+      <ul id="targets" class="targets"></ul>
+    </section>
+
+    <section class="tile" aria-labelledby="history-title">
+      <h2 id="history-title">Останні 14 днів</h2>
+      <ul id="history" class="history"></ul>
+      <p id="history-empty" class="muted" hidden>За два тижні без подій.</p>
+    </section>
+  </main>
+
+  <footer class="site">Перевірки кожні 2 хвилини. Смужка дня червона від 1 % невдалих перевірок, жовта від першого збою або 5 % повільних відповідей.</footer>
+</body>
+</html>
