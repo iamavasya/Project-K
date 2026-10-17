@@ -15,6 +15,7 @@ using Microsoft.OpenApi;
 using ProjectK.API.Authorization;
 using ProjectK.API.Helpers;
 using ProjectK.API.Hosting;
+using ProjectK.API.Middleware;
 using ProjectK.API.Serialization;
 using ProjectK.API.Swagger;
 using ProjectK.BusinessLogic.Behaviors;
@@ -218,6 +219,7 @@ public static class Program
         ConfigureRateLimiting(builder.Services, builder.Configuration);
 
         builder.Services.AddMemoryCache();
+        builder.Services.AddSingleton<RequestTimings>();
         builder.Services.AddHttpClient();
         builder.Services.AddAutoMapper(cfg => { cfg.AddCollectionMappers(); }, typeof(KurinModuleProfile));
         builder.Services.AddMediatR(cfg =>
@@ -326,6 +328,8 @@ public static class Program
 
         var app = builder.Build();
 
+        // First, so the time covers every middleware after it, not just the controller.
+        app.UseMiddleware<RequestTimingMiddleware>();
         app.UseForwardedHeaders();
         app.UseMiddleware<ProjectK.API.Middleware.ClientIpMiddleware>();
         // Outside the exception handler, so a request that ends in its 500 is counted as one.
@@ -381,17 +385,19 @@ public static class Program
 
         app.MapControllers();
 
-        app.MapGet("/health", (IConfiguration config) => Results.Ok(new
+        app.MapGet("/health", (IConfiguration config, RequestTimings timings) => Results.Ok(new
         {
             status = "ready",
             version = config["ReleaseInfo:Version"] ?? UnknownValue,
             // null, not "unknown", when the release carries no code name: the key stays in the
             // payload so nothing reading it has to change, and absence reads as absence.
             codeName = ResolveCodeName(config),
-            utc = DateTimeOffset.UtcNow
+            utc = DateTimeOffset.UtcNow,
+            // What the status page draws: the API's own time on real requests, not the network's.
+            api = timings.Snapshot()
         }))
         .WithSummary("Reports that the API is up, and which release is running.")
-        .WithDescription("What the container health check and the deployment pipeline read. Answers without touching the database, so it says the process is serving — not that everything behind it is well.");
+        .WithDescription("What the container health check and the deployment pipeline read. Answers without touching the database, so it says the process is serving — not that everything behind it is well. `api` is the median and 95th percentile of the server's own time on real requests over the last 15 minutes, null without any.");
 
         app.MapGet("/", () => "Backend Started")
             .WithSummary("A plain sign of life at the root, for anyone who opens the API in a browser.");
