@@ -798,7 +798,7 @@ describe('MemberCardComponent', () => {
       numberLocale: 'uk-UA',
       currentQuarter: { year: 2026, number: 4 },
       balance: -300,
-      quarterRate: { stanytsia: 240, kurin: 15, group: 45, total: 300 },
+      quarterRate: { stanytsia: 240, krai: 0, kurin: 15, group: 45, total: 300 },
       isConcessionNow: false,
       currentGroupKey: member.groupKey,
       currentGroupName: 'Соколи',

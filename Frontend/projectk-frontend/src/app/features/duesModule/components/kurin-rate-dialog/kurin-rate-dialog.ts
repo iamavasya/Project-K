@@ -50,7 +50,7 @@ export class KurinRateDialogComponent {
 
   readonly maxArticles = MAX_DUES_ARTICLES;
   readonly maxNameLength = MAX_DUES_ARTICLE_NAME;
-  readonly recipientOptions = [DuesRecipient.Stanytsia, DuesRecipient.Kurin]
+  readonly recipientOptions = [DuesRecipient.Stanytsia, DuesRecipient.Krai, DuesRecipient.Kurin]
     .map(value => ({ value, label: DUES_RECIPIENT_LABELS[value] }));
 
   readonly fromQuarterOptions = computed(() => fromQuarterOptions(this.years(), this.currentQuarter()));

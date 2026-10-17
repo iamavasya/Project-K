@@ -67,18 +67,23 @@ describe('KurinDuesComponent', () => {
       stanytsiaFull: 240,
       stanytsiaReduced: 180,
       kurinShare: 15,
-      kurinReduced: 15
+      kurinReduced: 15,
+      kraiFull: 0,
+      kraiReduced: 0
     }],
     box: { cash: 255, card: 0, total: 255, toForward: 240, own: 15, inTransit: 100 },
+    toStanytsia: 0,
+    toKrai: 0,
     sentToStanytsia: 0,
+    sentToKrai: 0,
     groups: [
       { groupKey: 'g-sokoly', groupName: 'Соколи', owedUp: 510, transferred: 355, received: 255, outstanding: 155, inTransit: 100 },
       { groupKey: 'g-levy', groupName: 'Леви', owedUp: 0, transferred: 0, received: 0, outstanding: 0, inTransit: 0 }
     ],
     quarters: [{
       quarter: q(2026, 4),
-      groups: [{ groupKey: 'g-sokoly', groupName: 'Соколи', youthCount: 9, expectedUp: 2295, collectedUp: 255, debtUp: 2040, stanytsiaExpected: 2160, stanytsiaCollected: 240 }],
-      total: { groupKey: '', groupName: 'Разом', youthCount: 9, expectedUp: 2295, collectedUp: 255, debtUp: 2040, stanytsiaExpected: 2160, stanytsiaCollected: 240 }
+      groups: [{ groupKey: 'g-sokoly', groupName: 'Соколи', youthCount: 9, expectedUp: 2295, collectedUp: 255, debtUp: 2040, stanytsiaExpected: 2160, stanytsiaCollected: 240, kraiExpected: 0, kraiCollected: 0 }],
+      total: { groupKey: '', groupName: 'Разом', youthCount: 9, expectedUp: 2295, collectedUp: 255, debtUp: 2040, stanytsiaExpected: 2160, stanytsiaCollected: 240, kraiExpected: 0, kraiCollected: 0 }
     }],
     transfers: [
       transfer({ duesEntryKey: 't-1', isReceived: true, receivedByName: 'Скарбник' }),
@@ -125,6 +130,20 @@ describe('KurinDuesComponent', () => {
     expect(component.pendingTransfers().length).toBe(2);
     expect(component.outstandingTotal()).toBe(155);
     expect(text()).toContain('чекають підтвердження: 2');
+  });
+
+  it('показує окремо станичні й крайові гроші, щойно курінь має крайову статтю', () => {
+    create();
+    expect(component.hasKrai()).toBeFalse();
+    expect(text()).not.toContain('До передачі в край');
+
+    TestBed.resetTestingModule();
+    create({ ...data, rates: [{ ...data.rates[0], kraiFull: 60, kraiReduced: 30 }], toStanytsia: 240, toKrai: 60, sentToKrai: 120 });
+
+    expect(component.hasKrai()).toBeTrue();
+    expect(text()).toContain('До передачі в край');
+    expect(text()).toContain('передано 120');
+    expect(text()).toContain('До краю');
   });
 
   it('клік по гуртку лишає лише його передачі; перемикач — лише ті, що в дорозі', () => {

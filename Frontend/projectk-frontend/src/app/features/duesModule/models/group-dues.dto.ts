@@ -28,6 +28,9 @@ export interface KurinDuesRateDto {
   stanytsiaReduced: number;
   kurinShare: number;
   kurinReduced: number;
+  /** What goes to the край on its own transfer; zero until the kurin names a край стаття. */
+  kraiFull: number;
+  kraiReduced: number;
 }
 
 export interface GroupDuesRateDto {
@@ -37,6 +40,7 @@ export interface GroupDuesRateDto {
 
 export interface DuesAmountDto {
   stanytsia: number;
+  krai: number;
   kurin: number;
   group: number;
   total: number;
@@ -167,6 +171,8 @@ export interface KurinDuesQuarterGroupDto {
   debtUp: number;
   stanytsiaExpected: number;
   stanytsiaCollected: number;
+  kraiExpected: number;
+  kraiCollected: number;
 }
 
 export interface KurinDuesQuarterDto {
@@ -197,9 +203,13 @@ export interface KurinDuesDto {
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
   rates: KurinDuesRateDto[];
-  /** `toForward` is what still goes to the станиця; `inTransit` — handed over by гуртки, not confirmed yet. */
+  /** `toForward` is what still goes to the станиця and the край; `inTransit` — handed over by гуртки, not confirmed yet. */
   box: DuesBoxDto;
+  /** Of `box.toForward`, the станиця's and the край's. */
+  toStanytsia: number;
+  toKrai: number;
   sentToStanytsia: number;
+  sentToKrai: number;
   groups: KurinGroupHandoverDto[];
   quarters: KurinDuesQuarterDto[];
   transfers: DuesTransferDto[];

@@ -691,6 +691,14 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<int>("FromQuarter")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("KraiFull")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("KraiReduced")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<Guid>("KurinKey")
                         .HasColumnType("uniqueidentifier");
 

@@ -142,5 +142,5 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
     private static QuarterDto Quarter(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
 
     private static DuesAmountDto Amount(DuesAmount a) =>
-        new() { Stanytsia = a.Stanytsia, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
+        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
 }

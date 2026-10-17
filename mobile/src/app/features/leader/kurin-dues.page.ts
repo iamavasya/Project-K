@@ -254,8 +254,17 @@ const DUES_ERRORS: Record<string, string> = {
                           <h3>До передачі в станицю</h3>
                           <p>передано {{ money(d.sentToStanytsia) }}</p>
                         </ion-label>
-                        <span slot="end" class="money">{{ money(d.box.toForward) }}</span>
+                        <span slot="end" class="money">{{ money(d.toStanytsia) }}</span>
                       </ion-item>
+                      @if (hasKrai()) {
+                        <ion-item data-testid="to-krai">
+                          <ion-label class="ion-text-wrap">
+                            <h3>До передачі в край</h3>
+                            <p>передано {{ money(d.sentToKrai) }}</p>
+                          </ion-label>
+                          <span slot="end" class="money">{{ money(d.toKrai) }}</span>
+                        </ion-item>
+                      }
                       <ion-item>
                         <ion-label class="ion-text-wrap">
                           <h3>В дорозі від гуртків</h3>
@@ -354,6 +363,7 @@ const DUES_ERRORS: Record<string, string> = {
                                 <h3>{{ group.groupName }}</h3>
                                 <p>{{ quarterLine(group) }}</p>
                                 <p>До станиці {{ money(group.stanytsiaCollected) }} з {{ money(group.stanytsiaExpected) }}</p>
+                                @if (hasKrai()) { <p>До краю {{ money(group.kraiCollected) }} з {{ money(group.kraiExpected) }}</p> }
                               </ion-label>
                               <span slot="end" class="money" [class.debt]="group.debtUp > 0" [class.ok]="group.debtUp <= 0">
                                 {{ group.debtUp > 0 ? money(group.debtUp) : 'сплачено' }}
@@ -365,6 +375,7 @@ const DUES_ERRORS: Record<string, string> = {
                               <h3>Разом</h3>
                               <p>{{ quarterLine(row.total) }}</p>
                               <p>До станиці {{ money(row.total.stanytsiaCollected) }} з {{ money(row.total.stanytsiaExpected) }}</p>
+                              @if (hasKrai()) { <p>До краю {{ money(row.total.kraiCollected) }} з {{ money(row.total.kraiExpected) }}</p> }
                             </ion-label>
                             <span slot="end" class="money" [class.debt]="row.total.debtUp > 0" [class.ok]="row.total.debtUp <= 0">
                               {{ row.total.debtUp > 0 ? money(row.total.debtUp) : 'сплачено' }}
@@ -618,6 +629,11 @@ export class KurinDuesPage implements OnInit, OnDestroy {
   });
   protected readonly ratesText = computed(() => kurinRatesText(this.rateNow(), this.currency(), this.numberLocale()));
   protected readonly standardArticles = computed(() => articlesAreStandard(this.rateNow()));
+  /** The web's: once the kurin has a край стаття or sent the край anything, its money shows apart. */
+  protected readonly hasKrai = computed(() => {
+    const d = this.data();
+    return !!d && (d.toKrai !== 0 || d.sentToKrai !== 0 || d.rates.some((r) => r.kraiFull > 0));
+  });
   protected readonly pending = computed(() => (this.data()?.transfers ?? []).filter((t) => !t.isReceived));
   protected readonly outstanding = computed(() => (this.data()?.groups ?? []).reduce((sum, g) => sum + g.outstanding, 0));
 

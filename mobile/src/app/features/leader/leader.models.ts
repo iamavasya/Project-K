@@ -73,7 +73,8 @@ export type DuesEntryKind =
   | 'Expense'
   | 'OtherIncome'
   | 'Exchange'
-  | 'Correction';
+  | 'Correction'
+  | 'TransferToKrai';
 
 export type DuesPaymentMethod = 'Cash' | 'Card';
 
@@ -95,7 +96,7 @@ export interface DuesArticleDto {
   name: string;
   amount: number;
   reducedAmount: number;
-  recipient: 'Stanytsia' | 'Kurin';
+  recipient: 'Stanytsia' | 'Krai' | 'Kurin';
 }
 
 /** The kurin's rate from a quarter on: the totals by recipient, and the статті they add up from. */
@@ -105,6 +106,8 @@ export interface KurinDuesRateDto {
   stanytsiaReduced: number;
   kurinShare: number;
   kurinReduced: number;
+  kraiFull: number;
+  kraiReduced: number;
   articles: DuesArticleDto[];
 }
 
@@ -115,6 +118,7 @@ export interface GroupDuesRateDto {
 
 export interface DuesAmountDto {
   stanytsia: number;
+  krai: number;
   kurin: number;
   group: number;
   total: number;
@@ -264,6 +268,8 @@ export interface KurinDuesQuarterGroupDto {
   debtUp: number;
   stanytsiaExpected: number;
   stanytsiaCollected: number;
+  kraiExpected: number;
+  kraiCollected: number;
 }
 
 export interface KurinDuesQuarterDto {
@@ -289,9 +295,13 @@ export interface KurinDuesDto {
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
   rates: KurinDuesRateDto[];
-  /** `toForward` is what still goes to the станиця; `inTransit` — handed over by гуртки, not confirmed yet. */
+  /** `toForward` is what still goes to the станиця and the край; `inTransit` — handed over by гуртки, not confirmed yet. */
   box: DuesBoxDto;
+  /** Of `box.toForward`, the станиця's and the край's. */
+  toStanytsia: number;
+  toKrai: number;
   sentToStanytsia: number;
+  sentToKrai: number;
   groups: KurinGroupHandoverDto[];
   /** Oldest quarter first; only quarters somebody was charged in. */
   quarters: KurinDuesQuarterDto[];

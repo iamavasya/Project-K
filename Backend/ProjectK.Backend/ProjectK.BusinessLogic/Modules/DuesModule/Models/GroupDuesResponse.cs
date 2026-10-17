@@ -60,6 +60,8 @@ public sealed class KurinDuesRateDto
     public decimal StanytsiaReduced { get; init; }
     public decimal KurinShare { get; init; }
     public decimal KurinReduced { get; init; }
+    public decimal KraiFull { get; init; }
+    public decimal KraiReduced { get; init; }
 
     public static KurinDuesRateDto From(KurinDuesRate rate, QuarterDto fromQuarter) => new()
     {
@@ -78,7 +80,9 @@ public sealed class KurinDuesRateDto
         StanytsiaFull = rate.StanytsiaFull,
         StanytsiaReduced = rate.StanytsiaReduced,
         KurinShare = rate.KurinShare,
-        KurinReduced = rate.KurinReduced ?? rate.KurinShare
+        KurinReduced = rate.KurinReduced ?? rate.KurinShare,
+        KraiFull = rate.KraiFull,
+        KraiReduced = rate.KraiReduced
     };
 }
 
@@ -99,6 +103,7 @@ public sealed class GroupDuesRateDto
 public sealed class DuesAmountDto
 {
     public decimal Stanytsia { get; init; }
+    public decimal Krai { get; init; }
     public decimal Kurin { get; init; }
     public decimal Group { get; init; }
     public decimal Total { get; init; }

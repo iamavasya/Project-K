@@ -100,8 +100,8 @@
   <section class="kurin-tile" aria-labelledby="locale-title">
     <div class="lil-tile-head">
       <div>
-        <h2 id="locale-title">Валюта й час</h2>
-        <p>Валюта, в якій курені краю рахують вкладку, і часовий пояс, за яким повторюються події в порядку денному.</p>
+        <h2 id="locale-title">Валюта, числа й час</h2>
+        <p>Валюта, в якій курені краю рахують вкладку, як записуються суми, і часовий пояс, за яким повторюються події й починається новий квартал вкладки.</p>
       </div>
     </div>
 
@@ -119,6 +119,23 @@
         [placeholder]="'Як за замовчуванням (' + defaultCurrency + ')'"
         [disabled]="saving()"
         appendTo="body" />
+    </div>
+
+    <div class="krai-field">
+      <label for="krai-number-locale">Запис чисел</label>
+      <p-select
+        inputId="krai-number-locale"
+        [options]="numberLocaleOptions()"
+        optionLabel="label"
+        optionValue="code"
+        [filter]="true"
+        [showClear]="true"
+        [ngModel]="numberLocale()"
+        (ngModelChange)="numberLocale.set($event ?? null)"
+        [placeholder]="'Як за замовчуванням (' + defaultNumberLocale + ')'"
+        [disabled]="saving()"
+        appendTo="body" />
+      <small class="krai-muted">Розділювач тисяч і копійок у сумах вкладки.</small>
     </div>
 
     <div class="krai-field">

@@ -9,7 +9,8 @@ export enum DuesEntryKind {
   Expense = 'Expense',
   OtherIncome = 'OtherIncome',
   Exchange = 'Exchange',
-  Correction = 'Correction'
+  Correction = 'Correction',
+  TransferToKrai = 'TransferToKrai'
 }
 
 export enum DuesPaymentMethod {
@@ -17,14 +18,16 @@ export enum DuesPaymentMethod {
   Card = 'Card'
 }
 
-/** Where the money of a стаття goes: up to the станиця (and through it the край), or kept by the kurin. */
+/** Where the money of a стаття goes: up to the станиця, up to the край on its own transfer, or kept by the kurin. */
 export enum DuesRecipient {
   Stanytsia = 'Stanytsia',
-  Kurin = 'Kurin'
+  Kurin = 'Kurin',
+  Krai = 'Krai'
 }
 
 export const DUES_RECIPIENT_LABELS: Record<DuesRecipient, string> = {
   [DuesRecipient.Stanytsia]: 'Станиці',
+  [DuesRecipient.Krai]: 'Краю',
   [DuesRecipient.Kurin]: 'Куреню'
 };
 
@@ -33,6 +36,7 @@ export const DUES_ENTRY_KIND_LABELS: Record<DuesEntryKind, string> = {
   [DuesEntryKind.Refund]: 'Повернення',
   [DuesEntryKind.TransferToKurin]: 'Передача курінному',
   [DuesEntryKind.TransferToStanytsia]: 'Передача в станицю',
+  [DuesEntryKind.TransferToKrai]: 'Передача в край',
   [DuesEntryKind.Expense]: 'Витрата',
   [DuesEntryKind.OtherIncome]: 'Інший прихід',
   [DuesEntryKind.Exchange]: 'Обмін готівка ↔ картка',
@@ -62,11 +66,12 @@ export const GROUP_DUES_KINDS: readonly DuesEntryKind[] = [
   DuesEntryKind.Correction
 ];
 
-/** What the kurin's own box records: nothing personal, and what goes up to the станиця. */
+/** What the kurin's own box records: nothing personal, and what goes up to the станиця and the край. */
 export const KURIN_DUES_KINDS: readonly DuesEntryKind[] = [
   DuesEntryKind.Expense,
   DuesEntryKind.OtherIncome,
   DuesEntryKind.TransferToStanytsia,
+  DuesEntryKind.TransferToKrai,
   DuesEntryKind.Exchange
 ];
 

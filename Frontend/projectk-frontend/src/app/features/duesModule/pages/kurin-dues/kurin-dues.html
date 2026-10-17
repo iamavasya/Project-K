@@ -60,7 +60,7 @@
       <div class="lil-tile-head">
         <div>
           <h2>Каса куреня</h2>
-          <p>Курінні гроші й те, що треба віддати в станицю</p>
+          <p>Курінні гроші й те, що треба віддати в станицю{{ hasKrai() ? ' і край' : '' }}</p>
         </div>
       </div>
 
@@ -77,9 +77,16 @@
         </div>
         <div class="lil-stat">
           <span class="lil-stat__label">До передачі в станицю</span>
-          <span class="lil-stat__value">{{ money(d.box.toForward) }}</span>
+          <span class="lil-stat__value">{{ money(d.toStanytsia) }}</span>
           <span class="lil-stat__sub">передано {{ money(d.sentToStanytsia) }}</span>
         </div>
+        @if (hasKrai()) {
+          <div class="lil-stat">
+            <span class="lil-stat__label">До передачі в край</span>
+            <span class="lil-stat__value">{{ money(d.toKrai) }}</span>
+            <span class="lil-stat__sub">передано {{ money(d.sentToKrai) }}</span>
+          </div>
+        }
         <div class="lil-stat">
           <span class="lil-stat__label">В дорозі від гуртків</span>
           <span class="lil-stat__value">{{ money(d.box.inTransit) }}</span>
@@ -175,6 +182,10 @@
               <span class="dues-quarter__sum">
                 до станиці {{ money(quarter.total.stanytsiaExpected) }}
                 · зібрано {{ money(quarter.total.stanytsiaCollected) }}
+                @if (hasKrai()) {
+                  · до краю {{ money(quarter.total.kraiExpected) }}
+                  · зібрано {{ money(quarter.total.kraiCollected) }}
+                }
               </span>
             </div>
           </ng-template>
@@ -186,6 +197,7 @@
               <th scope="col" class="dues-number">Здали</th>
               <th scope="col" class="dues-number">Борг</th>
               <th scope="col" class="dues-number">До станиці</th>
+              @if (hasKrai()) { <th scope="col" class="dues-number">До краю</th> }
             </tr>
           </ng-template>
           <ng-template #body let-row>
@@ -202,6 +214,9 @@
                 </span>
               </td>
               <td class="dues-number" data-mobile-label="До станиці">{{ money(row.stanytsiaCollected) }} <span class="dues-blank">/ {{ money(row.stanytsiaExpected) }}</span></td>
+              @if (hasKrai()) {
+                <td class="dues-number" data-mobile-label="До краю">{{ money(row.kraiCollected) }} <span class="dues-blank">/ {{ money(row.kraiExpected) }}</span></td>
+              }
             </tr>
           </ng-template>
           <ng-template #footer>
@@ -212,6 +227,9 @@
               <td class="dues-number" data-mobile-label="Здали">{{ money(quarter.total.collectedUp) }}</td>
               <td class="dues-number" data-mobile-label="Борг">{{ quarter.total.debtUp > 0 ? money(quarter.total.debtUp) : 'сплачено' }}</td>
               <td class="dues-number" data-mobile-label="До станиці">{{ money(quarter.total.stanytsiaCollected) }} <span class="dues-blank">/ {{ money(quarter.total.stanytsiaExpected) }}</span></td>
+              @if (hasKrai()) {
+                <td class="dues-number" data-mobile-label="До краю">{{ money(quarter.total.kraiCollected) }} <span class="dues-blank">/ {{ money(quarter.total.kraiExpected) }}</span></td>
+              }
             </tr>
           </ng-template>
         </p-table>

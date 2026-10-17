@@ -145,6 +145,11 @@ export class KurinDuesComponent implements OnInit {
       && (quarter === 'all' || quarterKey(this.quarterOfDate(entry.occurredOn)) === quarter));
   });
 
+  /** Whether the kurin has ever sent the край anything or set a край стаття: then its money shows apart. */
+  readonly hasKrai = computed(() => {
+    const d = this.data();
+    return !!d && (d.toKrai !== 0 || d.sentToKrai !== 0 || d.rates.some(r => r.kraiFull > 0));
+  });
   readonly outstandingTotal = computed(() => (this.data()?.groups ?? []).reduce((sum, g) => sum + g.outstanding, 0));
 
   readonly entryDialogVisible = signal(false);

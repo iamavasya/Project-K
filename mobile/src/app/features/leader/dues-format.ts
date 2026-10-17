@@ -17,6 +17,7 @@ export const KIND_LABELS: Record<DuesEntryKind, string> = {
   Refund: 'Повернення',
   TransferToKurin: 'Передача курінному',
   TransferToStanytsia: 'Передача в станицю',
+  TransferToKrai: 'Передача в край',
   Expense: 'Витрата',
   OtherIncome: 'Інший прихід',
   Exchange: 'Обмін готівка ↔ картка',
@@ -40,7 +41,7 @@ export const GROUP_KINDS: readonly DuesEntryKind[] = [
 ];
 
 /** What the kurin's own box records: nothing personal, and what goes up to the станиця. */
-export const KURIN_KINDS: readonly DuesEntryKind[] = ['Expense', 'OtherIncome', 'TransferToStanytsia', 'Exchange'];
+export const KURIN_KINDS: readonly DuesEntryKind[] = ['Expense', 'OtherIncome', 'TransferToStanytsia', 'TransferToKrai', 'Exchange'];
 
 export const STANDING_LABELS: Record<DuesAccountStanding, string | null> = {
   Current: null,

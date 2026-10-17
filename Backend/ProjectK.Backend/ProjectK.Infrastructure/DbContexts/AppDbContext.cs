@@ -244,6 +244,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.StanytsiaReduced).HasPrecision(18, 2);
             entity.Property(e => e.KurinShare).HasPrecision(18, 2);
             entity.Property(e => e.KurinReduced).HasPrecision(18, 2);
+            entity.Property(e => e.KraiFull).HasPrecision(18, 2);
+            entity.Property(e => e.KraiReduced).HasPrecision(18, 2);
             // A plain JSON column rather than an owned collection: rates are read untracked and saved
             // back with Update, which owned collections cannot do.
             entity.Property(e => e.Articles)

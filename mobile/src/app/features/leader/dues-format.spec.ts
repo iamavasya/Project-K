@@ -92,6 +92,8 @@ describe('dues format', () => {
       stanytsiaReduced: 50,
       kurinShare: 30,
       kurinReduced: 30,
+      kraiFull: 0,
+      kraiReduced: 0,
     };
     expect(kurinRatesText(rate)).toBe(
       'Станиця 100 ₴ (з пільгою 50 ₴) · Курінь 30 ₴ за квартал з кожного юнака. Гурткову частину кожен гурток задає собі.',
@@ -111,6 +113,8 @@ describe('dues format', () => {
       stanytsiaReduced: 50,
       kurinShare: 30,
       kurinReduced: 30,
+      kraiFull: 0,
+      kraiReduced: 0,
     };
     expect(articlesAreStandard(null)).toBe(true);
     expect(articlesAreStandard(standard)).toBe(true);

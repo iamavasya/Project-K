@@ -153,7 +153,7 @@ export class GroupDuesComponent implements OnInit {
   readonly quarterTotal = computed(() => {
     const kurin = this.kurinRateNow();
     const group = this.groupRateNow() ?? 0;
-    return (kurin?.stanytsiaFull ?? 0) + (kurin?.kurinShare ?? 0) + group;
+    return (kurin?.stanytsiaFull ?? 0) + (kurin?.kraiFull ?? 0) + (kurin?.kurinShare ?? 0) + group;
   });
 
   readonly entryDialogVisible = signal(false);

@@ -622,11 +622,14 @@ export class GroupDuesPage implements OnInit, OnDestroy {
     if (kurin) {
       const stanytsia = `${this.money(kurin.stanytsiaFull)}${withPilha(kurin.stanytsiaFull, kurin.stanytsiaReduced, this.currency(), this.numberLocale())}`;
       const own = `${this.money(kurin.kurinShare)}${withPilha(kurin.kurinShare, kurin.kurinReduced, this.currency(), this.numberLocale())}`;
+      const krai = kurin.kraiFull > 0
+        ? ` · край ${this.money(kurin.kraiFull)}${withPilha(kurin.kraiFull, kurin.kraiReduced, this.currency(), this.numberLocale())}`
+        : '';
       if (group === null) {
-        return `Станиця ${stanytsia} · курінь ${own}. Гурткову частину ще не задано, поки вона нуль.`;
+        return `Станиця ${stanytsia}${krai} · курінь ${own}. Гурткову частину ще не задано, поки вона нуль.`;
       }
-      const total = kurin.stanytsiaFull + kurin.kurinShare + group;
-      return `Квартальна вкладка ${this.money(total)} = станиця ${stanytsia} · курінь ${own} · гурток ${this.money(group)}`;
+      const total = kurin.stanytsiaFull + kurin.kraiFull + kurin.kurinShare + group;
+      return `Квартальна вкладка ${this.money(total)} = станиця ${stanytsia}${krai} · курінь ${own} · гурток ${this.money(group)}`;
     }
     const tail = group !== null ? `Гурток свою задав: ${this.money(group)} за квартал.` : 'Нарахувань поки немає.';
     return `Курінь ще не задав станичної та курінної частини вкладки. ${tail}`;

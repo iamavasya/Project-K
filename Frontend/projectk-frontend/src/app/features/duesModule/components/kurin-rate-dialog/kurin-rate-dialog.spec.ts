@@ -16,7 +16,9 @@ describe('KurinRateDialogComponent', () => {
     stanytsiaFull: 240,
     stanytsiaReduced: 180,
     kurinShare: 50,
-    kurinReduced: 50
+    kurinReduced: 50,
+    kraiFull: 0,
+    kraiReduced: 0
   };
 
   function open(rates: KurinDuesRateDto[] = [rate]) {

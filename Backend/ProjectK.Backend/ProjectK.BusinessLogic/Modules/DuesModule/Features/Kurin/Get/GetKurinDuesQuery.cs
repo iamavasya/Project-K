@@ -136,7 +136,10 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
                 Own = kurinBox.Box.Own,
                 InTransit = groups.Sum(g => g.InTransit)
             },
-            SentToStanytsia = entries.Where(e => e.GroupKey is null && e.Kind == DuesEntryKind.TransferToStanytsia).Sum(e => e.Amount),
+            ToStanytsia = kurinBox.ToStanytsia,
+            ToKrai = kurinBox.ToKrai,
+            SentToStanytsia = ledger.Sent(DuesEntryKind.TransferToStanytsia),
+            SentToKrai = ledger.Sent(DuesEntryKind.TransferToKrai),
             Groups = groups,
             Quarters = Quarters(accounts, groupNames),
             Transfers = transfers,
@@ -153,7 +156,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
 
     /// <summary>
     /// The гуртки's quarterly tables folded into the kurin's: per quarter, per гурток, how many youth
-    /// were charged, what they owe up and what of it is paid — and the станиця's part on its own.
+    /// were charged, what they owe up and what of it is paid — and the станиця's and край's parts on their own.
     /// </summary>
     private static IReadOnlyList<KurinDuesQuarterDto> Quarters(IReadOnlyList<DuesAccount> accounts, IReadOnlyDictionary<Guid, string> groupNames)
     {
@@ -183,8 +186,8 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
 
     private static KurinDuesQuarterGroupDto Row(Guid groupKey, string name, IReadOnlyList<DuesAccountQuarter> quarters)
     {
-        var expected = quarters.Sum(q => q.Charged.Stanytsia + q.Charged.Kurin);
-        var collected = quarters.Sum(q => q.Paid.Stanytsia + q.Paid.Kurin);
+        var expected = quarters.Sum(q => q.Charged.Up);
+        var collected = quarters.Sum(q => q.Paid.Up);
         return new KurinDuesQuarterGroupDto
         {
             GroupKey = groupKey,
@@ -194,7 +197,9 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             CollectedUp = collected,
             DebtUp = expected - collected,
             StanytsiaExpected = quarters.Sum(q => q.Charged.Stanytsia),
-            StanytsiaCollected = quarters.Sum(q => q.Paid.Stanytsia)
+            StanytsiaCollected = quarters.Sum(q => q.Paid.Stanytsia),
+            KraiExpected = quarters.Sum(q => q.Charged.Krai),
+            KraiCollected = quarters.Sum(q => q.Paid.Krai)
         };
     }
 

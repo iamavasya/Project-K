@@ -17,10 +17,17 @@ public sealed class KurinDuesResponse
     public IReadOnlyList<PlastYearDto> Years { get; init; } = [];
     public IReadOnlyList<KurinDuesRateDto> Rates { get; init; } = [];
 
-    /// <summary><c>ToForward</c> here is what still has to go to the станиця; <c>InTransit</c> — handed over by гуртки, not yet confirmed.</summary>
+    /// <summary><c>ToForward</c> here is what still has to go to the станиця and the край; <c>InTransit</c> — handed over by гуртки, not yet confirmed.</summary>
     public DuesBoxDto Box { get; init; } = new();
 
+    /// <summary>Of <c>Box.ToForward</c>, what is the станиця's.</summary>
+    public decimal ToStanytsia { get; init; }
+
+    /// <summary>Of <c>Box.ToForward</c>, what is the край's.</summary>
+    public decimal ToKrai { get; init; }
+
     public decimal SentToStanytsia { get; init; }
+    public decimal SentToKrai { get; init; }
 
     public IReadOnlyList<KurinGroupHandoverDto> Groups { get; init; } = [];
     public IReadOnlyList<DuesTransferDto> Transfers { get; init; } = [];
@@ -55,7 +62,7 @@ public sealed class KurinDuesQuarterGroupDto
     /// <summary>Youth charged for the quarter in this гурток.</summary>
     public int YouthCount { get; init; }
 
-    /// <summary>The станиця and kurin parts the гурток has to hand up for the quarter.</summary>
+    /// <summary>The станиця, край and kurin parts the гурток has to hand up for the quarter.</summary>
     public decimal ExpectedUp { get; init; }
 
     /// <summary>Of that, what the youth have paid so far.</summary>
@@ -67,6 +74,10 @@ public sealed class KurinDuesQuarterGroupDto
     /// <summary>The станиця part alone: what the kurin owes the станиця for this quarter's youth.</summary>
     public decimal StanytsiaExpected { get; init; }
     public decimal StanytsiaCollected { get; init; }
+
+    /// <summary>The край part alone: what the kurin owes the край for this quarter's youth.</summary>
+    public decimal KraiExpected { get; init; }
+    public decimal KraiCollected { get; init; }
 }
 
 /// <summary>A гурток whose box the caller may open.</summary>
@@ -82,7 +93,7 @@ public sealed class KurinGroupHandoverDto
     public Guid GroupKey { get; init; }
     public string GroupName { get; init; } = string.Empty;
 
-    /// <summary>Collected by the гурток for the станиця and the kurin so far.</summary>
+    /// <summary>Collected by the гурток for the станиця, the край and the kurin so far.</summary>
     public decimal OwedUp { get; init; }
     public decimal Transferred { get; init; }
     public decimal Received { get; init; }

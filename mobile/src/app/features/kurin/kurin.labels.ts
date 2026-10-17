@@ -702,6 +702,7 @@ export const DUES_KIND_LABELS: Record<string, string> = {
   Refund: 'Повернення',
   TransferToKurin: 'Передача курінному',
   TransferToStanytsia: 'Передача в станицю',
+  TransferToKrai: 'Передача в край',
   Expense: 'Витрата',
   OtherIncome: 'Інший прихід',
   Exchange: 'Обмін готівка ↔ картка',

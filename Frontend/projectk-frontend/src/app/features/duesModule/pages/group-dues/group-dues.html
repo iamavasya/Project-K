@@ -101,12 +101,20 @@
             Квартальна вкладка <strong>{{ money(quarterTotal()) }}</strong>
             = станиця {{ money(kurin.stanytsiaFull) }}
             @if (kurin.stanytsiaReduced !== kurin.stanytsiaFull) { (з пільгою {{ money(kurin.stanytsiaReduced) }}) }
+            @if (kurin.kraiFull > 0) {
+              · край {{ money(kurin.kraiFull) }}
+              @if (kurin.kraiReduced !== kurin.kraiFull) { (з пільгою {{ money(kurin.kraiReduced) }}) }
+            }
             · курінь {{ money(kurin.kurinShare) }}
             @if (kurin.kurinReduced !== kurin.kurinShare) { (з пільгою {{ money(kurin.kurinReduced) }}) }
             · гурток {{ money(groupRateNow()!) }}
           } @else {
             Станиця {{ money(kurin.stanytsiaFull) }}
             @if (kurin.stanytsiaReduced !== kurin.stanytsiaFull) { (з пільгою {{ money(kurin.stanytsiaReduced) }}) }
+            @if (kurin.kraiFull > 0) {
+              · край {{ money(kurin.kraiFull) }}
+              @if (kurin.kraiReduced !== kurin.kraiFull) { (з пільгою {{ money(kurin.kraiReduced) }}) }
+            }
             · курінь {{ money(kurin.kurinShare) }}@if (kurin.kurinReduced !== kurin.kurinShare) { (з пільгою {{ money(kurin.kurinReduced) }})}.
             Гурткову частину ще не задано — поки вона нуль.
           }

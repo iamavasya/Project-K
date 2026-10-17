@@ -18,7 +18,7 @@ const ZVYAZKOVYI = { canKeep: true, canVerify: true, canSetRates: true };
 
 const quarterRow = (groupKey: string, groupName: string, youthCount: number, collectedUp: number, stanytsiaCollected: number) => ({
   groupKey, groupName, youthCount, expectedUp: youthCount * 130, collectedUp, debtUp: youthCount * 130 - collectedUp,
-  stanytsiaExpected: youthCount * 100, stanytsiaCollected,
+  stanytsiaExpected: youthCount * 100, stanytsiaCollected, kraiExpected: 0, kraiCollected: 0,
 });
 const total = (rows: ReturnType<typeof quarterRow>[]) => ({
   groupKey: '00000000-0000-0000-0000-000000000000', groupName: 'Разом',
@@ -41,9 +41,9 @@ function kurinDues(viewer = ZVYAZKOVYI) {
   return {
     kurinKey: 'k1', currentQuarter: q(2026, 4),
     years: [{ startYear: 2026, label: '2026/27', quarters: [q(2026, 3), q(2026, 4), q(2027, 1), q(2027, 2)] }],
-    rates: [{ fromQuarter: q(2026, 3), articles: [{ name: 'Станиця', recipient: 'Stanytsia', amount: 100, reducedAmount: 50 }, { name: 'Курінь', recipient: 'Kurin', amount: 30, reducedAmount: 30 }], stanytsiaFull: 100, stanytsiaReduced: 50, kurinShare: 30, kurinReduced: 30 }],
+    rates: [{ fromQuarter: q(2026, 3), articles: [{ name: 'Станиця', recipient: 'Stanytsia', amount: 100, reducedAmount: 50 }, { name: 'Курінь', recipient: 'Kurin', amount: 30, reducedAmount: 30 }], stanytsiaFull: 100, stanytsiaReduced: 50, kurinShare: 30, kurinReduced: 30, kraiFull: 0, kraiReduced: 0 }],
     box: { cash: 520, card: 180, total: 700, toForward: 400, own: 300, inTransit: 130 },
-    sentToStanytsia: 200,
+    toStanytsia: 400, toKrai: 0, sentToStanytsia: 200, sentToKrai: 0,
     groups: [
       { groupKey: 'g1', groupName: 'Соколи', owedUp: 600, transferred: 400, received: 270, outstanding: 200, inTransit: 130 },
       { groupKey: 'g2', groupName: 'Вовки', owedUp: 260, transferred: 260, received: 260, outstanding: 0, inTransit: 0 },
@@ -204,7 +204,7 @@ test('confirms a transfer, records and checks operations and sets the kurin’s 
   await expect(form.getByTestId('entry-person')).toHaveCount(0);
   await form.getByTestId('entry-kind').click();
   await expect(page.locator('ion-action-sheet').getByRole('radio')).toHaveText([
-    'Витрата', 'Інший прихід', 'Передача в станицю', 'Обмін готівка ↔ картка',
+    'Витрата', 'Інший прихід', 'Передача в станицю', 'Передача в край', 'Обмін готівка ↔ картка',
   ]);
   await choose(page, 'Передача в станицю');
   await form.getByTestId('entry-amount').locator('input').fill('400');
@@ -271,13 +271,15 @@ test('sends a kurin with its own статті to the web for its rates', async (
     fromQuarter: q(2026, 3),
     articles: [
       { name: 'Станиця', recipient: 'Stanytsia', amount: 100, reducedAmount: 50 },
+      { name: 'Крайова вкладка', recipient: 'Krai', amount: 60, reducedAmount: 30 },
       { name: 'Табірний фонд', recipient: 'Kurin', amount: 50, reducedAmount: 25 },
     ],
-    stanytsiaFull: 100, stanytsiaReduced: 50, kurinShare: 50, kurinReduced: 25,
+    stanytsiaFull: 100, stanytsiaReduced: 50, kurinShare: 50, kurinReduced: 25, kraiFull: 60, kraiReduced: 30,
   };
   await signIn(page, undefined, kurinDuesApi({ rates: [own] }), TREASURER);
   await page.goto('./tabs/kurin/dues');
-  await expect(page.getByTestId('rates')).toContainText('Станиця 100 ₴ (з пільгою 50 ₴) · Табірний фонд 50 ₴ (з пільгою 25 ₴)');
+  await expect(page.getByTestId('rates')).toContainText('Станиця 100 ₴ (з пільгою 50 ₴) · Крайова вкладка 60 ₴ (з пільгою 30 ₴) · Табірний фонд 50 ₴ (з пільгою 25 ₴)');
+  await expect(page.getByTestId('to-krai')).toContainText('До передачі в край');
   await expect(page.getByTestId('kurin-rate')).toHaveCount(0);
   await expect(page.getByTestId('kurin-rate-web')).toContainText('їх змінюють у вебі');
 });
