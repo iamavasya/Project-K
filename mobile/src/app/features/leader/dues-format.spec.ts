@@ -1,6 +1,7 @@
 import {
   EntryDraft,
   amountLabel,
+  articlesAreStandard,
   balanceLabel,
   duesMoney,
   entryProblems,
@@ -12,6 +13,7 @@ import {
   quarterOfDate,
   rateAt,
 } from './dues-format';
+import { KurinDuesRateDto } from './leader.models';
 
 const draft = (overrides: Partial<EntryDraft>): EntryDraft => ({
   kind: 'Contribution',
@@ -79,13 +81,43 @@ describe('dues format', () => {
     expect(entryRequest(draft({ kind: 'Exchange', method: 'Card' })).counterMethod).toBe('Cash');
   });
 
-  it('says the kurin parts in force, or that there are none yet', () => {
-    const rate = { fromQuarter: { year: 2026, number: 3 }, stanytsiaFull: 100, stanytsiaReduced: 50, kurinShare: 30 };
+  it('says the kurin статті in force, or that there are none yet', () => {
+    const rate: KurinDuesRateDto = {
+      fromQuarter: { year: 2026, number: 3 },
+      articles: [
+        { name: 'Станиця', recipient: 'Stanytsia', amount: 100, reducedAmount: 50 },
+        { name: 'Курінь', recipient: 'Kurin', amount: 30, reducedAmount: 30 },
+      ],
+      stanytsiaFull: 100,
+      stanytsiaReduced: 50,
+      kurinShare: 30,
+      kurinReduced: 30,
+    };
     expect(kurinRatesText(rate)).toBe(
-      'Станиця 100 ₴ (пільгова 50 ₴) · курінь 30 ₴ за квартал з кожного юнака. Гурткову частину кожен гурток задає собі.',
+      'Станиця 100 ₴ (з пільгою 50 ₴) · Курінь 30 ₴ за квартал з кожного юнака. Гурткову частину кожен гурток задає собі.',
     );
-    expect(kurinRatesText({ ...rate, stanytsiaReduced: 100 })).toContain('Станиця 100 ₴ · курінь 30 ₴');
+    expect(kurinRatesText(rate, 'CZK')).toContain('Станиця 100 Kč (з пільгою 50 Kč)');
     expect(kurinRatesText(null)).toBe('Ставки ще не задано — гуртки нічого не нараховують, доки їх немає.');
+  });
+
+  it('lets the phone change only the two standard статті', () => {
+    const standard: KurinDuesRateDto = {
+      fromQuarter: { year: 2026, number: 3 },
+      articles: [
+        { name: 'Станиця', recipient: 'Stanytsia', amount: 100, reducedAmount: 50 },
+        { name: 'Курінь', recipient: 'Kurin', amount: 30, reducedAmount: 30 },
+      ],
+      stanytsiaFull: 100,
+      stanytsiaReduced: 50,
+      kurinShare: 30,
+      kurinReduced: 30,
+    };
+    expect(articlesAreStandard(null)).toBe(true);
+    expect(articlesAreStandard(standard)).toBe(true);
+    expect(articlesAreStandard({ ...standard, articles: [] })).toBe(true);
+    expect(articlesAreStandard({ ...standard, articles: [standard.articles[0], { ...standard.articles[1], reducedAmount: 20 }] })).toBe(false);
+    expect(articlesAreStandard({ ...standard, articles: [...standard.articles, { name: 'Табір', recipient: 'Kurin', amount: 10, reducedAmount: 10 }] })).toBe(false);
+    expect(articlesAreStandard({ ...standard, articles: [standard.articles[0], { ...standard.articles[1], name: 'Табір' }] })).toBe(false);
   });
 
   it('checks the kurin rates as the web dialog does', () => {

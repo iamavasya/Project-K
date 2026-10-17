@@ -90,11 +90,24 @@ export interface PlastYearDto {
   quarters: QuarterDto[];
 }
 
+export type DuesRecipient = 'Stanytsia' | 'Kurin';
+
+export interface DuesArticleDto {
+  name: string;
+  recipient: DuesRecipient;
+  amount: number;
+  /** What a person with a пільга pays for it. */
+  reducedAmount: number;
+}
+
 export interface KurinDuesRateDto {
   fromQuarter: QuarterDto;
+  /** The kurin's статті, in its order; the amounts below are their totals. */
+  articles: DuesArticleDto[];
   stanytsiaFull: number;
   stanytsiaReduced: number;
   kurinShare: number;
+  kurinReduced: number;
 }
 
 export interface GroupDuesRateDto {
