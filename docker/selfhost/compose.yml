@@ -68,6 +68,10 @@ services:
       # is written to the API log instead.
       Feedback__GitHub__Token: ${PROJECTK_FEEDBACK_GITHUB_TOKEN:-}
       Feedback__GitHub__Repository: ${PROJECTK_FEEDBACK_GITHUB_REPOSITORY:-iamavasya/Project-K}
+      # Anonymous daily ping to the status service: release, counts, nothing personal
+      # (docs/self-host/README.md, «Телеметрія»). Only true/1/yes/on pings; unset means true,
+      # empty or anything else (false, 0, no, off) turns it off.
+      Telemetry__Enabled: ${PROJECTK_TELEMETRY-true}
       # Push notifications to the phone app (/m/). Empty keys mean no push; see .env.example.
       WebPush__PublicKey: ${PROJECTK_WEBPUSH_PUBLIC_KEY:-}
       WebPush__PrivateKey: ${PROJECTK_WEBPUSH_PRIVATE_KEY:-}
