@@ -101,11 +101,13 @@ internal sealed class TelemetryBackgroundService : BackgroundService
         }
     }
 
-    /// <summary>"v1.9.0" is older than "v1.10.0"; anything that is not a plain vX.Y.Z is never older.</summary>
+    /// <summary>"v1.9.0" is older than "v1.10.0" and "1.2" means "1.2.0"; anything that is not a plain vX.Y or vX.Y.Z is never older.</summary>
     internal static bool IsOlder(string version, string latest)
     {
         static Version? Parse(string v) =>
-            System.Version.TryParse(v.TrimStart('v', 'V'), out var parsed) && parsed.Build >= 0 && parsed.Revision < 0 ? parsed : null;
+            System.Version.TryParse(v.TrimStart('v', 'V'), out var parsed) && parsed.Revision < 0
+                ? new Version(parsed.Major, parsed.Minor, Math.Max(parsed.Build, 0))
+                : null;
 
         return Parse(version) is { } current && Parse(latest) is { } newest && current < newest;
     }

@@ -36,6 +36,9 @@ public class TelemetryTests
     [InlineData("v1.1.9", "v1.2.0", true)]
     [InlineData("v1.9.0", "v1.10.0", true)]
     [InlineData("v1.2.0", "v1.2.0", false)]
+    [InlineData("1.1.9", "v1.2", true)]
+    [InlineData("1.1", "v1.2", true)]
+    [InlineData("1.2", "v1.2.0", false)]
     [InlineData("v0.0.0-dev", "v1.2.0", false)]
     [InlineData("v1.2.0", "nightly", false)]
     public void IsOlder_ShouldCompareReleasesByNumber(string version, string latest, bool expected)
