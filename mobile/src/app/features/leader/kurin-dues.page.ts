@@ -79,6 +79,7 @@ const DUES_ERRORS: Record<string, string> = {
   EntryNotFound: 'Цієї операції вже немає.',
   TransferNotFound: 'Цієї передачі вже немає.',
   CollectorNotInKurin: 'Той, хто збирав, має бути з цього куреня.',
+  DuesArticlesInUse: 'У куреня власні статті вкладки, їх змінюють у вебі.',
 };
 
 /**

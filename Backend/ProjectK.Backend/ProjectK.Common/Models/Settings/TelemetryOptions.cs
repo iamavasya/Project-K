@@ -9,7 +9,14 @@ public sealed class TelemetryOptions
 {
     public const string SectionName = "Telemetry";
 
-    public bool Enabled { get; set; }
+    /// <summary>
+    /// A string, not a bool: the binder throws on <c>0</c>, <c>no</c> or <c>off</c>, and a self-host
+    /// that turns the ping off that way must not crash the API at boot. See <see cref="IsEnabled"/>.
+    /// </summary>
+    public string? Enabled { get; set; }
+
+    /// <summary>Only a clear "on" (<c>true</c>, <c>1</c>, <c>yes</c>, <c>on</c>) pings; anything else, empty included, does not.</summary>
+    public bool IsEnabled => IsOn(Enabled);
 
     public string Endpoint { get; set; } = "https://status.rostyslav-mukha.dev/v1/ping";
 
@@ -19,4 +26,7 @@ public sealed class TelemetryOptions
     public int IntervalHours { get; set; } = 24;
 
     public int TimeoutSeconds { get; set; } = 15;
+
+    public static bool IsOn(string? value) =>
+        value?.Trim().ToLowerInvariant() is "true" or "1" or "yes" or "on";
 }

@@ -122,4 +122,22 @@ public class SetKurinDuesRateTests
             Articles = [Article("Станиця", DuesRecipient.Stanytsia, 240, 180), Article("Курінь", DuesRecipient.Kurin, 15)]
         })).IsValid.Should().BeTrue();
     }
+
+    [Fact]
+    public void Validator_TurnsDownAMissingArticle_OrAMissingName_WithoutThrowing()
+    {
+        var validator = new SetKurinDuesRateCommandValidator();
+
+        validator.Validate(new SetKurinDuesRateCommand(Kurin, new SetKurinDuesRateRequest
+        {
+            FromQuarter = From(Q1),
+            Articles = [null!, Article("Курінь", DuesRecipient.Kurin, 15)]
+        })).IsValid.Should().BeFalse();
+
+        validator.Validate(new SetKurinDuesRateCommand(Kurin, new SetKurinDuesRateRequest
+        {
+            FromQuarter = From(Q1),
+            Articles = [Article(null!, DuesRecipient.Kurin, 15)]
+        })).IsValid.Should().BeFalse();
+    }
 }

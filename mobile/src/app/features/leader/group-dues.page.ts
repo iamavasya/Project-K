@@ -77,6 +77,7 @@ const DUES_ERRORS: Record<string, string> = {
   NotInGroup: 'Цей юнак не з цього гуртка.',
   CollectorNotInKurin: 'Той, хто збирав, має бути з цього куреня.',
   GroupNotFound: 'Такого гуртка немає.',
+  DuesArticlesInUse: 'У куреня власні статті вкладки, їх змінюють у вебі.',
 };
 
 interface PersonRow {
