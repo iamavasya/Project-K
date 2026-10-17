@@ -3,7 +3,7 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { ConfirmationService } from '@openng/optimus-ui/api';
-import { DuesEntryKind, DuesPaymentMethod, DuesRecipient } from '../../models/dues.enums';
+import { DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from '../../models/dues.enums';
 import { DuesAccountDto, DuesEntryDto, GroupDuesDto } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 import { GroupDuesComponent } from './group-dues';
@@ -81,6 +81,7 @@ describe('GroupDuesComponent', () => {
     groupName: 'Соколи',
     currency: 'UAH',
     numberLocale: 'uk-UA',
+    upstream: DuesUpstream.Stanytsia,
     currentQuarter: q(2026, 2),
     years: [
       { startYear: 2025, label: '25–26', quarters: [q(2025, 4), q(2026, 1), q(2026, 2), q(2026, 3)] },

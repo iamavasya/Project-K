@@ -62,8 +62,8 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
             return new ServiceResult<MemberDuesResponse>(ResultType.Forbidden);
         }
 
-        var locale = await _profiles.DuesLocaleForKurinAsync(kurinKey, cancellationToken);
-        var current = locale.QuarterOf(_time.GetUtcNow());
+        var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
+        var current = krai.QuarterOf(_time.GetUtcNow());
         var memberships = (await _memberships.GetForMemberAsync(request.MemberKey, cancellationToken))
             .Where(m => m.KurinKey == kurinKey)
             .ToList();
@@ -100,8 +100,8 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         {
             HasAccount = true,
             KurinKey = kurinKey,
-            Currency = locale.Currency,
-            NumberLocale = locale.NumberLocale,
+            Currency = krai.Currency,
+            NumberLocale = krai.NumberLocale,
             CurrentQuarter = Quarter(current),
             Balance = accounts.Sum(a => a.Balance),
             QuarterRate = rate is null ? null : Amount(rate),

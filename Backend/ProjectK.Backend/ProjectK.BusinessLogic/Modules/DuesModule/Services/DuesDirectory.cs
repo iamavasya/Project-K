@@ -28,7 +28,7 @@ public sealed class DuesDirectory : IDuesDirectory
     {
         var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
 
-        var current = (await _profiles.DuesLocaleForKurinAsync(kurinKey, cancellationToken)).QuarterOf(_time.GetUtcNow());
+        var current = (await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken)).QuarterOf(_time.GetUtcNow());
         return ledger.Accounts()
             .SelectMany(account => account.Quarters
                 .Where(q => q.Quarter < current && q.Charged.Total > 0 && q.Balance >= 0)

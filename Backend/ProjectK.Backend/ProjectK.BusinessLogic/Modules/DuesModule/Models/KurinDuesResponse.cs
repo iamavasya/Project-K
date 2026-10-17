@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Models;
@@ -13,6 +14,8 @@ public sealed class KurinDuesResponse
     public string Currency { get; init; } = "UAH";
     /// <summary>How the край writes numbers, such as uk-UA.</summary>
     public string NumberLocale { get; init; } = "uk-UA";
+    /// <summary>Where the край's kurins hand the вкладка up: stanytsia, krai or both.</summary>
+    public string Upstream { get; init; } = KraiDues.Stanytsia;
     public QuarterDto CurrentQuarter { get; init; } = new();
     public IReadOnlyList<PlastYearDto> Years { get; init; } = [];
     public IReadOnlyList<KurinDuesRateDto> Rates { get; init; } = [];

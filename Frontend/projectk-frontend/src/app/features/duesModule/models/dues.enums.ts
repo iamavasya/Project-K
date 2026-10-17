@@ -25,6 +25,22 @@ export enum DuesRecipient {
   Krai = 'Krai'
 }
 
+/** Where the край's kurins hand the вкладка up: through the станиця, straight to the край, or both. */
+export enum DuesUpstream {
+  Stanytsia = 'stanytsia',
+  Krai = 'krai',
+  Both = 'both'
+}
+
+export const DUES_UPSTREAM_LABELS: Record<DuesUpstream, string> = {
+  [DuesUpstream.Stanytsia]: 'Станиці, а вона — краю',
+  [DuesUpstream.Krai]: 'Напряму краю',
+  [DuesUpstream.Both]: 'І станиці, і краю — за статтями'
+};
+
+export const paysStanytsia = (upstream: DuesUpstream): boolean => upstream !== DuesUpstream.Krai;
+export const paysKrai = (upstream: DuesUpstream): boolean => upstream !== DuesUpstream.Stanytsia;
+
 export const DUES_RECIPIENT_LABELS: Record<DuesRecipient, string> = {
   [DuesRecipient.Stanytsia]: 'Станиці',
   [DuesRecipient.Krai]: 'Краю',
@@ -74,6 +90,20 @@ export const KURIN_DUES_KINDS: readonly DuesEntryKind[] = [
   DuesEntryKind.TransferToKrai,
   DuesEntryKind.Exchange
 ];
+
+/** What the kurin's box offers under its край's setting: a transfer only where the край takes money. */
+export function kurinDuesKinds(upstream: DuesUpstream): DuesEntryKind[] {
+  return KURIN_DUES_KINDS.filter(kind =>
+    (kind !== DuesEntryKind.TransferToStanytsia || paysStanytsia(upstream))
+    && (kind !== DuesEntryKind.TransferToKrai || paysKrai(upstream)));
+}
+
+/** Where a new стаття may send its money under the край's setting. */
+export function duesRecipients(upstream: DuesUpstream): DuesRecipient[] {
+  return [DuesRecipient.Stanytsia, DuesRecipient.Krai, DuesRecipient.Kurin].filter(recipient =>
+    (recipient !== DuesRecipient.Stanytsia || paysStanytsia(upstream))
+    && (recipient !== DuesRecipient.Krai || paysKrai(upstream)));
+}
 
 /** How a person stands towards a гурток's box, in a word; one who is still here needs none. */
 export const DUES_STANDING_LABELS: Record<DuesAccountStanding, string | null> = {

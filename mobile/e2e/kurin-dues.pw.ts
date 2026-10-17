@@ -73,9 +73,9 @@ function kurinDues(viewer = ZVYAZKOVYI) {
 }
 
 /** The kurin's box; `viewer` is what the server says the caller may do, `denied` a youth's 403. */
-function kurinDuesApi(options: { viewer?: typeof ZVYAZKOVYI; denied?: boolean; rates?: unknown[] } = {}): ExtraApi {
+function kurinDuesApi(options: { viewer?: typeof ZVYAZKOVYI; denied?: boolean; rates?: unknown[]; extra?: Record<string, unknown> } = {}): ExtraApi {
   return ({ method, path }) => {
-    if (method === 'GET' && path === 'kurin/k1/dues') return options.denied ? refuse(403) : ok({ ...kurinDues(options.viewer), ...(options.rates ? { rates: options.rates } : {}) });
+    if (method === 'GET' && path === 'kurin/k1/dues') return options.denied ? refuse(403) : ok({ ...kurinDues(options.viewer), ...(options.rates ? { rates: options.rates } : {}), ...options.extra });
     if (method === 'GET' && path === 'kurin/k1/dues/groups') return ok([]);
     if (method === 'GET' && path === 'group/g1/dues') return refuse(403);
     return null;
@@ -204,7 +204,7 @@ test('confirms a transfer, records and checks operations and sets the kurin’s 
   await expect(form.getByTestId('entry-person')).toHaveCount(0);
   await form.getByTestId('entry-kind').click();
   await expect(page.locator('ion-action-sheet').getByRole('radio')).toHaveText([
-    'Витрата', 'Інший прихід', 'Передача в станицю', 'Передача в край', 'Обмін готівка ↔ картка',
+    'Витрата', 'Інший прихід', 'Передача в станицю', 'Обмін готівка ↔ картка',
   ]);
   await choose(page, 'Передача в станицю');
   await form.getByTestId('entry-amount').locator('input').fill('400');
@@ -282,6 +282,25 @@ test('sends a kurin with its own статті to the web for its rates', async (
   await expect(page.getByTestId('to-krai')).toContainText('До передачі в край');
   await expect(page.getByTestId('kurin-rate')).toHaveCount(0);
   await expect(page.getByTestId('kurin-rate-web')).toContainText('їх змінюють у вебі');
+});
+
+test('in a край paid straight, shows no станиця and offers only the transfer to the край', async ({ page }) => {
+  const straight = {
+    fromQuarter: q(2026, 3),
+    articles: [
+      { name: 'Край', recipient: 'Krai', amount: 600, reducedAmount: 300 },
+      { name: 'Курінь', recipient: 'Kurin', amount: 100, reducedAmount: 100 },
+    ],
+    stanytsiaFull: 0, stanytsiaReduced: 0, kurinShare: 100, kurinReduced: 100, kraiFull: 600, kraiReduced: 300,
+  };
+  await signIn(page, undefined, kurinDuesApi({ rates: [straight], extra: { upstream: 'krai', toStanytsia: 0, sentToStanytsia: 0, toKrai: 400 } }), TREASURER);
+  await page.goto('./tabs/kurin/dues');
+  await expect(page.getByTestId('to-krai')).toContainText('До передачі в край');
+  await expect(page.getByTestId('to-stanytsia')).toHaveCount(0);
+  await expect(page.getByTestId('kurin-rate')).toBeVisible();
+  await page.getByRole('button', { name: 'Записати операцію' }).click();
+  await page.locator('app-dues-entry-form').getByTestId('entry-kind').click();
+  await expect(page.locator('ion-action-sheet').getByRole('radio')).toHaveText(['Витрата', 'Інший прихід', 'Передача в край', 'Обмін готівка ↔ картка']);
 });
 
 test('shows the box read-only to whoever the server lets read but not keep', async ({ page }) => {

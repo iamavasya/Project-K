@@ -4,6 +4,7 @@ import {
   DuesEntryDto,
   DuesEntryKind,
   DuesPaymentMethod,
+  DuesUpstream,
   KurinDuesRateDto,
   PlastYearDto,
   QuarterDto,
@@ -42,6 +43,16 @@ export const GROUP_KINDS: readonly DuesEntryKind[] = [
 
 /** What the kurin's own box records: nothing personal, and what goes up to the станиця. */
 export const KURIN_KINDS: readonly DuesEntryKind[] = ['Expense', 'OtherIncome', 'TransferToStanytsia', 'TransferToKrai', 'Exchange'];
+
+export const paysStanytsia = (upstream: DuesUpstream): boolean => upstream !== 'krai';
+export const paysKrai = (upstream: DuesUpstream): boolean => upstream !== 'stanytsia';
+
+/** The web's kurinDuesKinds: a transfer only where the край takes money. */
+export function kurinKinds(upstream: DuesUpstream): DuesEntryKind[] {
+  return KURIN_KINDS.filter(
+    (kind) => (kind !== 'TransferToStanytsia' || paysStanytsia(upstream)) && (kind !== 'TransferToKrai' || paysKrai(upstream)),
+  );
+}
 
 export const STANDING_LABELS: Record<DuesAccountStanding, string | null> = {
   Current: null,
@@ -211,11 +222,10 @@ export function withPilha(
  */
 export function articlesAreStandard(rate: KurinDuesRateDto | null): boolean {
   if (!rate || rate.articles.length === 0) return true;
-  const [stanytsia, kurin] = rate.articles;
+  const [up, kurin] = rate.articles;
   return (
     rate.articles.length === 2 &&
-    stanytsia.name === 'Станиця' &&
-    stanytsia.recipient === 'Stanytsia' &&
+    ((up.name === 'Станиця' && up.recipient === 'Stanytsia') || (up.name === 'Край' && up.recipient === 'Krai')) &&
     kurin.name === 'Курінь' &&
     kurin.recipient === 'Kurin' &&
     kurin.reducedAmount === kurin.amount

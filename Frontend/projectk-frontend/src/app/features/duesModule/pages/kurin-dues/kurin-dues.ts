@@ -20,7 +20,11 @@ import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
   DuesEntryKind,
-  KURIN_DUES_KINDS
+  DuesUpstream,
+  KURIN_DUES_KINDS,
+  kurinDuesKinds,
+  paysKrai,
+  paysStanytsia
 } from '../../models/dues.enums';
 import {
   DuesEntryDto,
@@ -60,7 +64,8 @@ export class KurinDuesComponent implements OnInit {
   readonly quarterLabel = quarterLabel;
   readonly quarterShort = quarterShort;
   readonly methodLabels = DUES_PAYMENT_METHOD_LABELS;
-  readonly kurinKinds = KURIN_DUES_KINDS;
+  readonly upstream = computed(() => this.data()?.upstream ?? DuesUpstream.Stanytsia);
+  readonly kurinKinds = computed(() => kurinDuesKinds(this.upstream()));
 
   kurinKey = '';
 
@@ -145,11 +150,17 @@ export class KurinDuesComponent implements OnInit {
       && (quarter === 'all' || quarterKey(this.quarterOfDate(entry.occurredOn)) === quarter));
   });
 
-  /** Whether the kurin has ever sent the край anything or set a край стаття: then its money shows apart. */
+  /** The край takes money straight, or the kurin still has some of it or sent it before: the край's money shows apart. */
   readonly hasKrai = computed(() => {
     const d = this.data();
-    return !!d && (d.toKrai !== 0 || d.sentToKrai !== 0 || d.rates.some(r => r.kraiFull > 0));
+    return !!d && (paysKrai(this.upstream()) || d.toKrai !== 0 || d.sentToKrai !== 0 || d.rates.some(r => r.kraiFull > 0));
   });
+  /** The same for the станиця: a край paid straight has none, unless old money is still on the way. */
+  readonly hasStanytsia = computed(() => {
+    const d = this.data();
+    return !!d && (paysStanytsia(this.upstream()) || d.toStanytsia !== 0 || d.sentToStanytsia !== 0 || d.rates.some(r => r.stanytsiaFull > 0));
+  });
+  readonly upTo = computed(() => [this.hasStanytsia() ? 'станицю' : '', this.hasKrai() ? 'край' : ''].filter(Boolean).join(' і '));
   readonly outstandingTotal = computed(() => (this.data()?.groups ?? []).reduce((sum, g) => sum + g.outstanding, 0));
 
   readonly entryDialogVisible = signal(false);

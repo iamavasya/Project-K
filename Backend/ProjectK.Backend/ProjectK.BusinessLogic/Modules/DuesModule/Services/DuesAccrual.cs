@@ -40,11 +40,11 @@ public sealed class DuesAccrual : IDuesAccrual
 
         var memberships = await _memberships.GetInKurinAsync(kurinKey, cancellationToken);
         var charged = await ChargedAsync(kurinKey, cancellationToken);
-        var locale = await _profiles.DuesLocaleForKurinAsync(kurinKey, cancellationToken);
+        var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
         var added = false;
         foreach (var membership in memberships.Where(m => m.Kind == MembershipKind.Youth && m.GroupKey.HasValue))
         {
-            added |= Charge(kurinKey, membership, membership.GroupKey!.Value, firstQuarter.Value, charged, locale);
+            added |= Charge(kurinKey, membership, membership.GroupKey!.Value, firstQuarter.Value, charged, krai);
         }
 
         if (added)
@@ -69,8 +69,8 @@ public sealed class DuesAccrual : IDuesAccrual
         }
 
         var charged = await ChargedAsync(kurinKey, cancellationToken);
-        var locale = await _profiles.DuesLocaleForKurinAsync(kurinKey, cancellationToken);
-        if (Charge(kurinKey, membership, groupKey, firstQuarter.Value, charged, locale))
+        var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
+        if (Charge(kurinKey, membership, groupKey, firstQuarter.Value, charged, krai))
         {
             await SaveAsync(cancellationToken);
         }
@@ -99,16 +99,16 @@ public sealed class DuesAccrual : IDuesAccrual
         Guid groupKey,
         DuesQuarter firstQuarter,
         HashSet<(Guid Membership, int Quarter)> charged,
-        DuesLocale locale)
+        DuesKrai krai)
     {
-        var current = locale.QuarterOf(_time.GetUtcNow());
-        var from = locale.QuarterOf(membership.JoinedAtUtc);
+        var current = krai.QuarterOf(_time.GetUtcNow());
+        var from = krai.QuarterOf(membership.JoinedAtUtc);
         if (from < firstQuarter)
         {
             from = firstQuarter;
         }
 
-        var to = membership.LeftAtUtc is { } left && locale.QuarterOf(left) < current ? locale.QuarterOf(left) : current;
+        var to = membership.LeftAtUtc is { } left && krai.QuarterOf(left) < current ? krai.QuarterOf(left) : current;
 
         var added = false;
         for (var quarter = from; quarter <= to; quarter = quarter.Next())

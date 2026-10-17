@@ -78,6 +78,9 @@ export type DuesEntryKind =
 
 export type DuesPaymentMethod = 'Cash' | 'Card';
 
+/** Through the станиця, straight to the край, or both, by стаття (the web's DuesUpstream). */
+export type DuesUpstream = 'stanytsia' | 'krai' | 'both';
+
 export type DuesAccountStanding = 'Current' | 'Moved' | 'Left';
 
 export interface QuarterDto {
@@ -197,6 +200,8 @@ export interface GroupDuesDto {
   currency: string;
   /** How the край writes numbers, such as uk-UA. */
   numberLocale: string;
+  /** Where the край's kurins hand the вкладка up. */
+  upstream: DuesUpstream;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
   kurinRates: KurinDuesRateDto[];
@@ -292,6 +297,8 @@ export interface KurinDuesDto {
   currency: string;
   /** How the край writes numbers, such as uk-UA. */
   numberLocale: string;
+  /** Where the край's kurins hand the вкладка up. */
+  upstream: DuesUpstream;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
   rates: KurinDuesRateDto[];

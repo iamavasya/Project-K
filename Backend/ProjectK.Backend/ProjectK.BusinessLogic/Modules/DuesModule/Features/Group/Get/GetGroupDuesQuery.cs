@@ -70,8 +70,8 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
 
         var ledger = new DuesLedger(kurinRates, groupRates, concessions, charges, entries);
         var accounts = ledger.Accounts();
-        var locale = await _profiles.DuesLocaleForKurinAsync(kurinKey, cancellationToken);
-        var current = locale.QuarterOf(_time.GetUtcNow());
+        var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
+        var current = krai.QuarterOf(_time.GetUtcNow());
 
         // A membership the kurin no longer has is a removed person, not someone who left: their rows
         // were closed on removal, and older leftovers must not show as a nameless line.
@@ -127,8 +127,9 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
             GroupKey = group.GroupKey,
             KurinKey = kurinKey,
             GroupName = group.Name,
-            Currency = locale.Currency,
-            NumberLocale = locale.NumberLocale,
+            Currency = krai.Currency,
+            NumberLocale = krai.NumberLocale,
+            Upstream = krai.Dues.Upstream,
             CurrentQuarter = Quarter(current),
             Years = Years(charges, current),
             KurinRates = kurinRates.Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),

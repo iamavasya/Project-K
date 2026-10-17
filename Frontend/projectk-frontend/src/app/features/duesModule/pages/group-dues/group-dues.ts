@@ -24,7 +24,9 @@ import {
   DUES_PAYMENT_METHOD_LABELS,
   DUES_STANDING_LABELS,
   DuesEntryKind,
-  GROUP_DUES_KINDS
+  DuesUpstream,
+  GROUP_DUES_KINDS,
+  paysStanytsia
 } from '../../models/dues.enums';
 import {
   DuesAccountDto,
@@ -73,6 +75,9 @@ export class GroupDuesComponent implements OnInit {
   /** What this kurin counts its вкладка in, from its край's profile. */
   readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
   readonly numberLocale = computed(() => this.data()?.numberLocale ?? DEFAULT_NUMBER_LOCALE);
+  readonly upstream = computed(() => this.data()?.upstream ?? DuesUpstream.Stanytsia);
+  /** A край paid straight has no станиця part, unless an old rate still sets one. */
+  readonly showStanytsia = (stanytsiaFull: number): boolean => stanytsiaFull > 0 || paysStanytsia(this.upstream());
   readonly currencySymbol = computed(() => currencySymbol(this.currency()));
   readonly money = (amount: number): string => money(amount, this.currency(), this.numberLocale());
   readonly signedMoney = (amount: number): string => signedMoney(amount, this.currency(), this.numberLocale());

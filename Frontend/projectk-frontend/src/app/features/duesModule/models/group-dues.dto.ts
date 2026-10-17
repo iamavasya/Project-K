@@ -1,4 +1,4 @@
-import { DuesEntryKind, DuesPaymentMethod, DuesRecipient } from './dues.enums';
+import { DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from './dues.enums';
 
 export interface QuarterDto {
   year: number;
@@ -122,6 +122,8 @@ export interface GroupDuesDto {
   currency: string;
   /** How the край writes numbers, such as uk-UA. */
   numberLocale: string;
+  /** Where the край's kurins hand the вкладка up. */
+  upstream: DuesUpstream;
   groupName: string;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
@@ -200,6 +202,8 @@ export interface KurinDuesDto {
   currency: string;
   /** How the край writes numbers, such as uk-UA. */
   numberLocale: string;
+  /** Where the край's kurins hand the вкладка up. */
+  upstream: DuesUpstream;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
   rates: KurinDuesRateDto[];

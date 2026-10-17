@@ -46,8 +46,8 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
 
         foreach (var membership in me.Memberships)
         {
-            var locale = await _profiles.DuesLocaleForKurinAsync(membership.KurinKey, cancellationToken);
-            var quarter = locale.QuarterOf(_time.GetUtcNow());
+            var krai = await _profiles.DuesKraiForKurinAsync(membership.KurinKey, cancellationToken);
+            var quarter = krai.QuarterOf(_time.GetUtcNow());
             var ledger = await _ledgers.OpenAsync(membership.KurinKey, cancellationToken);
             var accounts = ledger.Accounts().Where(a => a.MembershipKey == membership.MembershipKey).ToList();
             if (accounts.Count == 0)
@@ -59,8 +59,8 @@ public sealed class GetMyDuesQueryHandler : IRequestHandler<GetMyDuesQuery, Serv
             {
                 Kurin = MeKurins.Ref(membership, _currentUser.KurinKey),
                 GroupName = membership.GroupName,
-                Currency = locale.Currency,
-                NumberLocale = locale.NumberLocale,
+                Currency = krai.Currency,
+                NumberLocale = krai.NumberLocale,
                 QuarterYear = quarter.Year,
                 QuarterNumber = quarter.Number,
                 Balance = accounts.Sum(a => a.Balance),

@@ -56,7 +56,7 @@ public class DuesAccrualTests
         if (_zone is not null)
         {
             profiles.Setup(p => p.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(new KraiProfile(
-                "ca", "Канада", 1, new KraiCatalogSettings(["ca"], []), new KraiLocaleSettings("CAD", _zone, "en-CA"), KraiCardFieldsSettings.Default));
+                "ca", "Канада", 1, new KraiCatalogSettings(["ca"], []), new KraiLocaleSettings("CAD", _zone, "en-CA"), KraiCardFieldsSettings.Default, KraiDuesSettings.Default));
         }
 
         return new DuesAccrual(_dues.Object, directory.Object, _time, profiles.Object);

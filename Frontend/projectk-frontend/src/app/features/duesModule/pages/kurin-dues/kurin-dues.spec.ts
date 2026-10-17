@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { BehaviorSubject, of } from 'rxjs';
-import { DuesEntryKind, DuesPaymentMethod, DuesRecipient } from '../../models/dues.enums';
+import { DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from '../../models/dues.enums';
 import { DuesEntryDto, DuesTransferDto, KurinDuesDto } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 import { KurinDuesComponent } from './kurin-dues';
@@ -56,6 +56,7 @@ describe('KurinDuesComponent', () => {
     kurinKey: 'k1',
     currency: 'UAH',
     numberLocale: 'uk-UA',
+    upstream: DuesUpstream.Stanytsia,
     currentQuarter: q(2026, 4),
     years: [{ startYear: 2026, label: '26–27', quarters: [q(2026, 4), q(2027, 1), q(2027, 2), q(2027, 3)] }],
     rates: [{
@@ -144,6 +145,17 @@ describe('KurinDuesComponent', () => {
     expect(text()).toContain('До передачі в край');
     expect(text()).toContain('передано 120');
     expect(text()).toContain('До краю');
+  });
+
+  it('у краї без станиць ховає станицю й пропонує лише передачу в край', () => {
+    create({ ...data, upstream: DuesUpstream.Krai, sentToStanytsia: 0, entries: [], rates: [{ ...data.rates[0], stanytsiaFull: 0, stanytsiaReduced: 0, kraiFull: 240, kraiReduced: 180 }] });
+
+    expect(component.hasStanytsia()).toBeFalse();
+    expect(component.hasKrai()).toBeTrue();
+    expect(text()).not.toContain('До передачі в станицю');
+    expect(text()).toContain('До передачі в край');
+    expect(component.kurinKinds()).toContain(DuesEntryKind.TransferToKrai);
+    expect(component.kurinKinds()).not.toContain(DuesEntryKind.TransferToStanytsia);
   });
 
   it('клік по гуртку лишає лише його передачі; перемикач — лише ті, що в дорозі', () => {

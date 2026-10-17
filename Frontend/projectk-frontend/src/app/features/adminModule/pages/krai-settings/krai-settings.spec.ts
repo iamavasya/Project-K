@@ -9,6 +9,7 @@ import { KurinService } from '../../../kurinModule/services/kurin-service/kurin.
 import { BadgesCatalogService } from '../../../kurinModule/services/probes-and-badges/badges-catalog.service';
 import { BadgeCatalogItemDto } from '../../../kurinModule/models/probes-and-badges/badge-catalog-item.dto';
 import { KraiProfileEditorDto } from '../../models/krai-profile.dto';
+import { DuesUpstream } from '../../../duesModule/models/dues.enums';
 
 function badge(id: string, kraiCode: string, country: string): BadgeCatalogItemDto {
   return {
@@ -78,6 +79,7 @@ describe('KraiSettingsComponent', () => {
     expect(profiles.save).toHaveBeenCalledWith('cz', 2, {
       catalog: { badgeSources: ['ua'], hiddenBadges: undefined },
       locale: { currency: 'CZK', timeZone: undefined, numberLocale: undefined },
+      dues: undefined,
       cardFields: undefined
     }, 'усе українське');
     expect(component.editor()!.revision).toBe(3);
@@ -104,6 +106,7 @@ describe('KraiSettingsComponent', () => {
     expect(component.numberLocale()).toBeNull();
     component.timeZone.set('Europe/Prague');
     component.numberLocale.set('cs-CZ');
+    component.upstream.set(DuesUpstream.Krai);
     expect(component.dirty()).toBeTrue();
     expect(component.numberLocaleOptions().find(o => o.code === 'cs-CZ')?.label).toContain('1');
     component.save();
@@ -111,6 +114,7 @@ describe('KraiSettingsComponent', () => {
     expect(profiles.save).toHaveBeenCalledWith('cz', 2, {
       catalog: { badgeSources: ['ua'], hiddenBadges: ['ua-2'] },
       locale: { currency: 'CZK', timeZone: 'Europe/Prague', numberLocale: 'cs-CZ' },
+      dues: { upstream: DuesUpstream.Krai },
       cardFields: undefined
     }, null);
   });

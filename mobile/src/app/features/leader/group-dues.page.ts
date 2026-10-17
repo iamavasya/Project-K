@@ -498,6 +498,7 @@ interface PersonRow {
         <ng-template>
           @if (data(); as d) {
             <app-dues-kurin-rate-form
+              [upstream]="d.upstream"
               [currency]="currency()"
               [rates]="d.kurinRates"
               [quarters]="fromQuarters()"
@@ -622,17 +623,22 @@ export class GroupDuesPage implements OnInit, OnDestroy {
     if (kurin) {
       const stanytsia = `${this.money(kurin.stanytsiaFull)}${withPilha(kurin.stanytsiaFull, kurin.stanytsiaReduced, this.currency(), this.numberLocale())}`;
       const own = `${this.money(kurin.kurinShare)}${withPilha(kurin.kurinShare, kurin.kurinReduced, this.currency(), this.numberLocale())}`;
-      const krai = kurin.kraiFull > 0
-        ? ` · край ${this.money(kurin.kraiFull)}${withPilha(kurin.kraiFull, kurin.kraiReduced, this.currency(), this.numberLocale())}`
-        : '';
+      const krai = `${this.money(kurin.kraiFull)}${withPilha(kurin.kraiFull, kurin.kraiReduced, this.currency(), this.numberLocale())}`;
+      // A край paid straight has no станиця part, unless an old rate still sets one.
+      const parts = [
+        kurin.stanytsiaFull > 0 || d.upstream !== 'krai' ? `станиця ${stanytsia}` : '',
+        kurin.kraiFull > 0 ? `край ${krai}` : '',
+        `курінь ${own}`,
+      ].filter(Boolean);
       if (group === null) {
-        return `Станиця ${stanytsia}${krai} · курінь ${own}. Гурткову частину ще не задано, поки вона нуль.`;
+        const line = parts.join(' · ');
+        return `${line.charAt(0).toUpperCase()}${line.slice(1)}. Гурткову частину ще не задано, поки вона нуль.`;
       }
       const total = kurin.stanytsiaFull + kurin.kraiFull + kurin.kurinShare + group;
-      return `Квартальна вкладка ${this.money(total)} = станиця ${stanytsia}${krai} · курінь ${own} · гурток ${this.money(group)}`;
+      return `Квартальна вкладка ${this.money(total)} = ${parts.join(' · ')} · гурток ${this.money(group)}`;
     }
     const tail = group !== null ? `Гурток свою задав: ${this.money(group)} за квартал.` : 'Нарахувань поки немає.';
-    return `Курінь ще не задав станичної та курінної частини вкладки. ${tail}`;
+    return `Курінь ще не задав своїх статей вкладки. ${tail}`;
   });
 
   constructor() {

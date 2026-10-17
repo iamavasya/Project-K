@@ -2,6 +2,7 @@ import {
   EntryDraft,
   amountLabel,
   articlesAreStandard,
+  kurinKinds,
   balanceLabel,
   duesMoney,
   entryProblems,
@@ -102,6 +103,12 @@ describe('dues format', () => {
     expect(kurinRatesText(null)).toBe('Ставки ще не задано — гуртки нічого не нараховують, доки їх немає.');
   });
 
+  it('offers the kurin a transfer only where its край takes money', () => {
+    expect(kurinKinds('stanytsia')).toEqual(['Expense', 'OtherIncome', 'TransferToStanytsia', 'Exchange']);
+    expect(kurinKinds('krai')).toEqual(['Expense', 'OtherIncome', 'TransferToKrai', 'Exchange']);
+    expect(kurinKinds('both')).toEqual(['Expense', 'OtherIncome', 'TransferToStanytsia', 'TransferToKrai', 'Exchange']);
+  });
+
   it('lets the phone change only the two standard статті', () => {
     const standard: KurinDuesRateDto = {
       fromQuarter: { year: 2026, number: 3 },
@@ -122,6 +129,7 @@ describe('dues format', () => {
     expect(articlesAreStandard({ ...standard, articles: [standard.articles[0], { ...standard.articles[1], reducedAmount: 20 }] })).toBe(false);
     expect(articlesAreStandard({ ...standard, articles: [...standard.articles, { name: 'Табір', recipient: 'Kurin', amount: 10, reducedAmount: 10 }] })).toBe(false);
     expect(articlesAreStandard({ ...standard, articles: [standard.articles[0], { ...standard.articles[1], name: 'Табір' }] })).toBe(false);
+    expect(articlesAreStandard({ ...standard, articles: [{ name: 'Край', recipient: 'Krai', amount: 600, reducedAmount: 300 }, standard.articles[1]] })).toBe(true);
   });
 
   it('checks the kurin rates as the web dialog does', () => {

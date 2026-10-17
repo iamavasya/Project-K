@@ -18,6 +18,7 @@ import { KraiCardFieldsDocument, KraiProfileDocument, KraiProfileEditorDto, Krai
 import { formatUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { KraiCardFieldsComponent, sameCardFields } from './krai-card-fields/krai-card-fields';
 import { currencySymbol, DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../../duesModule/functions/dues-format.function';
+import { DUES_UPSTREAM_LABELS, DuesUpstream } from '../../../duesModule/models/dues.enums';
 
 interface SourceOption {
   code: string;
@@ -85,6 +86,8 @@ export class KraiSettingsComponent implements OnInit {
   readonly currency = signal<string | null>(null);
   readonly timeZone = signal<string | null>(null);
   readonly numberLocale = signal<string | null>(null);
+  readonly upstream = signal<DuesUpstream>(DuesUpstream.Stanytsia);
+  readonly upstreamOptions = Object.values(DuesUpstream).map(value => ({ value, label: DUES_UPSTREAM_LABELS[value] }));
   readonly defaultNumberLocale = DEFAULT_NUMBER_LOCALE;
   readonly cardFields = signal<KraiCardFieldsDocument | undefined>(undefined);
   readonly note = signal('');
@@ -161,6 +164,7 @@ export class KraiSettingsComponent implements OnInit {
       || (locale?.currency ?? null) !== this.currency()
       || (locale?.timeZone ?? null) !== this.timeZone()
       || (locale?.numberLocale ?? null) !== this.numberLocale()
+      || (editor.document.dues?.upstream ?? DuesUpstream.Stanytsia) !== this.upstream()
       || !sameCardFields(editor.document.cardFields, this.cardFields());
   });
 
@@ -257,6 +261,9 @@ export class KraiSettingsComponent implements OnInit {
         timeZone: this.timeZone() ?? undefined,
         numberLocale: this.numberLocale() ?? undefined
       },
+      dues: this.upstream() === DuesUpstream.Stanytsia && !editor.document.dues
+        ? undefined
+        : { ...editor.document.dues, upstream: this.upstream() === DuesUpstream.Stanytsia ? undefined : this.upstream() },
       cardFields: this.cardFields()
     };
     this.write(this.profiles.save(editor.kraiCode, editor.revision, document, this.note().trim() || null), 'Профіль збережено.');
@@ -343,6 +350,7 @@ export class KraiSettingsComponent implements OnInit {
     this.currency.set(editor.document.locale?.currency ?? null);
     this.timeZone.set(editor.document.locale?.timeZone ?? null);
     this.numberLocale.set(editor.document.locale?.numberLocale ?? null);
+    this.upstream.set(editor.document.dues?.upstream ?? DuesUpstream.Stanytsia);
     this.cardFields.set(editor.document.cardFields);
     this.note.set('');
   }
