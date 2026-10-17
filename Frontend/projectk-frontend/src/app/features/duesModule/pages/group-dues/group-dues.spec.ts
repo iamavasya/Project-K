@@ -3,7 +3,7 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { ConfirmationService } from '@openng/optimus-ui/api';
-import { DuesEntryKind, DuesPaymentMethod, DuesRecipient } from '../../models/dues.enums';
+import { DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from '../../models/dues.enums';
 import { DuesAccountDto, DuesEntryDto, GroupDuesDto } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 import { GroupDuesComponent } from './group-dues';
@@ -17,7 +17,7 @@ describe('GroupDuesComponent', () => {
   let dues: jasmine.SpyObj<DuesService>;
 
   const q = (year: number, number: number) => ({ year, number });
-  const amount = (stanytsia: number, kurin: number, group: number) => ({ stanytsia, kurin, group, total: stanytsia + kurin + group });
+  const amount = (stanytsia: number, kurin: number, group: number) => ({ stanytsia, krai: 0, kurin, group, total: stanytsia + kurin + group });
 
   const account = (over: Partial<DuesAccountDto>): DuesAccountDto => ({
     membershipKey: 'm-' + nextKey(),
@@ -80,6 +80,8 @@ describe('GroupDuesComponent', () => {
     kurinKey: 'k1',
     groupName: 'Соколи',
     currency: 'UAH',
+    numberLocale: 'uk-UA',
+    upstream: DuesUpstream.Stanytsia,
     currentQuarter: q(2026, 2),
     years: [
       { startYear: 2025, label: '25–26', quarters: [q(2025, 4), q(2026, 1), q(2026, 2), q(2026, 3)] },
@@ -94,7 +96,9 @@ describe('GroupDuesComponent', () => {
       stanytsiaFull: 240,
       stanytsiaReduced: 180,
       kurinShare: 15,
-      kurinReduced: 15
+      kurinReduced: 15,
+      kraiFull: 0,
+      kraiReduced: 0
     }],
     groupRates: [{ fromQuarter: q(2025, 4), groupShare: 45 }],
     accounts: [paidUp, debtor, moved],
