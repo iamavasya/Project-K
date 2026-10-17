@@ -63,6 +63,19 @@ describe('KurinRateDialogComponent', () => {
     expect(sent?.articles.length).toBe(3);
   });
 
+  it('leaves a стаття without a пільга empty, so raising its amount does not create one', () => {
+    const dialog = open();
+    let sent: SetKurinDuesRateRequest | undefined;
+    dialog.save.subscribe(r => (sent = r));
+    const fund = dialog.articles()[1];
+
+    expect(fund.reducedAmount).toBeNull();
+    dialog.setArticle(fund.id, { amount: 70 });
+    dialog.submit();
+
+    expect(sent?.articles[1]).toEqual({ name: 'Табірний фонд', recipient: DuesRecipient.Kurin, amount: 70, reducedAmount: 70 });
+  });
+
   it('will not save two статті of one name or a пільга above the full amount', () => {
     const dialog = open();
     const [first, second] = dialog.articles();

@@ -141,7 +141,7 @@ export class KurinRateDialogComponent {
       .sort((a, b) => index(b.fromQuarter) - index(a.fromQuarter))[0] ?? null;
     this.fromQuarter.set(quarterKey(current));
     this.articles.set(now
-      ? now.articles.map(a => this.row(a.name, a.recipient, a.amount, a.reducedAmount))
+      ? now.articles.map(a => this.row(a.name, a.recipient, a.amount, a.reducedAmount === a.amount ? null : a.reducedAmount))
       : [
           this.row('Станиця', DuesRecipient.Stanytsia, null, null),
           this.row('Курінь', DuesRecipient.Kurin, null, null)
