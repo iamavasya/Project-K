@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using ProjectK.API.Authorization;
 using ProjectK.API.Helpers;
+using ProjectK.API.Hosting;
 using ProjectK.API.Serialization;
 using ProjectK.API.Swagger;
 using ProjectK.BusinessLogic.Behaviors;
@@ -208,6 +209,11 @@ public static class Program
 
         builder.Services.AddHostedService<OrphanPhotoCleanupService>();
         // --- end Blob storage DI ---
+
+        if (StartupWarmUpService.IsEnabled(builder.Configuration, builder.Environment))
+        {
+            builder.Services.AddHostedService<StartupWarmUpService>();
+        }
 
         ConfigureRateLimiting(builder.Services, builder.Configuration);
 
