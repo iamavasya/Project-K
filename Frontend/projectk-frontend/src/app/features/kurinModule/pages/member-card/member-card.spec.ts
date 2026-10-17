@@ -795,6 +795,7 @@ describe('MemberCardComponent', () => {
       hasAccount: true,
       kurinKey: member.kurinKey,
       currency: 'UAH',
+      numberLocale: 'uk-UA',
       currentQuarter: { year: 2026, number: 4 },
       balance: -300,
       quarterRate: { stanytsia: 240, kurin: 15, group: 45, total: 300 },

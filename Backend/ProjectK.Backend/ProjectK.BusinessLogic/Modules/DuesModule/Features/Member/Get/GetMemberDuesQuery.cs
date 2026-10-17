@@ -62,7 +62,8 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
             return new ServiceResult<MemberDuesResponse>(ResultType.Forbidden);
         }
 
-        var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
+        var locale = await _profiles.DuesLocaleForKurinAsync(kurinKey, cancellationToken);
+        var current = locale.QuarterOf(_time.GetUtcNow());
         var memberships = (await _memberships.GetForMemberAsync(request.MemberKey, cancellationToken))
             .Where(m => m.KurinKey == kurinKey)
             .ToList();
@@ -95,13 +96,12 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
         var canOpenGroup = currentGroup is { } groupKey
             && (await _resourceAccess.CheckAccessAsync(ResourceType.GroupDues, ResourceAction.Read, groupKey, cancellationToken)).IsAllowed;
 
-        var currency = await _profiles.CurrencyForKurinAsync(kurinKey, cancellationToken);
-
         return new ServiceResult<MemberDuesResponse>(ResultType.Success, new MemberDuesResponse
         {
             HasAccount = true,
             KurinKey = kurinKey,
-            Currency = currency,
+            Currency = locale.Currency,
+            NumberLocale = locale.NumberLocale,
             CurrentQuarter = Quarter(current),
             Balance = accounts.Sum(a => a.Balance),
             QuarterRate = rate is null ? null : Amount(rate),

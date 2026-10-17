@@ -4,7 +4,7 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { SelectModule } from '@openng/optimus-ui/select';
-import { DEFAULT_CURRENCY, money, quarterKey } from '../../functions/dues-format.function';
+import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, money, quarterKey } from '../../functions/dues-format.function';
 import { fromQuarterOptions } from '../../functions/from-quarter-options.function';
 import { DUES_RECIPIENT_LABELS, DuesRecipient } from '../../models/dues.enums';
 import { KurinDuesRateDto, PlastYearDto, QuarterDto, SetKurinDuesRateRequest } from '../../models/group-dues.dto';
@@ -41,6 +41,8 @@ export class KurinRateDialogComponent {
   readonly saving = input(false);
   /** ISO 4217 code of the край's currency, for the totals. */
   readonly currency = input(DEFAULT_CURRENCY);
+  /** How the край writes numbers, such as uk-UA. */
+  readonly numberLocale = input(DEFAULT_NUMBER_LOCALE);
   readonly save = output<SetKurinDuesRateRequest>();
 
   readonly fromQuarter = signal('');
@@ -85,7 +87,7 @@ export class KurinRateDialogComponent {
 
   readonly valid = computed(() => this.errors().length === 0);
 
-  readonly money = (amount: number): string => money(amount, this.currency());
+  readonly money = (amount: number): string => money(amount, this.currency(), this.numberLocale());
 
   private nextId = 0;
 

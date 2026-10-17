@@ -1,4 +1,4 @@
-import { DEFAULT_CURRENCY } from '../../me/labels';
+import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../me/labels';
 import { Component, ElementRef, OnDestroy, OnInit, afterRenderEffect, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -527,9 +527,10 @@ export class GroupDuesPage implements OnInit, OnDestroy {
   protected readonly kindLabels = KIND_LABELS;
   /** What this kurin counts its вкладка in, from its край's profile. */
   protected readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
-  protected readonly money = (amount: number): string => duesMoney(amount, this.currency());
-  protected readonly balance = balanceLabel;
-  protected readonly amount = (entry: DuesEntryDto): string => amountLabel(entry, this.currency());
+  protected readonly numberLocale = computed(() => this.data()?.numberLocale ?? DEFAULT_NUMBER_LOCALE);
+  protected readonly money = (amount: number): string => duesMoney(amount, this.currency(), this.numberLocale());
+  protected readonly balance = (balance: number): string => balanceLabel(balance, this.currency(), this.numberLocale());
+  protected readonly amount = (entry: DuesEntryDto): string => amountLabel(entry, this.currency(), this.numberLocale());
   protected readonly signed = signedAmount;
   protected readonly key = quarterKey;
 
@@ -619,8 +620,8 @@ export class GroupDuesPage implements OnInit, OnDestroy {
     const kurin = this.kurinRateNow();
     const group = this.groupRateNow();
     if (kurin) {
-      const stanytsia = `${this.money(kurin.stanytsiaFull)}${withPilha(kurin.stanytsiaFull, kurin.stanytsiaReduced, this.currency())}`;
-      const own = `${this.money(kurin.kurinShare)}${withPilha(kurin.kurinShare, kurin.kurinReduced, this.currency())}`;
+      const stanytsia = `${this.money(kurin.stanytsiaFull)}${withPilha(kurin.stanytsiaFull, kurin.stanytsiaReduced, this.currency(), this.numberLocale())}`;
+      const own = `${this.money(kurin.kurinShare)}${withPilha(kurin.kurinShare, kurin.kurinReduced, this.currency(), this.numberLocale())}`;
       if (group === null) {
         return `Станиця ${stanytsia} · курінь ${own}. Гурткову частину ще не задано, поки вона нуль.`;
       }

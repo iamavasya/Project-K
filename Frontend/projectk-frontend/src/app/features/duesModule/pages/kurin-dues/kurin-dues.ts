@@ -15,7 +15,7 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
-import { DEFAULT_CURRENCY, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
+import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
 import {
   DUES_ENTRY_KIND_LABELS,
   DUES_PAYMENT_METHOD_LABELS,
@@ -70,9 +70,10 @@ export class KurinDuesComponent implements OnInit {
 
   /** What this kurin counts its вкладка in, from its край's profile. */
   readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
+  readonly numberLocale = computed(() => this.data()?.numberLocale ?? DEFAULT_NUMBER_LOCALE);
   readonly currencySymbol = computed(() => currencySymbol(this.currency()));
-  readonly money = (amount: number): string => money(amount, this.currency());
-  readonly signedMoney = (amount: number): string => signedMoney(amount, this.currency());
+  readonly money = (amount: number): string => money(amount, this.currency(), this.numberLocale());
+  readonly signedMoney = (amount: number): string => signedMoney(amount, this.currency(), this.numberLocale());
 
   readonly selectedYear = signal<number | null>(null);
   readonly year = computed(() => {
@@ -198,7 +199,7 @@ export class KurinDuesComponent implements OnInit {
   }
 
   amountLabel(entry: DuesEntryDto): string {
-    return duesAmountLabel(entry, this.currency());
+    return duesAmountLabel(entry, this.currency(), this.numberLocale());
   }
 
   isIncoming(entry: DuesEntryDto): boolean | null {

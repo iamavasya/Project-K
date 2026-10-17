@@ -55,6 +55,7 @@ describe('KurinDuesComponent', () => {
   const data: KurinDuesDto = {
     kurinKey: 'k1',
     currency: 'UAH',
+    numberLocale: 'uk-UA',
     currentQuarter: q(2026, 4),
     years: [{ startYear: 2026, label: '26–27', quarters: [q(2026, 4), q(2027, 1), q(2027, 2), q(2027, 3)] }],
     rates: [{

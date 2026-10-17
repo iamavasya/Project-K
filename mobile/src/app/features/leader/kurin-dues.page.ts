@@ -1,4 +1,4 @@
-import { DEFAULT_CURRENCY } from '../../me/labels';
+import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../me/labels';
 import { Component, ElementRef, OnDestroy, OnInit, afterRenderEffect, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -583,8 +583,9 @@ export class KurinDuesPage implements OnInit, OnDestroy {
   protected readonly kindLabels = KIND_LABELS;
   /** What this kurin counts its вкладка in, from its край's profile. */
   protected readonly currency = computed(() => this.data()?.currency ?? DEFAULT_CURRENCY);
-  protected readonly money = (amount: number): string => duesMoney(amount, this.currency());
-  protected readonly amount = (entry: DuesEntryDto): string => amountLabel(entry, this.currency());
+  protected readonly numberLocale = computed(() => this.data()?.numberLocale ?? DEFAULT_NUMBER_LOCALE);
+  protected readonly money = (amount: number): string => duesMoney(amount, this.currency(), this.numberLocale());
+  protected readonly amount = (entry: DuesEntryDto): string => amountLabel(entry, this.currency(), this.numberLocale());
   protected readonly signed = signedAmount;
   protected readonly key = quarterKey;
 
@@ -615,7 +616,7 @@ export class KurinDuesPage implements OnInit, OnDestroy {
     const d = this.data();
     return d ? rateAt(d.rates, d.currentQuarter) : null;
   });
-  protected readonly ratesText = computed(() => kurinRatesText(this.rateNow(), this.currency()));
+  protected readonly ratesText = computed(() => kurinRatesText(this.rateNow(), this.currency(), this.numberLocale()));
   protected readonly standardArticles = computed(() => articlesAreStandard(this.rateNow()));
   protected readonly pending = computed(() => (this.data()?.transfers ?? []).filter((t) => !t.isReceived));
   protected readonly outstanding = computed(() => (this.data()?.groups ?? []).reduce((sum, g) => sum + g.outstanding, 0));

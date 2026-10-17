@@ -11,6 +11,8 @@ public sealed class KurinDuesResponse
     public Guid KurinKey { get; init; }
     /// <summary>ISO 4217 code of what the amounts are counted in: the край's currency.</summary>
     public string Currency { get; init; } = "UAH";
+    /// <summary>How the край writes numbers, such as uk-UA.</summary>
+    public string NumberLocale { get; init; } = "uk-UA";
     public QuarterDto CurrentQuarter { get; init; } = new();
     public IReadOnlyList<PlastYearDto> Years { get; init; } = [];
     public IReadOnlyList<KurinDuesRateDto> Rates { get; init; } = [];

@@ -116,6 +116,8 @@ export interface GroupDuesDto {
   kurinKey: string;
   /** ISO 4217 code of what the amounts are counted in: the край's currency. */
   currency: string;
+  /** How the край writes numbers, such as uk-UA. */
+  numberLocale: string;
   groupName: string;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
@@ -190,6 +192,8 @@ export interface KurinDuesDto {
   kurinKey: string;
   /** ISO 4217 code of what the amounts are counted in: the край's currency. */
   currency: string;
+  /** How the край writes numbers, such as uk-UA. */
+  numberLocale: string;
   currentQuarter: QuarterDto;
   years: PlastYearDto[];
   rates: KurinDuesRateDto[];
@@ -220,6 +224,8 @@ export interface MemberDuesDto {
   kurinKey: string;
   /** ISO 4217 code of what the amounts are counted in: the край's currency. */
   currency: string;
+  /** How the край writes numbers, such as uk-UA. */
+  numberLocale: string;
   currentQuarter: QuarterDto;
   balance: number;
   quarterRate: DuesAmountDto | null;

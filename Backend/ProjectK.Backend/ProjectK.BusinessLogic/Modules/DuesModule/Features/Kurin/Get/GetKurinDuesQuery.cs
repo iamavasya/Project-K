@@ -73,7 +73,8 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
         // Memberships the kurin no longer has are removed people; see GetGroupDuesQuery.
         var accounts = ledger.Accounts().Where(a => names.Memberships.ContainsKey(a.MembershipKey)).ToList();
         var kurinBox = ledger.KurinBox(accounts);
-        var current = DuesQuarter.Of(_time.GetUtcNow().UtcDateTime);
+        var locale = await _profiles.DuesLocaleForKurinAsync(kurinKey, cancellationToken);
+        var current = locale.QuarterOf(_time.GetUtcNow());
 
         var transfers = entries
             .Where(e => e.GroupKey.HasValue && e.Kind == DuesEntryKind.TransferToKurin)
@@ -118,12 +119,11 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             .DefaultIfEmpty(current.Index)
             .Min();
 
-        var currency = await _profiles.CurrencyForKurinAsync(kurinKey, cancellationToken);
-
         return new ServiceResult<KurinDuesResponse>(ResultType.Success, new KurinDuesResponse
         {
             KurinKey = kurinKey,
-            Currency = currency,
+            Currency = locale.Currency,
+            NumberLocale = locale.NumberLocale,
             CurrentQuarter = Quarter(current),
             Years = Years(DuesQuarter.FromIndex(first), current),
             Rates = rates.Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
