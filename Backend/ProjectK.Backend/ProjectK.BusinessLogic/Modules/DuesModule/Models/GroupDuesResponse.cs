@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.KraiProfiles;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Models.Enums;
@@ -13,6 +14,10 @@ public sealed class GroupDuesResponse
 
     /// <summary>ISO 4217 code of what the amounts are counted in: the край's currency.</summary>
     public string Currency { get; init; } = "UAH";
+    /// <summary>How the край writes numbers, such as uk-UA.</summary>
+    public string NumberLocale { get; init; } = "uk-UA";
+    /// <summary>Where the край's kurins hand the вкладка up: stanytsia, krai or both.</summary>
+    public string Upstream { get; init; } = KraiDues.Stanytsia;
 
     public QuarterDto CurrentQuarter { get; init; } = new();
 
@@ -58,6 +63,8 @@ public sealed class KurinDuesRateDto
     public decimal StanytsiaReduced { get; init; }
     public decimal KurinShare { get; init; }
     public decimal KurinReduced { get; init; }
+    public decimal KraiFull { get; init; }
+    public decimal KraiReduced { get; init; }
 
     public static KurinDuesRateDto From(KurinDuesRate rate, QuarterDto fromQuarter) => new()
     {
@@ -76,7 +83,9 @@ public sealed class KurinDuesRateDto
         StanytsiaFull = rate.StanytsiaFull,
         StanytsiaReduced = rate.StanytsiaReduced,
         KurinShare = rate.KurinShare,
-        KurinReduced = rate.KurinReduced ?? rate.KurinShare
+        KurinReduced = rate.KurinReduced ?? rate.KurinShare,
+        KraiFull = rate.KraiFull,
+        KraiReduced = rate.KraiReduced
     };
 }
 
@@ -97,6 +106,7 @@ public sealed class GroupDuesRateDto
 public sealed class DuesAmountDto
 {
     public decimal Stanytsia { get; init; }
+    public decimal Krai { get; init; }
     public decimal Kurin { get; init; }
     public decimal Group { get; init; }
     public decimal Total { get; init; }
