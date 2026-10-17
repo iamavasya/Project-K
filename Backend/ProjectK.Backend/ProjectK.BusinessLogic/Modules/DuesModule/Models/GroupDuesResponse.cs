@@ -1,3 +1,5 @@
+using ProjectK.BusinessLogic.Modules.DuesModule.Services;
+using ProjectK.Common.Entities.DuesModule;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.DuesModule.Models;
@@ -48,9 +50,42 @@ public sealed class PlastYearDto
 public sealed class KurinDuesRateDto
 {
     public QuarterDto FromQuarter { get; init; } = new();
+
+    /// <summary>The kurin's статті, in the order it set them. The amounts below are their totals.</summary>
+    public IReadOnlyList<DuesArticleDto> Articles { get; init; } = [];
+
     public decimal StanytsiaFull { get; init; }
     public decimal StanytsiaReduced { get; init; }
     public decimal KurinShare { get; init; }
+    public decimal KurinReduced { get; init; }
+
+    public static KurinDuesRateDto From(KurinDuesRate rate, QuarterDto fromQuarter) => new()
+    {
+        FromQuarter = fromQuarter,
+        Articles = (rate.Articles.Count > 0
+                ? rate.Articles
+                : KurinDuesArticles.Standard(rate.StanytsiaFull, rate.StanytsiaReduced, rate.KurinShare))
+            .Select(a => new DuesArticleDto
+            {
+                Name = a.Name,
+                Recipient = a.Recipient,
+                Amount = a.Amount,
+                ReducedAmount = a.ReducedAmount
+            })
+            .ToList(),
+        StanytsiaFull = rate.StanytsiaFull,
+        StanytsiaReduced = rate.StanytsiaReduced,
+        KurinShare = rate.KurinShare,
+        KurinReduced = rate.KurinReduced ?? rate.KurinShare
+    };
+}
+
+public sealed class DuesArticleDto
+{
+    public string Name { get; init; } = string.Empty;
+    public DuesRecipient Recipient { get; init; }
+    public decimal Amount { get; init; }
+    public decimal ReducedAmount { get; init; }
 }
 
 public sealed class GroupDuesRateDto

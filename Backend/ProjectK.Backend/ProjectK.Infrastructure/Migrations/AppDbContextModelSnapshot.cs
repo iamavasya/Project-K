@@ -681,6 +681,10 @@ namespace ProjectK.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Articles")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -689,6 +693,10 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Property<Guid>("KurinKey")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("KurinReduced")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("KurinShare")
                         .HasPrecision(18, 2)

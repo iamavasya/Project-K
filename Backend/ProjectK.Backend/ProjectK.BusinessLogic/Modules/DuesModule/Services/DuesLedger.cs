@@ -36,7 +36,7 @@ public sealed class DuesLedger
         _entries = entries.Where(e => !e.IsDeleted).ToList();
     }
 
-    /// <summary>Whether the membership pays the пільгова станиця rate in that quarter.</summary>
+    /// <summary>Whether the membership pays the пільгові amounts of the статті in that quarter.</summary>
     public bool IsConcession(Guid membershipKey, DuesQuarter quarter) =>
         _concessions[membershipKey].LastOrDefault(c => c.FromQuarter <= quarter.Index)?.IsConcession ?? false;
 
@@ -46,13 +46,15 @@ public sealed class DuesLedger
         var kurin = _kurinRates.LastOrDefault(r => r.FromQuarter <= quarter.Index);
         var group = _groupRates[groupKey].LastOrDefault(r => r.FromQuarter <= quarter.Index);
 
-        decimal stanytsia = 0;
+        decimal stanytsia = 0, own = 0;
         if (kurin is not null)
         {
-            stanytsia = IsConcession(membershipKey, quarter) ? kurin.StanytsiaReduced : kurin.StanytsiaFull;
+            var concession = IsConcession(membershipKey, quarter);
+            stanytsia = concession ? kurin.StanytsiaReduced : kurin.StanytsiaFull;
+            own = concession ? kurin.KurinReduced ?? kurin.KurinShare : kurin.KurinShare;
         }
 
-        return new DuesAmount(stanytsia, kurin?.KurinShare ?? 0, group?.GroupShare ?? 0);
+        return new DuesAmount(stanytsia, own, group?.GroupShare ?? 0);
     }
 
     /// <summary>Every account in the kurin, one per membership per гурток it was charged or paid in.</summary>

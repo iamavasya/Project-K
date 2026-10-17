@@ -17,6 +17,17 @@ export enum DuesPaymentMethod {
   Card = 'Card'
 }
 
+/** Where the money of a стаття goes: up to the станиця (and through it the край), or kept by the kurin. */
+export enum DuesRecipient {
+  Stanytsia = 'Stanytsia',
+  Kurin = 'Kurin'
+}
+
+export const DUES_RECIPIENT_LABELS: Record<DuesRecipient, string> = {
+  [DuesRecipient.Stanytsia]: 'Станиці',
+  [DuesRecipient.Kurin]: 'Куреню'
+};
+
 export const DUES_ENTRY_KIND_LABELS: Record<DuesEntryKind, string> = {
   [DuesEntryKind.Contribution]: 'Вкладка',
   [DuesEntryKind.Refund]: 'Повернення',

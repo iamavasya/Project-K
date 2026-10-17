@@ -129,6 +129,26 @@ public class DuesLedgerTests
     }
 
     [Fact]
+    public void Concession_TakesThePilhovyAmountOfEveryStattia()
+    {
+        var rate = new KurinDuesRate { KurinKey = Kurin, FromQuarter = Q2.Index };
+        rate.SetArticles(
+        [
+            new KurinDuesArticle { Name = "Станиця", Recipient = DuesRecipient.Stanytsia, Amount = 240, ReducedAmount = 180 },
+            new KurinDuesArticle { Name = "Курінь", Recipient = DuesRecipient.Kurin, Amount = 15, ReducedAmount = 15 },
+            new KurinDuesArticle { Name = "Табірний фонд", Recipient = DuesRecipient.Kurin, Amount = 50, ReducedAmount = 25 }
+        ]);
+        _kurinRates.Add(rate);
+        _concessions.Add(new DuesConcession { KurinKey = Kurin, MembershipKey = Youth, FromQuarter = Q2.Index, IsConcession = true });
+        Charge(GroupA, Q1, Q2);
+
+        var quarters = Account(GroupA).Quarters;
+
+        quarters[0].Charged.Should().Be(new DuesAmount(240, 15, 45));
+        quarters[1].Charged.Should().Be(new DuesAmount(180, 40, 45));
+    }
+
+    [Fact]
     public void RateChange_AppliesFromItsQuarter()
     {
         _kurinRates.Add(new KurinDuesRate { KurinKey = Kurin, FromQuarter = Q3.Index, StanytsiaFull = 300, StanytsiaReduced = 200, KurinShare = 20 });

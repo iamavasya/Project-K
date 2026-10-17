@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { BehaviorSubject, of } from 'rxjs';
-import { DuesEntryKind, DuesPaymentMethod } from '../../models/dues.enums';
+import { DuesEntryKind, DuesPaymentMethod, DuesRecipient } from '../../models/dues.enums';
 import { DuesEntryDto, DuesTransferDto, KurinDuesDto } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 import { KurinDuesComponent } from './kurin-dues';
@@ -57,7 +57,17 @@ describe('KurinDuesComponent', () => {
     currency: 'UAH',
     currentQuarter: q(2026, 4),
     years: [{ startYear: 2026, label: '26–27', quarters: [q(2026, 4), q(2027, 1), q(2027, 2), q(2027, 3)] }],
-    rates: [{ fromQuarter: q(2026, 4), stanytsiaFull: 240, stanytsiaReduced: 180, kurinShare: 15 }],
+    rates: [{
+      fromQuarter: q(2026, 4),
+      articles: [
+        { name: 'Станиця', recipient: DuesRecipient.Stanytsia, amount: 240, reducedAmount: 180 },
+        { name: 'Курінь', recipient: DuesRecipient.Kurin, amount: 15, reducedAmount: 15 }
+      ],
+      stanytsiaFull: 240,
+      stanytsiaReduced: 180,
+      kurinShare: 15,
+      kurinReduced: 15
+    }],
     box: { cash: 255, card: 0, total: 255, toForward: 240, own: 15, inTransit: 100 },
     sentToStanytsia: 0,
     groups: [
