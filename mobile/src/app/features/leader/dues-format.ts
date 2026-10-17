@@ -179,12 +179,33 @@ export function entryRequest(draft: EntryDraft): UpsertDuesEntryRequest {
 }
 
 /** The web's line under the kurin's box about the станиця and kurin parts in force now. */
-export function kurinRatesText(rate: KurinDuesRateDto | null): string {
+export function kurinRatesText(rate: KurinDuesRateDto | null, currency: string = DEFAULT_CURRENCY): string {
   if (!rate) return 'Ставки ще не задано — гуртки нічого не нараховують, доки їх немає.';
-  const reduced = rate.stanytsiaReduced !== rate.stanytsiaFull ? ` (пільгова ${duesMoney(rate.stanytsiaReduced)})` : '';
+  const articles = rate.articles
+    .map((a) => `${a.name} ${duesMoney(a.amount, currency)}${withPilha(a.amount, a.reducedAmount, currency)}`)
+    .join(' · ');
+  return `${articles} за квартал з кожного юнака. Гурткову частину кожен гурток задає собі.`;
+}
+
+/** " (з пільгою …)" when a пільга lowers the amount, else nothing. */
+export function withPilha(full: number, reduced: number, currency: string = DEFAULT_CURRENCY): string {
+  return reduced !== full ? ` (з пільгою ${duesMoney(reduced, currency)})` : '';
+}
+
+/**
+ * The server's KurinDuesArticles.AreStandard: only the two standard статті, which the phone's
+ * three-amount form can change without losing anything. Any other set is edited on the web.
+ */
+export function articlesAreStandard(rate: KurinDuesRateDto | null): boolean {
+  if (!rate || rate.articles.length === 0) return true;
+  const [stanytsia, kurin] = rate.articles;
   return (
-    `Станиця ${duesMoney(rate.stanytsiaFull)}${reduced} · курінь ${duesMoney(rate.kurinShare)} за квартал з кожного юнака. ` +
-    'Гурткову частину кожен гурток задає собі.'
+    rate.articles.length === 2 &&
+    stanytsia.name === 'Станиця' &&
+    stanytsia.recipient === 'Stanytsia' &&
+    kurin.name === 'Курінь' &&
+    kurin.recipient === 'Kurin' &&
+    kurin.reducedAmount === kurin.amount
   );
 }
 

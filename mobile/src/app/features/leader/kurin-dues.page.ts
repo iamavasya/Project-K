@@ -44,6 +44,7 @@ import {
   KURIN_KINDS,
   allQuarters,
   amountLabel,
+  articlesAreStandard,
   duesMoney,
   fromQuarterOptions,
   kurinRatesText,
@@ -79,6 +80,7 @@ const DUES_ERRORS: Record<string, string> = {
   EntryNotFound: 'Цієї операції вже немає.',
   TransferNotFound: 'Цієї передачі вже немає.',
   CollectorNotInKurin: 'Той, хто збирав, має бути з цього куреня.',
+  DuesArticlesInUse: 'У куреня власні статті вкладки, їх змінюють у вебі.',
 };
 
 /**
@@ -282,10 +284,18 @@ const DUES_ERRORS: Record<string, string> = {
                         <div class="rates" data-testid="rates">{{ ratesText() }}</div>
                       </ion-item>
                       @if (d.viewer.canSetRates) {
-                        <ion-item [button]="true" [detail]="true" (click)="openRate()" data-testid="kurin-rate">
-                          <ion-label>Ставки куреня</ion-label>
-                          @if (!rateNow()) { <ion-note slot="end">не задано</ion-note> }
-                        </ion-item>
+                        @if (standardArticles()) {
+                          <ion-item [button]="true" [detail]="true" (click)="openRate()" data-testid="kurin-rate">
+                            <ion-label>Ставки куреня</ion-label>
+                            @if (!rateNow()) { <ion-note slot="end">не задано</ion-note> }
+                          </ion-item>
+                        } @else {
+                          <ion-item data-testid="kurin-rate-web">
+                            <ion-label class="ion-text-wrap">
+                              <p>У куреня власні статті вкладки, їх змінюють у вебі.</p>
+                            </ion-label>
+                          </ion-item>
+                        }
                       }
                     </ion-item-group>
                   </ion-list>
@@ -605,7 +615,8 @@ export class KurinDuesPage implements OnInit, OnDestroy {
     const d = this.data();
     return d ? rateAt(d.rates, d.currentQuarter) : null;
   });
-  protected readonly ratesText = computed(() => kurinRatesText(this.rateNow()));
+  protected readonly ratesText = computed(() => kurinRatesText(this.rateNow(), this.currency()));
+  protected readonly standardArticles = computed(() => articlesAreStandard(this.rateNow()));
   protected readonly pending = computed(() => (this.data()?.transfers ?? []).filter((t) => !t.isReceived));
   protected readonly outstanding = computed(() => (this.data()?.groups ?? []).reduce((sum, g) => sum + g.outstanding, 0));
 

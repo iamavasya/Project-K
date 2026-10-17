@@ -88,7 +88,7 @@ public static class DependencyInjection
         services.AddSingleton<TelemetryCounters>();
 
         var options = configuration.GetSection(TelemetryOptions.SectionName).Get<TelemetryOptions>() ?? new TelemetryOptions();
-        if (!options.Enabled)
+        if (!options.IsEnabled)
         {
             return;
         }

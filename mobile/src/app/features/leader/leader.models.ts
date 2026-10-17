@@ -90,11 +90,22 @@ export interface PlastYearDto {
   quarters: QuarterDto[];
 }
 
+/** A стаття of the kurin's вкладка; reducedAmount is what a person with a пільга pays. */
+export interface DuesArticleDto {
+  name: string;
+  amount: number;
+  reducedAmount: number;
+  recipient: 'Stanytsia' | 'Kurin';
+}
+
+/** The kurin's rate from a quarter on: the totals by recipient, and the статті they add up from. */
 export interface KurinDuesRateDto {
   fromQuarter: QuarterDto;
   stanytsiaFull: number;
   stanytsiaReduced: number;
   kurinShare: number;
+  kurinReduced: number;
+  articles: DuesArticleDto[];
 }
 
 export interface GroupDuesRateDto {

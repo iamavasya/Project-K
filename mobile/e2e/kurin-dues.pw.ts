@@ -41,7 +41,7 @@ function kurinDues(viewer = ZVYAZKOVYI) {
   return {
     kurinKey: 'k1', currentQuarter: q(2026, 4),
     years: [{ startYear: 2026, label: '2026/27', quarters: [q(2026, 3), q(2026, 4), q(2027, 1), q(2027, 2)] }],
-    rates: [{ fromQuarter: q(2026, 3), stanytsiaFull: 100, stanytsiaReduced: 50, kurinShare: 30 }],
+    rates: [{ fromQuarter: q(2026, 3), articles: [{ name: 'Станиця', recipient: 'Stanytsia', amount: 100, reducedAmount: 50 }, { name: 'Курінь', recipient: 'Kurin', amount: 30, reducedAmount: 30 }], stanytsiaFull: 100, stanytsiaReduced: 50, kurinShare: 30, kurinReduced: 30 }],
     box: { cash: 520, card: 180, total: 700, toForward: 400, own: 300, inTransit: 130 },
     sentToStanytsia: 200,
     groups: [
@@ -73,9 +73,9 @@ function kurinDues(viewer = ZVYAZKOVYI) {
 }
 
 /** The kurin's box; `viewer` is what the server says the caller may do, `denied` a youth's 403. */
-function kurinDuesApi(options: { viewer?: typeof ZVYAZKOVYI; denied?: boolean } = {}): ExtraApi {
+function kurinDuesApi(options: { viewer?: typeof ZVYAZKOVYI; denied?: boolean; rates?: unknown[] } = {}): ExtraApi {
   return ({ method, path }) => {
-    if (method === 'GET' && path === 'kurin/k1/dues') return options.denied ? refuse(403) : ok(kurinDues(options.viewer));
+    if (method === 'GET' && path === 'kurin/k1/dues') return options.denied ? refuse(403) : ok({ ...kurinDues(options.viewer), ...(options.rates ? { rates: options.rates } : {}) });
     if (method === 'GET' && path === 'kurin/k1/dues/groups') return ok([]);
     if (method === 'GET' && path === 'group/g1/dues') return refuse(403);
     return null;
@@ -116,7 +116,7 @@ test('opens the kurin’s box from Меню and reads its cash, гуртки, tr
   await expect(box).toContainText('ще в гуртках 200 ₴');
   await expect(page.getByTestId('subline')).toHaveText('зараз IV кв. 2026 · гуртків: 2 · чекають підтвердження: 1');
   await expect(page.getByTestId('rates')).toHaveText(
-    'Станиця 100 ₴ (пільгова 50 ₴) · курінь 30 ₴ за квартал з кожного юнака. Гурткову частину кожен гурток задає собі.',
+    'Станиця 100 ₴ (з пільгою 50 ₴) · Курінь 30 ₴ за квартал з кожного юнака. Гурткову частину кожен гурток задає собі.',
   );
   await expect(page.getByTestId('kurin-rate')).toBeVisible();
   await shot(page, project, 'kurin-dues');
@@ -264,6 +264,22 @@ test('confirms a transfer, records and checks operations and sets the kurin’s 
     stanytsiaReduced: 150,
     kurinShare: 40,
   });
+});
+
+test('sends a kurin with its own статті to the web for its rates', async ({ page }) => {
+  const own = {
+    fromQuarter: q(2026, 3),
+    articles: [
+      { name: 'Станиця', recipient: 'Stanytsia', amount: 100, reducedAmount: 50 },
+      { name: 'Табірний фонд', recipient: 'Kurin', amount: 50, reducedAmount: 25 },
+    ],
+    stanytsiaFull: 100, stanytsiaReduced: 50, kurinShare: 50, kurinReduced: 25,
+  };
+  await signIn(page, undefined, kurinDuesApi({ rates: [own] }), TREASURER);
+  await page.goto('./tabs/kurin/dues');
+  await expect(page.getByTestId('rates')).toContainText('Станиця 100 ₴ (з пільгою 50 ₴) · Табірний фонд 50 ₴ (з пільгою 25 ₴)');
+  await expect(page.getByTestId('kurin-rate')).toHaveCount(0);
+  await expect(page.getByTestId('kurin-rate-web')).toContainText('їх змінюють у вебі');
 });
 
 test('shows the box read-only to whoever the server lets read but not keep', async ({ page }) => {

@@ -43,6 +43,7 @@ import {
   STANDING_LABELS,
   allQuarters,
   amountLabel,
+  articlesAreStandard,
   balanceLabel,
   duesMoney,
   fromQuarterOptions,
@@ -54,6 +55,7 @@ import {
   sameQuarter,
   shortDate,
   signedAmount,
+  withPilha,
 } from './dues-format';
 import { DuesEntryForm, DuesKurinRateForm, DuesQuarterForm } from './dues-forms';
 import {
@@ -77,6 +79,7 @@ const DUES_ERRORS: Record<string, string> = {
   NotInGroup: 'Цей юнак не з цього гуртка.',
   CollectorNotInKurin: 'Той, хто збирав, має бути з цього куреня.',
   GroupNotFound: 'Такого гуртка немає.',
+  DuesArticlesInUse: 'У куреня власні статті вкладки, їх змінюють у вебі.',
 };
 
 interface PersonRow {
@@ -273,10 +276,18 @@ interface PersonRow {
                       </ion-item>
                     }
                     @if (d.viewer.canSetKurinRates) {
-                      <ion-item [button]="true" [detail]="true" (click)="openKurinRate()" data-testid="kurin-rate">
-                        <ion-label>Ставки куреня</ion-label>
-                        @if (!kurinRateNow()) { <ion-note slot="end">не задано</ion-note> }
-                      </ion-item>
+                      @if (standardArticles()) {
+                        <ion-item [button]="true" [detail]="true" (click)="openKurinRate()" data-testid="kurin-rate">
+                          <ion-label>Ставки куреня</ion-label>
+                          @if (!kurinRateNow()) { <ion-note slot="end">не задано</ion-note> }
+                        </ion-item>
+                      } @else {
+                        <ion-item data-testid="kurin-rate-web">
+                          <ion-label class="ion-text-wrap">
+                            <p>У куреня власні статті вкладки, їх змінюють у вебі.</p>
+                          </ion-label>
+                        </ion-item>
+                      }
                     }
                   </ion-item-group>
                 </ion-list>
@@ -587,6 +598,7 @@ export class GroupDuesPage implements OnInit, OnDestroy {
     const d = this.data();
     return d ? rateAt(d.kurinRates, d.currentQuarter) : null;
   });
+  protected readonly standardArticles = computed(() => articlesAreStandard(this.kurinRateNow()));
   protected readonly groupRateNow = computed(() => {
     const d = this.data();
     return d ? (rateAt(d.groupRates, d.currentQuarter)?.groupShare ?? null) : null;
@@ -607,12 +619,13 @@ export class GroupDuesPage implements OnInit, OnDestroy {
     const kurin = this.kurinRateNow();
     const group = this.groupRateNow();
     if (kurin) {
+      const stanytsia = `${this.money(kurin.stanytsiaFull)}${withPilha(kurin.stanytsiaFull, kurin.stanytsiaReduced, this.currency())}`;
+      const own = `${this.money(kurin.kurinShare)}${withPilha(kurin.kurinShare, kurin.kurinReduced, this.currency())}`;
       if (group === null) {
-        return `Станиця ${this.money(kurin.stanytsiaFull)} · курінь ${this.money(kurin.kurinShare)}. Гурткову частину ще не задано, поки вона нуль.`;
+        return `Станиця ${stanytsia} · курінь ${own}. Гурткову частину ще не задано, поки вона нуль.`;
       }
-      const reduced = kurin.stanytsiaReduced !== kurin.stanytsiaFull ? ` (пільгова ${this.money(kurin.stanytsiaReduced)})` : '';
       const total = kurin.stanytsiaFull + kurin.kurinShare + group;
-      return `Квартальна вкладка ${this.money(total)} = станиця ${this.money(kurin.stanytsiaFull)}${reduced} · курінь ${this.money(kurin.kurinShare)} · гурток ${this.money(group)}`;
+      return `Квартальна вкладка ${this.money(total)} = станиця ${stanytsia} · курінь ${own} · гурток ${this.money(group)}`;
     }
     const tail = group !== null ? `Гурток свою задав: ${this.money(group)} за квартал.` : 'Нарахувань поки немає.';
     return `Курінь ще не задав станичної та курінної частини вкладки. ${tail}`;

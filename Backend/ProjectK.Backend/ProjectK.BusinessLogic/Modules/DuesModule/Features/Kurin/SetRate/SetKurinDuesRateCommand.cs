@@ -27,15 +27,16 @@ public sealed class SetKurinDuesRateCommandValidator : AbstractValidator<SetKuri
 
         When(c => c.Request.Articles is not null, () =>
         {
+            RuleForEach(c => c.Request.Articles!).NotNull();
             RuleFor(c => c.Request.Articles!)
                 .NotEmpty().WithMessage("A rate needs at least one стаття.")
                 .Must(a => a.Count <= KurinDuesArticles.MaxCount)
                 .WithMessage($"No more than {KurinDuesArticles.MaxCount} статей.")
-                .Must(a => a.Select(x => x.Name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() == a.Count)
+                .Must(a => a.Select(x => x?.Name?.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() == a.Count)
                 .WithMessage("Two статті cannot have the same name.");
             RuleForEach(c => c.Request.Articles!).ChildRules(article =>
             {
-                article.RuleFor(a => a.Name).NotEmpty().Must(n => n.Trim().Length > 0)
+                article.RuleFor(a => a.Name).NotEmpty().Must(n => n?.Trim().Length > 0)
                     .MaximumLength(KurinDuesArticles.MaxNameLength);
                 article.RuleFor(a => a.Recipient).IsInEnum();
                 article.RuleFor(a => a.Amount).GreaterThanOrEqualTo(0).PrecisionScale(18, 2, ignoreTrailingZeros: true);

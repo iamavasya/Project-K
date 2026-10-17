@@ -33,6 +33,30 @@ public class TelemetryTests
     }
 
     [Theory]
+    [InlineData("true", true)]
+    [InlineData("True", true)]
+    [InlineData(" 1 ", true)]
+    [InlineData("yes", true)]
+    [InlineData("ON", true)]
+    [InlineData("false", false)]
+    [InlineData("0", false)]
+    [InlineData("no", false)]
+    [InlineData("off", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    [InlineData("maybe", false)]
+    public void Enabled_IsOnOnlyForAClearOn_AndBindsWithoutThrowing(string? value, bool expected)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Telemetry:Enabled"] = value })
+            .Build();
+
+        var options = configuration.GetSection(TelemetryOptions.SectionName).Get<TelemetryOptions>() ?? new TelemetryOptions();
+
+        Assert.Equal(expected, options.IsEnabled);
+    }
+
+    [Theory]
     [InlineData("v1.1.9", "v1.2.0", true)]
     [InlineData("v1.9.0", "v1.10.0", true)]
     [InlineData("v1.2.0", "v1.2.0", false)]
@@ -151,7 +175,7 @@ public class TelemetryTests
             provider,
             httpClients.Object,
             new TelemetryCounters(),
-            Options.Create(new TelemetryOptions { Enabled = true, Endpoint = "https://status.test/v1/ping" }),
+            Options.Create(new TelemetryOptions { Enabled = "true", Endpoint = "https://status.test/v1/ping" }),
             configuration,
             environment.Object,
             NullLogger<TelemetryBackgroundService>.Instance);

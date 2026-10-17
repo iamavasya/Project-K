@@ -37,6 +37,9 @@ services:
       Jwt__Audience: ${PROJECTK_JWT_AUDIENCE:-ProjectK-Users}
       Telegram__DevAlerts__Enabled: "false"
       Telegram__PublicChannel__Enabled: "false"
+      # Off in every local stack: selfhost and prod run as SelfHost/Production, where the ping is on,
+      # and would report a v0.0.0-dev install to the real status service.
+      Telemetry__Enabled: ${PROJECTK_TELEMETRY:-false}
       Feedback__GitHub__Token: ${PROJECTK_FEEDBACK_GITHUB_TOKEN:-}
       Feedback__GitHub__Repository: ${PROJECTK_FEEDBACK_GITHUB_REPOSITORY:-iamavasya/Project-K}
       # Web Push to the PWA (VAPID). Both keys or none: without them push is off. The e2e env sets a

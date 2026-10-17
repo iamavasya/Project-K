@@ -153,6 +153,21 @@ describe('GroupDuesComponent', () => {
     expect(text()).toContain('25 ₴');
   });
 
+  it('показує пільгу курінної частини, коли курінь її задав', () => {
+    create({ ...data, kurinRates: [{ ...data.kurinRates[0], kurinReduced: 10 }] });
+
+    const rates = (fixture.nativeElement as HTMLElement).querySelector('.dues-rates')?.textContent ?? '';
+    expect(rates).toContain('з пільгою 180 ₴');
+    expect(rates).toContain('з пільгою 10 ₴');
+  });
+
+  it('не показує пільги курінної частини, коли вона дорівнює повній', () => {
+    create();
+
+    const rates = (fixture.nativeElement as HTMLElement).querySelector('.dues-rates')?.textContent ?? '';
+    expect(rates).not.toContain('з пільгою 15 ₴');
+  });
+
   it('клік по юнаку лишає в історії тільки його операції, другий клік знімає фільтр', () => {
     create();
 
