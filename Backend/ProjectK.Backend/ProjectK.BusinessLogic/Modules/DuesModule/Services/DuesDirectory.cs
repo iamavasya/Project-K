@@ -45,9 +45,11 @@ public sealed class DuesDirectory : IDuesDirectory
         }
 
         var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
-        var balance = ledger.Accounts()
+        var current = (await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken)).QuarterOf(_time.GetUtcNow());
+        return ledger.Accounts()
             .Where(account => membershipKeys.Contains(account.MembershipKey))
-            .Sum(account => account.Balance);
-        return balance < 0 ? -balance : 0;
+            .SelectMany(account => account.Quarters)
+            .Where(q => q.Quarter < current && q.Balance < 0)
+            .Sum(q => -q.Balance);
     }
 }

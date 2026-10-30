@@ -55,6 +55,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<DuesCharge> DuesCharges { get; set; }
     public DbSet<DuesEntry> DuesEntries { get; set; }
     public DbSet<DuesEntryEvent> DuesEntryEvents { get; set; }
+    public DbSet<KurinDuesSettings> KurinDuesSettings { get; set; }
 
     public DbSet<KurinScoreSettings> KurinScoreSettings { get; set; }
     public DbSet<ScoreRule> ScoreRules { get; set; }
@@ -277,6 +278,13 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.Value).HasPrecision(18, 2);
             entity.Property(e => e.Parts).HasConversion<int>();
             entity.Property(e => e.Reason).HasMaxLength(500);
+        });
+
+        builder.Entity<KurinDuesSettings>(entity =>
+        {
+            entity.HasKey(e => e.KurinDuesSettingsKey);
+            entity.Property(e => e.ChargeTiming).HasConversion<int>();
+            entity.HasIndex(e => e.KurinKey).IsUnique();
         });
 
         builder.Entity<DuesCharge>(entity =>

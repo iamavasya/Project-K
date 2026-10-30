@@ -147,6 +147,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<GroupDuesController, Guid, Guid>>(nameof(GroupDuesController.DeleteEntry), "RequireUser");
         yield return Row<Action<GroupDuesController, Guid, Guid, SetDuesEntryVerifiedRequest>>(nameof(GroupDuesController.SetEntryVerified), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid, SetKurinDuesRateRequest>>(nameof(KurinDuesController.SetRate), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, SetKurinDuesSettingsRequest>>(nameof(KurinDuesController.SetSettings), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid>>(nameof(KurinDuesController.Get), "RequireUser");
         yield return Row<Action<MemberDuesController, Guid>>(nameof(MemberDuesController.Get), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid>>(nameof(KurinDuesController.GetReadableGroups), "RequireUser");

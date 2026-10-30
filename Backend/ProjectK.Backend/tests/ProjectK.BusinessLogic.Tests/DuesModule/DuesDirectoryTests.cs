@@ -77,4 +77,29 @@ public class DuesDirectoryTests
     {
         (await Directory().GetPaidQuartersAsync(Kurin)).Should().BeEmpty();
     }
+
+    // Charged Q1–Q4 at 300 each (240 + 15 + 45); the running Q4 is not a debt that keeps someone.
+    [Fact]
+    public async Task Owed_CountsOnlyQuartersAlreadyBehind()
+    {
+        Pay(450);
+
+        var owed = await Directory().GetOwedAsync(Kurin, [Youth]);
+
+        owed.Should().Be(450);
+    }
+
+    [Fact]
+    public async Task Owed_IsZero_WhenOnlyTheRunningQuarterIsUnpaid()
+    {
+        Pay(900);
+
+        (await Directory().GetOwedAsync(Kurin, [Youth])).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Owed_IgnoresOtherMemberships()
+    {
+        (await Directory().GetOwedAsync(Kurin, [Guid.NewGuid()])).Should().Be(0);
+    }
 }

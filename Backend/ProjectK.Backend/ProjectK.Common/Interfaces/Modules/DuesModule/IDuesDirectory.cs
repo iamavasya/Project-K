@@ -15,9 +15,10 @@ public interface IDuesDirectory
     Task<IReadOnlyCollection<PaidQuarterRecord>> GetPaidQuartersAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// What the given memberships of the kurin still owe it, all their accounts together — the
-    /// running quarter included, since it is charged when it begins. Zero when they are square or
-    /// ahead: a surplus on one account pays the debt on another, as on the person's card.
+    /// What the given memberships of the kurin still owe it for quarters already behind them, all
+    /// their accounts together. The running quarter is left out whichever way the kurin pays: the
+    /// quarter a person leaves in is not charged (see <c>DuesAccrual</c>), so it is not a debt that
+    /// keeps them. Zero when they are square.
     /// </summary>
     Task<decimal> GetOwedAsync(Guid kurinKey, IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default);
 }

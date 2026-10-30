@@ -884,6 +884,7 @@ describe('MemberCardComponent', () => {
       numberLocale: 'uk-UA',
       currentQuarter: { year: 2026, number: 4 },
       balance: -300,
+      owedToLeave: 0,
       quarterRate: { stanytsia: 240, krai: 0, kurin: 15, group: 45, total: 300 },
       isConcessionNow: false,
       concessionNamesNow: [],
@@ -922,7 +923,7 @@ describe('MemberCardComponent', () => {
     // Борг з людиною не йде: «Вивести» пояснює, що спершу треба сплатити, і не пропонує вивести.
     it('із боргом «Вивести» каже про вкладку замість підтвердження', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));
-      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: -300 })));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: -600, owedToLeave: 300 })));
       createComponent();
       fixture.detectChanges();
       const confirm = vi.spyOn(component.confirmationService, 'confirm').mockReturnThis();

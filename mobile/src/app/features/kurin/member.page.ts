@@ -797,8 +797,8 @@ export class MemberPage implements OnInit {
     if (!key || this.placing()) return;
     // Debt does not leave with the person (web member-card): said before the tap, not after.
     const d = this.dues();
-    if (d && d.kurinKey === m.kurinKey && d.balance < 0) {
-      await this.toasts.show(`Людина винна куреню ${this.money(-d.balance)}. ${OWES_DUES_TEXT}`, 'danger');
+    if (d && d.kurinKey === m.kurinKey && d.owedToLeave > 0) {
+      await this.toasts.show(`Людина винна куреню ${this.money(d.owedToLeave)} за квартали, що минули. ${OWES_DUES_TEXT}`, 'danger');
       return;
     }
     const sheet = await this.sheets.create({
@@ -819,7 +819,7 @@ export class MemberPage implements OnInit {
       await this.data.leaveKurin(m.kurinKey, key);
     } catch (error) {
       await this.toasts.show(
-        apiErrorText(error, 'Не вдалося вивести. Спробуй ще раз.', { MemberOwesDues: `Людина винна куреню вкладку. ${OWES_DUES_TEXT}` }),
+        apiErrorText(error, 'Не вдалося вивести. Спробуй ще раз.', { MemberOwesDues: `Людина винна куреню вкладку за квартали, що минули. ${OWES_DUES_TEXT}` }),
         'danger',
       );
       this.placing.set(false);

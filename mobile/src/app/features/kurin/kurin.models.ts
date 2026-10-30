@@ -270,6 +270,8 @@ export interface MemberDuesDto {
   numberLocale: string;
   currentQuarter: QuarterDto;
   balance: number;
+  /** Unpaid quarters already behind them — what keeps them in the kurin (web MemberDuesDto). */
+  owedToLeave: number;
   quarterRate: { total: number } | null;
   isConcessionNow: boolean;
   currentGroupKey: string | null;

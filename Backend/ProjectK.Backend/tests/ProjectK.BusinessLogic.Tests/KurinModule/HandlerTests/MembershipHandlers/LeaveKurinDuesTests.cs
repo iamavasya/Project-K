@@ -10,20 +10,22 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
 using Xunit;
 
 namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MembershipHandlers;
 
 /// <summary>
-/// Debt does not leave with the person: the kurin releases someone only once they owe it nothing,
-/// counting every stretch of theirs in that kurin and none elsewhere.
+/// Debt does not leave with the person: the kurin releases someone only once they owe it nothing for
+/// quarters already behind them, counting every stretch of theirs in that kurin and none elsewhere.
 /// </summary>
 public class LeaveKurinDuesTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IMembershipRepository> _memberships = new();
     private readonly Mock<IDuesDirectory> _dues = new();
+    private readonly Mock<IDomainEventPublisher> _events = new();
     private readonly JournalRecorder _journal = new(Mock.Of<ICurrentUserContext>());
 
     private readonly Guid _kurinKey = Guid.NewGuid();
@@ -52,7 +54,7 @@ public class LeaveKurinDuesTests
         new(key, kurinKey, 1, KurinBranch.UPYu, null, null, null, MembershipKind.Youth, DateTime.UtcNow.AddYears(-3), leftAtUtc);
 
     private LeaveKurinCommandHandler Handler() =>
-        new(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), Mock.Of<IMemberDirectory>(), _journal.Audit, _dues.Object);
+        new(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), Mock.Of<IMemberDirectory>(), _journal.Audit, _dues.Object, _events.Object);
 
     private void Owes(decimal amount) =>
         _dues.Setup(d => d.GetOwedAsync(_kurinKey, It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
@@ -69,6 +71,7 @@ public class LeaveKurinDuesTests
         result.ErrorCode.Should().Be("MemberOwesDues");
         _membership.LeftAtUtc.Should().BeNull();
         _journal.Entries.Should().BeEmpty();
+        _events.Verify(e => e.PublishAsync(It.IsAny<MembershipLeft>(), It.IsAny<CancellationToken>()), Times.Never);
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -81,6 +84,9 @@ public class LeaveKurinDuesTests
 
         result.Type.Should().Be(ResultType.Success);
         _membership.LeftAtUtc.Should().NotBeNull();
+        // The dues module drops the charge for the quarter they leave in.
+        _events.Verify(e => e.PublishAsync(
+            It.Is<MembershipLeft>(l => l.MembershipKey == _membership.MembershipKey && l.KurinKey == _kurinKey), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

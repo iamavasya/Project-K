@@ -35,6 +35,9 @@ public class DuesAccrualTests
     private readonly List<KurinMembershipRecord> _memberships = [];
     private readonly Mock<IDuesUnitOfWork> _dues = new();
 
+    // No row: the kurin pays наперед.
+    private KurinDuesSettings? _settings;
+
     public DuesAccrualTests()
     {
         var rates = new Mock<IKurinDuesRateRepository>();
@@ -46,6 +49,9 @@ public class DuesAccrualTests
             .Callback<DuesCharge, CancellationToken>((charge, _) => _created.Add(charge));
         _dues.SetupGet(d => d.KurinDuesRates).Returns(rates.Object);
         _dues.SetupGet(d => d.DuesCharges).Returns(charges.Object);
+        var settings = new Mock<IKurinDuesSettingsRepository>();
+        settings.Setup(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _settings);
+        _dues.SetupGet(d => d.KurinDuesSettings).Returns(settings.Object);
     }
 
     private DuesAccrual Accrual()
@@ -147,14 +153,38 @@ public class DuesAccrualTests
     }
 
     [Fact]
-    public async Task Leaving_StopsChargesAfterTheQuarterTheyLeft()
+    public async Task Leaving_IsNotChargedTheQuarterTheyLeftIn()
     {
         RateFrom(new DuesQuarter(2025, 3));
         var youth = Member(GroupA, new DateTime(2025, 1, 1), left: new DateTime(2025, 11, 2));
 
         await Accrual().AccrueKurinAsync(Kurin);
 
-        QuartersOf(youth).Should().Equal(new DuesQuarter(2025, 3), new DuesQuarter(2025, 4));
+        QuartersOf(youth).Should().Equal(new DuesQuarter(2025, 3));
+    }
+
+    [Fact]
+    public async Task PayingInArrears_TheRunningQuarterIsNotChargedYet()
+    {
+        _settings = new KurinDuesSettings { KurinKey = Kurin, ChargeTiming = DuesChargeTiming.InArrears };
+        RateFrom(new DuesQuarter(2025, 4));
+        var youth = Member(GroupA, new DateTime(2024, 3, 1));
+
+        await Accrual().AccrueKurinAsync(Kurin);
+
+        QuartersOf(youth).Should().Equal(new DuesQuarter(2025, 4), new DuesQuarter(2026, 1));
+    }
+
+    [Fact]
+    public async Task PayingInArrears_LeavingAtTheStartOfAQuarter_OwesTheOneBefore()
+    {
+        _settings = new KurinDuesSettings { KurinKey = Kurin, ChargeTiming = DuesChargeTiming.InArrears };
+        RateFrom(new DuesQuarter(2025, 4));
+        var youth = Member(GroupA, new DateTime(2024, 3, 1), left: new DateTime(2026, 4, 3));
+
+        await Accrual().AccrueKurinAsync(Kurin);
+
+        QuartersOf(youth).Should().Equal(new DuesQuarter(2025, 4), new DuesQuarter(2026, 1));
     }
 
     [Fact]

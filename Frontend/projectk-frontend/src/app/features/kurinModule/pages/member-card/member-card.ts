@@ -494,8 +494,8 @@ export class MemberCardComponent implements OnInit {
   confirmLeaveKurin(membership: MembershipDto): void {
     // Борг з людиною не йде: спершу сплатити повністю. Сервер однаково відмовить, але краще
     // сказати це до натискання, а не тостом після.
-    if (this.dues && this.dues.kurinKey === membership.kurinKey && this.dues.balance < 0) {
-      this.showDebtBlocksRelease(this.money(-this.dues.balance));
+    if (this.dues && this.dues.kurinKey === membership.kurinKey && this.dues.owedToLeave > 0) {
+      this.showDebtBlocksRelease(this.money(this.dues.owedToLeave));
       return;
     }
 
@@ -547,7 +547,7 @@ export class MemberCardComponent implements OnInit {
   private showDebtBlocksRelease(owed: string | null): void {
     this.confirmationService.confirm({
       header: 'Спершу — вкладка',
-      message: (owed ? `Людина винна куреню ${owed}. ` : 'Людина винна куреню вкладку. ')
+      message: (owed ? `Людина винна куреню ${owed} за квартали, що минули. ` : 'Людина винна куреню вкладку за квартали, що минули. ')
         + 'Борг не переходить разом із нею: вивести можна, коли вкладку сплачено повністю.',
       icon: 'pi pi-wallet',
       acceptLabel: 'Зрозуміло',

@@ -953,6 +953,35 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("KurinDuesRates");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.KurinDuesSettings", b =>
+                {
+                    b.Property<Guid>("KurinDuesSettingsKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ChargeTiming")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SetByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("KurinDuesSettingsKey");
+
+                    b.HasIndex("KurinKey")
+                        .IsUnique();
+
+                    b.ToTable("KurinDuesSettings");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.InfrastructureModule.AppNotification", b =>
                 {
                     b.Property<Guid>("NotificationKey")

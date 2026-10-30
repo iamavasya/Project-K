@@ -88,3 +88,9 @@ public sealed class SetDuesTransferReceivedRequest
 {
     public bool IsReceived { get; set; }
 }
+
+/// <summary>Body of <c>PUT api/kurin/{kurinKey}/dues/settings</c>.</summary>
+public sealed class SetKurinDuesSettingsRequest
+{
+    public DuesChargeTiming ChargeTiming { get; set; }
+}

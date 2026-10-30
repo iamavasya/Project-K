@@ -58,7 +58,7 @@ public class MembershipJournalTests
     [Fact]
     public async Task Leaving_IsRecordedWithTheGroupTheyLeftFrom()
     {
-        var handler = new LeaveKurinCommandHandler(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), _members.Object, _journal.Audit, Mock.Of<IDuesDirectory>());
+        var handler = new LeaveKurinCommandHandler(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), _members.Object, _journal.Audit, Mock.Of<IDuesDirectory>(), Mock.Of<IDomainEventPublisher>());
 
         await handler.Handle(new LeaveKurinCommand(_membership.MemberKey, _kurinKey), default);
 

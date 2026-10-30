@@ -5,6 +5,7 @@ using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Leave;
@@ -23,14 +24,16 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
     private readonly IMemberDirectory _members;
     private readonly IKurinAudit _audit;
     private readonly IDuesDirectory _dues;
+    private readonly IDomainEventPublisher _events;
 
-    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork, IAccessChangeSignal accessChanges, IMemberDirectory members, IKurinAudit audit, IDuesDirectory dues)
+    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork, IAccessChangeSignal accessChanges, IMemberDirectory members, IKurinAudit audit, IDuesDirectory dues, IDomainEventPublisher events)
     {
         _unitOfWork = unitOfWork;
         _accessChanges = accessChanges;
         _members = members;
         _audit = audit;
         _dues = dues;
+        _events = events;
     }
 
     public async Task<ServiceResult<object>> Handle(LeaveKurinCommand request, CancellationToken cancellationToken)
@@ -82,6 +85,12 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
                 request.MemberKey,
                 AuditChanges.Removed(("kind", membership.Kind), ("group", group?.Name)),
                 KurinKey: request.KurinKey),
+            cancellationToken);
+
+        // Announced before the save, so what the dues module settles for the quarter they left in
+        // commits together with the closed membership.
+        await _events.PublishAsync(
+            new MembershipLeft(membership.MembershipKey, request.KurinKey, membership.LeftAtUtc.Value),
             cancellationToken);
 
         // Offices are held by someone who belongs here; the access layer reads both together and

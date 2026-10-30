@@ -12,7 +12,9 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 /// <inheritdoc />
 /// <remarks>
 /// Who is charged: a youth membership standing in a гурток, from the quarter it joined — but not
-/// before the kurin's first rate — to the quarter it left, or the current one. Впорядники stand in the
+/// before the kurin's first rate — up to the last quarter that has fallen due. Paying наперед, that is
+/// the running quarter; paying за пройдений квартал, the one before it. The quarter a person left in
+/// is never charged: released at the start of a quarter, they do not take it. Впорядники stand in the
 /// kurin and in no гурток, so they are never charged. Quarters are read on the край's clock.
 /// </remarks>
 public sealed class DuesAccrual : IDuesAccrual
@@ -41,10 +43,11 @@ public sealed class DuesAccrual : IDuesAccrual
         var memberships = await _memberships.GetInKurinAsync(kurinKey, cancellationToken);
         var charged = await ChargedAsync(kurinKey, cancellationToken);
         var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
+        var last = await LastDueQuarterAsync(kurinKey, krai, cancellationToken);
         var added = false;
         foreach (var membership in memberships.Where(m => m.Kind == MembershipKind.Youth && m.GroupKey.HasValue))
         {
-            added |= Charge(kurinKey, membership, membership.GroupKey!.Value, firstQuarter.Value, charged, krai);
+            added |= Charge(kurinKey, membership, membership.GroupKey!.Value, firstQuarter.Value, last, charged, krai);
         }
 
         if (added)
@@ -70,7 +73,8 @@ public sealed class DuesAccrual : IDuesAccrual
 
         var charged = await ChargedAsync(kurinKey, cancellationToken);
         var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
-        if (Charge(kurinKey, membership, groupKey, firstQuarter.Value, charged, krai))
+        var last = await LastDueQuarterAsync(kurinKey, krai, cancellationToken);
+        if (Charge(kurinKey, membership, groupKey, firstQuarter.Value, last, charged, krai))
         {
             await SaveAsync(cancellationToken);
         }
@@ -98,17 +102,21 @@ public sealed class DuesAccrual : IDuesAccrual
         KurinMembershipRecord membership,
         Guid groupKey,
         DuesQuarter firstQuarter,
+        DuesQuarter last,
         HashSet<(Guid Membership, int Quarter)> charged,
         DuesKrai krai)
     {
-        var current = krai.QuarterOf(_time.GetUtcNow());
         var from = krai.QuarterOf(membership.JoinedAtUtc);
         if (from < firstQuarter)
         {
             from = firstQuarter;
         }
 
-        var to = membership.LeftAtUtc is { } left && krai.QuarterOf(left) < current ? krai.QuarterOf(left) : current;
+        var to = last;
+        if (membership.LeftAtUtc is { } left && krai.QuarterOf(left) <= to)
+        {
+            to = DuesQuarter.FromIndex(krai.QuarterOf(left).Index - 1);
+        }
 
         var added = false;
         for (var quarter = from; quarter <= to; quarter = quarter.Next())
@@ -139,5 +147,15 @@ public sealed class DuesAccrual : IDuesAccrual
     {
         var charges = await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken);
         return charges.Select(c => (c.MembershipKey, c.Quarter)).ToHashSet();
+    }
+
+    /// <summary>The last quarter that has fallen due today, by the kurin's choice of when it pays.</summary>
+    private async Task<DuesQuarter> LastDueQuarterAsync(Guid kurinKey, DuesKrai krai, CancellationToken cancellationToken)
+    {
+        var current = krai.QuarterOf(_time.GetUtcNow());
+        var settings = await _dues.KurinDuesSettings.GetForKurinAsync(kurinKey, cancellationToken);
+        return settings?.ChargeTiming == DuesChargeTiming.InArrears
+            ? DuesQuarter.FromIndex(current.Index - 1)
+            : current;
     }
 }

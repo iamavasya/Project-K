@@ -7,6 +7,7 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { CheckboxModule } from '@openng/optimus-ui/checkbox';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { SelectModule } from '@openng/optimus-ui/select';
+import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { TableModule } from '@openng/optimus-ui/table';
 import { TagModule } from '@openng/optimus-ui/tag';
@@ -17,7 +18,10 @@ import { failureDetail } from '../../../../shared/functions/failure-detail.funct
 import { KurinRateDialogComponent } from '../../components/kurin-rate-dialog/kurin-rate-dialog';
 import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, currencySymbol, duesAmountLabel, isIncomingDues, money, quarterKey, quarterLabel, quarterShort, signedMoney } from '../../functions/dues-format.function';
 import {
+  DUES_CHARGE_TIMING_HINTS,
+  DUES_CHARGE_TIMING_LABELS,
   DUES_ENTRY_KIND_LABELS,
+  DuesChargeTiming,
   DUES_PAYMENT_METHOD_LABELS,
   DuesEntryKind,
   DuesUpstream,
@@ -48,7 +52,7 @@ import { DuesEntryDialogComponent } from '../group-dues/components/dues-entry-di
   selector: 'app-kurin-dues',
   imports: [
     DatePipe, FormsModule, RouterLink, ButtonModule, TableModule, TagModule, SelectModule, CheckboxModule,
-    ToggleSwitchModule, TooltipModule, SkeletonModule, ConfirmDialogModule,
+    ToggleSwitchModule, TooltipModule, SkeletonModule, ConfirmDialogModule, SelectButtonModule,
     EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent
   ],
   providers: [ConfirmationService],
@@ -171,6 +175,11 @@ export class KurinDuesComponent implements OnInit {
 
   readonly rateDialogVisible = signal(false);
   readonly savingRate = signal(false);
+  readonly savingTiming = signal(false);
+
+  readonly timingOptions = Object.values(DuesChargeTiming).map(value => ({ value, label: DUES_CHARGE_TIMING_LABELS[value] }));
+  readonly timingLabels = DUES_CHARGE_TIMING_LABELS;
+  readonly timingHints = DUES_CHARGE_TIMING_HINTS;
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -287,6 +296,17 @@ export class KurinDuesComponent implements OnInit {
     this.dues.setKurinRate(this.kurinKey, request).subscribe({
       next: () => { this.savingRate.set(false); this.rateDialogVisible.set(false); this.load(); },
       error: () => this.savingRate.set(false)
+    });
+  }
+
+  saveChargeTiming(timing: DuesChargeTiming): void {
+    if (!timing || timing === this.data()?.chargeTiming) {
+      return;
+    }
+    this.savingTiming.set(true);
+    this.dues.setKurinChargeTiming(this.kurinKey, timing).subscribe({
+      next: () => { this.savingTiming.set(false); this.load(); },
+      error: () => this.savingTiming.set(false)
     });
   }
 

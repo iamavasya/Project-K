@@ -117,3 +117,20 @@ export const INCOMING_DUES_KINDS: ReadonlySet<DuesEntryKind> = new Set([
   DuesEntryKind.Contribution,
   DuesEntryKind.OtherIncome
 ]);
+
+/** When a kurin's вкладка falls due (`DuesChargeTiming`): наперед, or за квартал, що минув. */
+export enum DuesChargeTiming {
+  InAdvance = 'InAdvance',
+  InArrears = 'InArrears'
+}
+
+export const DUES_CHARGE_TIMING_LABELS: Record<DuesChargeTiming, string> = {
+  [DuesChargeTiming.InAdvance]: 'Наперед',
+  [DuesChargeTiming.InArrears]: 'За пройдений квартал'
+};
+
+/** What the choice means, said once under it. */
+export const DUES_CHARGE_TIMING_HINTS: Record<DuesChargeTiming, string> = {
+  [DuesChargeTiming.InAdvance]: 'Квартал нараховується, щойно почався.',
+  [DuesChargeTiming.InArrears]: 'Квартал нараховується, коли минув: на початку IV кв. платять за III.'
+};

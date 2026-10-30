@@ -104,6 +104,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
             NumberLocale = krai.NumberLocale,
             CurrentQuarter = Quarter(current),
             Balance = accounts.Sum(a => a.Balance),
+            OwedToLeave = accounts.SelectMany(a => a.Quarters).Where(q => q.Quarter < current && q.Balance < 0).Sum(q => -q.Balance),
             QuarterRate = rate is null ? null : Amount(rate),
             IsConcessionNow = standing is not null && ledger.IsConcession(standing.MembershipKey, current),
             ConcessionNamesNow = standing is null ? [] : ledger.GrantsIn(standing.MembershipKey, current).Select(g => g.Name).ToList(),

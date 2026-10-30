@@ -1,4 +1,4 @@
-import { DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from './dues.enums';
+import { DuesChargeTiming, DuesEntryKind, DuesPaymentMethod, DuesRecipient, DuesUpstream } from './dues.enums';
 import type { DuesConcessionGrantDto, KraiConcessionDto } from './concession.dto';
 
 export interface QuarterDto {
@@ -212,6 +212,8 @@ export interface KurinDuesDto {
   /** Where the край's kurins hand the вкладка up. */
   upstream: DuesUpstream;
   currentQuarter: QuarterDto;
+  /** When the вкладка falls due; the quarter a person leaves in is never charged. */
+  chargeTiming: DuesChargeTiming;
   years: PlastYearDto[];
   rates: KurinDuesRateDto[];
   /** `toForward` is what still goes to the станиця and the край; `inTransit` — handed over by гуртки, not confirmed yet. */
@@ -249,6 +251,8 @@ export interface MemberDuesDto {
   numberLocale: string;
   currentQuarter: QuarterDto;
   balance: number;
+  /** Unpaid quarters already behind them — what keeps them in the kurin. The running quarter is not in it. */
+  owedToLeave: number;
   quarterRate: DuesAmountDto | null;
   isConcessionNow: boolean;
   /** The край's пільги the person holds this quarter. */

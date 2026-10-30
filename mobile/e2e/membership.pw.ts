@@ -57,7 +57,7 @@ function membershipApi(world: World): ExtraApi {
         case 'member/m2/dues':
           return world.martaOwes
             ? ok({ hasAccount: true, kurinKey: 'k1', currency: 'UAH', numberLocale: 'uk-UA', currentQuarter: { year: 2026, number: 4 },
-              balance: -world.martaOwes, quarterRate: null, isConcessionNow: false, currentGroupKey: 'g1', currentGroupName: 'Соколи',
+              balance: -world.martaOwes, owedToLeave: world.martaOwes, quarterRate: null, isConcessionNow: false, currentGroupKey: 'g1', currentGroupName: 'Соколи',
               canOpenGroupDues: false, accounts: [], entries: [] })
             : refuse(403);
       }
