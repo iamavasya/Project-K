@@ -93,7 +93,7 @@
     <div class="setting-row">
       <div class="setting-copy">
         <h3 id="score-enabled-title">Точкування</h3>
-        <p>Бали гуртків і людей за сходини, проби й події.</p>
+        <p>{{ isSenior ? 'Бали людей за сходини й події.' : 'Бали гуртків і людей за сходини, проби й події.' }}</p>
       </div>
       <p-toggleswitch
         [(ngModel)]="scoreEnabled"

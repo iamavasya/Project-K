@@ -300,6 +300,7 @@ const DESCRIPTION_LIMIT = 360;
             </ion-card-content>
           </ion-card>
 
+          @if ((kurinValue()?.scoreEnabled ?? true) || canReviewSkills()) {
           <ion-list [inset]="true">
             <ion-item-group>
               @if (kurinValue()?.scoreEnabled ?? true) {
@@ -316,6 +317,7 @@ const DESCRIPTION_LIMIT = 360;
               }
             </ion-item-group>
           </ion-list>
+          }
 
           @if (!kurinIsSenior()) {
           <ion-list [inset]="true" data-testid="groups">
