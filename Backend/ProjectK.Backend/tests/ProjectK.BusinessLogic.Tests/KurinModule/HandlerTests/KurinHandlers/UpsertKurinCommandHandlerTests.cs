@@ -280,6 +280,22 @@ public class UpsertKurinHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldSwitchScoreOff_AndLeaveItAlone_WhenNotAsked()
+    {
+        var kurinKey = Guid.NewGuid();
+        var kurin = new Kurin(47) { KurinKey = kurinKey };
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(kurinKey, default)).ReturnsAsync(kurin);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+
+        var off = await _handler.Handle(new UpsertKurinCommand(kurinKey, 47) { ScoreEnabled = false }, default);
+        off.Data!.ScoreEnabled.Should().BeFalse();
+
+        var untouched = await _handler.Handle(new UpsertKurinCommand(kurinKey, 47, "Lviv"), default);
+        untouched.Data!.ScoreEnabled.Should().BeFalse();
+        kurin.ScoreEnabled.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Handle_WhenPreparatoryKurinTakesAFreeNumber_ShouldStopBeingPreparatory()
     {
         var kurinKey = Guid.NewGuid();

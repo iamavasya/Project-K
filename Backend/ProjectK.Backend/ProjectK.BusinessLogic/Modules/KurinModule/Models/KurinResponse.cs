@@ -29,4 +29,7 @@ public class KurinResponse
     public string? Description { get; set; }
     public int CurrentUserCount { get; set; }
     public bool ProfileVerificationEnabled { get; set; }
+
+    /// <summary>Whether the kurin keeps точкування now; the UI shows its menu, tiles and pages only then.</summary>
+    public bool ScoreEnabled { get; set; }
 }

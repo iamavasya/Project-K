@@ -74,6 +74,22 @@ public class KurinBranchRequestHandlerTests
     }
 
     [Fact]
+    public void Score_ShouldBeOnInYouthAndOffInSeniorKurins_UntilTheKurinChooses()
+    {
+        var youth = new Kurin(47);
+        var senior = new Kurin(5, KurinBranch.USP);
+
+        youth.IsScoreEnabled.Should().BeTrue();
+        senior.IsScoreEnabled.Should().BeFalse();
+
+        youth.ScoreEnabled = false;
+        senior.ScoreEnabled = true;
+
+        youth.IsScoreEnabled.Should().BeFalse();
+        senior.IsScoreEnabled.Should().BeTrue();
+    }
+
+    [Fact]
     public void BranchSet_ShouldNotMixYouthWithTheOlderBranches()
     {
         KurinBranchSet.IsValid([KurinBranch.UPYu]).Should().BeTrue();

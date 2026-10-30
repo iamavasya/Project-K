@@ -278,10 +278,12 @@ const DESCRIPTION_LIMIT = 360;
 
           <ion-list [inset]="true">
             <ion-item-group>
-              <ion-item [button]="true" [detail]="true" routerLink="/tabs/kurin/score">
-                <ion-icon class="lk-tile" slot="start" name="trophy" aria-hidden="true" style="--lk-tile: #f2a900" />
-                <ion-label>Точкування</ion-label>
-              </ion-item>
+              @if (kurinValue()?.scoreEnabled ?? true) {
+                <ion-item [button]="true" [detail]="true" routerLink="/tabs/kurin/score">
+                  <ion-icon class="lk-tile" slot="start" name="trophy" aria-hidden="true" style="--lk-tile: #f2a900" />
+                  <ion-label>Точкування</ion-label>
+                </ion-item>
+              }
               @if (canReviewSkills()) {
                 <ion-item [button]="true" [detail]="true" routerLink="/tabs/kurin/review/skills">
                   <ion-icon class="lk-tile" slot="start" name="ribbon" aria-hidden="true" style="--lk-tile: #5e5ce6" />

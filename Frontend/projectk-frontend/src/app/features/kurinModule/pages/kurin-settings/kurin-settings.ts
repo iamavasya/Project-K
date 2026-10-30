@@ -70,6 +70,8 @@ export class KurinSettingsComponent implements OnInit {
   kurinKey = '';
   kurin: KurinDto | null = null;
   profileVerificationEnabled = false;
+  /** Точкування в цьому курені; вимкнене зникає з меню, плиток і сторінок, а бали лишаються. */
+  scoreEnabled = true;
   /** A підготовчий курінь has no number; clearing the box asks for one. */
   preparatory = false;
   number: number | null = null;
@@ -118,6 +120,7 @@ export class KurinSettingsComponent implements OnInit {
       next: (kurin) => {
         this.kurin = kurin;
         this.profileVerificationEnabled = kurin.profileVerificationEnabled ?? false;
+        this.scoreEnabled = kurin.scoreEnabled ?? true;
         this.preparatory = kurin.number === null;
         this.number = kurin.number;
         this.loading = false;
@@ -142,7 +145,8 @@ export class KurinSettingsComponent implements OnInit {
     const request: KurinDto = {
       ...this.kurin,
       number: this.preparatory ? null : this.number,
-      profileVerificationEnabled: this.profileVerificationEnabled
+      profileVerificationEnabled: this.profileVerificationEnabled,
+      scoreEnabled: this.scoreEnabled
     };
 
     this.saving = true;
@@ -161,6 +165,7 @@ export class KurinSettingsComponent implements OnInit {
       next: ([updated]) => {
         this.kurin = updated;
         this.profileVerificationEnabled = updated.profileVerificationEnabled ?? false;
+        this.scoreEnabled = updated.scoreEnabled ?? true;
         this.preparatory = updated.number === null;
         this.number = updated.number;
         this.saving = false;

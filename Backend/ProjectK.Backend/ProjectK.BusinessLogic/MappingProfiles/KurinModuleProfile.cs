@@ -27,12 +27,14 @@ public class KurinModuleProfile : Profile
         // Kurin Mapping
         CreateMap<Kurin, KurinResponse>()
             .ForMember(dest => dest.CurrentUserCount, opt => opt.MapFrom(src => src.Memberships.Count(ms => ms.LeftAtUtc == null)))
-            .ForMember(dest => dest.Branches, opt => opt.MapFrom(src => src.Numbering));
+            .ForMember(dest => dest.Branches, opt => opt.MapFrom(src => src.Numbering))
+            .ForMember(dest => dest.ScoreEnabled, opt => opt.MapFrom(src => src.IsScoreEnabled));
         CreateMap<UpsertKurinCommand, Kurin>(MemberList.None)
             .ForMember(dest => dest.KurinKey, opt => opt.Ignore())
             .ForMember(dest => dest.Number, opt => opt.Ignore())
             .ForMember(dest => dest.Branch, opt => opt.Ignore())
             .ForMember(dest => dest.Branches, opt => opt.Ignore())
+            .ForMember(dest => dest.ScoreEnabled, opt => opt.Ignore())
             .ForMember(dest => dest.KraiCode, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedDate, opt => opt.MapFrom(src => DateTime.UtcNow));
 

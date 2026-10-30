@@ -20,6 +20,8 @@ export interface KurinDto {
   namedAfter?: string | null;
   description?: string | null;
   profileVerificationEnabled?: boolean;
+  /** Whether the kurin keeps точкування now (web kurin.dto). */
+  scoreEnabled?: boolean;
 }
 
 export interface GroupDto {

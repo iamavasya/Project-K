@@ -1944,6 +1944,9 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
 
+                    b.Property<bool?>("ScoreEnabled")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Stanytsia")
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");

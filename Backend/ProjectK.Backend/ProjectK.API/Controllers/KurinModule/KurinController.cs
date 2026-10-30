@@ -457,7 +457,10 @@ public class KurinController : ControllerBase
             request.RegionOrCountry,
             request.NamedAfter,
             request.Description,
-            request.ProfileVerificationEnabled);
+            request.ProfileVerificationEnabled)
+        {
+            ScoreEnabled = request.ScoreEnabled
+        };
         var response = await _mediator.Send(command);
         return response.ToActionResult(this);
     }

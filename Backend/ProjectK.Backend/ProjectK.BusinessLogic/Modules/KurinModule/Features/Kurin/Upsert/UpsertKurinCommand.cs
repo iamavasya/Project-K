@@ -31,6 +31,9 @@ public class UpsertKurinCommand : IRequest<ServiceResult<KurinResponse>>
     public string? Description { get; set; }
     public bool ProfileVerificationEnabled { get; set; }
 
+    /// <summary>Точкування on or off; null leaves the kurin as it is.</summary>
+    public bool? ScoreEnabled { get; set; }
+
     /// <summary>
     /// The край a new kurin joins; null takes the instance default. An existing kurin keeps its
     /// край here and moves only through <c>SetKurinKraiCommand</c>, which only an admin may send.
@@ -122,6 +125,10 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
             existing.NamedAfter = namedAfter;
             existing.Description = description;
             existing.ProfileVerificationEnabled = request.ProfileVerificationEnabled;
+            if (request.ScoreEnabled is bool scoreEnabled)
+            {
+                existing.ScoreEnabled = scoreEnabled;
+            }
             _unitOfWork.Kurins.Update(existing, cancellationToken);
 
             var recorded = AuditChanges.Of(before.Zip(Snapshot(existing), (was, now) => (was.Field, was.Value, now.Value)).ToArray());
@@ -225,7 +232,8 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
         ("regionOrCountry", kurin.RegionOrCountry),
         ("namedAfter", kurin.NamedAfter),
         ("description", kurin.Description),
-        ("profileVerificationEnabled", kurin.ProfileVerificationEnabled)
+        ("profileVerificationEnabled", kurin.ProfileVerificationEnabled),
+        ("scoreEnabled", kurin.IsScoreEnabled)
     ];
 
     private static string? NormalizeOptionalText(string? value)

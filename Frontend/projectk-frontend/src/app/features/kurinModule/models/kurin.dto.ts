@@ -16,4 +16,6 @@ export interface KurinDto {
   description?: string | null;
   currentUserCount?: number;
   profileVerificationEnabled?: boolean;
+  /** Чи веде курінь точкування зараз; вимкнене ховає меню, плитки й сторінки, а дані лишає. */
+  scoreEnabled?: boolean;
 }

@@ -109,6 +109,15 @@ public class Kurin : Entity
     public KurinBranch Branch { get; private set; } = KurinBranch.UPYu;
     public bool ProfileVerificationEnabled { get; set; }
 
+    /// <summary>
+    /// Whether the kurin keeps точкування, as its settings say; null is the default for its гілка.
+    /// Switching it off hides the menu, tiles and pages and keeps every score already recorded.
+    /// </summary>
+    public bool? ScoreEnabled { get; set; }
+
+    /// <summary>Точкування as the kurin has it now: on in УПЮ and off in the older гілки unless the kurin chose.</summary>
+    public bool IsScoreEnabled => ScoreEnabled ?? !KurinBranchSet.IsSenior(Branch);
+
     /// <summary>Days a done task stays on the board before it moves to the archive by itself; null keeps it there.</summary>
     public int? TaskAutoArchiveAfterDays { get; set; } = 30;
 

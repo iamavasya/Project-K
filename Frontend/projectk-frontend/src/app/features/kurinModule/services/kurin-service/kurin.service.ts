@@ -182,7 +182,8 @@ export class KurinService {
         regionOrCountry: kurin.regionOrCountry,
         namedAfter: kurin.namedAfter,
         description: kurin.description,
-        profileVerificationEnabled: kurin.profileVerificationEnabled ?? false
+        profileVerificationEnabled: kurin.profileVerificationEnabled ?? false,
+        scoreEnabled: kurin.scoreEnabled
       },
       {
         headers: {

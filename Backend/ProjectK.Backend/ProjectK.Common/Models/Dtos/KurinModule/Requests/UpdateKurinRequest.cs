@@ -7,6 +7,9 @@ public class UpdateKurinRequest
     /// <summary>The kurin's number; null makes it a підготовчий курінь.</summary>
     public int? Number { get; set; }
 
+    /// <summary>Точкування on or off; left out, the kurin keeps what it has.</summary>
+    public bool? ScoreEnabled { get; set; }
+
     [MaxLength(120)]
     public string? Stanytsia { get; set; }
 

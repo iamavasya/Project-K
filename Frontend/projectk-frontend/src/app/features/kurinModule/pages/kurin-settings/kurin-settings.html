@@ -82,6 +82,27 @@
     </div>
   </section>
 
+  <section class="kurin-tile" aria-labelledby="kurin-features-title">
+    <div class="setting-copy">
+      <h2 id="kurin-features-title">Можливості куреня</h2>
+      <p>
+        Чим курінь користується. Вимкнене зникає з меню, плиток і сторінок, а вже записане
+        лишається: увімкнеш знову — усе на місці.
+      </p>
+    </div>
+    <div class="setting-row">
+      <div class="setting-copy">
+        <h3 id="score-enabled-title">Точкування</h3>
+        <p>Бали гуртків і людей за сходини, проби й події.</p>
+      </div>
+      <p-toggleswitch
+        [(ngModel)]="scoreEnabled"
+        [disabled]="loading || saving"
+        inputId="scoreEnabled"
+        ariaLabelledBy="score-enabled-title" />
+    </div>
+  </section>
+
   @if (kurinKey) {
     <section class="kurin-tile" aria-labelledby="event-groups-title">
       <div class="setting-copy">
