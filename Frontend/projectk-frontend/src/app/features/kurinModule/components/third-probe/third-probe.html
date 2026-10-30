@@ -40,19 +40,21 @@
         <p-button label="Змінити етапи" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="openStagesDialog()" />
         }
     </div>
-    <ol class="tp-stages">
-        @for (stage of stages(); track stage.key) {
-        <li class="tp-stage" [class.tp-stage--done]="stage.day" [class.tp-stage--closing]="stage.closing">
+    @for (part of stageParts(); track part.title) {
+    <p class="tp-stages__part">{{ part.title }}</p>
+    <ol class="tp-stages" [style.--tp-stage-columns]="part.stages.length">
+        @for (stage of part.stages; track stage.key) {
+        <li class="tp-stage" [class.tp-stage--done]="stage.day">
             <span class="tp-stage__dot pi" [class.pi-check]="stage.day" [class.pi-circle]="!stage.day" aria-hidden="true"></span>
             <span class="tp-stage__label">{{ stage.label }}</span>
             <span class="tp-muted text-xs">
-                @if (stage.day) { {{ stage.day }} } @else { — }
+                @if (stage.day) { {{ stage.day }} } @else if (stage.hint) { {{ stage.hint }} } @else { — }
                 @if (stage.key === 'openedOn' && t.file?.openedOnIsDerived) { · коли закрили другу пробу }
-                @if (stage.hint && !stage.day) { · {{ stage.hint }} }
             </span>
         </li>
         }
     </ol>
+    }
 </section>
 
 <div class="tp-grid">

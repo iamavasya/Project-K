@@ -160,6 +160,11 @@ export class ThirdProbeComponent {
     }));
   });
 
+  readonly stageParts = computed(() => [
+    { title: 'Відкриття', stages: this.stages().filter(stage => !stage.closing) },
+    { title: 'Закриття', stages: this.stages().filter(stage => stage.closing) }
+  ]);
+
   /** Offices held since the probe opened: «Які діловодства ти виконував протягом проби». */
   readonly offices = computed(() => {
     const opened = fromIsoDate(this.file()?.openedOn ?? null);

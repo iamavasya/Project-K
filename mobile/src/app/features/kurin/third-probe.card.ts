@@ -128,7 +128,7 @@ interface ProjectView {
           @for (item of checklist(); track item.label) {
             <div class="check" [class.done]="item.done">
               <span class="mark">{{ item.done ? '✓' : '–' }}</span>
-              <span><strong>{{ item.label }}</strong> <span class="meta">· {{ item.detail }}</span></span>
+              <span><strong>{{ item.label }}</strong><span class="meta">&nbsp;· {{ item.detail }}</span></span>
             </div>
           }
         </div>
@@ -142,7 +142,7 @@ interface ProjectView {
           @for (stage of stages(); track stage.key) {
             <div class="check" [class.done]="stage.day">
               <span class="mark">{{ stage.day ? '✓' : '–' }}</span>
-              <span><strong>{{ stage.label }}</strong> <span class="meta">· {{ stage.day ?? '—' }}</span></span>
+              <span><strong>{{ stage.label }}</strong><span class="meta">&nbsp;· {{ stage.day ?? '—' }}</span></span>
             </div>
           }
         </div>
