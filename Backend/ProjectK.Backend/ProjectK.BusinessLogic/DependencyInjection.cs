@@ -8,6 +8,7 @@ using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Services.Caching;
@@ -84,6 +85,7 @@ public static class DependencyInjection
         services.AddScoped<MemberProbeLine>();
         services.AddScoped<IMemberProbeLine>(sp => sp.GetRequiredService<MemberProbeLine>());
         services.AddScoped<IProbeProjectAccess, ProbeProjectAccess>();
+        services.AddScoped<IThirdProbeReader, ThirdProbeReader>();
         services.AddScoped<IProbeEditionHolds>(sp => sp.GetRequiredService<MemberProbeLine>());
         services.AddScoped<IGroupProbeEditions, GroupProbeEditions>();
 

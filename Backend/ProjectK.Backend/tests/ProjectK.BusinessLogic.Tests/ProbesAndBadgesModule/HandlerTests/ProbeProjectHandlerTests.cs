@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Audit;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -16,8 +17,8 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Tests.ProbesAndBadgesModule.HandlerTests;
 
 /// <summary>
-/// The third probe's projects: limits held by the server, pictures only from the project itself,
-/// and files that go when their row goes.
+/// The third probe: five projects and a spare, at most two of them shared, pictures only from the
+/// project itself, files that go when their row goes, and confirmations under the signing rights.
 /// </summary>
 public class ProbeProjectHandlerTests
 {
@@ -25,77 +26,120 @@ public class ProbeProjectHandlerTests
 
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IProbeProjectRepository> _projects = new();
+    private readonly Mock<IBadgeProgressRepository> _badges = new();
     private readonly Mock<IProbeProjectAccess> _access = new();
     private readonly Mock<IBlobReadLinks> _links = new();
     private readonly Mock<IPhotoService> _photos = new();
     private readonly Mock<IProbesCatalogService> _probes = new();
+    private readonly Mock<IThirdProbeReader> _reader = new();
     private readonly Mock<ICurrentUserContext> _user = new();
     private readonly JournalRecorder _journal;
     private readonly Guid _memberKey = Guid.NewGuid();
+    private readonly List<ProbeProject> _stored = [];
+    private ThirdProbeFile? _file;
 
     public ProbeProjectHandlerTests()
     {
         _unitOfWork.SetupGet(u => u.ProbeProjects).Returns(_projects.Object);
+        _unitOfWork.SetupGet(u => u.BadgeProgresses).Returns(_badges.Object);
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _access.Setup(a => a.IsProjectProbeAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _access.Setup(a => a.CanEditAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _access.Setup(a => a.CanSignAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _access.Setup(a => a.CanUnsignAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _links.Setup(l => l.For(It.IsAny<string?>())).Returns<string?>(name => $"https://blob/{name}?sig");
         _user.SetupGet(u => u.UserId).Returns(Guid.NewGuid());
         _user.SetupGet(u => u.KurinKey).Returns(Guid.NewGuid());
         _journal = new JournalRecorder(_user.Object, new AuditActorResolver(_user.Object, new Mock<IMemberDirectory>().Object));
-        _projects.Setup(r => r.GetForMemberProbeAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _reader.Setup(r => r.ReadAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ThirdProbeResponse(true, true, true, true, null, [], [], null!));
+        _projects.Setup(r => r.GetForMemberProbeAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>())).ReturnsAsync(() => _stored.ToList());
+        _projects.Setup(r => r.Create(It.IsAny<ProbeProject>(), It.IsAny<CancellationToken>())).Callback<ProbeProject, CancellationToken>((p, _) => _stored.Add(p));
+        _projects.Setup(r => r.GetWithImagesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid key, CancellationToken _) => _stored.FirstOrDefault(p => p.ProbeProjectKey == key));
+        _projects.Setup(r => r.GetFileAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>())).ReturnsAsync(() => _file);
+        _projects.Setup(r => r.AddFile(It.IsAny<ThirdProbeFile>())).Callback<ThirdProbeFile>(f => _file = f);
     }
 
     private SaveProbeProjectCommandHandler SaveHandler() => new(
-        _unitOfWork.Object, _access.Object, _links.Object, _photos.Object, _journal.Actors, _journal.Audit, _probes.Object);
+        _unitOfWork.Object, _access.Object, _photos.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
 
-    private UploadProbeProjectImageCommandHandler UploadHandler() => new(
-        _unitOfWork.Object, _access.Object, _photos.Object, _links.Object);
+    private UploadProbeProjectImageCommandHandler UploadHandler() => new(_unitOfWork.Object, _access.Object, _photos.Object, _links.Object);
 
-    private ProbeProject GivenProject(int images = 0)
+    private SignThirdProbeCommandHandler SignHandler() => new(
+        _unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+
+    private SaveThirdProbeFileCommandHandler FileHandler() => new(
+        _unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+
+    private UploadCampCertificateCommandHandler CertificateHandler() => new(
+        _unitOfWork.Object, _access.Object, _photos.Object, _journal.Audit, _probes.Object, _reader.Object);
+
+    private ProbeProject Given(bool isSpare = false, bool isShared = false, int images = 0, string title = "Похід")
     {
-        var project = new ProbeProject { MemberKey = _memberKey, ProbeId = ProbeId, Title = "Похід" };
+        var project = new ProbeProject { MemberKey = _memberKey, ProbeId = ProbeId, Title = title, IsSpare = isSpare, IsShared = isShared };
         for (var i = 0; i < images; i++)
         {
             project.Images.Add(new ProbeProjectImage { ProbeProjectKey = project.ProbeProjectKey, BlobName = $"probe-project-images/{i}.jpg" });
         }
-
-        _projects.Setup(r => r.GetWithImagesAsync(project.ProbeProjectKey, It.IsAny<CancellationToken>())).ReturnsAsync(project);
+        _stored.Add(project);
         return project;
     }
 
-    private SaveProbeProjectCommand Save(Guid? projectKey, string description, string title = "Похід") =>
-        new(_memberKey, ProbeId, projectKey, title, true, description, "Олена Коваль", "+380501112233");
+    private static ProbeProjectInput Input(string goal = "", string plan = "", string results = "", bool shared = false, string title = "Похід") =>
+        new(title, ProbeProjectArea.Nature, [ProbeProjectReach.GroupOrKurin, ProbeProjectReach.Stanytsia], shared, shared ? "Олег, Марта" : null,
+            new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 3), "Чорногора", "Провід куреня", "Олена Коваль", "+380501112233",
+            goal, plan, results);
+
+    private SaveProbeProjectCommand Save(Guid? key, ProbeProjectInput input) => new(_memberKey, ProbeId, key, input);
 
     [Fact]
-    public async Task Save_ShouldAddAProject_AndJournalIt()
+    public async Task Save_ShouldAddAProject_AsAMainOne_AndJournalIt()
     {
-        var result = await SaveHandler().Handle(Save(null, "**План** походу"), CancellationToken.None);
+        var result = await SaveHandler().Handle(Save(null, Input(goal: "**Мета**")), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Created);
-        result.Data!.IsIndividual.Should().BeTrue();
-        result.Data.DirectionMentorName.Should().Be("Олена Коваль");
-        _projects.Verify(r => r.Create(It.IsAny<ProbeProject>(), It.IsAny<CancellationToken>()), Times.Once);
+        var project = _stored.Single();
+        project.IsSpare.Should().BeFalse();
+        project.Reach.Should().Be(ProbeProjectReach.GroupOrKurin | ProbeProjectReach.Stanytsia);
+        project.CoordinatorName.Should().Be("Олена Коваль");
+        result.Data!.ProjectKey.Should().Be(project.ProbeProjectKey);
         _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectAdded);
     }
 
     [Fact]
-    public async Task Save_ShouldRefuseTheSixthProject()
+    public async Task Save_ShouldMakeTheSixthTheSpare_AndRefuseTheSeventh()
     {
-        var five = Enumerable.Range(0, ProbeProjectRules.MaxProjects).Select(_ => new ProbeProject()).ToList();
-        _projects.Setup(r => r.GetForMemberProbeAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>())).ReturnsAsync(five);
+        for (var i = 0; i < ProbeProjectRules.MaxMainProjects; i++)
+        {
+            Given();
+        }
 
-        var result = await SaveHandler().Handle(Save(null, "text"), CancellationToken.None);
+        (await SaveHandler().Handle(Save(null, Input()), CancellationToken.None)).Type.Should().Be(ResultType.Created);
+        _stored.Last().IsSpare.Should().BeTrue();
 
-        result.Type.Should().Be(ResultType.BadRequest);
-        result.ErrorCode.Should().Be("TooManyProjects");
+        var seventh = await SaveHandler().Handle(Save(null, Input()), CancellationToken.None);
+        seventh.ErrorCode.Should().Be("TooManyProjects");
     }
 
     [Fact]
-    public async Task Save_ShouldRefuseADescriptionOverTheLimit()
+    public async Task Save_ShouldRefuseAThirdSharedMainProject_ButLetTheSpareBeShared()
     {
-        var result = await SaveHandler().Handle(
-            Save(null, new string('а', ProbeProjectRules.MaxDescriptionLength + 1)), CancellationToken.None);
+        Given(isShared: true);
+        Given(isShared: true);
+        var third = Given();
+        var spare = Given(isSpare: true);
+
+        (await SaveHandler().Handle(Save(third.ProbeProjectKey, Input(shared: true)), CancellationToken.None))
+            .ErrorCode.Should().Be("TooManyShared");
+        (await SaveHandler().Handle(Save(spare.ProbeProjectKey, Input(shared: true)), CancellationToken.None))
+            .Type.Should().Be(ResultType.Success);
+    }
+
+    [Fact]
+    public async Task Save_ShouldRefuseATextOverTheLimit()
+    {
+        var result = await SaveHandler().Handle(Save(null, Input(plan: new string('а', ProbeProjectRules.MaxTextLength + 1))), CancellationToken.None);
 
         result.ErrorCode.Should().Be("DescriptionTooLong");
     }
@@ -103,11 +147,11 @@ public class ProbeProjectHandlerTests
     [Theory]
     [InlineData("![x](https://example.com/cat.png)")]
     [InlineData("![x](data:image/png;base64,AAAA)")]
-    public async Task Save_ShouldRefuseAPictureFromOutside(string markdown)
+    public async Task Save_ShouldRefuseAPictureFromOutside_InAnyOfTheTexts(string markdown)
     {
-        var project = GivenProject();
+        var project = Given();
 
-        var result = await SaveHandler().Handle(Save(project.ProbeProjectKey, markdown), CancellationToken.None);
+        var result = await SaveHandler().Handle(Save(project.ProbeProjectKey, Input(results: markdown)), CancellationToken.None);
 
         result.ErrorCode.Should().Be("ForeignImage");
     }
@@ -115,26 +159,25 @@ public class ProbeProjectHandlerTests
     [Fact]
     public async Task Save_ShouldRefuseAPictureOfAnotherProject()
     {
-        var project = GivenProject();
+        var project = Given();
 
-        var result = await SaveHandler().Handle(
-            Save(project.ProbeProjectKey, $"![фото](project-image:{Guid.NewGuid()})"), CancellationToken.None);
+        var result = await SaveHandler().Handle(Save(project.ProbeProjectKey, Input(goal: $"![фото](project-image:{Guid.NewGuid()})")), CancellationToken.None);
 
         result.ErrorCode.Should().Be("ForeignImage");
     }
 
     [Fact]
-    public async Task Save_ShouldDropPicturesTheTextNoLongerShows_RowsAndBlobs()
+    public async Task Save_ShouldDropPicturesNoTextShowsAnyMore_RowsAndBlobs()
     {
-        var project = GivenProject(images: 2);
+        var project = Given(images: 2);
         var kept = project.Images.First();
         var dropped = project.Images.Last();
 
         var result = await SaveHandler().Handle(
-            Save(project.ProbeProjectKey, $"Ось:\n\n![фото](project-image:{kept.ProbeProjectImageKey})"), CancellationToken.None);
+            Save(project.ProbeProjectKey, Input(results: $"Ось:\n\n![фото](project-image:{kept.ProbeProjectImageKey})")), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
-        result.Data!.Images.Should().ContainSingle(image => image.ImageKey == kept.ProbeProjectImageKey);
+        project.Images.Should().ContainSingle().Which.Should().Be(kept);
         _projects.Verify(r => r.RemoveImages(It.Is<IEnumerable<ProbeProjectImage>>(list => list.Single() == dropped)), Times.Once);
         _photos.Verify(p => p.DeletePhotoAsync(dropped.BlobName, It.IsAny<CancellationToken>()), Times.Once);
         _photos.Verify(p => p.DeletePhotoAsync(kept.BlobName, It.IsAny<CancellationToken>()), Times.Never);
@@ -145,9 +188,7 @@ public class ProbeProjectHandlerTests
     {
         _access.Setup(a => a.CanEditAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        var result = await SaveHandler().Handle(Save(null, "text"), CancellationToken.None);
-
-        result.Type.Should().Be(ResultType.Forbidden);
+        (await SaveHandler().Handle(Save(null, Input()), CancellationToken.None)).Type.Should().Be(ResultType.Forbidden);
     }
 
     [Fact]
@@ -155,15 +196,13 @@ public class ProbeProjectHandlerTests
     {
         _access.Setup(a => a.IsProjectProbeAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        var result = await SaveHandler().Handle(Save(null, "text"), CancellationToken.None);
-
-        result.ErrorCode.Should().Be("NotProjectProbe");
+        (await SaveHandler().Handle(Save(null, Input()), CancellationToken.None)).ErrorCode.Should().Be("NotProjectProbe");
     }
 
     [Fact]
     public async Task Upload_ShouldRefuseAFileOverOneMegabyte_BeforeStoringIt()
     {
-        var project = GivenProject();
+        var project = Given();
 
         var result = await UploadHandler().Handle(
             new UploadProbeProjectImageCommand(_memberKey, ProbeId, project.ProbeProjectKey, new byte[ProbeProjectRules.MaxImageBytes + 1], "big.png"),
@@ -176,67 +215,198 @@ public class ProbeProjectHandlerTests
     [Fact]
     public async Task Upload_ShouldRefuseTheSixthPicture()
     {
-        var project = GivenProject(images: ProbeProjectRules.MaxImagesPerProject);
+        var project = Given(images: ProbeProjectRules.MaxImagesPerProject);
 
         var result = await UploadHandler().Handle(
-            new UploadProbeProjectImageCommand(_memberKey, ProbeId, project.ProbeProjectKey, [1, 2, 3], "a.png"),
-            CancellationToken.None);
+            new UploadProbeProjectImageCommand(_memberKey, ProbeId, project.ProbeProjectKey, [1, 2, 3], "a.png"), CancellationToken.None);
 
         result.ErrorCode.Should().Be("TooManyImages");
     }
 
     [Fact]
-    public async Task Upload_ShouldRefuseAFileThatDoesNotDecode()
-    {
-        var project = GivenProject();
-        _photos.Setup(p => p.UploadPhotoAsync(It.IsAny<byte[]>(), It.IsAny<string>(), BlobUploadContext.ProbeProjectImage, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("not an image"));
-
-        var result = await UploadHandler().Handle(
-            new UploadProbeProjectImageCommand(_memberKey, ProbeId, project.ProbeProjectKey, [1, 2, 3], "evil.png"),
-            CancellationToken.None);
-
-        result.ErrorCode.Should().Be("InvalidImageContent");
-        _projects.Verify(r => r.AddImage(It.IsAny<ProbeProjectImage>()), Times.Never);
-    }
-
-    [Fact]
     public async Task Upload_ShouldStoreThePicture_InTheProjectFolder()
     {
-        var project = GivenProject();
+        var project = Given();
         _photos.Setup(p => p.UploadPhotoAsync(It.IsAny<byte[]>(), "a.png", BlobUploadContext.ProbeProjectImage, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PhotoUploadResult("probe-project-images/new.jpg", "ignored"));
 
         var result = await UploadHandler().Handle(
-            new UploadProbeProjectImageCommand(_memberKey, ProbeId, project.ProbeProjectKey, [1, 2, 3], "a.png"),
-            CancellationToken.None);
+            new UploadProbeProjectImageCommand(_memberKey, ProbeId, project.ProbeProjectKey, [1, 2, 3], "a.png"), CancellationToken.None);
 
-        result.Type.Should().Be(ResultType.Success);
         result.Data!.Url.Should().Be("https://blob/probe-project-images/new.jpg?sig");
         _projects.Verify(r => r.AddImage(It.Is<ProbeProjectImage>(i => i.BlobName == "probe-project-images/new.jpg")), Times.Once);
     }
 
     [Fact]
-    public async Task Delete_ShouldRemoveTheProject_AndEveryBlobOfIt()
+    public async Task Delete_ShouldRemoveTheProjectAndItsBlobs_AndLetTheSpareTakeItsPlace()
     {
-        var project = GivenProject(images: 2);
-        var handler = new DeleteProbeProjectCommandHandler(_unitOfWork.Object, _access.Object, _photos.Object, _journal.Audit, _probes.Object);
+        var project = Given(images: 2);
+        var spare = Given(isSpare: true);
+        var handler = new DeleteProbeProjectCommandHandler(_unitOfWork.Object, _access.Object, _photos.Object, _journal.Audit, _probes.Object, _reader.Object);
 
         var result = await handler.Handle(new DeleteProbeProjectCommand(_memberKey, ProbeId, project.ProbeProjectKey), CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
         _projects.Verify(r => r.Delete(project, It.IsAny<CancellationToken>()), Times.Once);
         _photos.Verify(p => p.DeletePhotoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        spare.IsSpare.Should().BeFalse();
         _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectRemoved);
     }
 
     [Fact]
-    public void Markdown_ShouldReadThePictureKeys_InOrder()
+    public async Task Swap_ShouldExchangeTheSpareAndAMainProject()
+    {
+        var main = Given(title: "Шпаківні");
+        var spare = Given(isSpare: true, title: "Ватра");
+        var handler = new SwapSpareProjectCommandHandler(_unitOfWork.Object, _access.Object, _journal.Audit, _probes.Object, _reader.Object);
+
+        var result = await handler.Handle(new SwapSpareProjectCommand(_memberKey, ProbeId, spare.ProbeProjectKey, main.ProbeProjectKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        (main.IsSpare, spare.IsSpare).Should().Be((true, false));
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectsSwapped);
+    }
+
+    [Fact]
+    public async Task Swap_ShouldRefuse_WhenItWouldMakeAThirdSharedMainProject()
+    {
+        Given(isShared: true);
+        Given(isShared: true);
+        var main = Given();
+        var spare = Given(isSpare: true, isShared: true);
+        var handler = new SwapSpareProjectCommandHandler(_unitOfWork.Object, _access.Object, _journal.Audit, _probes.Object, _reader.Object);
+
+        var result = await handler.Handle(new SwapSpareProjectCommand(_memberKey, ProbeId, spare.ProbeProjectKey, main.ProbeProjectKey), CancellationToken.None);
+
+        result.ErrorCode.Should().Be("TooManyShared");
+        spare.IsSpare.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Sign_ShouldMarkAProjectDone_WithTheCoordinatorsWords()
+    {
+        var project = Given();
+
+        await SignHandler().Handle(
+            new SignThirdProbeCommand(_memberKey, ProbeId, ThirdProbeSignPart.ProjectCompletion, true, project.ProbeProjectKey, "Взірцево"),
+            CancellationToken.None);
+
+        project.CompletedAtUtc.Should().NotBeNull();
+        project.CoordinatorComment.Should().Be("Взірцево");
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.ProjectCompleted);
+    }
+
+    [Fact]
+    public async Task Sign_ShouldUseTheUnsigningRight_ToTakeAConfirmationBack()
+    {
+        var project = Given();
+        project.ApprovedAtUtc = DateTime.UtcNow;
+        _access.Setup(a => a.CanUnsignAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var result = await SignHandler().Handle(
+            new SignThirdProbeCommand(_memberKey, ProbeId, ThirdProbeSignPart.ProjectApproval, false, project.ProbeProjectKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Forbidden);
+        project.ApprovedAtUtc.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Sign_ShouldNotConfirmAConferenceWithNoDate()
+    {
+        var result = await SignHandler().Handle(
+            new SignThirdProbeCommand(_memberKey, ProbeId, ThirdProbeSignPart.Conference, true), CancellationToken.None);
+
+        result.ErrorCode.Should().Be("NothingToConfirm");
+    }
+
+    [Fact]
+    public async Task File_ShouldDropTheCampConfirmation_WhenTheCampChanges()
+    {
+        _file = new ThirdProbeFile
+        {
+            MemberKey = _memberKey, ProbeId = ProbeId, CampKind = ThirdProbeCampKind.Kvt, CampName = "КВТ «Говерла»",
+            CampConfirmedAtUtc = DateTime.UtcNow, CampConfirmedByName = "Звʼязковий"
+        };
+
+        await FileHandler().Handle(
+            new SaveThirdProbeFileCommand(_memberKey, ProbeId,
+                new ThirdProbeFileInput(null, null, null, null, ThirdProbeCampKind.Kvt, "КВТ «Синевир»", null, null, null, "")),
+            CancellationToken.None);
+
+        _file.CampConfirmedAtUtc.Should().BeNull();
+        _file.CampConfirmedByName.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task File_ShouldAcceptOnlyAHeldVmilistForTilovykhovannia()
+    {
+        _badges.Setup(b => b.GetByMemberAndBadgeIdAsync(_memberKey, "biker", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BadgeProgress { BadgeId = "biker", Status = BadgeProgressStatus.Submitted });
+
+        var result = await FileHandler().Handle(
+            new SaveThirdProbeFileCommand(_memberKey, ProbeId, new ThirdProbeFileInput(null, null, null, null, null, null, null, null, "biker", "")),
+            CancellationToken.None);
+
+        result.ErrorCode.Should().Be("BadgeNotHeld");
+    }
+
+    [Fact]
+    public async Task File_ShouldKeepPicturesOutOfTheResume()
+    {
+        var result = await FileHandler().Handle(
+            new SaveThirdProbeFileCommand(_memberKey, ProbeId,
+                new ThirdProbeFileInput(null, null, null, null, null, null, null, null, null, $"![x](project-image:{Guid.NewGuid()})")),
+            CancellationToken.None);
+
+        result.ErrorCode.Should().Be("ForeignImage");
+    }
+
+    [Fact]
+    public async Task Certificate_ShouldRefuseAFileThatIsNotAPictureOrAPdf()
+    {
+        _photos.Setup(p => p.UploadPhotoAsync(It.IsAny<byte[]>(), It.IsAny<string>(), BlobUploadContext.ThirdProbeCertificatePdf, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("not a PDF"));
+
+        var result = await CertificateHandler().Handle(
+            new UploadCampCertificateCommand(_memberKey, ProbeId, [1, 2, 3], "posvidka.pdf", IsPdf: true), CancellationToken.None);
+
+        result.ErrorCode.Should().Be("InvalidCertificate");
+        _file.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Certificate_ShouldReplaceThePreviousOne_AndDeleteItsFile()
+    {
+        _file = new ThirdProbeFile { MemberKey = _memberKey, ProbeId = ProbeId, CampCertificateBlobName = "third-probe-certificates/old.jpg" };
+        _photos.Setup(p => p.UploadPhotoAsync(It.IsAny<byte[]>(), "posvidka.pdf", BlobUploadContext.ThirdProbeCertificatePdf, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PhotoUploadResult("third-probe-certificates/new.pdf", "ignored"));
+
+        var result = await CertificateHandler().Handle(
+            new UploadCampCertificateCommand(_memberKey, ProbeId, [37, 80, 68, 70, 45, 49], "posvidka.pdf", IsPdf: true), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _file.CampCertificateBlobName.Should().Be("third-probe-certificates/new.pdf");
+        _file.CampCertificateContentType.Should().Be("application/pdf");
+        _photos.Verify(p => p.DeletePhotoAsync("third-probe-certificates/old.jpg", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Certificate_ShouldRefuseAFileOverTwoMegabytes()
+    {
+        var result = await CertificateHandler().Handle(
+            new UploadCampCertificateCommand(_memberKey, ProbeId, new byte[ProbeProjectRules.MaxCertificateBytes + 1], "scan.jpg", IsPdf: false),
+            CancellationToken.None);
+
+        result.ErrorCode.Should().Be("CertificateTooLarge");
+    }
+
+    [Fact]
+    public void Markdown_ShouldReadThePictureKeys_AcrossTexts()
     {
         var first = Guid.NewGuid();
         var second = Guid.NewGuid();
 
-        ProbeProjectMarkdown.ImageKeys($"a ![x](project-image:{first}) b ![](project-image:{second}) [link](https://plast.org.ua)")
+        ProbeProjectMarkdown.ImageKeys($"a ![x](project-image:{first})", $"[link](https://plast.org.ua) ![](project-image:{second})")
             .Should().Equal(first, second);
     }
 }

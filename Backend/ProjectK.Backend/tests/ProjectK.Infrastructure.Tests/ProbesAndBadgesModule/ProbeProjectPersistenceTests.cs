@@ -32,6 +32,37 @@ public class ProbeProjectPersistenceTests
     {
         Assert.Contains(BlobUploadFolders.ProbeProjectImages, BlobUploadFolders.ScenarioFolders);
         Assert.StartsWith(BlobUploadFolders.ProbeProjectImages, BlobUploadContext.ProbeProjectImage.Folder);
+        Assert.Contains(BlobUploadFolders.ThirdProbeCertificates, BlobUploadFolders.ScenarioFolders);
+    }
+
+    [Fact]
+    public async Task ACampPosvidka_IsKeptByItsFile()
+    {
+        var options = Options();
+        await using (var context = new AppDbContext(options))
+        {
+            context.ThirdProbeFiles.Add(new ThirdProbeFile
+            {
+                MemberKey = Guid.NewGuid(), ProbeId = "probe-3", CampCertificateBlobName = "third-probe-certificates/p.pdf"
+            });
+            context.ProbeProjects.Add(Project(Guid.NewGuid(), "probe-project-images/a.jpg"));
+            await context.SaveChangesAsync();
+        }
+
+        await using (var context = new AppDbContext(options))
+        {
+            var referenced = await new ProbeProjectImageReferenceProvider(context).GetAllReferencedBlobNamesAsync(CancellationToken.None);
+            Assert.Equal(["probe-project-images/a.jpg", "third-probe-certificates/p.pdf"], referenced.Order());
+        }
+    }
+
+    [Theory]
+    [InlineData("%PDF-1.7 rest", true)]
+    [InlineData("<svg onload=alert(1)>", false)]
+    [InlineData("%PDF", false)]
+    public void APdf_IsToldByItsBytes(string content, bool expected)
+    {
+        Assert.Equal(expected, AzureBlobPhotoService.IsPdf(System.Text.Encoding.ASCII.GetBytes(content)));
     }
 
     [Fact]
@@ -72,6 +103,7 @@ public class ProbeProjectPersistenceTests
         await using (var context = new AppDbContext(options))
         {
             context.ProbeProjects.AddRange(Project(gone, "probe-project-images/x.jpg"), Project(stays, "probe-project-images/y.jpg"));
+            context.ThirdProbeFiles.Add(new ThirdProbeFile { MemberKey = gone, ProbeId = "probe-3", CampCertificateBlobName = "third-probe-certificates/z.pdf" });
             await context.SaveChangesAsync();
         }
 

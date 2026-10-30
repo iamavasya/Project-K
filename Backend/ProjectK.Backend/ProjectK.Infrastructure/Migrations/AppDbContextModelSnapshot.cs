@@ -2595,32 +2595,93 @@ namespace ProjectK.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("ApprovedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("ApprovedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Area")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CompletedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("CompletedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CoordinatorComment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("CoordinatorContact")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CoordinatorName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Description")
+                    b.Property<DateOnly?>("EndsOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("EventLeads")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Goal")
                         .IsRequired()
-                        .HasMaxLength(20000)
+                        .HasMaxLength(10000)
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DirectionMentorContact")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("DirectionMentorName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<bool>("IsIndividual")
+                    b.Property<bool>("IsShared")
                         .HasColumnType("bit");
+
+                    b.Property<bool>("IsSpare")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<Guid>("MemberKey")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ProbeId")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Reach")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Results")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SharedWith")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateOnly?>("StartsOn")
+                        .HasColumnType("date");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -2669,6 +2730,109 @@ namespace ProjectK.Infrastructure.Migrations
                     b.HasIndex("ProbeProjectKey");
 
                     b.ToTable("ProbeProjectImages");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ThirdProbeFile", b =>
+                {
+                    b.Property<Guid>("ThirdProbeFileKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CampCertificateBlobName")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("CampCertificateContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CampCertificateFileName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("CampConfirmedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CampConfirmedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("CampConfirmedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly?>("CampFrom")
+                        .HasColumnType("date");
+
+                    b.Property<int?>("CampKind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CampName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateOnly?>("CampTo")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("ConferenceConfirmedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ConferenceConfirmedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("ConferenceConfirmedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly?>("ConferenceOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ConferenceWith")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Mentors")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateOnly?>("OpenedOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("PhysicalBadgeId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ProbeId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Resume")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UpdatedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("UpdatedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ThirdProbeFileKey");
+
+                    b.HasIndex("MemberKey", "ProbeId")
+                        .IsUnique();
+
+                    b.ToTable("ThirdProbeFiles");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.KurinScoreSettings", b =>

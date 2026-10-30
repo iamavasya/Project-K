@@ -21,6 +21,12 @@ public interface IProbeProjectAccess
     Task<bool> IsProjectProbeAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
 
     Task<bool> CanEditAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+    /// <summary>Confirms the conference, the camp, a project's start or its completion: <see cref="KurinCapability.SignProbe"/>.</summary>
+    Task<bool> CanSignAsync(Guid memberKey, CancellationToken cancellationToken = default);
+
+    /// <summary>Takes such a confirmation back: <see cref="KurinCapability.UnsignProbe"/>.</summary>
+    Task<bool> CanUnsignAsync(Guid memberKey, CancellationToken cancellationToken = default);
 }
 
 public sealed class ProbeProjectAccess : IProbeProjectAccess
@@ -57,8 +63,12 @@ public sealed class ProbeProjectAccess : IProbeProjectAccess
             return true;
         }
 
-        var decision = await _access.CheckCapabilityAsync(
-            KurinCapability.SignProbe, ResourceType.Member, memberKey, cancellationToken);
-        return decision.IsAllowed;
+        return await CanSignAsync(memberKey, cancellationToken);
     }
+
+    public async Task<bool> CanSignAsync(Guid memberKey, CancellationToken cancellationToken = default) =>
+        (await _access.CheckCapabilityAsync(KurinCapability.SignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
+
+    public async Task<bool> CanUnsignAsync(Guid memberKey, CancellationToken cancellationToken = default) =>
+        (await _access.CheckCapabilityAsync(KurinCapability.UnsignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
 }

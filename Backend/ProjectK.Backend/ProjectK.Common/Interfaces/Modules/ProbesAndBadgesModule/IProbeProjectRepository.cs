@@ -10,15 +10,22 @@ public interface IProbeProjectRepository : IBaseEntityRepository<ProbeProject>
     /// <summary>One project with its pictures, tracked.</summary>
     Task<ProbeProject?> GetWithImagesAsync(Guid projectKey, CancellationToken cancellationToken = default);
 
+    /// <summary>The person's third-probe file, tracked; null until the first write.</summary>
+    Task<ThirdProbeFile?> GetFileAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
+
+    void AddFile(ThirdProbeFile file);
+
     void AddImage(ProbeProjectImage image);
 
     void RemoveImages(IEnumerable<ProbeProjectImage> images);
 
-    /// <summary>Every blob a project picture lives in: what the orphan cleanup must leave alone.</summary>
+    /// <summary>
+    /// Every blob a project picture or a camp посвідка lives in: what the orphan cleanup must leave alone.
+    /// </summary>
     Task<IReadOnlyList<string>> GetAllImageBlobNamesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Removes these people's projects and pictures. No foreign key ties them to the member row;
+    /// Removes these people's projects, pictures and third-probe files. No foreign key ties them to the member row;
     /// the blobs go with the next orphan sweep.
     /// </summary>
     Task DeleteForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);

@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -8,47 +9,58 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
 
-/// <summary>Removes a project with its pictures, blobs included.</summary>
-public sealed record DeleteProbeProjectCommand(Guid MemberKey, string ProbeId, Guid ProjectKey) : IRequest<ServiceResult<bool>>;
+/// <summary>
+/// Removes a project with its pictures, blobs included. A main project that goes leaves its place to
+/// the spare, which is what the spare is for.
+/// </summary>
+public sealed record DeleteProbeProjectCommand(Guid MemberKey, string ProbeId, Guid ProjectKey) : IRequest<ServiceResult<ThirdProbeResponse>>;
 
-public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeleteProbeProjectCommand, ServiceResult<bool>>
+public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeleteProbeProjectCommand, ServiceResult<ThirdProbeResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProbeProjectAccess _access;
     private readonly IPhotoService _photos;
     private readonly IKurinAudit _audit;
     private readonly IProbesCatalogService _probes;
+    private readonly IThirdProbeReader _reader;
 
     public DeleteProbeProjectCommandHandler(
         IUnitOfWork unitOfWork,
         IProbeProjectAccess access,
         IPhotoService photos,
         IKurinAudit audit,
-        IProbesCatalogService probes)
+        IProbesCatalogService probes,
+        IThirdProbeReader reader)
     {
         _unitOfWork = unitOfWork;
         _access = access;
         _photos = photos;
         _audit = audit;
         _probes = probes;
+        _reader = reader;
     }
 
-    public async Task<ServiceResult<bool>> Handle(DeleteProbeProjectCommand request, CancellationToken cancellationToken)
+    public async Task<ServiceResult<ThirdProbeResponse>> Handle(DeleteProbeProjectCommand request, CancellationToken cancellationToken)
     {
         var probeId = request.ProbeId.Trim();
-        if (await ProbeProjectGuard.RefuseAsync<bool>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
+        if (await ProbeProjectGuard.RefuseAsync<ThirdProbeResponse>(_access, request.MemberKey, probeId, cancellationToken) is { } refused)
         {
             return refused;
         }
 
-        var project = await _unitOfWork.ProbeProjects.GetWithImagesAsync(request.ProjectKey, cancellationToken);
-        if (project is null || project.MemberKey != request.MemberKey || project.ProbeId != probeId)
+        var all = await _unitOfWork.ProbeProjects.GetForMemberProbeAsync(request.MemberKey, probeId, cancellationToken);
+        var project = all.FirstOrDefault(p => p.ProbeProjectKey == request.ProjectKey);
+        if (project is null)
         {
-            return new ServiceResult<bool>(ResultType.NotFound);
+            return new ServiceResult<ThirdProbeResponse>(ResultType.NotFound);
         }
 
         var blobs = project.Images.Select(image => image.BlobName).ToList();
         _unitOfWork.ProbeProjects.Delete(project, cancellationToken);
+        if (!project.IsSpare && all.FirstOrDefault(p => p.IsSpare) is { } spare)
+        {
+            spare.IsSpare = false;
+        }
 
         await _audit.RecordAsync(
             new AuditRecord(
@@ -67,6 +79,6 @@ public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeletePro
             await _photos.DeletePhotoAsync(blob, cancellationToken);
         }
 
-        return new ServiceResult<bool>(ResultType.Success, true);
+        return new ServiceResult<ThirdProbeResponse>(ResultType.Success, await _reader.ReadAsync(request.MemberKey, probeId, cancellationToken));
     }
 }

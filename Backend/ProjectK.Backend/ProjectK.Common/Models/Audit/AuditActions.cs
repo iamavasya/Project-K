@@ -24,6 +24,36 @@ public static class AuditActions
         public const string ProjectAdded = "Probe.ProjectAdded";
         public const string ProjectEdited = "Probe.ProjectEdited";
         public const string ProjectRemoved = "Probe.ProjectRemoved";
+        public const string ProjectApproved = "Probe.ProjectApproved";
+        public const string ProjectApprovalRemoved = "Probe.ProjectApprovalRemoved";
+        public const string ProjectCompleted = "Probe.ProjectCompleted";
+        public const string ProjectCompletionRemoved = "Probe.ProjectCompletionRemoved";
+
+        /// <summary>The spare project took a main one's place.</summary>
+        public const string ProjectsSwapped = "Probe.ProjectsSwapped";
+
+        /// <summary>The third-probe file: dates, mentors, camp, résumé.</summary>
+        public const string FileEdited = "Probe.FileEdited";
+        public const string ConferenceConfirmed = "Probe.ConferenceConfirmed";
+        public const string ConferenceUnconfirmed = "Probe.ConferenceUnconfirmed";
+        public const string CampConfirmed = "Probe.CampConfirmed";
+        public const string CampUnconfirmed = "Probe.CampUnconfirmed";
+        public const string CertificateAttached = "Probe.CertificateAttached";
+        public const string CertificateRemoved = "Probe.CertificateRemoved";
+
+        /// <summary>The action of confirming (or taking back) a part of the third probe, by the part's name.</summary>
+        public static string ThirdProbe(string part, bool confirmed) => (part, confirmed) switch
+        {
+            ("Conference", true) => ConferenceConfirmed,
+            ("Conference", false) => ConferenceUnconfirmed,
+            ("Camp", true) => CampConfirmed,
+            ("Camp", false) => CampUnconfirmed,
+            ("ProjectApproval", true) => ProjectApproved,
+            ("ProjectApproval", false) => ProjectApprovalRemoved,
+            ("ProjectCompletion", true) => ProjectCompleted,
+            ("ProjectCompletion", false) => ProjectCompletionRemoved,
+            _ => throw new ArgumentOutOfRangeException(nameof(part), part, "Unknown part of the third probe.")
+        };
     }
 
     /// <summary>Вмілості.</summary>

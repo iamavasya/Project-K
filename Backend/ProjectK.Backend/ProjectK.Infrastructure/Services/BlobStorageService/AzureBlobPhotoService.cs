@@ -135,6 +135,7 @@ public class AzureBlobPhotoService : IPhotoService
         {
             BlobUploadProcessingMode.CompressToJpeg => await PrepareJpegUploadAsync(photoStream, fileName, uploadContext, cancellationToken).ConfigureAwait(false),
             BlobUploadProcessingMode.EncodeAsPng => await PreparePngUploadAsync(photoStream, fileName, uploadContext, cancellationToken).ConfigureAwait(false),
+            BlobUploadProcessingMode.KeepPdf => await PreparePdfUploadAsync(photoStream, uploadContext, cancellationToken).ConfigureAwait(false),
             _ => throw new ArgumentOutOfRangeException(nameof(uploadContext), uploadContext.ProcessingMode, "Unsupported blob upload processing mode.")
         };
     }
@@ -199,6 +200,29 @@ public class AzureBlobPhotoService : IPhotoService
             throw new InvalidOperationException("Uploaded file is not a valid image.", ex);
         }
     }
+
+    /// <summary>
+    /// A PDF is not decoded like a picture, so it is let in only by its signature: a file that does
+    /// not start with %PDF- is refused, whatever its name or declared type.
+    /// </summary>
+    private static async Task<PreparedBlobUpload> PreparePdfUploadAsync(
+        Stream stream,
+        BlobUploadContext uploadContext,
+        CancellationToken cancellationToken)
+    {
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms, cancellationToken).ConfigureAwait(false);
+        var bytes = ms.ToArray();
+        if (!IsPdf(bytes))
+        {
+            throw new InvalidOperationException("Uploaded file is not a PDF.");
+        }
+
+        return new PreparedBlobUpload(bytes, ".pdf", uploadContext.ContentType);
+    }
+
+    internal static bool IsPdf(ReadOnlySpan<byte> bytes) =>
+        bytes.Length > 5 && bytes[..5].SequenceEqual("%PDF-"u8);
 
     private async Task<PreparedBlobUpload> PreparePngUploadAsync(
         Stream photoStream,

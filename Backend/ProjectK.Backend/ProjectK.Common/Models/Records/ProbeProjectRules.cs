@@ -1,28 +1,47 @@
 namespace ProjectK.Common.Models.Records;
 
 /// <summary>
-/// The limits of the third probe's projects. Numbers, not styling: inline pictures must not turn
-/// blob storage into a dump, so the server holds them and the clients only repeat them.
+/// The limits of the third probe's file and projects. Numbers, not styling: inline pictures and
+/// attached посвідки must not turn blob storage into a dump, so the server holds them and the
+/// clients only repeat them.
 /// </summary>
 public static class ProbeProjectRules
 {
-    /// <summary>The programme asks for five projects; one more would be a plan, not a probe.</summary>
-    public const int MaxProjects = 5;
+    /// <summary>The programme asks for five projects, one from each area.</summary>
+    public const int MaxMainProjects = 5;
+
+    /// <summary>One more, written out in reserve and swapped in when a main one falls through.</summary>
+    public const int MaxSpareProjects = 1;
+
+    public const int MaxProjects = MaxMainProjects + MaxSpareProjects;
+
+    /// <summary>«Два проєкти можуть бути спільні з іншими третьопробниками.»</summary>
+    public const int MaxSharedMainProjects = 2;
 
     public const int MaxImagesPerProject = 5;
 
     /// <summary>One picture as it arrives, before it is re-encoded: 1 MB.</summary>
     public const long MaxImageBytes = 1024 * 1024;
 
-    /// <summary>The description in Markdown, pictures as short tokens.</summary>
-    public const int MaxDescriptionLength = 20_000;
+    /// <summary>The посвідка of the camp, a picture or a PDF: 2 MB.</summary>
+    public const long MaxCertificateBytes = 2 * 1024 * 1024;
 
-    public const int MaxTitleLength = 200;
-    public const int MaxMentorNameLength = 200;
-    public const int MaxMentorContactLength = 200;
+    /// <summary>Each of a project's three texts (goal, plan, results), pictures as short tokens.</summary>
+    public const int MaxTextLength = 10_000;
+
+    public const int MaxResumeLength = 10_000;
+    public const int MaxShortTextLength = 200;
+    public const int MaxMentorsLength = 500;
+    public const int MaxCommentLength = 2_000;
 
     /// <summary>The probe's place in its edition (знак прихильника is 0).</summary>
     public const int ProbeOrder = 3;
+
+    /// <summary>A youth's programme ends on their 18th birthday, and the third probe with it.</summary>
+    public const int YouthEndsAtAge = 18;
+
+    /// <summary>The вмілості the probe asks for, one of them for тіловиховання.</summary>
+    public const int RequiredBadges = 4;
 
     /// <summary>How a picture is written into the Markdown: <c>![…](project-image:{key})</c>.</summary>
     public const string ImageScheme = "project-image:";

@@ -46,6 +46,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<ProbePointProgress> ProbePointProgresses { get; set; }
     public DbSet<ProbeProject> ProbeProjects { get; set; }
     public DbSet<ProbeProjectImage> ProbeProjectImages { get; set; }
+    public DbSet<ThirdProbeFile> ThirdProbeFiles { get; set; }
     public DbSet<MentorAssignment> MentorAssignments { get; set; }
     public DbSet<MemberWarning> MemberWarnings { get; set; }
     public DbSet<MemberAward> MemberAwards { get; set; }
@@ -666,27 +667,49 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
 
         builder.Entity<ProbeProject>(entity =>
         {
+            const int shortText = ProbeProjectRules.MaxShortTextLength;
             entity.HasKey(e => e.ProbeProjectKey);
-            entity.Property(e => e.ProbeId)
-                .HasMaxLength(200)
-                .IsRequired();
-            entity.Property(e => e.Title)
-                .HasMaxLength(ProbeProjectRules.MaxTitleLength)
-                .IsRequired();
-            entity.Property(e => e.Description)
-                .HasMaxLength(ProbeProjectRules.MaxDescriptionLength)
-                .IsRequired();
-            entity.Property(e => e.DirectionMentorName)
-                .HasMaxLength(ProbeProjectRules.MaxMentorNameLength);
-            entity.Property(e => e.DirectionMentorContact)
-                .HasMaxLength(ProbeProjectRules.MaxMentorContactLength);
-            entity.Property(e => e.UpdatedByName)
-                .HasMaxLength(200);
+            entity.Property(e => e.ProbeId).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Title).HasMaxLength(shortText).IsRequired();
+            entity.Property(e => e.Area).HasConversion<int?>();
+            entity.Property(e => e.Reach).HasConversion<int>();
+            entity.Property(e => e.SharedWith).HasMaxLength(shortText);
+            entity.Property(e => e.Location).HasMaxLength(shortText);
+            entity.Property(e => e.EventLeads).HasMaxLength(shortText);
+            entity.Property(e => e.CoordinatorName).HasMaxLength(shortText);
+            entity.Property(e => e.CoordinatorContact).HasMaxLength(shortText);
+            entity.Property(e => e.Goal).HasMaxLength(ProbeProjectRules.MaxTextLength).IsRequired();
+            entity.Property(e => e.Plan).HasMaxLength(ProbeProjectRules.MaxTextLength).IsRequired();
+            entity.Property(e => e.Results).HasMaxLength(ProbeProjectRules.MaxTextLength).IsRequired();
+            entity.Property(e => e.CoordinatorComment).HasMaxLength(ProbeProjectRules.MaxCommentLength);
+            entity.Property(e => e.ApprovedByName).HasMaxLength(200);
+            entity.Property(e => e.CompletedByName).HasMaxLength(200);
+            entity.Property(e => e.UpdatedByName).HasMaxLength(200);
             entity.HasIndex(e => new { e.MemberKey, e.ProbeId });
             entity.HasMany(e => e.Images)
                 .WithOne(i => i.Project)
                 .HasForeignKey(i => i.ProbeProjectKey)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ThirdProbeFile>(entity =>
+        {
+            const int shortText = ProbeProjectRules.MaxShortTextLength;
+            entity.HasKey(e => e.ThirdProbeFileKey);
+            entity.Property(e => e.ProbeId).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Mentors).HasMaxLength(ProbeProjectRules.MaxMentorsLength);
+            entity.Property(e => e.ConferenceWith).HasMaxLength(shortText);
+            entity.Property(e => e.ConferenceConfirmedByName).HasMaxLength(200);
+            entity.Property(e => e.CampKind).HasConversion<int?>();
+            entity.Property(e => e.CampName).HasMaxLength(shortText);
+            entity.Property(e => e.CampCertificateBlobName).HasMaxLength(300);
+            entity.Property(e => e.CampCertificateContentType).HasMaxLength(100);
+            entity.Property(e => e.CampCertificateFileName).HasMaxLength(shortText);
+            entity.Property(e => e.CampConfirmedByName).HasMaxLength(200);
+            entity.Property(e => e.PhysicalBadgeId).HasMaxLength(200);
+            entity.Property(e => e.Resume).HasMaxLength(ProbeProjectRules.MaxResumeLength).IsRequired();
+            entity.Property(e => e.UpdatedByName).HasMaxLength(200);
+            entity.HasIndex(e => new { e.MemberKey, e.ProbeId }).IsUnique();
         });
 
         builder.Entity<ProbeProjectImage>(entity =>

@@ -13,13 +13,13 @@ public static partial class ProbeProjectMarkdown
     private static partial Regex ImagePattern();
 
     /// <summary>
-    /// The keys of the pictures in <paramref name="markdown"/>, in order; null when a picture
-    /// points anywhere but at <c>project-image:{key}</c>.
+    /// The keys of the pictures in <paramref name="texts"/>, in order; null when a picture points
+    /// anywhere but at <c>project-image:{key}</c>.
     /// </summary>
-    public static IReadOnlyList<Guid>? ImageKeys(string markdown)
+    public static IReadOnlyList<Guid>? ImageKeys(params string[] texts)
     {
         var keys = new List<Guid>();
-        foreach (Match match in ImagePattern().Matches(markdown))
+        foreach (Match match in texts.SelectMany(text => ImagePattern().Matches(text)))
         {
             var target = match.Groups[1].Value;
             if (!target.StartsWith(ProbeProjectRules.ImageScheme, StringComparison.Ordinal)

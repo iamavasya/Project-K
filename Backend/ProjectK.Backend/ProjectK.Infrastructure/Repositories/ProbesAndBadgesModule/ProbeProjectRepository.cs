@@ -29,16 +29,32 @@ public class ProbeProjectRepository : BaseEntityRepository<ProbeProject>, IProbe
             .FirstOrDefaultAsync(project => project.ProbeProjectKey == projectKey, cancellationToken);
     }
 
+    public async Task<ThirdProbeFile?> GetFileAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default)
+    {
+        return await Context.ThirdProbeFiles
+            .AsTracking()
+            .FirstOrDefaultAsync(file => file.MemberKey == memberKey && file.ProbeId == probeId, cancellationToken);
+    }
+
+    public void AddFile(ThirdProbeFile file) => Context.ThirdProbeFiles.Add(file);
+
     public void AddImage(ProbeProjectImage image) => Context.ProbeProjectImages.Add(image);
 
     public void RemoveImages(IEnumerable<ProbeProjectImage> images) => Context.ProbeProjectImages.RemoveRange(images);
 
     public async Task<IReadOnlyList<string>> GetAllImageBlobNamesAsync(CancellationToken cancellationToken = default)
     {
-        return await Context.ProbeProjectImages
+        var pictures = await Context.ProbeProjectImages
             .AsNoTracking()
             .Select(image => image.BlobName)
             .ToListAsync(cancellationToken);
+        var certificates = await Context.ThirdProbeFiles
+            .AsNoTracking()
+            .Where(file => file.CampCertificateBlobName != null)
+            .Select(file => file.CampCertificateBlobName!)
+            .ToListAsync(cancellationToken);
+
+        return [.. pictures, .. certificates];
     }
 
     public override Task<IEnumerable<ProbeProject>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -61,5 +77,11 @@ public class ProbeProjectRepository : BaseEntityRepository<ProbeProject>, IProbe
             .ToListAsync(cancellationToken);
 
         Context.ProbeProjects.RemoveRange(rows);
+
+        var files = await Context.ThirdProbeFiles
+            .Where(file => memberKeys.Contains(file.MemberKey))
+            .ToListAsync(cancellationToken);
+
+        Context.ThirdProbeFiles.RemoveRange(files);
     }
 }
