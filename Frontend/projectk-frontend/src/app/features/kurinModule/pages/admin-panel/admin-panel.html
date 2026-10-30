@@ -47,8 +47,8 @@
                 <td data-mobile-label="Курінь">
                     @if (isSenior(item)) {
                         <div class="kurin-number-cell">
-                            <span>{{ seniorTitle(item) }}</span>
-                            <small>{{ item.namedAfter ? '«' + item.namedAfter + '»' : 'старший курінь' }}</small>
+                            <span>{{ item.namedAfter || seniorTitle(item) }}</span>
+                            <small>{{ item.namedAfter ? seniorTitle(item) : 'без назви' }}</small>
                         </div>
                     } @else {
                         <div class="kurin-number-cell">

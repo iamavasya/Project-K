@@ -103,7 +103,7 @@ public sealed class SubmitKurinBranchRequestCommandHandler
             new KurinBranchRequestSubmitted(
                 wanted.KurinBranchRequestKey,
                 kurin.KurinKey,
-                kurin.NamedAfter is null ? current : $"{current} «{kurin.NamedAfter}»",
+                kurin.NamedAfter is null ? current : $"«{kurin.NamedAfter}» · {current}",
                 KurinBranchNames.DescribeSenior(wanted.WantedBranches),
                 userKey),
             cancellationToken);

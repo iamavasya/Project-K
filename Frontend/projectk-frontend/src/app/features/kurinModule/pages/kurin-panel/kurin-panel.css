@@ -42,6 +42,13 @@
     font-weight: 650;
 }
 
+.kurin-title__branches {
+    margin: 0;
+    color: var(--p-text-muted-color);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
 .group-panel {
     display: grid;
     gap: var(--lil-page-gap);

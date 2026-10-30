@@ -237,7 +237,11 @@ const DESCRIPTION_LIMIT = 360;
                       <app-kurin-plaque [number]="k.number" [size]="48" data-testid="kurin-plaque" />
                       <div>
                         <h2>{{ heading(k) }}</h2>
-                        @if (k.namedAfter) { <p>{{ isSenior(k) ? '«' + k.namedAfter + '»' : 'ім. ' + k.namedAfter }}</p> }
+                        @if (isSenior(k)) {
+                          @if (k.namedAfter) { <p>{{ branchesName(k) }}</p> }
+                        } @else if (k.namedAfter) {
+                          <p>ім. {{ k.namedAfter }}</p>
+                        }
                         <ion-badge class="lk-tag--secondary">{{ branchLabel(k) }}</ion-badge>
                       </div>
                       @if (canManageGroups()) {
@@ -529,9 +533,14 @@ export class KurinPage implements OnInit, OnDestroy {
     return isSeniorBranch(kurin.branch);
   }
 
-  /** «47 курінь»; a senior kurin by every гілка, «5-й курінь УСП · 20-й курінь УПС». */
+  /** «47 курінь»; a senior kurin by its own name, its гілки under it. */
   protected heading(kurin: KurinDto): string {
-    return this.isSenior(kurin) ? kurinBranchesName(kurin.branches) : kurinTitle(kurin.number);
+    return this.isSenior(kurin) ? kurin.namedAfter || this.branchesName(kurin) : kurinTitle(kurin.number);
+  }
+
+  /** «5-й курінь УСП · 20-й курінь УПС». */
+  protected branchesName(kurin: KurinDto): string {
+    return kurinBranchesName(kurin.branches);
   }
 
   /** The ступінь above the office tags; «Учасник» only for someone with neither (web «Статус»). */

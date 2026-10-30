@@ -5,7 +5,7 @@ import { KurinNumberComponent } from '../../../kurinModule/components/kurin-numb
 import { MEMBERSHIP_KIND_LABELS } from '../../../kurinModule/models/enums/membership-kind.enum';
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MyGroupDto } from '../../models/me.dto';
-import { compareKurinNumbers, kurinBranchTags, kurinLabel, kurinWithName } from '../../../../shared/functions/kurin-label.function';
+import { compareKurinNumbers, kurinHeadline, kurinLabel, kurinSubline } from '../../../../shared/functions/kurin-label.function';
 
 export interface KurinRow {
   option: KurinScopeOption;
@@ -25,7 +25,7 @@ export interface KurinRow {
 })
 export class MyKurinsTileComponent {
   protected readonly numberLabel = kurinLabel;
-  protected readonly branchTags = kurinBranchTags;
+
   readonly kurins = input<KurinScopeOption[]>([]);
   readonly groups = input<MyGroupDto[]>([]);
   readonly currentKurinKey = input<string | null>(null);
@@ -52,8 +52,12 @@ export class MyKurinsTileComponent {
     [...this.groups()].sort((a, b) => Number(b.kurin.isCurrent) - Number(a.kurin.isCurrent) || compareKurinNumbers(a.kurin.kurinNumber, b.kurin.kurinNumber))
   );
 
-  kurinLabel(option: KurinScopeOption): string {
-    return kurinWithName({ number: option.kurinNumber, branch: option.branch, branches: option.branches, namedAfter: option.namedAfter });
+  headline(option: KurinScopeOption): string {
+    return kurinHeadline({ number: option.kurinNumber, branch: option.branch, branches: option.branches, namedAfter: option.namedAfter });
+  }
+
+  subline(option: KurinScopeOption): string {
+    return kurinSubline({ number: option.kurinNumber, branch: option.branch, branches: option.branches, namedAfter: option.namedAfter });
   }
 
   /** Leading one's own гурток is sitting in its провід; leading another's is being its впорядник. */

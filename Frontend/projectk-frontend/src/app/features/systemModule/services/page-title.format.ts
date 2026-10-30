@@ -1,12 +1,13 @@
-import { KurinBranch } from '../../kurinModule/models/enums/kurin-branch.enum';
+import { KurinBranch, isSeniorBranch } from '../../kurinModule/models/enums/kurin-branch.enum';
 import { kurinLabel } from '../../../shared/functions/kurin-label.function';
 
 export const TITLE_SEPARATOR = ' · ';
 
 export type TitleContextType = 'kurin' | 'group' | 'member';
 
-/** «к. ч. 12»; a senior kurin by its main гілка, «5-й курінь УСП». */
-export function formatKurinTitle(kurinNumber: number | null | undefined, branch?: KurinBranch | null): string | null {
+/** «к. ч. 12»; a senior kurin by its own name, else by its main гілка, «5-й курінь УСП». */
+export function formatKurinTitle(kurinNumber: number | null | undefined, branch?: KurinBranch | null, name?: string | null): string | null {
+  if (name && isSeniorBranch(branch)) return name;
   return typeof kurinNumber === 'number' && Number.isFinite(kurinNumber)
     ? kurinLabel(kurinNumber, branch)
     : null;

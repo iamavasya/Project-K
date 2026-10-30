@@ -14,12 +14,12 @@ export function kurinShortLabel(option: Pick<KurinScopeOption, 'kurinNumber'> & 
 
 /**
  * «к. ч. 7 ім. Сірого Лева», as the web's my-kurins tile names a kurin; a senior kurin by all its
- * гілки and its own name, «5-й курінь УСП · 20-й курінь УПС «Орден Хрестоносців»».
+ * гілки after its own name, «Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС».
  */
 export function kurinLabel(option: Pick<KurinScopeOption, 'kurinNumber' | 'namedAfter'> & Partial<Pick<KurinScopeOption, 'branch' | 'branches'>>): string {
   if (isSeniorBranch(option.branch)) {
     const numbers = option.branches?.length ? kurinBranchesName(option.branches) : kurinShortLabel(option);
-    return option.namedAfter ? `${numbers} «${option.namedAfter}»` : numbers;
+    return option.namedAfter ? `${option.namedAfter} · ${numbers}` : numbers;
   }
   return option.namedAfter ? `${kurinShortLabel(option)} ім. ${option.namedAfter}` : kurinShortLabel(option);
 }

@@ -14,6 +14,9 @@ import { MessageService } from '@openng/optimus-ui/api';
 import { RouterLink } from '@angular/router';
 import { PhoneInputComponent } from '../../../../../shared/phone-input/phone-input';
 
+/** Улад, у якому курінь має число. */
+type Ulad = 'UPYu' | 'USP' | 'UPS';
+
 @Component({
   selector: 'app-waitlist-registration',
   imports: [
@@ -121,38 +124,37 @@ import { PhoneInputComponent } from '../../../../../shared/phone-input/phone-inp
               <label for="ulad">Улад куреня</label>
               <p-selectbutton
                 inputId="ulad"
-                formControlName="ulad"
+                formControlName="ulady"
                 [options]="uladOptions"
                 optionLabel="label"
                 optionValue="value"
-                [allowEmpty]="false" />
+                [multiple]="true" />
+              <small class="text-muted-color">Курінь УСП і УПС водночас — це один курінь зі своїм числом у кожному уладі.</small>
             </div>
           }
 
           @if (form.get('isKurinLeaderCandidate')?.value && isSenior) {
-            <p class="m-0 text-sm text-muted-color">
-              Старший курінь може бути в обох уладах — тоді в кожному в нього своє число, а курінь один.
-            </p>
             <div class="flex flex-col gap-3">
-              <div class="flex items-center gap-3">
-                <p-checkbox formControlName="inUsp" [binary]="true" inputId="in-usp" />
-                <label for="in-usp" class="w-12">УСП</label>
-                <input pInputText id="usp-number" formControlName="uspNumber" inputmode="numeric" placeholder="Число в УСП"
-                  aria-label="Число куреня в УСП" class="flex-1" (input)="onDigitsInput($event, 'uspNumber')" />
-              </div>
-              <div class="flex items-center gap-3">
-                <p-checkbox formControlName="inUps" [binary]="true" inputId="in-ups" />
-                <label for="in-ups" class="w-12">УПС</label>
-                <input pInputText id="ups-number" formControlName="upsNumber" inputmode="numeric" placeholder="Число в УПС"
-                  aria-label="Число куреня в УПС" class="flex-1" (input)="onDigitsInput($event, 'upsNumber')" />
-              </div>
-              @if (form.hasError('noSeniorBranch')) {
-                <small class="text-muted-color">Познач хоча б один улад і впиши число куреня в ньому.</small>
+              @if (inUlad('USP')) {
+                <div class="flex flex-col gap-2">
+                  <label for="usp-number">Число куреня в УСП</label>
+                  <input pInputText id="usp-number" formControlName="uspNumber" inputmode="numeric" (input)="onDigitsInput($event, 'uspNumber')" />
+                </div>
+              }
+              @if (inUlad('UPS')) {
+                <div class="flex flex-col gap-2">
+                  <label for="ups-number">Число куреня в УПС</label>
+                  <input pInputText id="ups-number" formControlName="upsNumber" inputmode="numeric" (input)="onDigitsInput($event, 'upsNumber')" />
+                </div>
               }
             </div>
           }
 
-          @if (form.get('isKurinLeaderCandidate')?.value && !isSenior) {
+          @if (form.get('isKurinLeaderCandidate')?.value && form.hasError('noUlad')) {
+            <small class="text-muted-color">Обери улад куреня.</small>
+          }
+
+          @if (form.get('isKurinLeaderCandidate')?.value && inUlad('UPYu')) {
             <div class="flex items-center gap-2">
               <p-checkbox formControlName="isPreparatoryKurin" [binary]="true" inputId="preparatory" />
               <label for="preparatory">Мій курінь є підготовчим (ще без числа)</label>
@@ -213,8 +215,9 @@ export class WaitlistRegistrationComponent {
   /** The list did not load: the applicant names the край in words, as the form used to ask. */
   kraisUnavailable = false;
   readonly uladOptions = [
-    { label: 'Юнацтво · УПЮ', value: 'UPYu' },
-    { label: 'Старші · УСП, УПС', value: 'senior' }
+    { label: 'УПЮ', value: 'UPYu' },
+    { label: 'УСП', value: 'USP' },
+    { label: 'УПС', value: 'UPS' }
   ];
 
   // Only a Зв'язковий may apply for now: the kurin is what gets onboarded, and a person on
@@ -237,17 +240,13 @@ export class WaitlistRegistrationComponent {
       isKurinLeaderCandidate: [false, Validators.requiredTrue],
       isPreparatoryKurin: [false],
       claimedKurinNameOrNumber: ['', this.kurinNumberValidators()],
-      ulad: ['UPYu' as 'UPYu' | 'senior'],
-      inUsp: [false],
+      ulady: [['UPYu'] as Ulad[]],
       uspNumber: [{ value: '', disabled: true }, this.kurinNumberValidators()],
-      inUps: [false],
       upsNumber: [{ value: '', disabled: true }, this.kurinNumberValidators()]
-    }, { validators: (control: AbstractControl) => this.seniorBranchChosen(control) });
+    }, { validators: (control: AbstractControl) => this.uladChosen(control) });
 
-    // A senior kurin names a number in each улад it is in instead of the one УПЮ number.
-    this.form.get('ulad')!.valueChanges.subscribe(() => this.syncNumberFields());
-    this.form.get('inUsp')!.valueChanges.subscribe(() => this.syncNumberFields());
-    this.form.get('inUps')!.valueChanges.subscribe(() => this.syncNumberFields());
+    // УПЮ stands alone; УСП and УПС go together, each with its own number.
+    this.form.get('ulady')!.valueChanges.subscribe((ulady: Ulad[] | null) => this.pickUlady(ulady ?? []));
 
     // A підготовчий курінь has no number yet, so the field steps aside rather than stay required.
     this.form.get('isPreparatoryKurin')!.valueChanges.subscribe(() => this.syncNumberFields());
@@ -283,16 +282,38 @@ export class WaitlistRegistrationComponent {
   }
 
   get isSenior(): boolean {
-    return this.form.get('ulad')!.value === 'senior';
+    return this.inUlad('USP') || this.inUlad('UPS');
   }
+
+  inUlad(ulad: Ulad): boolean {
+    return ((this.form.get('ulady')!.value as Ulad[] | null) ?? []).includes(ulad);
+  }
+
+  /** Picking УПЮ drops УСП and УПС, and the other way round: a kurin is never both. */
+  private pickUlady(ulady: Ulad[]): void {
+    const previous = this.lastUlady;
+    const added = ulady.filter(u => !previous.includes(u));
+    let next = ulady;
+    if (added.includes('UPYu')) {
+      next = ['UPYu'];
+    } else if (added.some(u => u !== 'UPYu')) {
+      next = ulady.filter(u => u !== 'UPYu');
+    }
+    this.lastUlady = next;
+    if (next.length !== ulady.length) {
+      this.form.get('ulady')!.setValue(next, { emitEvent: false });
+    }
+    this.syncNumberFields();
+  }
+
+  private lastUlady: Ulad[] = ['UPYu'];
 
   /** Each number field is on only while it means something, so a hidden one never blocks the form. */
   private syncNumberFields(): void {
-    const senior = this.isSenior;
     const preparatory = !!this.form.get('isPreparatoryKurin')!.value;
-    this.toggle('claimedKurinNameOrNumber', !senior && !preparatory);
-    this.toggle('uspNumber', senior && !!this.form.get('inUsp')!.value);
-    this.toggle('upsNumber', senior && !!this.form.get('inUps')!.value);
+    this.toggle('claimedKurinNameOrNumber', this.inUlad('UPYu') && !preparatory);
+    this.toggle('uspNumber', this.inUlad('USP'));
+    this.toggle('upsNumber', this.inUlad('UPS'));
     this.form.updateValueAndValidity();
   }
 
@@ -306,9 +327,9 @@ export class WaitlistRegistrationComponent {
     }
   }
 
-  private seniorBranchChosen(control: AbstractControl): ValidationErrors | null {
-    const value = control.value as { ulad?: string; inUsp?: boolean; inUps?: boolean };
-    return value.ulad === 'senior' && !value.inUsp && !value.inUps ? { noSeniorBranch: true } : null;
+  private uladChosen(control: AbstractControl): ValidationErrors | null {
+    const value = control.value as { isKurinLeaderCandidate?: boolean; ulady?: Ulad[] | null };
+    return value.isKurinLeaderCandidate && !value.ulady?.length ? { noUlad: true } : null;
   }
 
   get kurinNumberOutOfRange(): boolean {
@@ -341,16 +362,16 @@ export class WaitlistRegistrationComponent {
 
   /** What the server takes: a senior kurin's numbers per улад, or the one УПЮ number. */
   private registration(): WaitlistRegistration {
-    const { ulad, inUsp, uspNumber, inUps, upsNumber, ...rest } = this.form.value;
-    if (ulad !== 'senior') {
+    const { ulady, uspNumber, upsNumber, ...rest } = this.form.value;
+    if (!this.isSenior) {
       return rest;
     }
     return {
       ...rest,
       claimedKurinNameOrNumber: null,
       isPreparatoryKurin: false,
-      uspNumber: inUsp && uspNumber ? Number(uspNumber) : null,
-      upsNumber: inUps && upsNumber ? Number(upsNumber) : null
+      uspNumber: uspNumber ? Number(uspNumber) : null,
+      upsNumber: upsNumber ? Number(upsNumber) : null
     };
   }
 

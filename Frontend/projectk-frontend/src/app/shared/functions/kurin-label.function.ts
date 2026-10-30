@@ -57,14 +57,37 @@ export interface KurinNaming {
 }
 
 /**
- * A kurin with its name: "к. ч. 47 ім. Івана Богуна" for УПЮ, "5-й курінь УСП · 20-й курінь УПС
- * «Орден Хрестоносців»» for a senior kurin, whose name is its own and not someone's it bears.
+ * A kurin with its name on one line: "к. ч. 47 ім. Івана Богуна" for УПЮ. A senior kurin goes by its
+ * own name first and its гілки after: "Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС".
  */
 export function kurinWithName(kurin: KurinNaming): string {
   if (kurin.branch && isSeniorBranch(kurin.branch)) {
-    const numbers = kurinBranchesName(kurin.branches?.length ? kurin.branches : [{ branch: kurin.branch, number: kurin.number ?? null }]);
-    return kurin.namedAfter ? `${numbers} «${kurin.namedAfter}»` : numbers;
+    const numbers = seniorNumbers(kurin);
+    return kurin.namedAfter ? `${kurin.namedAfter} · ${numbers}` : numbers;
   }
   const label = kurinLabel(kurin.number);
   return kurin.namedAfter ? `${label} ім. ${kurin.namedAfter}` : label;
+}
+
+/**
+ * The first of two lines naming a kurin: a senior kurin's own name ("Орден Хрестоносців"), or its
+ * гілки when it has none; a УПЮ kurin as before, "к. ч. 47 ім. Івана Богуна".
+ */
+export function kurinHeadline(kurin: KurinNaming): string {
+  if (kurin.branch && isSeniorBranch(kurin.branch)) {
+    return kurin.namedAfter || seniorNumbers(kurin);
+  }
+  return kurinWithName(kurin);
+}
+
+/** The second line under it: a senior kurin's гілки in full, "5-й курінь УСП · 20-й курінь УПС"; "УПЮ" otherwise. */
+export function kurinSubline(kurin: KurinNaming): string {
+  if (kurin.branch && isSeniorBranch(kurin.branch)) {
+    return seniorNumbers(kurin);
+  }
+  return kurinBranchTags(kurin.branches, kurin.branch ?? KurinBranch.UPYu);
+}
+
+function seniorNumbers(kurin: KurinNaming): string {
+  return kurinBranchesName(kurin.branches?.length ? kurin.branches : [{ branch: kurin.branch!, number: kurin.number ?? null }]);
 }

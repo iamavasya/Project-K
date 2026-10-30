@@ -9,7 +9,8 @@ import { AuthService } from '../../../authModule/services/auth-service/auth.serv
 import { KurinScopeOption } from '../../models/kurin-scope-option.model';
 import { MEMBERSHIP_KIND_LABELS } from '../../models/enums/membership-kind.enum';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
-import { kurinBranchTags, kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
+import { kurinHeadline, kurinLabel, kurinName, kurinSubline } from '../../../../shared/functions/kurin-label.function';
+import { isSeniorBranch } from '../../models/enums/kurin-branch.enum';
 
 /**
  * Вибір куреня, в якому людина зараз діє. Зʼявляється лише тим, хто справді належить до кількох:
@@ -34,7 +35,21 @@ export class KurinSwitcherComponent implements OnInit {
   readonly options = signal<KurinScopeOption[]>([]);
   readonly switchingTo = signal<string | null>(null);
 
-  readonly branchTags = kurinBranchTags;
+  protected headline(option: KurinScopeOption): string {
+    return kurinHeadline(this.naming(option));
+  }
+
+  protected subline(option: KurinScopeOption): string {
+    return kurinSubline(this.naming(option));
+  }
+
+  protected isSenior(option: KurinScopeOption): boolean {
+    return isSeniorBranch(option.branch);
+  }
+
+  private naming(option: KurinScopeOption) {
+    return { number: option.kurinNumber, branch: option.branch, branches: option.branches, namedAfter: option.namedAfter };
+  }
   readonly kindLabels = MEMBERSHIP_KIND_LABELS;
 
   ngOnInit(): void {
@@ -56,7 +71,8 @@ export class KurinSwitcherComponent implements OnInit {
 
   get currentLabel(): string {
     const current = this.current;
-    return current ? kurinLabel(current.kurinNumber, current.branch) : 'Оберіть курінь';
+    if (!current) return 'Оберіть курінь';
+    return isSeniorBranch(current.branch) ? kurinHeadline(this.naming(current)) : kurinLabel(current.kurinNumber, current.branch);
   }
 
   isCurrent(option: KurinScopeOption): boolean {

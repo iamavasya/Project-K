@@ -106,7 +106,10 @@ import { kurinBranchesName } from '../../../../shared/functions/kurin-label.func
           @for (request of branchRequests; track request.kurinBranchRequestKey) {
             <li class="branch-requests__item">
               <div class="branch-requests__body">
-                <strong>{{ branchesName(request.currentBranches) }}@if (request.kurinNamedAfter) { «{{ request.kurinNamedAfter }}» }</strong>
+                <strong>{{ request.kurinNamedAfter || branchesName(request.currentBranches) }}</strong>
+                @if (request.kurinNamedAfter) {
+                  <small class="text-muted-color">{{ branchesName(request.currentBranches) }}</small>
+                }
                 <span class="branch-requests__change">
                   <i class="pi pi-arrow-right" aria-hidden="true"></i>
                   {{ branchesName(request.wantedBranches) }}

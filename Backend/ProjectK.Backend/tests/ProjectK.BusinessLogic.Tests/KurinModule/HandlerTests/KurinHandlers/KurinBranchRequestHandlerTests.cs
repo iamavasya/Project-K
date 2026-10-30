@@ -120,7 +120,7 @@ public class KurinBranchRequestHandlerTests
             It.Is<KurinBranchRequest>(request => request.UspNumber == 5 && request.UpsNumber == 20 && request.Note == "Ми вже рік у УПС" && request.RequestedByUserKey == _userKey),
             It.IsAny<CancellationToken>()), Times.Once);
         _events.Verify(e => e.PublishAsync(
-            It.Is<KurinBranchRequestSubmitted>(raised => raised.Kurin == "5-й курінь УСП «Орден Хрестоносців»" && raised.Wanted == "5-й курінь УСП · 20-й курінь УПС"),
+            It.Is<KurinBranchRequestSubmitted>(raised => raised.Kurin == "«Орден Хрестоносців» · 5-й курінь УСП" && raised.Wanted == "5-й курінь УСП · 20-й курінь УПС"),
             It.IsAny<CancellationToken>()), Times.Once);
         kurin.Numbering.Should().ContainSingle("nothing changes before an administrator approves");
     }

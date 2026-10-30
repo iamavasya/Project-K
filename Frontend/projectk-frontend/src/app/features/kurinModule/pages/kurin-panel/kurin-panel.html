@@ -10,10 +10,7 @@
                 <div class="kurin-title-block">
                     <h1 class="kurin-title">
                         @if (isSenior) {
-                            <span>{{ seniorTitle }}</span>
-                            @if (kurinData?.namedAfter) {
-                                <span class="kurin-title__patron">«{{ kurinData.namedAfter }}»</span>
-                            }
+                            <span>{{ kurinData?.namedAfter || seniorTitle }}</span>
                         } @else {
                             <span>{{ kurinData ? (kurinNumber === null ? 'Підготовчий' : kurinNumber) : '-' }} курінь</span>
                             @if (kurinData?.namedAfter) {
@@ -21,7 +18,11 @@
                             }
                         }
                     </h1>
-                    <p-tag [value]="branchLabel" severity="secondary" pTooltip="Пластова гілка куреня" tooltipPosition="bottom" />
+                    @if (isSenior && kurinData?.namedAfter) {
+                        <p class="kurin-title__branches">{{ seniorTitle }}</p>
+                    } @else {
+                        <p-tag [value]="branchLabel" severity="secondary" pTooltip="Пластова гілка куреня" tooltipPosition="bottom" />
+                    }
                 </div>
 
                 @if (hasKurinEditActions && !profileEditMode) {

@@ -63,7 +63,7 @@ export class KurinSettingsComponent implements OnInit {
 
   get title(): string {
     if (!this.kurin) return '-';
-    if (this.isSenior) return kurinBranchesName(this.kurin.branches);
+    if (this.isSenior) return this.kurin.namedAfter || kurinBranchesName(this.kurin.branches);
     return `${this.kurin.number ?? 'Підготовчий'} курінь`;
   }
 
