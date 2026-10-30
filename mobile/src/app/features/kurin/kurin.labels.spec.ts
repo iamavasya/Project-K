@@ -163,6 +163,13 @@ describe('kurin labels', () => {
     const closed = probeRows(probes, [{ probeId: 'probe-1', status: 'Completed', completedAtUtc: '2026-05-01T10:00:00Z', pointSignatures: [] }] as never);
     expect(closed[0]).toMatchObject({ isCompleted: true, signedPoints: 4, percent: 100 });
     expect(closed[1]).toMatchObject({ isDisabled: false, canOpen: true });
+    // The third has no points but its projects: it opens once the second is closed.
+    const second = probeRows(probes, [
+      { probeId: 'probe-1', status: 'Completed', completedAtUtc: '2026-05-01T10:00:00Z', pointSignatures: [] },
+      { probeId: 'probe-2', status: 'Completed', completedAtUtc: '2026-09-01T10:00:00Z', pointSignatures: [] },
+    ] as never);
+    expect(second[2]).toMatchObject({ hasNoPoints: true, isDisabled: false, canOpen: true });
+    expect(probeMeta(second[2])).toBe('Складається з проєктів: опис і фото на сторінці проби');
   });
 
   it('falls back to the unnamed edition, with a started probe of another edition in its place', () => {

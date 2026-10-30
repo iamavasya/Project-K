@@ -573,10 +573,10 @@ export function probeRows(line: ProbeSummaryDto[], progresses: ProbeProgressDto[
       status,
       completedAtUtc: progress?.completedAtUtc ?? progress?.verifiedAtUtc ?? null,
       isCompleted: closed(status),
-      isDisabled: hasNoPoints,
+      isDisabled: false,
       lockedBehind: null,
       hasNoPoints,
-      canOpen: !hasNoPoints,
+      canOpen: true,
       pointsCount: probe.pointsCount,
       signedPoints,
       percent: probePercent(signedPoints, total, status),
@@ -599,7 +599,7 @@ const PROBE_STATUS_LABELS: Record<ProbeStatus, string> = {
 /** The line under a probe on the card (web getProbeSummaryMeta). */
 export function probeMeta(row: ProbeRow): string {
   if (row.lockedBehind) return `Відкриється після закриття: ${row.lockedBehind}`;
-  if (row.hasNoPoints) return 'Поточкове відстеження цієї проби буде окремим етапом';
+  if (row.hasNoPoints) return 'Складається з проєктів: опис і фото на сторінці проби';
   if (row.completedAtUtc) return `Завершено: ${shortDate(utcDate(row.completedAtUtc))}`;
   const status = PROBE_STATUS_LABELS[row.status];
   return row.pointsCount === null ? status : `${status} · ${row.pointsCount} точок`;

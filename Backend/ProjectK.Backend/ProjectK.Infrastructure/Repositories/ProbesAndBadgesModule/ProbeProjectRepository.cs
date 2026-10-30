@@ -54,8 +54,9 @@ public class ProbeProjectRepository : BaseEntityRepository<ProbeProject>, IProbe
         }
 
         // Through the tracker, like the other progress rows: an out-of-band delete would commit
-        // ahead of the use case that asked for it. Pictures follow by cascade.
+        // ahead of the use case that asked for it. Pictures are loaded so they go in the same save.
         var rows = await Context.ProbeProjects
+            .Include(project => project.Images)
             .Where(project => memberKeys.Contains(project.MemberKey))
             .ToListAsync(cancellationToken);
 
