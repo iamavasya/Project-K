@@ -88,7 +88,7 @@ public sealed class UploadCampCertificateCommandHandler
                               - (existing?.CampCertificateBytes ?? 0);
         if (storedElsewhere + request.Content.LongLength > ProbeProjectRules.MaxStoredBytes)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeResponse>("StorageFull", "The third probe's files would take more than 15 MB.");
+            return ProbeProjectGuard.Refuse<ThirdProbeResponse>("StorageFull", "The third probe's files would take more than 10 MB.");
         }
 
         var context = request.IsPdf ? BlobUploadContext.ThirdProbeCertificatePdf : BlobUploadContext.ThirdProbeCertificateImage;

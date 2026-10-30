@@ -25,10 +25,10 @@ public static class ProbeProjectRules
 
     /// <summary>
     /// Everything one person may keep in storage for their third probe, pictures and посвідка
-    /// together: 15 MB, counted by what was uploaded. Thirty full-size pictures would not fit; a
+    /// together: 10 MB, counted by what was uploaded. Ten full-size pictures fill it; a
     /// probe needs a few per project, and blob storage is paid for.
     /// </summary>
-    public const long MaxStoredBytes = 15 * 1024 * 1024;
+    public const long MaxStoredBytes = 10 * 1024 * 1024;
 
     /// <summary>The посвідка of the camp, a picture or a PDF: 2 MB.</summary>
     public const long MaxCertificateBytes = 2 * 1024 * 1024;

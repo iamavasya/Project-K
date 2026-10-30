@@ -47,7 +47,7 @@ const REFUSALS = {
   UnsupportedImageType: 'Підходять лише PNG, JPEG або WebP.',
   InvalidImageContent: 'Це не зображення, або файл пошкоджений.',
   TooManyImages: 'У проєкті вже пʼять зображень. Прибери зайве й збережи.',
-  StorageFull: 'Файли третьої проби вже займають майже все місце (до 15 МБ).',
+  StorageFull: 'Файли третьої проби вже займають майже все місце (до 10 МБ).',
   TooManyProjects: 'Вже є пʼять проєктів і запасний.',
   TooManyShared: 'Спільних може бути лише два з пʼяти основних.',
   TitleRequired: 'Дай проєкту назву.',
@@ -162,7 +162,7 @@ const REFUSALS = {
       }
       <ion-note class="limits">
         @if (uploading()) { Завантажую… · }
-        До {{ tab.limits.maxImagesPerProject }} зображень на проєкт, кожне до 1 МБ (PNG, JPEG, WebP); усі файли проби — до 15 МБ.
+        До {{ tab.limits.maxImagesPerProject }} зображень на проєкт, кожне до 1 МБ (PNG, JPEG, WebP); усі файли проби — до 10 МБ.
       </ion-note>
     </ion-content>
   `,

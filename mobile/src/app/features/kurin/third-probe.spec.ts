@@ -12,7 +12,7 @@ function tab(overrides: Partial<ThirdProbeDto> = {}): ThirdProbeDto {
     badges: [],
     limits: {
       maxMainProjects: 5, maxSpareProjects: 1, maxSharedMainProjects: 2, maxImagesPerProject: 5, maxImageBytes: 1048576,
-      maxCertificateBytes: 2097152, maxStoredBytes: 15728640, maxTextLength: 10000, requiredBadges: 4, youthEndsAtAge: 18,
+      maxCertificateBytes: 2097152, maxStoredBytes: 10485760, maxTextLength: 10000, requiredBadges: 4, youthEndsAtAge: 18,
     },
     ...overrides,
   };

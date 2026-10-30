@@ -72,7 +72,7 @@ public sealed class UploadProbeProjectImageCommandHandler
             > ProbeProjectRules.MaxStoredBytes)
         {
             return ServiceResult<ProbeProjectImageResponse>.Failure(
-                ResultType.BadRequest, "StorageFull", "The third probe's files would take more than 15 MB.");
+                ResultType.BadRequest, "StorageFull", "The third probe's files would take more than 10 MB.");
         }
 
         PhotoUploadResult upload;

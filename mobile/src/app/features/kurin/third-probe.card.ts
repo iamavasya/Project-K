@@ -32,7 +32,7 @@ const TEXTS: readonly { field: 'description' | 'goal' | 'plan' | 'results'; labe
 const REFUSALS = {
   CertificateTooLarge: 'Посвідка завелика: до 2 МБ.',
   InvalidCertificate: 'Посвідка — це фото (PNG, JPEG, WebP) або PDF.',
-  StorageFull: 'Файли третьої проби вже займають майже все місце (до 15 МБ).',
+  StorageFull: 'Файли третьої проби вже займають майже все місце (до 10 МБ).',
   TooManyShared: 'Спільних може бути лише два з пʼяти основних.',
   NothingToConfirm: 'Спершу запиши дату рефлексії.',
 };
