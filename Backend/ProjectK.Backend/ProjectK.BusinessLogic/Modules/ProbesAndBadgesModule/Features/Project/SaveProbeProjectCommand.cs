@@ -24,6 +24,7 @@ public sealed record ProbeProjectInput(
     string? EventLeads,
     string? CoordinatorName,
     string? CoordinatorContact,
+    string? Description,
     string? Goal,
     string? Plan,
     string? Results);
@@ -84,7 +85,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
             return ProbeProjectGuard.Refuse<ProbeProjectSavedResponse>(invalid.Code, invalid.Message);
         }
 
-        var imageKeys = ProbeProjectMarkdown.ImageKeys(input.Goal!, input.Plan!, input.Results!);
+        var imageKeys = ProbeProjectMarkdown.ImageKeys(input.Description!, input.Goal!, input.Plan!, input.Results!);
         if (imageKeys is null)
         {
             return ForeignImage();
@@ -199,6 +200,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         project.EventLeads = input.EventLeads;
         project.CoordinatorName = input.CoordinatorName;
         project.CoordinatorContact = input.CoordinatorContact;
+        project.Description = input.Description!;
         project.Goal = input.Goal!;
         project.Plan = input.Plan!;
         project.Results = input.Results!;
@@ -212,6 +214,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
         EventLeads = Optional(input.EventLeads),
         CoordinatorName = Optional(input.CoordinatorName),
         CoordinatorContact = Optional(input.CoordinatorContact),
+        Description = input.Description?.Trim() ?? string.Empty,
         Goal = input.Goal?.Trim() ?? string.Empty,
         Plan = input.Plan?.Trim() ?? string.Empty,
         Results = input.Results?.Trim() ?? string.Empty
@@ -236,7 +239,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
             return ("FieldTooLong", $"Short fields hold at most {shortText} characters.");
         }
 
-        if (new[] { input.Goal, input.Plan, input.Results }.Any(text => text!.Length > ProbeProjectRules.MaxTextLength))
+        if (new[] { input.Description, input.Goal, input.Plan, input.Results }.Any(text => text!.Length > ProbeProjectRules.MaxTextLength))
         {
             return ("DescriptionTooLong", $"Each text holds at most {ProbeProjectRules.MaxTextLength} characters.");
         }

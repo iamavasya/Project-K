@@ -23,15 +23,21 @@ public static class ProbeProjectRules
     /// <summary>One picture as it arrives, before it is re-encoded: 1 MB.</summary>
     public const long MaxImageBytes = 1024 * 1024;
 
+    /// <summary>
+    /// Everything one person may keep in storage for their third probe, pictures and посвідка
+    /// together: 15 MB, counted by what was uploaded. Thirty full-size pictures would not fit; a
+    /// probe needs a few per project, and blob storage is paid for.
+    /// </summary>
+    public const long MaxStoredBytes = 15 * 1024 * 1024;
+
     /// <summary>The посвідка of the camp, a picture or a PDF: 2 MB.</summary>
     public const long MaxCertificateBytes = 2 * 1024 * 1024;
 
-    /// <summary>Each of a project's three texts (goal, plan, results), pictures as short tokens.</summary>
+    /// <summary>Each of a project's texts (description, goal, plan, results), pictures as short tokens.</summary>
     public const int MaxTextLength = 10_000;
 
     public const int MaxResumeLength = 10_000;
     public const int MaxShortTextLength = 200;
-    public const int MaxMentorsLength = 500;
     public const int MaxCommentLength = 2_000;
 
     /// <summary>The probe's place in its edition (знак прихильника is 0).</summary>

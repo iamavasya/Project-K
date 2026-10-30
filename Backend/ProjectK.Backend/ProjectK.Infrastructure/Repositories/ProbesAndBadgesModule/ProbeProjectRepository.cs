@@ -38,6 +38,33 @@ public class ProbeProjectRepository : BaseEntityRepository<ProbeProject>, IProbe
 
     public void AddFile(ThirdProbeFile file) => Context.ThirdProbeFiles.Add(file);
 
+    public async Task<IReadOnlyList<ThirdProbeFile>> GetFilesForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
+    {
+        return await Context.ThirdProbeFiles
+            .AsNoTracking()
+            .Where(file => memberKeys.Contains(file.MemberKey))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ProbeProject>> GetProjectsForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
+    {
+        return await Context.ProbeProjects
+            .AsNoTracking()
+            .Where(project => memberKeys.Contains(project.MemberKey))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<long> GetStoredBytesAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default)
+    {
+        var pictures = await Context.ProbeProjectImages
+            .Where(image => image.Project!.MemberKey == memberKey && image.Project.ProbeId == probeId)
+            .SumAsync(image => (long?)image.Bytes, cancellationToken) ?? 0;
+        var certificate = await Context.ThirdProbeFiles
+            .Where(file => file.MemberKey == memberKey && file.ProbeId == probeId)
+            .SumAsync(file => (long?)file.CampCertificateBytes, cancellationToken) ?? 0;
+        return pictures + certificate;
+    }
+
     public void AddImage(ProbeProjectImage image) => Context.ProbeProjectImages.Add(image);
 
     public void RemoveImages(IEnumerable<ProbeProjectImage> images) => Context.ProbeProjectImages.RemoveRange(images);

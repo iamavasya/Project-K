@@ -10,12 +10,16 @@ using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
 
-/// <summary>What the person writes into their third-probe file; the confirmations are not here.</summary>
+/// <summary>
+/// What the person writes into their third-probe file. The confirmation of the reflection and the
+/// stages are not here: leaders set those.
+/// </summary>
 public sealed record ThirdProbeFileInput(
-    DateOnly? OpenedOn,
-    string? Mentors,
-    DateOnly? ConferenceOn,
-    string? ConferenceWith,
+    string? MentorZvyazkovyi,
+    string? MentorVporiadnyk,
+    string? MentorReferent,
+    DateOnly? ReflectionOn,
+    string? ReflectionWith,
     ThirdProbeCampKind? CampKind,
     string? CampName,
     DateOnly? CampFrom,
@@ -24,7 +28,7 @@ public sealed record ThirdProbeFileInput(
     string? Resume);
 
 /// <summary>
-/// Writes the third-probe file. A confirmed conference or camp whose details change loses its
+/// Writes the third-probe file. A confirmed reflection whose date or partner changes loses its
 /// confirmation: what was confirmed is no longer what is written.
 /// </summary>
 public sealed record SaveThirdProbeFileCommand(Guid MemberKey, string ProbeId, ThirdProbeFileInput Input)
@@ -63,51 +67,37 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
             return refused;
         }
 
-        var input = request.Input;
-        var mentors = Optional(input.Mentors);
-        var conferenceWith = Optional(input.ConferenceWith);
-        var campName = Optional(input.CampName);
-        var physicalBadgeId = Optional(input.PhysicalBadgeId);
-        var resume = input.Resume?.Trim() ?? string.Empty;
-
-        if (Invalid(input, mentors, conferenceWith, campName, resume) is { } invalid)
+        var input = Normalize(request.Input);
+        if (Invalid(input) is { } invalid)
         {
             return ProbeProjectGuard.Refuse<ThirdProbeResponse>(invalid.Code, invalid.Message);
         }
 
-        if (physicalBadgeId is not null && !await HoldsAsync(request.MemberKey, physicalBadgeId, cancellationToken))
+        if (input.PhysicalBadgeId is { } badgeId && !await HoldsAsync(request.MemberKey, badgeId, cancellationToken))
         {
             return ProbeProjectGuard.Refuse<ThirdProbeResponse>("BadgeNotHeld", "The вмілість must be one the person holds, confirmed.");
         }
 
-        var file = await _unitOfWork.ProbeProjects.GetFileAsync(request.MemberKey, probeId, cancellationToken);
-        if (file is null)
+        var file = await ThirdProbeFiles.GetOrAddAsync(_unitOfWork, request.MemberKey, probeId, cancellationToken);
+        if (file.ReflectionOn != input.ReflectionOn || file.ReflectionWith != input.ReflectionWith)
         {
-            file = new ThirdProbeFile { MemberKey = request.MemberKey, ProbeId = probeId };
-            _unitOfWork.ProbeProjects.AddFile(file);
-        }
-
-        if (file.ConferenceOn != input.ConferenceOn || file.ConferenceWith != conferenceWith)
-        {
-            ClearConference(file);
-        }
-
-        if (file.CampKind != input.CampKind || file.CampName != campName || file.CampFrom != input.CampFrom || file.CampTo != input.CampTo)
-        {
-            ClearCamp(file);
+            file.ReflectionConfirmedAtUtc = null;
+            file.ReflectionConfirmedByUserKey = null;
+            file.ReflectionConfirmedByName = null;
         }
 
         var actor = await _actors.ResolveAsync(cancellationToken);
-        file.OpenedOn = input.OpenedOn;
-        file.Mentors = mentors;
-        file.ConferenceOn = input.ConferenceOn;
-        file.ConferenceWith = conferenceWith;
+        file.MentorZvyazkovyi = input.MentorZvyazkovyi;
+        file.MentorVporiadnyk = input.MentorVporiadnyk;
+        file.MentorReferent = input.MentorReferent;
+        file.ReflectionOn = input.ReflectionOn;
+        file.ReflectionWith = input.ReflectionWith;
         file.CampKind = input.CampKind;
-        file.CampName = campName;
+        file.CampName = input.CampName;
         file.CampFrom = input.CampFrom;
         file.CampTo = input.CampTo;
-        file.PhysicalBadgeId = physicalBadgeId;
-        file.Resume = resume;
+        file.PhysicalBadgeId = input.PhysicalBadgeId;
+        file.Resume = input.Resume!;
         file.UpdatedDate = DateTime.UtcNow;
         file.UpdatedByUserKey = actor.UserKey;
         file.UpdatedByName = actor.Name;
@@ -125,20 +115,6 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
         return new ServiceResult<ThirdProbeResponse>(ResultType.Success, await _reader.ReadAsync(request.MemberKey, probeId, cancellationToken));
     }
 
-    internal static void ClearConference(ThirdProbeFile file)
-    {
-        file.ConferenceConfirmedAtUtc = null;
-        file.ConferenceConfirmedByUserKey = null;
-        file.ConferenceConfirmedByName = null;
-    }
-
-    internal static void ClearCamp(ThirdProbeFile file)
-    {
-        file.CampConfirmedAtUtc = null;
-        file.CampConfirmedByUserKey = null;
-        file.CampConfirmedByName = null;
-    }
-
     private async Task<bool> HoldsAsync(Guid memberKey, string badgeId, CancellationToken cancellationToken)
     {
         var progress = await _unitOfWork.BadgeProgresses.GetByMemberAndBadgeIdAsync(memberKey, badgeId, cancellationToken);
@@ -147,26 +123,33 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
 
     private static string? Optional(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static (string Code, string Message)? Invalid(
-        ThirdProbeFileInput input,
-        string? mentors,
-        string? conferenceWith,
-        string? campName,
-        string resume)
+    private static ThirdProbeFileInput Normalize(ThirdProbeFileInput input) => input with
+    {
+        MentorZvyazkovyi = Optional(input.MentorZvyazkovyi),
+        MentorVporiadnyk = Optional(input.MentorVporiadnyk),
+        MentorReferent = Optional(input.MentorReferent),
+        ReflectionWith = Optional(input.ReflectionWith),
+        CampName = Optional(input.CampName),
+        PhysicalBadgeId = Optional(input.PhysicalBadgeId),
+        Resume = input.Resume?.Trim() ?? string.Empty
+    };
+
+    private static (string Code, string Message)? Invalid(ThirdProbeFileInput input)
     {
         const int shortText = ProbeProjectRules.MaxShortTextLength;
-        if (mentors?.Length > ProbeProjectRules.MaxMentorsLength || conferenceWith?.Length > shortText || campName?.Length > shortText)
+        if (new[] { input.MentorZvyazkovyi, input.MentorVporiadnyk, input.MentorReferent, input.ReflectionWith, input.CampName }
+            .Any(text => text?.Length > shortText))
         {
-            return ("FieldTooLong", $"Short fields hold at most {shortText} characters, mentors {ProbeProjectRules.MaxMentorsLength}.");
+            return ("FieldTooLong", $"Short fields hold at most {shortText} characters.");
         }
 
-        if (resume.Length > ProbeProjectRules.MaxResumeLength)
+        if (input.Resume!.Length > ProbeProjectRules.MaxResumeLength)
         {
             return ("DescriptionTooLong", $"The résumé holds at most {ProbeProjectRules.MaxResumeLength} characters.");
         }
 
         // The résumé carries no pictures: there is nowhere to upload them to.
-        if (ProbeProjectMarkdown.ImageKeys(resume) is not { Count: 0 })
+        if (ProbeProjectMarkdown.ImageKeys(input.Resume) is not { Count: 0 })
         {
             return ("ForeignImage", "The résumé holds text only.");
         }
@@ -182,5 +165,21 @@ public sealed class SaveThirdProbeFileCommandHandler : IRequestHandler<SaveThird
         }
 
         return null;
+    }
+}
+
+/// <summary>The one place a third-probe file comes into being: on whichever write needs it first.</summary>
+internal static class ThirdProbeFiles
+{
+    public static async Task<ThirdProbeFile> GetOrAddAsync(IUnitOfWork unitOfWork, Guid memberKey, string probeId, CancellationToken cancellationToken)
+    {
+        if (await unitOfWork.ProbeProjects.GetFileAsync(memberKey, probeId, cancellationToken) is { } file)
+        {
+            return file;
+        }
+
+        file = new ThirdProbeFile { MemberKey = memberKey, ProbeId = probeId };
+        unitOfWork.ProbeProjects.AddFile(file);
+        return file;
     }
 }

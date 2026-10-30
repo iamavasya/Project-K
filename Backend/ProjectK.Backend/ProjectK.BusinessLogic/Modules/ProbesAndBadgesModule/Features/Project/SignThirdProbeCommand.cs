@@ -12,11 +12,8 @@ namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
 /// <summary>What a leader confirms on the third probe, besides the probe's points.</summary>
 public enum ThirdProbeSignPart
 {
-    /// <summary>The opening conference took place.</summary>
-    Conference,
-
-    /// <summary>The camp is counted.</summary>
-    Camp,
+    /// <summary>The reflection with the Звʼязковий took place. (The camp has no confirmation: the край counts it, not Lilejka.)</summary>
+    Reflection,
 
     /// <summary>«Дозвіл»: the project may go ahead.</summary>
     ProjectApproval,
@@ -89,37 +86,21 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
         Guid subjectKey;
         string subject;
 
-        if (request.Part is ThirdProbeSignPart.Conference or ThirdProbeSignPart.Camp)
+        if (request.Part == ThirdProbeSignPart.Reflection)
         {
             var file = await _unitOfWork.ProbeProjects.GetFileAsync(memberKey, probeId, cancellationToken);
-            if (request.Part == ThirdProbeSignPart.Conference)
+            if (request.Sign && file?.ReflectionOn is null)
             {
-                if (request.Sign && file?.ConferenceOn is null)
-                {
-                    return ProbeProjectGuard.Refuse<ThirdProbeResponse>("NothingToConfirm", "Write down when the conference took place first.");
-                }
-
-                if (file is not null)
-                {
-                    (file.ConferenceConfirmedAtUtc, file.ConferenceConfirmedByUserKey, file.ConferenceConfirmedByName) = (at, by, name);
-                }
-                subject = "conference";
+                return ProbeProjectGuard.Refuse<ThirdProbeResponse>("NothingToConfirm", "Write down when the reflection took place first.");
             }
-            else
-            {
-                if (request.Sign && string.IsNullOrEmpty(file?.CampName))
-                {
-                    return ProbeProjectGuard.Refuse<ThirdProbeResponse>("NothingToConfirm", "Write down which camp it was first.");
-                }
 
-                if (file is not null)
-                {
-                    (file.CampConfirmedAtUtc, file.CampConfirmedByUserKey, file.CampConfirmedByName) = (at, by, name);
-                }
-                subject = file?.CampName ?? "camp";
+            if (file is not null)
+            {
+                (file.ReflectionConfirmedAtUtc, file.ReflectionConfirmedByUserKey, file.ReflectionConfirmedByName) = (at, by, name);
             }
 
             subjectKey = file?.ThirdProbeFileKey ?? Guid.Empty;
+            subject = "reflection";
         }
         else
         {
@@ -158,10 +139,5 @@ public sealed class SignThirdProbeCommandHandler : IRequestHandler<SignThirdProb
         return new ServiceResult<ThirdProbeResponse>(ResultType.Success, await _reader.ReadAsync(memberKey, probeId, cancellationToken));
     }
 
-    private static string Field(ThirdProbeSignPart part) => part switch
-    {
-        ThirdProbeSignPart.Conference => "conference",
-        ThirdProbeSignPart.Camp => "camp",
-        _ => "project"
-    };
+    private static string Field(ThirdProbeSignPart part) => part == ThirdProbeSignPart.Reflection ? "reflection" : "project";
 }

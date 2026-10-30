@@ -11,4 +11,7 @@ public class ProbeProjectImage : Entity
     public Guid ProbeProjectKey { get; set; }
     public ProbeProject? Project { get; set; }
     public string BlobName { get; set; } = string.Empty;
+
+    /// <summary>The bytes the picture took on upload, counted against the person's storage.</summary>
+    public long Bytes { get; set; }
 }

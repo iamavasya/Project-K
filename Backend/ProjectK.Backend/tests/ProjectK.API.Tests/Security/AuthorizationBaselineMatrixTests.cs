@@ -320,10 +320,10 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<MemberProgressController>(nameof(MemberProgressController.UnsignProbePoint), "RequireUser");
         yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.GetThirdProbe), AuthorizationPolicies.RequireUser);
         yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.SaveFile), AuthorizationPolicies.RequireUser);
-        yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.ConfirmConference), AuthorizationPolicies.RequireUser);
-        yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.UnconfirmConference), AuthorizationPolicies.RequireUser);
-        yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.ConfirmCamp), AuthorizationPolicies.RequireUser);
-        yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.UnconfirmCamp), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.ConfirmReflection), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.UnconfirmReflection), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.SetStages), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.GetThirdProbers), AuthorizationPolicies.RequireUser);
         yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.UploadCertificate), AuthorizationPolicies.RequireUser);
         yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.DeleteCertificate), AuthorizationPolicies.RequireUser);
         yield return Endpoint<ThirdProbeController>(nameof(ThirdProbeController.AddProject), AuthorizationPolicies.RequireUser);

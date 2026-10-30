@@ -68,6 +68,13 @@ public sealed class UploadProbeProjectImageCommandHandler
                 ResultType.BadRequest, "TooManyImages", $"A project holds at most {ProbeProjectRules.MaxImagesPerProject} pictures.");
         }
 
+        if (await _unitOfWork.ProbeProjects.GetStoredBytesAsync(request.MemberKey, probeId, cancellationToken) + request.Content.LongLength
+            > ProbeProjectRules.MaxStoredBytes)
+        {
+            return ServiceResult<ProbeProjectImageResponse>.Failure(
+                ResultType.BadRequest, "StorageFull", "The third probe's files would take more than 15 MB.");
+        }
+
         PhotoUploadResult upload;
         try
         {
@@ -80,7 +87,7 @@ public sealed class UploadProbeProjectImageCommandHandler
                 ResultType.BadRequest, "InvalidImageContent", "Uploaded file is not a valid image.");
         }
 
-        var image = new ProbeProjectImage { ProbeProjectKey = project.ProbeProjectKey, BlobName = upload.BlobName };
+        var image = new ProbeProjectImage { ProbeProjectKey = project.ProbeProjectKey, BlobName = upload.BlobName, Bytes = request.Content.LongLength };
         _unitOfWork.ProbeProjects.AddImage(image);
 
         if (await _unitOfWork.SaveChangesAsync(cancellationToken) <= 0)

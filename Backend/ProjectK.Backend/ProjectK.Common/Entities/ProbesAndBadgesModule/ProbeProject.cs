@@ -49,10 +49,11 @@ public class ProbeProject : Entity
     public string? CoordinatorContact { get; set; }
 
     /// <summary>
-    /// The three texts of the template, in Markdown as the editor's delta turns into it. Inline
-    /// pictures are written as <c>project-image:{key}</c> rather than an address: blob links are
-    /// signed and expire.
+    /// The texts, in Markdown as the editor's delta turns into it: what the project is and the
+    /// person's role in it, then the template's goal, plan and results. Inline pictures are written
+    /// as <c>project-image:{key}</c> rather than an address: blob links are signed and expire.
     /// </summary>
+    public string Description { get; set; } = string.Empty;
     public string Goal { get; set; } = string.Empty;
     public string Plan { get; set; } = string.Empty;
     public string Results { get; set; } = string.Empty;

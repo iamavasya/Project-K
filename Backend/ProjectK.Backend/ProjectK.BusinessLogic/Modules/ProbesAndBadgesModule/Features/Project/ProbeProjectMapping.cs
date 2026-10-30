@@ -17,6 +17,7 @@ internal static class ProbeProjectMapping
         ProbeProjectRules.MaxImagesPerProject,
         ProbeProjectRules.MaxImageBytes,
         ProbeProjectRules.MaxCertificateBytes,
+        ProbeProjectRules.MaxStoredBytes,
         ProbeProjectRules.MaxTextLength,
         ProbeProjectRules.RequiredBadges,
         ProbeProjectRules.YouthEndsAtAge);
@@ -44,6 +45,7 @@ internal static class ProbeProjectMapping
         project.EventLeads,
         project.CoordinatorName,
         project.CoordinatorContact,
+        project.Description,
         project.Goal,
         project.Plan,
         project.Results,

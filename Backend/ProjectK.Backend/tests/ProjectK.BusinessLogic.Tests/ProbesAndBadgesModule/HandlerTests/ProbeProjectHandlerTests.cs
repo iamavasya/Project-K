@@ -89,7 +89,7 @@ public class ProbeProjectHandlerTests
     private static ProbeProjectInput Input(string goal = "", string plan = "", string results = "", bool shared = false, string title = "Похід") =>
         new(title, ProbeProjectArea.Nature, [ProbeProjectReach.GroupOrKurin, ProbeProjectReach.Stanytsia], shared, shared ? "Олег, Марта" : null,
             new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 3), "Чорногора", "Провід куреня", "Олена Коваль", "+380501112233",
-            goal, plan, results);
+            "Що це за проєкт і моя роль", goal, plan, results);
 
     private SaveProbeProjectCommand Save(Guid? key, ProbeProjectInput input) => new(_memberKey, ProbeId, key, input);
 
@@ -311,30 +311,42 @@ public class ProbeProjectHandlerTests
     }
 
     [Fact]
-    public async Task Sign_ShouldNotConfirmAConferenceWithNoDate()
+    public async Task Sign_ShouldNotConfirmAReflectionWithNoDate()
     {
         var result = await SignHandler().Handle(
-            new SignThirdProbeCommand(_memberKey, ProbeId, ThirdProbeSignPart.Conference, true), CancellationToken.None);
+            new SignThirdProbeCommand(_memberKey, ProbeId, ThirdProbeSignPart.Reflection, true), CancellationToken.None);
 
         result.ErrorCode.Should().Be("NothingToConfirm");
     }
 
     [Fact]
-    public async Task File_ShouldDropTheCampConfirmation_WhenTheCampChanges()
+    public async Task File_ShouldDropTheReflectionConfirmation_WhenTheReflectionChanges()
     {
         _file = new ThirdProbeFile
         {
-            MemberKey = _memberKey, ProbeId = ProbeId, CampKind = ThirdProbeCampKind.Kvt, CampName = "КВТ «Говерла»",
-            CampConfirmedAtUtc = DateTime.UtcNow, CampConfirmedByName = "Звʼязковий"
+            MemberKey = _memberKey, ProbeId = ProbeId, ReflectionOn = new DateOnly(2026, 3, 1), ReflectionWith = "Звʼязковий",
+            ReflectionConfirmedAtUtc = DateTime.UtcNow, ReflectionConfirmedByName = "Звʼязковий"
         };
 
         await FileHandler().Handle(
+            new SaveThirdProbeFileCommand(_memberKey, ProbeId, FileInput(reflectionOn: new DateOnly(2026, 3, 8))), CancellationToken.None);
+
+        _file.ReflectionConfirmedAtUtc.Should().BeNull();
+        _file.ReflectionConfirmedByName.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task File_ShouldWriteTheMentorsByRole_AndTheCampWithoutAnyConfirmation()
+    {
+        await FileHandler().Handle(
             new SaveThirdProbeFileCommand(_memberKey, ProbeId,
-                new ThirdProbeFileInput(null, null, null, null, ThirdProbeCampKind.Kvt, "КВТ «Синевир»", null, null, null, "")),
+                FileInput() with { MentorZvyazkovyi = " Володимир Іваненко ", MentorReferent = "Олена Коваль", CampKind = ThirdProbeCampKind.Kvt, CampName = "КВТ" }),
             CancellationToken.None);
 
-        _file.CampConfirmedAtUtc.Should().BeNull();
-        _file.CampConfirmedByName.Should().BeNull();
+        _file!.MentorZvyazkovyi.Should().Be("Володимир Іваненко");
+        _file.MentorVporiadnyk.Should().BeNull();
+        _file.MentorReferent.Should().Be("Олена Коваль");
+        _file.CampName.Should().Be("КВТ");
     }
 
     [Fact]
@@ -344,8 +356,7 @@ public class ProbeProjectHandlerTests
             .ReturnsAsync(new BadgeProgress { BadgeId = "biker", Status = BadgeProgressStatus.Submitted });
 
         var result = await FileHandler().Handle(
-            new SaveThirdProbeFileCommand(_memberKey, ProbeId, new ThirdProbeFileInput(null, null, null, null, null, null, null, null, "biker", "")),
-            CancellationToken.None);
+            new SaveThirdProbeFileCommand(_memberKey, ProbeId, FileInput() with { PhysicalBadgeId = "biker" }), CancellationToken.None);
 
         result.ErrorCode.Should().Be("BadgeNotHeld");
     }
@@ -354,12 +365,81 @@ public class ProbeProjectHandlerTests
     public async Task File_ShouldKeepPicturesOutOfTheResume()
     {
         var result = await FileHandler().Handle(
-            new SaveThirdProbeFileCommand(_memberKey, ProbeId,
-                new ThirdProbeFileInput(null, null, null, null, null, null, null, null, null, $"![x](project-image:{Guid.NewGuid()})")),
+            new SaveThirdProbeFileCommand(_memberKey, ProbeId, FileInput() with { Resume = $"![x](project-image:{Guid.NewGuid()})" }),
             CancellationToken.None);
 
         result.ErrorCode.Should().Be("ForeignImage");
     }
+
+    [Fact]
+    public async Task Upload_ShouldRefuse_WhenThePersonsStorageIsFull()
+    {
+        var project = Given();
+        _projects.Setup(r => r.GetStoredBytesAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProbeProjectRules.MaxStoredBytes - 10);
+
+        var result = await UploadHandler().Handle(
+            new UploadProbeProjectImageCommand(_memberKey, ProbeId, project.ProbeProjectKey, new byte[100], "a.png"), CancellationToken.None);
+
+        result.ErrorCode.Should().Be("StorageFull");
+        _photos.Verify(p => p.UploadPhotoAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<BlobUploadContext>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Certificate_ShouldCountItsBytes_AndNotLetThemPassTheCap()
+    {
+        _projects.Setup(r => r.GetStoredBytesAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProbeProjectRules.MaxStoredBytes);
+
+        var result = await CertificateHandler().Handle(
+            new UploadCampCertificateCommand(_memberKey, ProbeId, [1, 2, 3], "scan.jpg", IsPdf: false), CancellationToken.None);
+
+        result.ErrorCode.Should().Be("StorageFull");
+    }
+
+    [Fact]
+    public async Task Stages_ShouldBeSetByWhoeverMaySign_AndJournaled()
+    {
+        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+        var stages = new ThirdProbeStagesInput(new DateOnly(2025, 9, 1), new DateOnly(2025, 9, 20), new DateOnly(2025, 10, 1), new DateOnly(2025, 11, 1), null, null, null);
+
+        var result = await handler.Handle(new SetThirdProbeStagesCommand(_memberKey, ProbeId, stages), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _file!.ApplicationSubmittedOn.Should().Be(new DateOnly(2025, 10, 1));
+        _file.OpenedOn.Should().Be(new DateOnly(2025, 11, 1));
+        _journal.Entries.Should().ContainSingle(e => e.Action == AuditActions.Probe.StagesChanged);
+    }
+
+    [Theory]
+    [InlineData("2026-01-01", "2025-12-01", null)]
+    [InlineData("2026-01-01", null, "2026-02-01")]
+    [InlineData("2026-01-01", "2026-03-01", "2026-02-01")]
+    public async Task Stages_ShouldRefuseAClosingBeforeTheOpeningOrANamingBeforeTheClosing(string opened, string? completed, string? named)
+    {
+        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+        var stages = new ThirdProbeStagesInput(null, null, null, DateOnly.Parse(opened),
+            completed is null ? null : DateOnly.Parse(completed), named is null ? null : DateOnly.Parse(named), null);
+
+        var result = await handler.Handle(new SetThirdProbeStagesCommand(_memberKey, ProbeId, stages), CancellationToken.None);
+
+        result.ErrorCode.Should().Be("StagesOutOfOrder");
+    }
+
+    [Fact]
+    public async Task Stages_ShouldBeForbidden_ToTheYouthThemself()
+    {
+        _access.Setup(a => a.CanSignAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        var handler = new SetThirdProbeStagesCommandHandler(_unitOfWork.Object, _access.Object, _journal.Actors, _journal.Audit, _probes.Object, _reader.Object);
+
+        var result = await handler.Handle(
+            new SetThirdProbeStagesCommand(_memberKey, ProbeId, new ThirdProbeStagesInput(null, null, null, null, null, null, null)), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Forbidden);
+    }
+
+    private static ThirdProbeFileInput FileInput(DateOnly? reflectionOn = null) =>
+        new(null, null, null, reflectionOn, null, null, null, null, null, null, "");
 
     [Fact]
     public async Task Certificate_ShouldRefuseAFileThatIsNotAPictureOrAPdf()

@@ -52,6 +52,7 @@ public sealed class ThirdProbeReader : IThirdProbeReader
         var projects = await _unitOfWork.ProbeProjects.GetForMemberProbeAsync(memberKey, probeId, cancellationToken);
         var previousClosedOn = place > 0 ? await ClosedOnAsync(memberKey, line[place - 1].Id, cancellationToken) : null;
         var openedOn = file?.OpenedOn ?? previousClosedOn;
+        var stored = await _unitOfWork.ProbeProjects.GetStoredBytesAsync(memberKey, probeId, cancellationToken);
 
         var canSign = await _access.CanSignAsync(memberKey, cancellationToken);
         var canEdit = canSign || await _access.CanEditAsync(memberKey, cancellationToken);
@@ -62,7 +63,7 @@ public sealed class ThirdProbeReader : IThirdProbeReader
             canEdit,
             canSign,
             canUnsign,
-            ToResponse(file, openedOn, file?.OpenedOn is null && openedOn is not null),
+            ToResponse(file, openedOn, file?.OpenedOn is null && openedOn is not null, stored),
             projects
                 .OrderBy(project => project.IsSpare)
                 .ThenBy(project => project.CreatedDate)
@@ -102,14 +103,16 @@ public sealed class ThirdProbeReader : IThirdProbeReader
             .ToList();
     }
 
-    private ThirdProbeFileResponse ToResponse(ThirdProbeFile? file, DateOnly? openedOn, bool derived) => new(
+    private ThirdProbeFileResponse ToResponse(ThirdProbeFile? file, DateOnly? openedOn, bool derived, long stored) => new(
         openedOn,
         derived,
-        file?.Mentors,
-        file?.ConferenceOn,
-        file?.ConferenceWith,
-        file?.ConferenceConfirmedAtUtc,
-        file?.ConferenceConfirmedByName,
+        file?.MentorZvyazkovyi,
+        file?.MentorVporiadnyk,
+        file?.MentorReferent,
+        file?.ReflectionOn,
+        file?.ReflectionWith,
+        file?.ReflectionConfirmedAtUtc,
+        file?.ReflectionConfirmedByName,
         file?.CampKind,
         file?.CampName,
         file?.CampFrom,
@@ -117,10 +120,21 @@ public sealed class ThirdProbeReader : IThirdProbeReader
         file?.CampCertificateBlobName is { } blob
             ? new ThirdProbeCertificateResponse(_links.For(blob)!, file.CampCertificateContentType ?? "image/jpeg", file.CampCertificateFileName)
             : null,
-        file?.CampConfirmedAtUtc,
-        file?.CampConfirmedByName,
         file?.PhysicalBadgeId,
         file?.Resume ?? string.Empty,
+        Stages(file),
+        stored,
         file?.UpdatedDate,
         file?.UpdatedByName);
+
+    internal static ThirdProbeStagesResponse Stages(ThirdProbeFile? file) => new(
+        file?.MotivationLetterOn,
+        file?.SelfReflectionOn,
+        file?.ApplicationSubmittedOn,
+        file?.OpenedOn,
+        file?.CompletedOn,
+        file?.NamedOn,
+        file?.ArchivedOn,
+        file?.StagesUpdatedAtUtc,
+        file?.StagesUpdatedByName);
 }

@@ -16,7 +16,7 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 
 /// <summary>
-/// A member's third probe: the file (opening, mentors, conference, camp and its посвідка, résumé)
+/// A member's third probe: the file (mentors, reflection, camp and its посвідка, résumé, stages)
 /// and the projects, each laid out as the УПЮ template asks, with small inline pictures.
 /// </summary>
 /// <remarks>
@@ -48,7 +48,7 @@ public class ThirdProbeController : ControllerBase
         (await _mediator.Send(new GetThirdProbeQuery(memberKey, probeId), cancellationToken)).ToActionResult(this);
 
     /// <summary>
-    /// Writes the file: opening date, mentors, conference, camp, the вмілість for тіловиховання, résumé.
+    /// Writes the file: mentors, reflection, camp, the вмілість for тіловиховання, résumé.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpPut("third-probe")]
@@ -63,54 +63,67 @@ public class ThirdProbeController : ControllerBase
         CancellationToken cancellationToken)
     {
         var input = new ThirdProbeFileInput(
-            request.OpenedOn, request.Mentors, request.ConferenceOn, request.ConferenceWith, request.CampKind,
-            request.CampName, request.CampFrom, request.CampTo, request.PhysicalBadgeId, request.Resume);
+            request.MentorZvyazkovyi, request.MentorVporiadnyk, request.MentorReferent, request.ReflectionOn, request.ReflectionWith,
+            request.CampKind, request.CampName, request.CampFrom, request.CampTo, request.PhysicalBadgeId, request.Resume);
         return (await _mediator.Send(new SaveThirdProbeFileCommand(memberKey, probeId, input), cancellationToken)).ToActionResult(this);
     }
 
     /// <summary>
-    /// Confirms the opening conference.
+    /// Confirms the reflection with the Звʼязковий.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpPut("third-probe/conference/confirmation")]
+    [HttpPut("third-probe/reflection/confirmation")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
     [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public Task<IActionResult> ConfirmConference(Guid memberKey, string probeId, CancellationToken cancellationToken) =>
-        SignAsync(memberKey, probeId, ThirdProbeSignPart.Conference, true, null, null, cancellationToken);
+    public Task<IActionResult> ConfirmReflection(Guid memberKey, string probeId, CancellationToken cancellationToken) =>
+        SignAsync(memberKey, probeId, ThirdProbeSignPart.Reflection, true, null, null, cancellationToken);
 
     /// <summary>
-    /// Takes the conference's confirmation back.
+    /// Takes the reflection's confirmation back.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpDelete("third-probe/conference/confirmation")]
+    [HttpDelete("third-probe/reflection/confirmation")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
     [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public Task<IActionResult> UnconfirmConference(Guid memberKey, string probeId, CancellationToken cancellationToken) =>
-        SignAsync(memberKey, probeId, ThirdProbeSignPart.Conference, false, null, null, cancellationToken);
+    public Task<IActionResult> UnconfirmReflection(Guid memberKey, string probeId, CancellationToken cancellationToken) =>
+        SignAsync(memberKey, probeId, ThirdProbeSignPart.Reflection, false, null, null, cancellationToken);
 
     /// <summary>
-    /// Counts the camp for the probe.
+    /// Sets the stages the referent of the third probe tracks: motivation letter, self-reflection,
+    /// application to the край, opening, done, named, archived. Whole: a stage sent null is cleared.
     /// </summary>
+    /// <remarks>The route the referent's own tool writes through.</remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpPut("third-probe/camp/confirmation")]
+    [HttpPut("third-probe/stages")]
     [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
     [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public Task<IActionResult> ConfirmCamp(Guid memberKey, string probeId, CancellationToken cancellationToken) =>
-        SignAsync(memberKey, probeId, ThirdProbeSignPart.Camp, true, null, null, cancellationToken);
+    public async Task<IActionResult> SetStages(
+        Guid memberKey,
+        string probeId,
+        [FromBody] SetThirdProbeStagesRequest request,
+        CancellationToken cancellationToken)
+    {
+        var stages = new ThirdProbeStagesInput(
+            request.MotivationLetterOn, request.SelfReflectionOn, request.ApplicationSubmittedOn, request.OpenedOn,
+            request.CompletedOn, request.NamedOn, request.ArchivedOn);
+        return (await _mediator.Send(new SetThirdProbeStagesCommand(memberKey, probeId, stages), cancellationToken)).ToActionResult(this);
+    }
 
     /// <summary>
-    /// Takes the camp's confirmation back.
+    /// Lists a kurin's third-probers with their stages and how far the requirements are: the list the
+    /// referent of the third probe works from, and what their own tool polls.
     /// </summary>
+    /// <remarks>Only people whose probe the caller may sign are listed.</remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
-    [HttpDelete("third-probe/camp/confirmation")]
-    [ResourceAuthorize(ResourceType.ProbeProgress, ResourceAction.Read, ReadProbes, ResourceType.Member)]
-    [ProducesResponseType(typeof(ThirdProbeResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public Task<IActionResult> UnconfirmCamp(Guid memberKey, string probeId, CancellationToken cancellationToken) =>
-        SignAsync(memberKey, probeId, ThirdProbeSignPart.Camp, false, null, null, cancellationToken);
+    [HttpGet("~/api/kurin/{kurinKey:guid}/third-probers")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(typeof(IReadOnlyList<ThirdProberStatusResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetThirdProbers(Guid kurinKey, CancellationToken cancellationToken) =>
+        (await _mediator.Send(new GetThirdProbersQuery(kurinKey), cancellationToken)).ToActionResult(this);
 
     /// <summary>
     /// Attaches the camp's посвідка: a picture (PNG, JPEG, WebP) or a PDF, 2 MB at most.
@@ -342,6 +355,7 @@ public class ThirdProbeController : ControllerBase
         request.EventLeads,
         request.CoordinatorName,
         request.CoordinatorContact,
+        request.Description,
         request.Goal,
         request.Plan,
         request.Results);

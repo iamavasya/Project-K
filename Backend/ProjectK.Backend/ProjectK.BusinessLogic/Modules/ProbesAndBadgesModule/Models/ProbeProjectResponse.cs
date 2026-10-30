@@ -2,7 +2,7 @@ using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 
-/// <param name="Goal">Markdown, like <paramref name="Plan"/> and <paramref name="Results"/>; pictures are
+/// <param name="Description">Markdown, like the goal, plan and results; pictures are
 /// <c>project-image:{key}</c>, their links in <paramref name="Images"/>.</param>
 public sealed record ProbeProjectResponse(
     Guid ProjectKey,
@@ -18,6 +18,7 @@ public sealed record ProbeProjectResponse(
     string? EventLeads,
     string? CoordinatorName,
     string? CoordinatorContact,
+    string Description,
     string Goal,
     string Plan,
     string Results,
@@ -36,26 +37,43 @@ public sealed record ProbeProjectImageResponse(Guid ImageKey, string Url);
 /// <param name="Url">A signed link that expires.</param>
 public sealed record ThirdProbeCertificateResponse(string Url, string ContentType, string? FileName);
 
-/// <param name="OpenedOn">The date written down, or else the day the previous probe was closed.</param>
-/// <param name="OpenedOnIsDerived">True when <paramref name="OpenedOn"/> was not written down but taken
-/// from the previous probe.</param>
+/// <summary>
+/// The stages the referent of the third probe tracks, each the day it happened; null until then.
+/// The same shape travels to the referent's own tool (<see cref="ThirdProberStatusResponse"/>).
+/// </summary>
+public sealed record ThirdProbeStagesResponse(
+    DateOnly? MotivationLetterOn,
+    DateOnly? SelfReflectionOn,
+    DateOnly? ApplicationSubmittedOn,
+    DateOnly? OpenedOn,
+    DateOnly? CompletedOn,
+    DateOnly? NamedOn,
+    DateOnly? ArchivedOn,
+    DateTime? UpdatedAtUtc,
+    string? UpdatedByName);
+
+/// <param name="OpenedOn">The day the probe opened, or else the day the previous probe was closed.</param>
+/// <param name="OpenedOnIsDerived">True when <paramref name="OpenedOn"/> was taken from the previous probe.</param>
+/// <param name="StoredBytes">What the person's pictures and посвідка take, counted against the cap.</param>
 public sealed record ThirdProbeFileResponse(
     DateOnly? OpenedOn,
     bool OpenedOnIsDerived,
-    string? Mentors,
-    DateOnly? ConferenceOn,
-    string? ConferenceWith,
-    DateTime? ConferenceConfirmedAtUtc,
-    string? ConferenceConfirmedByName,
+    string? MentorZvyazkovyi,
+    string? MentorVporiadnyk,
+    string? MentorReferent,
+    DateOnly? ReflectionOn,
+    string? ReflectionWith,
+    DateTime? ReflectionConfirmedAtUtc,
+    string? ReflectionConfirmedByName,
     ThirdProbeCampKind? CampKind,
     string? CampName,
     DateOnly? CampFrom,
     DateOnly? CampTo,
     ThirdProbeCertificateResponse? CampCertificate,
-    DateTime? CampConfirmedAtUtc,
-    string? CampConfirmedByName,
     string? PhysicalBadgeId,
     string Resume,
+    ThirdProbeStagesResponse Stages,
+    long StoredBytes,
     DateTime? UpdatedAtUtc,
     string? UpdatedByName);
 
@@ -77,6 +95,7 @@ public sealed record ProbeProjectLimitsResponse(
     int MaxImagesPerProject,
     long MaxImageBytes,
     long MaxCertificateBytes,
+    long MaxStoredBytes,
     int MaxTextLength,
     int RequiredBadges,
     int YouthEndsAtAge);
@@ -85,7 +104,7 @@ public sealed record ProbeProjectLimitsResponse(
 /// <param name="IsProjectProbe">Whether the probe stands at the third place of the person's line.
 /// Only that one has a file and projects; for any other the rest is empty.</param>
 /// <param name="CanEdit">The person themself, or whoever the kurin lets sign their probe.</param>
-/// <param name="CanSign">May confirm the conference, the camp, a project's start and its completion.</param>
+/// <param name="CanSign">May confirm the reflection, a project's start and its completion, and set the stages.</param>
 /// <param name="CanUnsign">May take such a confirmation back.</param>
 public sealed record ThirdProbeResponse(
     bool IsProjectProbe,
@@ -96,3 +115,21 @@ public sealed record ThirdProbeResponse(
     IReadOnlyList<ProbeProjectResponse> Projects,
     IReadOnlyList<ThirdProbeBadgeResponse> Badges,
     ProbeProjectLimitsResponse Limits);
+
+/// <summary>
+/// One third-prober as the referent's tool reads them (`GET api/kurin/{kurinKey}/third-probers`):
+/// who, which probe, the stages, and how far the requirements are. A stable contract — fields are
+/// added, never renamed — so the tool can poll it and write the stages back.
+/// </summary>
+public sealed record ThirdProberStatusResponse(
+    Guid MemberKey,
+    string FirstName,
+    string LastName,
+    string ProbeId,
+    ThirdProbeStagesResponse Stages,
+    int MainProjects,
+    int CompletedProjects,
+    int BadgesDuringProbe,
+    bool HasCamp,
+    bool HasResume,
+    bool ReflectionConfirmed);

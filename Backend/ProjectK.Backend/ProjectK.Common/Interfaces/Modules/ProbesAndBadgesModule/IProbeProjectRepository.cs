@@ -15,6 +15,15 @@ public interface IProbeProjectRepository : IBaseEntityRepository<ProbeProject>
 
     void AddFile(ThirdProbeFile file);
 
+    /// <summary>The third-probe files of these people, untracked: one read for a whole kurin.</summary>
+    Task<IReadOnlyList<ThirdProbeFile>> GetFilesForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
+
+    /// <summary>The projects of these people, untracked, without pictures.</summary>
+    Task<IReadOnlyList<ProbeProject>> GetProjectsForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
+
+    /// <summary>What one person's pictures and посвідка of a probe take, as uploaded.</summary>
+    Task<long> GetStoredBytesAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
+
     void AddImage(ProbeProjectImage image);
 
     void RemoveImages(IEnumerable<ProbeProjectImage> images);

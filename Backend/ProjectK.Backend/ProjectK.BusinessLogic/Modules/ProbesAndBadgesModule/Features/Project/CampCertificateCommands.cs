@@ -83,6 +83,14 @@ public sealed class UploadCampCertificateCommandHandler
             return ProbeProjectGuard.Refuse<ThirdProbeResponse>("CertificateTooLarge", "The посвідка must be 2 MB or smaller.");
         }
 
+        var existing = await UnitOfWork.ProbeProjects.GetFileAsync(request.MemberKey, probeId, cancellationToken);
+        var storedElsewhere = await UnitOfWork.ProbeProjects.GetStoredBytesAsync(request.MemberKey, probeId, cancellationToken)
+                              - (existing?.CampCertificateBytes ?? 0);
+        if (storedElsewhere + request.Content.LongLength > ProbeProjectRules.MaxStoredBytes)
+        {
+            return ProbeProjectGuard.Refuse<ThirdProbeResponse>("StorageFull", "The third probe's files would take more than 15 MB.");
+        }
+
         var context = request.IsPdf ? BlobUploadContext.ThirdProbeCertificatePdf : BlobUploadContext.ThirdProbeCertificateImage;
         PhotoUploadResult upload;
         try
@@ -95,18 +103,12 @@ public sealed class UploadCampCertificateCommandHandler
                 "InvalidCertificate", "The посвідка must be a picture (PNG, JPEG, WebP) or a PDF.");
         }
 
-        var file = await UnitOfWork.ProbeProjects.GetFileAsync(request.MemberKey, probeId, cancellationToken);
-        if (file is null)
-        {
-            file = new ThirdProbeFile { MemberKey = request.MemberKey, ProbeId = probeId };
-            UnitOfWork.ProbeProjects.AddFile(file);
-        }
-
+        var file = await ThirdProbeFiles.GetOrAddAsync(UnitOfWork, request.MemberKey, probeId, cancellationToken);
         var previous = file.CampCertificateBlobName;
         file.CampCertificateBlobName = upload.BlobName;
         file.CampCertificateContentType = context.ContentType;
+        file.CampCertificateBytes = request.Content.LongLength;
         file.CampCertificateFileName = Path.GetFileName(request.FileName) is { Length: > 0 and <= ProbeProjectRules.MaxShortTextLength } name ? name : null;
-        SaveThirdProbeFileCommandHandler.ClearCamp(file);
 
         await RecordAsync(AuditActions.Probe.CertificateAttached, file, request.MemberKey, probeId, cancellationToken);
         if (await UnitOfWork.SaveChangesAsync(cancellationToken) <= 0)
@@ -152,8 +154,8 @@ public sealed class DeleteCampCertificateCommandHandler
             file.CampCertificateBlobName = null;
             file.CampCertificateContentType = null;
             file.CampCertificateFileName = null;
-            SaveThirdProbeFileCommandHandler.ClearCamp(file);
-            await RecordAsync(AuditActions.Probe.CertificateRemoved, file, request.MemberKey, probeId, cancellationToken);
+            file.CampCertificateBytes = 0;
+                await RecordAsync(AuditActions.Probe.CertificateRemoved, file, request.MemberKey, probeId, cancellationToken);
             await UnitOfWork.SaveChangesAsync(cancellationToken);
             await Photos.DeletePhotoAsync(blob, cancellationToken);
         }

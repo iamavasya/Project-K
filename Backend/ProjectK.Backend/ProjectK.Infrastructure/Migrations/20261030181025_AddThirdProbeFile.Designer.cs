@@ -12,7 +12,7 @@ using ProjectK.Infrastructure.DbContexts;
 namespace ProjectK.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261030165338_AddThirdProbeFile")]
+    [Migration("20261030181025_AddThirdProbeFile")]
     partial class AddThirdProbeFile
     {
         /// <inheritdoc />
@@ -2636,6 +2636,11 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateOnly?>("EndsOn")
                         .HasColumnType("date");
 
@@ -2719,6 +2724,9 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<long>("Bytes")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -2741,9 +2749,18 @@ namespace ProjectK.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateOnly?>("ApplicationSubmittedOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("ArchivedOn")
+                        .HasColumnType("date");
+
                     b.Property<string>("CampCertificateBlobName")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<long>("CampCertificateBytes")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("CampCertificateContentType")
                         .HasMaxLength(100)
@@ -2752,16 +2769,6 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<string>("CampCertificateFileName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("CampConfirmedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CampConfirmedByName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<Guid?>("CampConfirmedByUserKey")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateOnly?>("CampFrom")
                         .HasColumnType("date");
@@ -2776,22 +2783,8 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<DateOnly?>("CampTo")
                         .HasColumnType("date");
 
-                    b.Property<DateTime?>("ConferenceConfirmedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ConferenceConfirmedByName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<Guid?>("ConferenceConfirmedByUserKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateOnly?>("ConferenceOn")
+                    b.Property<DateOnly?>("CompletedOn")
                         .HasColumnType("date");
-
-                    b.Property<string>("ConferenceWith")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -2799,9 +2792,23 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<Guid>("MemberKey")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Mentors")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<string>("MentorReferent")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("MentorVporiadnyk")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("MentorZvyazkovyi")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateOnly?>("MotivationLetterOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("NamedOn")
+                        .HasColumnType("date");
 
                     b.Property<DateOnly?>("OpenedOn")
                         .HasColumnType("date");
@@ -2815,10 +2822,37 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<DateTime?>("ReflectionConfirmedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReflectionConfirmedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("ReflectionConfirmedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly?>("ReflectionOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ReflectionWith")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("Resume")
                         .IsRequired()
                         .HasMaxLength(10000)
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateOnly?>("SelfReflectionOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("StagesUpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("StagesUpdatedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("UpdatedByName")
                         .HasMaxLength(200)

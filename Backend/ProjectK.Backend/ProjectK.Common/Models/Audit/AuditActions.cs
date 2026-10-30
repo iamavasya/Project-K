@@ -32,22 +32,21 @@ public static class AuditActions
         /// <summary>The spare project took a main one's place.</summary>
         public const string ProjectsSwapped = "Probe.ProjectsSwapped";
 
-        /// <summary>The third-probe file: dates, mentors, camp, résumé.</summary>
+        /// <summary>The third-probe file: mentors, reflection, camp, résumé.</summary>
         public const string FileEdited = "Probe.FileEdited";
-        public const string ConferenceConfirmed = "Probe.ConferenceConfirmed";
-        public const string ConferenceUnconfirmed = "Probe.ConferenceUnconfirmed";
-        public const string CampConfirmed = "Probe.CampConfirmed";
-        public const string CampUnconfirmed = "Probe.CampUnconfirmed";
+        public const string ReflectionConfirmed = "Probe.ReflectionConfirmed";
+        public const string ReflectionUnconfirmed = "Probe.ReflectionUnconfirmed";
+
+        /// <summary>The referent's stages: motivation letter, self-reflection, application, opened, done, named, archived.</summary>
+        public const string StagesChanged = "Probe.StagesChanged";
         public const string CertificateAttached = "Probe.CertificateAttached";
         public const string CertificateRemoved = "Probe.CertificateRemoved";
 
         /// <summary>The action of confirming (or taking back) a part of the third probe, by the part's name.</summary>
         public static string ThirdProbe(string part, bool confirmed) => (part, confirmed) switch
         {
-            ("Conference", true) => ConferenceConfirmed,
-            ("Conference", false) => ConferenceUnconfirmed,
-            ("Camp", true) => CampConfirmed,
-            ("Camp", false) => CampUnconfirmed,
+            ("Reflection", true) => ReflectionConfirmed,
+            ("Reflection", false) => ReflectionUnconfirmed,
             ("ProjectApproval", true) => ProjectApproved,
             ("ProjectApproval", false) => ProjectApprovalRemoved,
             ("ProjectCompletion", true) => ProjectCompleted,
