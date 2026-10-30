@@ -183,7 +183,8 @@ export class KurinService {
         namedAfter: kurin.namedAfter,
         description: kurin.description,
         profileVerificationEnabled: kurin.profileVerificationEnabled ?? false,
-        scoreEnabled: kurin.scoreEnabled
+        scoreEnabled: kurin.scoreEnabled,
+        roleNames: kurin.canRenameRoles ? kurin.roleNames ?? {} : undefined
       },
       {
         headers: {

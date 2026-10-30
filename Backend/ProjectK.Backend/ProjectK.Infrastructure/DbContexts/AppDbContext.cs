@@ -158,6 +158,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Navigation(e => e.Branches).AutoInclude();
             entity.Ignore(e => e.Numbering);
             entity.Ignore(e => e.IsScoreEnabled);
+            entity.Property(e => e.RoleNames).HasMaxLength(2000);
             entity.Property(e => e.Stanytsia)
                 .HasMaxLength(120);
             entity.Property(e => e.RegionOrCountry)

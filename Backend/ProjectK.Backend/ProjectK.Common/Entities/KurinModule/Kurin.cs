@@ -115,6 +115,12 @@ public class Kurin : Entity
     /// </summary>
     public bool? ScoreEnabled { get; set; }
 
+    /// <summary>
+    /// The kurin's own names for its roles, as <c>{"Pysar":"Скриптор"}</c>; null keeps the usual ones.
+    /// Read it through <c>KurinRoleNames.Read</c>. Names only: rights stay with the role.
+    /// </summary>
+    public string? RoleNames { get; set; }
+
     /// <summary>Точкування as the kurin has it now: on in УПЮ and off in the older гілки unless the kurin chose.</summary>
     public bool IsScoreEnabled => ScoreEnabled ?? !KurinBranchSet.IsSenior(Branch);
 

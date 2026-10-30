@@ -1,9 +1,10 @@
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinService } from '../kurin-service/kurin.service';
 import { hasGroups, isSeniorBranch } from '../../models/enums/kurin-branch.enum';
+import { useKurinRoleNames } from '../../functions/leadership-role-display.function';
 
 /**
  * Чим користується курінь, у якому людина діє зараз: є в ньому гуртки чи ні, ведеться точкування.
@@ -28,4 +29,9 @@ export class KurinFeaturesService {
   readonly hasGroups = computed(() => hasGroups(this.kurin()?.branch));
 
   readonly isSenior = computed(() => isSeniorBranch(this.kurin()?.branch));
+
+  constructor() {
+    // The kurin's own role names follow the kurin the person acts in.
+    effect(() => useKurinRoleNames(this.kurin()?.roleNames));
+  }
 }

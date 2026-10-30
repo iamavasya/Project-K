@@ -10,6 +10,9 @@ public class UpdateKurinRequest
     /// <summary>Точкування on or off; left out, the kurin keeps what it has.</summary>
     public bool? ScoreEnabled { get; set; }
 
+    /// <summary>The kurin's own role names by role («Pysar» → «Скриптор»); left out, they stay as they are.</summary>
+    public Dictionary<string, string?>? RoleNames { get; set; }
+
     [MaxLength(120)]
     public string? Stanytsia { get; set; }
 

@@ -18,4 +18,8 @@ export interface KurinDto {
   profileVerificationEnabled?: boolean;
   /** Чи веде курінь точкування зараз; вимкнене ховає меню, плитки й сторінки, а дані лишає. */
   scoreEnabled?: boolean;
+  /** Власні назви ролей куреня: «Pysar» → «Скриптор». Права лишаються за роллю. */
+  roleNames?: Record<string, string>;
+  /** Чи може курінь перейменовувати ролі: поки що старші курені. */
+  canRenameRoles?: boolean;
 }

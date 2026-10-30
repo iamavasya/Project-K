@@ -34,6 +34,9 @@ public class UpsertKurinCommand : IRequest<ServiceResult<KurinResponse>>
     /// <summary>Точкування on or off; null leaves the kurin as it is.</summary>
     public bool? ScoreEnabled { get; set; }
 
+    /// <summary>The kurin's own names for its roles, by role name; null leaves them as they are, a blank name restores the usual one.</summary>
+    public IReadOnlyDictionary<string, string?>? RoleNames { get; set; }
+
     /// <summary>
     /// The край a new kurin joins; null takes the instance default. An existing kurin keeps its
     /// край here and moves only through <c>SetKurinKraiCommand</c>, which only an admin may send.
@@ -128,6 +131,22 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
             if (request.ScoreEnabled is bool scoreEnabled)
             {
                 existing.ScoreEnabled = scoreEnabled;
+            }
+
+            if (request.RoleNames is { } roleNames)
+            {
+                if (!KurinRoleNames.IsAvailableFor(existing.Branch))
+                {
+                    return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, KurinRoleNames.NotAvailableCode, "This kurin keeps the usual role names.");
+                }
+
+                var stored = KurinRoleNames.Normalize(roleNames, out var valid);
+                if (!valid)
+                {
+                    return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, KurinRoleNames.InvalidCode, $"A role name is one of the kurin's roles and up to {KurinRoleNames.MaxLength} characters.");
+                }
+
+                existing.RoleNames = stored;
             }
             _unitOfWork.Kurins.Update(existing, cancellationToken);
 
@@ -233,7 +252,8 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
         ("namedAfter", kurin.NamedAfter),
         ("description", kurin.Description),
         ("profileVerificationEnabled", kurin.ProfileVerificationEnabled),
-        ("scoreEnabled", kurin.IsScoreEnabled)
+        ("scoreEnabled", kurin.IsScoreEnabled),
+        ("roleNames", kurin.RoleNames)
     ];
 
     private static string? NormalizeOptionalText(string? value)

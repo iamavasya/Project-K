@@ -459,7 +459,8 @@ public class KurinController : ControllerBase
             request.Description,
             request.ProfileVerificationEnabled)
         {
-            ScoreEnabled = request.ScoreEnabled
+            ScoreEnabled = request.ScoreEnabled,
+            RoleNames = request.RoleNames
         };
         var response = await _mediator.Send(command);
         return response.ToActionResult(this);

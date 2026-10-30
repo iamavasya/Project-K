@@ -280,6 +280,26 @@ public class UpsertKurinHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldRenameASeniorKurinsRoles_ButKeepTheUsualNamesInUpyu()
+    {
+        var senior = new Kurin(5, KurinBranch.USP);
+        var youth = new Kurin(47);
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(senior.KurinKey, default)).ReturnsAsync(senior);
+        _kurinRepositoryMock.Setup(r => r.GetByKeyAsync(youth.KurinKey, default)).ReturnsAsync(youth);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+        var names = new Dictionary<string, string?> { ["Pysar"] = "  Скриптор ", ["Skarbnyk"] = "" };
+
+        var renamed = await _handler.Handle(new UpsertKurinCommand(senior.KurinKey, 5) { RoleNames = names }, default);
+        var refused = await _handler.Handle(new UpsertKurinCommand(youth.KurinKey, 47) { RoleNames = names }, default);
+        var unknown = await _handler.Handle(new UpsertKurinCommand(senior.KurinKey, 5) { RoleNames = new Dictionary<string, string?> { ["Hurtkoviy"] = "Ватажок" } }, default);
+
+        renamed.Data!.RoleNames.Should().Equal(new Dictionary<string, string> { ["Pysar"] = "Скриптор" });
+        refused.ErrorCode.Should().Be(KurinRoleNames.NotAvailableCode);
+        unknown.ErrorCode.Should().Be(KurinRoleNames.InvalidCode);
+        youth.RoleNames.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Handle_ShouldSwitchScoreOff_AndLeaveItAlone_WhenNotAsked()
     {
         var kurinKey = Guid.NewGuid();

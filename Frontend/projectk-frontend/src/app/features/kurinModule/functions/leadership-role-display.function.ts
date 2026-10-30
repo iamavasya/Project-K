@@ -34,9 +34,21 @@ export function leadershipRoleSeverityForRole(role: LeadershipRole | string): Ro
   }
 }
 
-/** The office's Ukrainian name, falling back to the raw value for anything unmapped. */
+/**
+ * The current kurin's own names for its roles, set by KurinFeaturesService whenever the kurin the
+ * person acts in changes. Module state on purpose: the name is read from templates, pipes and plain
+ * functions all over, and every one of them must say «Скриптор» where the kurin calls its писар so.
+ */
+let kurinRoleNames: Partial<Record<string, string>> = {};
+
+/** Replaces the current kurin's role names; an empty map restores the usual ones. */
+export function useKurinRoleNames(names: Record<string, string> | null | undefined): void {
+  kurinRoleNames = { ...(names ?? {}) };
+}
+
+/** The office's Ukrainian name — the kurin's own when it renamed it — falling back to the raw value for anything unmapped. */
 export function leadershipRoleDisplayName(role: LeadershipRole | string): string {
-  return ROLE_DISPLAY_NAMES[role as LeadershipRole] || String(role);
+  return kurinRoleNames[role] || ROLE_DISPLAY_NAMES[role as LeadershipRole] || String(role);
 }
 
 /** "Прізвище Ім'я По батькові", the way every list renders a member. */
