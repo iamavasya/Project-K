@@ -23,6 +23,16 @@ public interface IResourceScopeReader
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The account of the person a resource is about — a person, their data, their progress — and
+    /// null for anything else or a person without an account. Asked without a kurin: a person's
+    /// own record is theirs whether or not they stand in any kurin today.
+    /// </summary>
+    Task<Guid?> GetPersonAccountKeyAsync(
+        ResourceType resourceType,
+        Guid resourceKey,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Groups the user leads in this kurin: active гуртковий offices, explicit mentor assignments
     /// (legacy) and the group they are a member of. This is the "own groups" scope tier.
     /// </summary>

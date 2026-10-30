@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
@@ -21,13 +22,15 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
     private readonly IAccessChangeSignal _accessChanges;
     private readonly IMemberDirectory _members;
     private readonly IKurinAudit _audit;
+    private readonly IDuesDirectory _dues;
 
-    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork, IAccessChangeSignal accessChanges, IMemberDirectory members, IKurinAudit audit)
+    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork, IAccessChangeSignal accessChanges, IMemberDirectory members, IKurinAudit audit, IDuesDirectory dues)
     {
         _unitOfWork = unitOfWork;
         _accessChanges = accessChanges;
         _members = members;
         _audit = audit;
+        _dues = dues;
     }
 
     public async Task<ServiceResult<object>> Handle(LeaveKurinCommand request, CancellationToken cancellationToken)
@@ -47,6 +50,20 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
         {
             return ServiceResult<object>.Failure(
                 ResultType.NotFound, "NotAMember", "They do not currently belong to this kurin.");
+        }
+
+        // Debt does not leave with the person: whoever goes owes the kurin nothing first. Every
+        // stretch of theirs here counts — an account from a гурток they stood in years ago included.
+        var stretchesHere = (await _unitOfWork.Memberships.GetRecordsForMemberAsync(request.MemberKey, cancellationToken))
+            .Where(m => m.KurinKey == request.KurinKey)
+            .Select(m => m.MembershipKey)
+            .ToList();
+        if (await _dues.GetOwedAsync(request.KurinKey, stretchesHere, cancellationToken) > 0)
+        {
+            return ServiceResult<object>.Failure(
+                ResultType.Conflict,
+                "MemberOwesDues",
+                "They owe the kurin dues; a person is released only once paid in full.");
         }
 
         membership.LeftAtUtc = DateTime.UtcNow;

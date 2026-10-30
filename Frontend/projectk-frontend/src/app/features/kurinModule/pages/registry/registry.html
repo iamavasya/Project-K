@@ -204,7 +204,7 @@
   </p-table>
 
   @if (former().length) {
-    <button type="button" class="registry__former-toggle" (click)="toggleFormer()">
+    <button type="button" id="former" class="registry__former-toggle" (click)="toggleFormer()">
       <i class="pi" [class.pi-chevron-right]="!formerOpen()" [class.pi-chevron-down]="formerOpen()"></i>
       Колишні <span class="lil-count">{{ former().length }}</span>
     </button>

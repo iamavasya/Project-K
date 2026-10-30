@@ -98,6 +98,8 @@ interface Skills {
 }
 
 const STANDING: Record<string, string | null> = { Current: null, Moved: 'переведений', Left: 'вибув' };
+/** Why a person who owes cannot be released (`MemberOwesDues`). */
+const OWES_DUES_TEXT = 'Борг не переходить разом із нею: вивести можна, коли вкладку сплачено повністю.';
 
 /** What a field the kurin hides from this viewer says instead of its value. */
 
@@ -793,6 +795,12 @@ export class MemberPage implements OnInit {
   protected async confirmLeave(m: MembershipDto): Promise<void> {
     const key = this.key();
     if (!key || this.placing()) return;
+    // Debt does not leave with the person (web member-card): said before the tap, not after.
+    const d = this.dues();
+    if (d && d.kurinKey === m.kurinKey && d.balance < 0) {
+      await this.toasts.show(`Людина винна куреню ${this.money(-d.balance)}. ${OWES_DUES_TEXT}`, 'danger');
+      return;
+    }
     const sheet = await this.sheets.create({
       header: 'Вивести з куреня',
       subHeader:
@@ -810,7 +818,10 @@ export class MemberPage implements OnInit {
     try {
       await this.data.leaveKurin(m.kurinKey, key);
     } catch (error) {
-      await this.toasts.show(apiErrorText(error, 'Не вдалося вивести. Спробуй ще раз.'), 'danger');
+      await this.toasts.show(
+        apiErrorText(error, 'Не вдалося вивести. Спробуй ще раз.', { MemberOwesDues: `Людина винна куреню вкладку. ${OWES_DUES_TEXT}` }),
+        'danger',
+      );
       this.placing.set(false);
       return;
     }

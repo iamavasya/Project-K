@@ -95,6 +95,40 @@ public class ResourceScopeReader : IResourceScopeReader
         };
     }
 
+    public async Task<Guid?> GetPersonAccountKeyAsync(
+        ResourceType resourceType,
+        Guid resourceKey,
+        CancellationToken cancellationToken = default)
+    {
+        Guid? memberKey = resourceType switch
+        {
+            ResourceType.Member or ResourceType.MemberContacts or ResourceType.MemberBirthDate
+                or ResourceType.MemberBirthday or ResourceType.MemberAddress or ResourceType.MemberParents
+                or ResourceType.MemberExtras => resourceKey,
+            ResourceType.ProbeProgress => await _context.ProbeProgresses
+                .Where(p => p.ProbeProgressKey == resourceKey)
+                .Select(p => (Guid?)p.MemberKey)
+                .FirstOrDefaultAsync(cancellationToken),
+            ResourceType.BadgeProgress => await _context.BadgeProgresses
+                .Where(b => b.BadgeProgressKey == resourceKey)
+                .Select(b => (Guid?)b.MemberKey)
+                .FirstOrDefaultAsync(cancellationToken),
+            _ => null
+        };
+
+        if (memberKey is null)
+        {
+            return null;
+        }
+
+        // From the memberships, closed ones included, like every other access answer: a person
+        // released from their last kurin still has the rows that say whose account they were.
+        return await _context.Memberships
+            .Where(ms => ms.MemberKey == memberKey && ms.UserKey != null)
+            .Select(ms => ms.UserKey)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     private Task<ResourceScope?> MembershipScopeAsync(
         Guid memberKey,
         Guid inKurinKey,

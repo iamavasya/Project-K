@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
+import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
 import { environment } from '../../../../../environments/environment';
 import { ClientCacheService } from '../client-cache/client-cache.service';
 import { MEMBER_CACHE_PREFIX, GROUP_CACHE_PREFIX, KURIN_CACHE_PREFIX } from '../client-cache/cache-policy';
@@ -46,7 +47,10 @@ export class MembershipService {
   }
 
   leave(kurinKey: string, memberKey: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${kurinKey}/memberships/${memberKey}`).pipe(
+    // 409 — людина винна вкладку; картка пояснює це сама.
+    return this.http.delete<void>(`${this.apiUrl}/${kurinKey}/memberships/${memberKey}`, {
+      context: requestFeedback('auto', [409])
+    }).pipe(
       tap(() => this.forgetPlacement())
     );
   }

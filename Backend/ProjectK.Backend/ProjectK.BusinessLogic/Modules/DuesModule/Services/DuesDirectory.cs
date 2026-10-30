@@ -36,4 +36,18 @@ public sealed class DuesDirectory : IDuesDirectory
             .Distinct()
             .ToList();
     }
+
+    public async Task<decimal> GetOwedAsync(Guid kurinKey, IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default)
+    {
+        if (membershipKeys.Count == 0)
+        {
+            return 0;
+        }
+
+        var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
+        var balance = ledger.Accounts()
+            .Where(account => membershipKeys.Contains(account.MembershipKey))
+            .Sum(account => account.Balance);
+        return balance < 0 ? -balance : 0;
+    }
 }

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -84,7 +84,9 @@ export class RegistryComponent implements OnInit {
    * повернути її можна було лише за кодом, який тримає вона сама.
    */
   readonly former = signal<FormerMemberDto[]>([]);
-  readonly formerOpen = signal(false);
+  // `?former=1` — сюди веде картка щойно виведеної людини: її картку курінь уже не відкриває.
+  private scrollToFormer = inject(ActivatedRoute).snapshot.queryParamMap.get('former') === '1';
+  readonly formerOpen = signal(this.scrollToFormer);
   readonly returning = signal<string | null>(null);
 
   /**
@@ -205,7 +207,13 @@ export class RegistryComponent implements OnInit {
     // Тихо: колишні — довідка, а не робота. Курінь, у якому ще нікого не виводили, не має бачити
     // помилку через порожній список.
     this.membershipService.former(this.kurinKey).subscribe({
-      next: people => this.former.set(people),
+      next: people => {
+        this.former.set(people);
+        if (this.scrollToFormer && people.length) {
+          this.scrollToFormer = false;
+          setTimeout(() => document.getElementById('former')?.scrollIntoView({ block: 'start' }));
+        }
+      },
       error: () => this.former.set([])
     });
   }
