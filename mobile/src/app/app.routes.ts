@@ -85,6 +85,7 @@ export const routes: Routes = [
           },
           { path: 'leadership', loadComponent: () => import('./features/kurin/leadership.page').then((m) => m.LeadershipPage) },
           { path: 'kv', loadComponent: () => import('./features/kurin/kv.page').then((m) => m.KvPage) },
+          { path: 'transfers', loadComponent: () => import('./features/kurin/transfers.page').then((m) => m.TransfersPage) },
           { path: 'member/:memberKey', loadComponent: () => import('./features/kurin/member.page').then((m) => m.MemberPage) },
           {
             path: 'member/:memberKey/probe',

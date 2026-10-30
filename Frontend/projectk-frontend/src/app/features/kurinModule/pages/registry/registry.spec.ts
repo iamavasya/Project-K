@@ -78,10 +78,10 @@ describe('RegistryComponent', () => {
     TestBed.resetTestingModule();
     membership = {
       former: vi.fn(),
-      takeBack: vi.fn()
+      createRequest: vi.fn()
     } as MockedObject<MembershipService>;
     membership.former.mockReturnValue(of(former));
-    membership.takeBack.mockReturnValue(of('membership-key'));
+    membership.createRequest.mockReturnValue(of({ membershipRequestKey: null, joined: true }));
 
     TestBed.configureTestingModule({
       imports: [RegistryComponent],
@@ -205,16 +205,31 @@ describe('RegistryComponent', () => {
     component.confirmTakeBack(person);
     pendingConfirmations[0].accept?.();
 
-    expect(membership.takeBack).toHaveBeenCalledTimes(1);
+    expect(membership.createRequest).toHaveBeenCalledTimes(1);
 
-    expect(membership.takeBack).toHaveBeenCalledWith('kurin-1', 'gone-42');
+    expect(membership.createRequest).toHaveBeenCalledWith('kurin-1', { memberKey: 'gone-42', kind: 'Transfer', membershipKind: 'Youth' });
     expect(component.former()).toEqual([]);
+  });
+
+  // Since JOIN-01 a kurin does not take someone straight from another one: it asks, and the person stays
+  // on the former list until their kurin answers.
+  it('should ask for someone who has since joined another kurin, and keep them listed', () => {
+    const person = formerPerson({ memberKey: 'gone-42' });
+    load([], KurinBranch.UPYu, [person], service =>
+      service.createRequest.mockReturnValue(of({ membershipRequestKey: 'r-1', joined: false })));
+
+    acceptConfirmation();
+    component.confirmTakeBack(person);
+    pendingConfirmations[0].accept?.();
+
+    expect(component.former()).toHaveLength(1);
+    expect(component.returning()).toBeNull();
   });
 
   it('should leave them on the list when taking them back fails', () => {
     const person = formerPerson({ memberKey: 'gone-42' });
     load([], KurinBranch.UPYu, [person], service =>
-      service.takeBack.mockReturnValue(throwError(() => new Error('nope'))));
+      service.createRequest.mockReturnValue(throwError(() => new Error('nope'))));
 
     acceptConfirmation();
     component.confirmTakeBack(person);

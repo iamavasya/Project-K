@@ -309,3 +309,36 @@ export interface GroupRequest {
   name: string;
   description: string | null;
 }
+
+// ── Requests between kurins (web membership.service) ────────────────────────────────────────────
+
+export type MembershipRequestKind = 'Transfer' | 'AlsoJoin';
+export type MembershipRequestStatus = 'Pending' | 'Approved' | 'Declined' | 'Cancelled' | 'Expired';
+
+export interface MembershipRequestKurinDto {
+  kurinKey: string;
+  number: number | null;
+  namedAfter: string | null;
+}
+
+/** `owedToLeave`: for the answering kurin on a pending «перевести» — above zero, it cannot be approved. */
+export interface MembershipRequestDto {
+  membershipRequestKey: string;
+  kind: MembershipRequestKind;
+  status: MembershipRequestStatus;
+  memberKey: string;
+  memberName: string;
+  fromKurin: MembershipRequestKurinDto;
+  toKurin: MembershipRequestKurinDto;
+  membershipKind: 'Youth' | 'Staff';
+  createdAtUtc: string;
+  expiresAtUtc: string;
+  decidedAtUtc: string | null;
+  owedToLeave: number;
+}
+
+export interface MembershipCandidateDto {
+  member: { memberKey: string; publicId: string; fullName: string };
+  alreadyInThisKurin: boolean;
+  currentKurins: MembershipRequestKurinDto[];
+}

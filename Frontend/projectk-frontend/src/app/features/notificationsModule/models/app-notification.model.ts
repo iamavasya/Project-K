@@ -11,7 +11,9 @@ export type AppNotificationType =
   | 'AgendaItemUpdated'
   | 'AgendaItemStatusChanged'
   | 'AgendaItemDeleted'
-  | 'CalendarFeedRevoked';
+  | 'CalendarFeedRevoked'
+  | 'MembershipRequested'
+  | 'MembershipRequestDecided';
 
 export type AppNotificationSeverity = 'Info' | 'Success' | 'Warn' | 'Error';
 

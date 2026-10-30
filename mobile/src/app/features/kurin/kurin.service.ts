@@ -18,6 +18,9 @@ import {
   MemberDto,
   MemberDuesDto,
   MemberLookupDto,
+  MembershipCandidateDto,
+  MembershipRequestDto,
+  MembershipRequestKind,
   MemberWarningDto,
   MembershipDto,
   MentorAssignmentDto,
@@ -278,6 +281,35 @@ export class KurinApi {
     this.membersChanged.update((n) => n + 1);
   }
 
+
+  /** The kurin's requests both ways (web «Переходи»). */
+  membershipRequests(kurinKey: string): Promise<{ incoming: MembershipRequestDto[]; outgoing: MembershipRequestDto[] }> {
+    return this.api.get(`kurin/${kurinKey}/membership-requests`);
+  }
+
+  /** The person a code names, with the kurins they stand in now. */
+  membershipCandidate(kurinKey: string, publicId: string): Promise<MembershipCandidateDto> {
+    return this.api.get(`kurin/${kurinKey}/memberships/candidate`, { publicId });
+  }
+
+  /** Asks for a person; someone who stands nowhere is taken in at once (`joined`). */
+  async requestMembership(
+    kurinKey: string,
+    body: { publicId: string; kind: MembershipRequestKind; membershipKind: 'Youth' | 'Staff'; fromKurinKey: string | null },
+  ): Promise<{ membershipRequestKey: string | null; joined: boolean }> {
+    const sent = await this.api.post<{ membershipRequestKey: string | null; joined: boolean }>(`kurin/${kurinKey}/membership-requests`, body);
+    if (sent.joined) this.membersChanged.update((n) => n + 1);
+    return sent;
+  }
+
+  async decideMembershipRequest(kurinKey: string, requestKey: string, approve: boolean): Promise<void> {
+    await this.api.post(`kurin/${kurinKey}/membership-requests/${requestKey}/${approve ? 'approve' : 'decline'}`, {});
+    if (approve) this.membersChanged.update((n) => n + 1);
+  }
+
+  cancelMembershipRequest(kurinKey: string, requestKey: string): Promise<unknown> {
+    return this.api.delete(`kurin/${kurinKey}/membership-requests/${requestKey}`);
+  }
   /** The КВ people who may be a гурток's виховник (the Звʼязковий only). */
   mentorCandidates(kurinKey: string): Promise<MemberLookupDto[]> {
     return this.api.get(`member/members/mentor-candidates/${kurinKey}`);

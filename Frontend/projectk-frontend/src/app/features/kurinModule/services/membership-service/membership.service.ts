@@ -21,6 +21,62 @@ export interface FormerMemberDto {
   leftAtUtc: string;
 }
 
+/** Що курінь просить: «перевести» до себе чи «прийняти ще й до нас». */
+export type MembershipRequestKind = 'Transfer' | 'AlsoJoin';
+export type MembershipRequestStatus = 'Pending' | 'Approved' | 'Declined' | 'Cancelled' | 'Expired';
+export type MembershipKindName = 'Youth' | 'Staff';
+
+export interface MembershipRequestKurinDto {
+  kurinKey: string;
+  number: number | null;
+  namedAfter: string | null;
+}
+
+/**
+ * Запит між куренями. `owedToLeave` — для куреня, що відповідає, на «перевести»: поки він більший
+ * за нуль, підтвердити не можна.
+ */
+export interface MembershipRequestDto {
+  membershipRequestKey: string;
+  kind: MembershipRequestKind;
+  status: MembershipRequestStatus;
+  memberKey: string;
+  memberName: string;
+  fromKurin: MembershipRequestKurinDto;
+  toKurin: MembershipRequestKurinDto;
+  membershipKind: MembershipKindName;
+  createdAtUtc: string;
+  expiresAtUtc: string;
+  decidedAtUtc: string | null;
+  owedToLeave: number;
+}
+
+export interface MembershipRequestsDto {
+  incoming: MembershipRequestDto[];
+  outgoing: MembershipRequestDto[];
+}
+
+/** Людина за кодом: картка й курені, де вона стоїть зараз (лише номери). */
+export interface MembershipCandidateDto {
+  member: { memberKey: string; publicId: string; firstName: string; lastName: string; fullName: string };
+  alreadyInThisKurin: boolean;
+  currentKurins: MembershipRequestKurinDto[];
+}
+
+export interface CreateMembershipRequest {
+  publicId?: string | null;
+  memberKey?: string | null;
+  kind: MembershipRequestKind;
+  membershipKind: MembershipKindName;
+  fromKurinKey?: string | null;
+}
+
+/** Що зробив запит: людину, яка ніде не стоїть, прийнято одразу (`joined`). */
+export interface MembershipRequestSentDto {
+  membershipRequestKey: string | null;
+  joined: boolean;
+}
+
 /**
  * Належність до куреня — окремо від профілю людини. Профіль редагується один раз і скрізь, а
  * членство відкривається й закривається в кожному курені окремо, і це різні дії з різними правами.
@@ -60,6 +116,41 @@ export class MembershipService {
       `${this.apiUrl}/${kurinKey}/memberships/${memberKey}/group`,
       { groupKey }
     ).pipe(tap(() => this.forgetPlacement()));
+  }
+
+  /** Людина за кодом, який вона дала. 404 — коду немає; сторінка каже це сама. */
+  candidate(kurinKey: string, publicId: string): Observable<MembershipCandidateDto> {
+    return this.http.get<MembershipCandidateDto>(`${this.apiUrl}/${kurinKey}/memberships/candidate`, {
+      params: { publicId },
+      context: requestFeedback('errors', [404])
+    });
+  }
+
+  /** Запити куреня в обидва боки. */
+  requests(kurinKey: string): Observable<MembershipRequestsDto> {
+    return this.http.get<MembershipRequestsDto>(`${this.apiUrl}/${kurinKey}/membership-requests`);
+  }
+
+  /** 409 сторінка пояснює сама: людина вже тут, запит уже чекає, або треба вибрати курінь. */
+  createRequest(kurinKey: string, request: CreateMembershipRequest): Observable<MembershipRequestSentDto> {
+    return this.http.post<MembershipRequestSentDto>(`${this.apiUrl}/${kurinKey}/membership-requests`, request, {
+      context: requestFeedback('auto', [409])
+    }).pipe(tap(sent => sent.joined && this.forgetPlacement()));
+  }
+
+  /** 409 — людина винна вкладку або запит уже закрито; сторінка пояснює це сама. */
+  approveRequest(kurinKey: string, requestKey: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${kurinKey}/membership-requests/${requestKey}/approve`, {}, {
+      context: requestFeedback('auto', [409])
+    }).pipe(tap(() => this.forgetPlacement()));
+  }
+
+  declineRequest(kurinKey: string, requestKey: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${kurinKey}/membership-requests/${requestKey}/decline`, {});
+  }
+
+  cancelRequest(kurinKey: string, requestKey: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${kurinKey}/membership-requests/${requestKey}`);
   }
 
   /** Членство змінює склад списків куреня й гуртка так само, як самої людини. */

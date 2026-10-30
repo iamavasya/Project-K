@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -37,6 +37,12 @@ export interface TallyRow {
 
 /** Ключ вибору колонок. На курінь, бо в різних гілках потрібне різне. */
 const columnChoiceKey = (kurinKey: string) => `registry:columns:${kurinKey}`;
+
+/** Чому «Повернути» не вдалося, коли людина тим часом стала в іншому курені. */
+const TAKE_BACK_ERRORS: Record<string, string> = {
+  RequestPending: 'Запит щодо цієї людини вже чекає відповіді в «Переходах».',
+  ChooseKurin: 'Людина стоїть у кількох куренях. Попроси її код і надішли запит у «Переходах».'
+};
 
 @Component({
   selector: 'app-registry',
@@ -244,9 +250,24 @@ export class RegistryComponent implements OnInit {
 
   private takeBack(person: FormerMemberDto): void {
     this.returning.set(person.memberKey);
-    this.membershipService.takeBack(this.kurinKey, person.memberKey).subscribe({
-      next: () => {
+    // Through a request: someone who stands nowhere comes back at once, but someone who has since
+    // joined another kurin is asked for — «перевести» — and that kurin's Звʼязковий answers.
+    this.membershipService.createRequest(this.kurinKey, {
+      memberKey: person.memberKey,
+      kind: 'Transfer',
+      membershipKind: 'Youth'
+    }).subscribe({
+      next: sent => {
         this.returning.set(null);
+        if (!sent.joined) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Запит надіслано',
+            detail: `${this.formerName(person)} зараз в іншому курені. Перехід підтвердить його Звʼязковий — стежте в «Переходах».`
+          });
+          return;
+        }
+
         this.former.update(people => people.filter(other => other.memberKey !== person.memberKey));
         this.loadMembers();
         this.messageService.add({
@@ -257,10 +278,11 @@ export class RegistryComponent implements OnInit {
       },
       error: (error: unknown) => {
         this.returning.set(null);
+        const code = error instanceof HttpErrorResponse ? (error.error as { error?: string } | null)?.error : undefined;
         this.messageService.add({
           severity: 'error',
           summary: 'Не вдалося повернути',
-          detail: failureDetail(error)
+          detail: (code && TAKE_BACK_ERRORS[code]) || failureDetail(error)
         });
       }
     });

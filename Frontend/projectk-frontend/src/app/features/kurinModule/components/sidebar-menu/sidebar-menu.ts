@@ -201,6 +201,11 @@ export class SidebarMenuComponent implements OnChanges {
       items.push(this.navItem({ label: 'Реєстр', icon: 'pi pi-table', routerLink: ['/kurin/registry'], disabled }));
     }
 
+    // Переходи між куренями просить і підтверджує лише Звʼязковий.
+    if (this.permissionService.canManageWholeKurin()) {
+      items.push(this.navItem({ label: 'Переходи', icon: 'pi pi-arrow-right-arrow-left', routerLink: ['/kurin/transfers'], disabled }));
+    }
+
     // Імпорт заводить склад цілого куреня — це дія Зв'язкового, не гурткового.
     if (canManageKurinSettings) {
       items.push(this.navItem({ label: 'Імпорт складу', icon: 'pi pi-upload', routerLink: ['/kurin/import'], disabled }));
