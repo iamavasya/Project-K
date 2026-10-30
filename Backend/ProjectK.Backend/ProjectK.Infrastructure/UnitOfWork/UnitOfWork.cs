@@ -10,20 +10,20 @@ using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
-using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Interfaces.Modules.ScoreModule;
 using ProjectK.Infrastructure.DbContexts;
 using ProjectK.Infrastructure.Repositories;
 using ProjectK.Infrastructure.Repositories.AuthModule;
-using ProjectK.Infrastructure.Repositories.KraiModule;
 using ProjectK.Infrastructure.Repositories.DuesModule;
-using ProjectK.Infrastructure.Repositories.ScoreModule;
 using ProjectK.Infrastructure.Repositories.InfrastructureModule;
+using ProjectK.Infrastructure.Repositories.KraiModule;
 using ProjectK.Infrastructure.Repositories.KurinModule;
 using ProjectK.Infrastructure.Repositories.ProbesAndBadgesModule;
+using ProjectK.Infrastructure.Repositories.ScoreModule;
 
 namespace ProjectK.Infrastructure.UnitOfWork;
 
@@ -42,6 +42,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IPlanningSessionRepository _planningSessions;
     private IAgendaItemRepository _agendaItems;
     private IAgendaCategoryRepository _agendaCategories;
+    private IKurinTagRepository _kurinTags;
     private IAgendaResponseRepository _agendaResponses;
     private IBadgeProgressRepository _badgeProgresses;
     private IProbeProgressRepository _probeProgresses;
@@ -88,6 +89,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IPlanningSessionRepository PlanningSessions => _planningSessions ??= new PlanningSessionRepository(_context);
     public IAgendaItemRepository AgendaItems => _agendaItems ??= new AgendaItemRepository(_context);
     public IAgendaCategoryRepository AgendaCategories => _agendaCategories ??= new AgendaCategoryRepository(_context);
+    public IKurinTagRepository KurinTags => _kurinTags ??= new KurinTagRepository(_context);
     public IAgendaResponseRepository AgendaResponses => _agendaResponses ??= new AgendaResponseRepository(_context);
     public IBadgeProgressRepository BadgeProgresses => _badgeProgresses ??= new BadgeProgressRepository(_context);
     public IProbeProgressRepository ProbeProgresses => _probeProgresses ??= new ProbeProgressRepository(_context);

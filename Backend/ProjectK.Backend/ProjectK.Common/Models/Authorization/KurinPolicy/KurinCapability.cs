@@ -80,5 +80,11 @@ public enum KurinCapability
     AssignProvid,
 
     /// <summary>Read the kurin's Журнал дій.</summary>
-    ReadJournal
+    ReadJournal,
+
+    /// <summary>See the tags on people. A person's own tags are the kurin's separate switch.</summary>
+    SeeTags,
+
+    /// <summary>Define the kurin's tags and put them on people or take them off.</summary>
+    ManageTags
 }

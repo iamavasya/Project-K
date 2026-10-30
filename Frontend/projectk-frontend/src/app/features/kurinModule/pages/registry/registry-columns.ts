@@ -3,7 +3,7 @@ import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { PLAST_LADDER, PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../../models/enums/plast-ladder';
 
-export type RegistryColumnKind = 'text' | 'date' | 'phone' | 'email';
+export type RegistryColumnKind = 'text' | 'date' | 'phone' | 'email' | 'tags';
 
 export interface RegistryColumn {
   readonly id: string;
@@ -66,6 +66,14 @@ export const REGISTRY_COLUMNS: RegistryColumn[] = [
     value: member => member.mentoredGroupNames?.join(', ') || null
   },
   {
+    // Лише коли курінь користується тегами; плашки малює сторінка, бо назви дає довідник тегів.
+    id: 'tags',
+    header: 'Теги',
+    group: 'Належність',
+    kind: 'tags',
+    value: () => null
+  },
+  {
     id: 'phoneNumber',
     header: 'Телефон',
     group: 'Контакти',
@@ -94,6 +102,7 @@ export function defaultColumnIdsFor(branch: KurinBranch | null | undefined): str
     'dateOfBirth',
     'plastLevel',
     'groupName',
+    'tags',
     'phoneNumber',
     ...defaultLevelsFor(branch).map(level => `level:${level}`)
   ];

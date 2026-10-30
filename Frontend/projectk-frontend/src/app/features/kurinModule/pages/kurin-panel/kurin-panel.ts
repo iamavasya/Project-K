@@ -1,3 +1,4 @@
+import { KurinTagsTileComponent } from '../../components/kurin-tags-tile/kurin-tags-tile';
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -43,7 +44,8 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
     TooltipModule,
     KvPanelComponent,
     LeadershipPanelComponent,
-    EmptyStateComponent
+    EmptyStateComponent,
+    KurinTagsTileComponent
   ],
   templateUrl: './kurin-panel.html',
   changeDetection: ChangeDetectionStrategy.Eager,

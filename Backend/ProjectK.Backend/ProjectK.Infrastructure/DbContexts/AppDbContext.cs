@@ -10,15 +10,17 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using ProjectK.Common.Entities.AuditModule;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.DuesModule;
-using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Entities.InfrastructureModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Entities.KurinModule.Planning;
+using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
+using ProjectK.Common.Entities.ScoreModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Tags;
 
 namespace ProjectK.Infrastructure.DbContexts;
 
@@ -41,6 +43,9 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<AgendaAssignmentProgress> AgendaAssignmentProgress { get; set; }
     public DbSet<AgendaCategory> AgendaCategories { get; set; }
     public DbSet<AgendaResponse> AgendaResponses { get; set; }
+    public DbSet<KurinTag> KurinTags { get; set; }
+    public DbSet<MemberTag> MemberTags { get; set; }
+    public DbSet<KurinTagSettings> KurinTagSettings { get; set; }
     public DbSet<BadgeProgress> BadgeProgresses { get; set; }
     public DbSet<ProbeProgress> ProbeProgresses { get; set; }
     public DbSet<ProbePointProgress> ProbePointProgresses { get; set; }
@@ -579,6 +584,43 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .HasForeignKey(e => e.KurinKey)
                   .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(e => new { e.KurinKey, e.IsArchived });
+        });
+
+        builder.Entity<KurinTag>(entity =>
+        {
+            entity.HasKey(e => e.KurinTagKey);
+            entity.Property(e => e.Name).HasMaxLength(KurinTagRules.MaxNameLength).IsRequired();
+            entity.Property(e => e.ColorHex).HasMaxLength(16).IsRequired();
+            entity.HasOne(e => e.Kurin)
+                  .WithMany()
+                  .HasForeignKey(e => e.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.KurinKey, e.Name }).IsUnique();
+        });
+
+        builder.Entity<MemberTag>(entity =>
+        {
+            entity.HasKey(e => new { e.KurinTagKey, e.MemberKey });
+            entity.HasOne(e => e.Tag)
+                  .WithMany(t => t.Members)
+                  .HasForeignKey(e => e.KurinTagKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            // A deleted card takes its tags with it.
+            entity.HasOne<Member>()
+                  .WithMany()
+                  .HasForeignKey(e => e.MemberKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.MemberKey);
+        });
+
+        builder.Entity<KurinTagSettings>(entity =>
+        {
+            entity.HasKey(e => e.KurinKey);
+            entity.Property(e => e.OwnTagsVisible).HasDefaultValue(true);
+            entity.HasOne<Kurin>()
+                  .WithOne()
+                  .HasForeignKey<KurinTagSettings>(e => e.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<AgendaResponse>(entity =>

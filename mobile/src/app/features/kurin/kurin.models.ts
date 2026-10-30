@@ -93,6 +93,8 @@ export interface MemberLookupDto {
   groupName?: string | null;
   /** В кадрі виховників of that kurin (list reads only). */
   isStaff?: boolean;
+  /** The kurin's tags on them that the viewer may see; names come from the kurin's tag list. */
+  tagKeys?: string[];
 }
 
 export interface PlastLevelHistoryDto {

@@ -17,6 +17,7 @@ import { AgendaArchivePolicyComponent } from '../../components/agenda-archive-po
 import { KurinCardFieldsComponent } from '../../components/kurin-card-fields/kurin-card-fields';
 import { KurinAccessPolicyComponent } from '../../components/kurin-access-policy/kurin-access-policy';
 import { KurinProbeEditionsComponent } from '../../components/kurin-probe-editions/kurin-probe-editions';
+import { KurinTagSettingsComponent } from '../../components/kurin-tag-settings/kurin-tag-settings';
 import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 
 @Component({
@@ -32,7 +33,8 @@ import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
     AgendaArchivePolicyComponent,
     KurinCardFieldsComponent,
     KurinAccessPolicyComponent,
-    KurinProbeEditionsComponent
+    KurinProbeEditionsComponent,
+    KurinTagSettingsComponent
   ],
   templateUrl: './kurin-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -49,6 +51,7 @@ export class KurinSettingsComponent implements OnInit {
   private readonly cardFields = viewChild<KurinCardFieldsComponent>('cardFields');
   private readonly accessPolicy = viewChild<KurinAccessPolicyComponent>('accessPolicy');
   private readonly probeEditions = viewChild<KurinProbeEditionsComponent>('probeEditions');
+  private readonly tagSettings = viewChild<KurinTagSettingsComponent>('tagSettings');
 
   /** Проби є лише в юнацькому курені; в УСП чи УПС розділу проби гуртків немає. */
   protected readonly hasYouthProgram = hasYouthProgram;
@@ -137,12 +140,14 @@ export class KurinSettingsComponent implements OnInit {
     const cardFields = this.cardFields();
     const accessPolicy = this.accessPolicy();
     const probeEditions = this.probeEditions();
+    const tagSettings = this.tagSettings();
     forkJoin([
       this.kurinService.updateKurin(request),
       archive ? archive.save() : of(undefined),
       cardFields ? cardFields.save() : of(undefined),
       accessPolicy ? accessPolicy.save() : of(undefined),
-      probeEditions ? probeEditions.save() : of(undefined)
+      probeEditions ? probeEditions.save() : of(undefined),
+      tagSettings ? tagSettings.save() : of(undefined)
     ]).subscribe({
       next: ([updated]) => {
         this.kurin = updated;

@@ -23,6 +23,7 @@ public interface IUnitOfWork
     IPlanningSessionRepository PlanningSessions { get; }
     IAgendaItemRepository AgendaItems { get; }
     IAgendaCategoryRepository AgendaCategories { get; }
+    IKurinTagRepository KurinTags { get; }
     IAgendaResponseRepository AgendaResponses { get; }
     IBadgeProgressRepository BadgeProgresses { get; }
     IProbeProgressRepository ProbeProgresses { get; }

@@ -79,6 +79,8 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
             // The account belongs to another module; the read of one person asks it.
             .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())
+            // Tags are the kurin's, filled by KurinTagVisibility for whoever is looking.
+            .ForMember(dest => dest.TagKeys, opt => opt.Ignore())
             .ForMember(dest => dest.InvitationSent, opt => opt.Ignore())
             // Filled by MemberFieldMask, which knows who is looking.
             .ForMember(dest => dest.Birthday, opt => opt.Ignore())
@@ -102,6 +104,7 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.Awards, opt => opt.Ignore())
             .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
             .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())
+            .ForMember(dest => dest.TagKeys, opt => opt.Ignore())
             .ForMember(dest => dest.InvitationSent, opt => opt.Ignore())
             .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberListItemPhotoUrlResolver>());
 

@@ -49,6 +49,11 @@
 
                     </div>
 
+                    <app-member-tags-editor class="member-tags-row"
+                        [memberKey]="member.memberKey"
+                        [tagKeys]="member.tagKeys ?? []"
+                        (changed)="onTagsChanged($event)" />
+
                     @if (showsField('middleName')) {
                     <p class="member-middle-name mt-1 text-sm">
                         {{ member.middleName || 'По батькові не вказано' }}

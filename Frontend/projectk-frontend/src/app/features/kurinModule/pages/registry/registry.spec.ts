@@ -139,7 +139,7 @@ describe('RegistryComponent', () => {
   it('should not offer the закріплення column in the chooser', () => {
     load([]);
 
-    expect(component.allColumns.map(column => column.id)).not.toContain('mentoredGroups');
+    expect(component.allColumns().map(column => column.id)).not.toContain('mentoredGroups');
   });
 
   it('should count only юнаки, one row per ступінь', () => {
