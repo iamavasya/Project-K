@@ -223,8 +223,7 @@ export class TransfersComponent implements OnInit {
   confirmDecline(request: MembershipRequestDto): void {
     this.confirmation.confirm({
       header: 'Відхилити запит?',
-      message: `${kurinLabel(request.toKurin.number)} дізнається, що ви відхилили запит щодо ${request.memberName}. `
-        + 'Людина лишається у вашому курені.',
+      message: `${kurinLabel(request.toKurin.number)} дізнається, що ви відхилили запит. ${request.memberName} лишається у вашому курені.`,
       icon: 'pi pi-times-circle',
       acceptButtonProps: { label: 'Відхилити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
@@ -235,7 +234,7 @@ export class TransfersComponent implements OnInit {
   confirmCancel(request: MembershipRequestDto): void {
     this.confirmation.confirm({
       header: 'Скасувати запит?',
-      message: `Запит щодо ${request.memberName} до ${kurinLabel(request.fromKurin.number)} більше не чекатиме відповіді.`,
+      message: `Запит до ${kurinLabel(request.fromKurin.number)} (${request.memberName}) більше не чекатиме відповіді.`,
       icon: 'pi pi-times-circle',
       acceptButtonProps: { label: 'Скасувати запит', severity: 'danger' },
       rejectButtonProps: { label: 'Лишити', severity: 'secondary', outlined: true },

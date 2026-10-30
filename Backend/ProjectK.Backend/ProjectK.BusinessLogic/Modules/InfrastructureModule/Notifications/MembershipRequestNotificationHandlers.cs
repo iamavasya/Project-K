@@ -51,8 +51,8 @@ public sealed class MembershipRequestedEventHandler : INotificationHandler<Domai
         var raised = notification.Event;
         var asking = await MembershipRequestNotices.KurinAsync(_unitOfWork, raised.ToKurinKey, cancellationToken);
         var body = raised.Kind == MembershipRequestKind.Transfer
-            ? $"{asking} просить перевести до себе {raised.MemberName}."
-            : $"{asking} просить прийняти {raised.MemberName} ще й до себе.";
+            ? $"{asking} просить перевести до себе: {raised.MemberName}."
+            : $"{asking} просить прийняти ще й до себе: {raised.MemberName}.";
 
         await _notifications.NotifyManyAsync(
             (await MembershipRequestNotices.ZvyazkoviAsync(_unitOfWork, raised.FromKurinKey, cancellationToken))
@@ -103,7 +103,7 @@ public sealed class MembershipRequestDecidedEventHandler : INotificationHandler<
                 Title = raised.Approved ? "Запит підтверджено" : "Запит відхилено",
                 Body = raised.Approved
                     ? $"{from} підтвердив: {raised.MemberName} тепер у вашому курені."
-                    : $"{from} відхилив запит щодо {raised.MemberName}.",
+                    : $"{from} відхилив запит: {raised.MemberName} лишається там.",
                 EntityType = "MembershipRequest",
                 EntityKey = raised.MembershipRequestKey,
                 Route = MembershipRequestNotices.Route,
