@@ -6,6 +6,8 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Tags;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
@@ -26,6 +28,9 @@ public sealed class KurinReportDataServiceTests
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IKurinReportMedia> _media = new();
     private readonly Mock<IMemberProgressDirectory> _progress = new();
+    private readonly Mock<IUnitOfWork> _uow = new();
+    private readonly Mock<IKurinTagRepository> _tags = new();
+    private readonly Mock<IKurinTagVisibility> _tagVisibility = new();
     private readonly KurinReportDataService _service;
 
     private readonly Guid _kurinKey = Guid.NewGuid();
@@ -53,6 +58,9 @@ public sealed class KurinReportDataServiceTests
             .Setup(p => p.GetDetailsForMembersAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<Guid, MemberProgressDetail>());
 
+        _uow.Setup(u => u.KurinTags).Returns(_tags.Object);
+        TagsOn(false);
+
         _service = new KurinReportDataService(
             _source.Object,
             _currentUser.Object,
@@ -61,8 +69,15 @@ public sealed class KurinReportDataServiceTests
             Mock.Of<IProbesCatalogService>(),
             Mock.Of<IBadgesCatalogService>(),
             new ConfigurationBuilder().Build(),
-            _progress.Object);
+            _progress.Object,
+            _uow.Object,
+            _tagVisibility.Object);
     }
+
+    private void TagsOn(bool enabled)
+        => _tagVisibility
+            .Setup(v => v.SettingsAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new KurinTagSettingsState(enabled, EnabledByDefault: false, OwnTagsVisible: true));
 
     private Member Person(string lastName, Guid? groupKey = null, PlastLevel? level = null, bool withAccount = false)
     {
@@ -146,6 +161,44 @@ public sealed class KurinReportDataServiceTests
                 _memberships.ToDictionary(membership => membership.MemberKey)));
 
         return _service.BuildAsync(_kurinKey, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// The report is read only by whoever holds the whole kurin, so it names every tag a person
+    /// carries — by name, in order — and says it has tags at all only when the kurin uses them.
+    /// </summary>
+    [Fact]
+    public async Task ShouldNameEveryTag_WhenTheKurinUsesTags()
+    {
+        var tagged = Person("Юнак", _alphaKey);
+        Person("Без тегів", _alphaKey);
+        var camp = new KurinTag { KurinKey = _kurinKey, Name = "Табір" };
+        var novice = new KurinTag { KurinKey = _kurinKey, Name = "Новики" };
+        TagsOn(true);
+        _tags.Setup(t => t.GetForKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([camp, novice]);
+        _tags.Setup(t => t.GetAssignmentsAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new MemberTag { KurinTagKey = camp.KurinTagKey, MemberKey = tagged.MemberKey },
+            new MemberTag { KurinTagKey = novice.KurinTagKey, MemberKey = tagged.MemberKey }
+        ]);
+
+        var report = await Build();
+
+        report!.ShowsTags.Should().BeTrue();
+        report.Youth.Single(member => member.FullName == "Тест Юнак").Tags.Should().Equal("Новики", "Табір");
+        report.Youth.Single(member => member.FullName == "Тест Без тегів").Tags.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ShouldLeaveTagsOut_WhenTheKurinHasThemOff()
+    {
+        Person("Юнак", _alphaKey);
+
+        var report = await Build();
+
+        report!.ShowsTags.Should().BeFalse();
+        report.Members.Should().OnlyContain(member => member.Tags.Count == 0);
+        _tags.Verify(t => t.GetAssignmentsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>

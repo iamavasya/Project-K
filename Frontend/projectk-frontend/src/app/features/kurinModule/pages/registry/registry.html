@@ -42,6 +42,30 @@
       [maxSelectedLabels]="0"
       styleClass="registry__columns" />
 
+    @if (tagService.enabled() && tagService.current().tags.length) {
+      <label for="registry-tag-filter" class="registry__label-hidden">Фільтр за тегами</label>
+      <p-multiselect
+        inputId="registry-tag-filter"
+        [options]="tagService.current().tags"
+        [ngModel]="tagFilter()"
+        (ngModelChange)="tagFilter.set($event ?? [])"
+        optionLabel="name"
+        optionValue="kurinTagKey"
+        [showToggleAll]="false"
+        [showClear]="true"
+        placeholder="Теги"
+        selectedItemsLabel="Тегів: {0}"
+        [maxSelectedLabels]="1"
+        appendTo="body"
+        styleClass="registry__tags">
+        <ng-template let-tag #item>
+          <span class="registry__tag-option">
+            <span class="registry__tag-dot" [style.background]="tag.colorHex" aria-hidden="true"></span>{{ tag.name }}
+          </span>
+        </ng-template>
+      </p-multiselect>
+    }
+
     <p-button
       label="За замовчуванням"
       icon="pi pi-replay"
@@ -105,7 +129,11 @@
           Прізвище та ім'я <p-sortIcon field="lastName" />
         </th>
         @for (column of visibleColumns(); track column.id) {
-          <th scope="col">{{ column.header }}</th>
+          @if (column.kind === 'tags') {
+            <th scope="col" pSortableColumn="tagSort">{{ column.header }} <p-sortIcon field="tagSort" /></th>
+          } @else {
+            <th scope="col">{{ column.header }}</th>
+          }
         }
       </tr>
     </ng-template>
@@ -183,7 +211,11 @@
           Прізвище та ім'я <p-sortIcon field="lastName" />
         </th>
         @for (column of staffColumns(); track column.id) {
-          <th scope="col">{{ column.header }}</th>
+          @if (column.kind === 'tags') {
+            <th scope="col" pSortableColumn="tagSort">{{ column.header }} <p-sortIcon field="tagSort" /></th>
+          } @else {
+            <th scope="col">{{ column.header }}</th>
+          }
         }
       </tr>
     </ng-template>

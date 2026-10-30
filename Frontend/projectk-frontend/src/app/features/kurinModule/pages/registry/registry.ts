@@ -30,6 +30,11 @@ import { KurinTagService } from '../../services/kurin-tag-service/kurin-tag.serv
 import { KurinTagChipsComponent } from '../../components/kurin-tag-chips/kurin-tag-chips';
 import { KurinTagManagerComponent, TagCandidate } from '../../components/kurin-tag-manager/kurin-tag-manager';
 
+/** Рядок таблиці реєстру: людина й назви її тегів, за якими таблиця сортує колонку «Теги». */
+export interface RegistryRow extends MemberDto {
+  readonly tagSort: string;
+}
+
 /** Рядок таблиці чисельності: скільки юнаків стоїть на цьому ступені. */
 export interface TallyRow {
   readonly label: string;
@@ -150,24 +155,35 @@ export class RegistryComponent implements OnInit {
    * Пошук живе тут, а не у фільтрі таблиці: таблиць дві, а поле одне, і людина шукає по складу —
    * не знаючи наперед, у якій із двох таблиць той, кого вона шукає.
    */
-  private readonly found = computed(() => {
+  private readonly found = computed<RegistryRow[]>(() => {
     const needle = this.search().trim().toLowerCase();
-    if (!needle) {
-      return this.members();
-    }
+    const wanted = new Set(this.tagFilter());
+    const withTags = (member: MemberDto): RegistryRow => ({
+      ...member,
+      tagSort: this.tagService.resolve(member.tagKeys).map(tag => tag.name).join(', ')
+    });
 
-    return this.members().filter(member =>
-      [
-        member.lastName,
-        member.firstName,
-        member.middleName,
-        member.email,
-        member.phoneNumber,
-        member.groupName,
-        ...(member.mentoredGroupNames ?? []),
-        ...this.tagService.resolve(member.tagKeys).map(tag => tag.name)
-      ].some(field => field?.toLowerCase().includes(needle)));
+    return this.members()
+      .filter(member => !wanted.size || (member.tagKeys ?? []).some(key => wanted.has(key)))
+      .filter(member => !needle || this.matches(member, needle))
+      .map(withTags);
   });
+
+  /** Обрані в фільтрі теги; людина лишається в реєстрі, якщо має бодай один із них. */
+  readonly tagFilter = signal<string[]>([]);
+
+  private matches(member: MemberDto, needle: string): boolean {
+    return [
+      member.lastName,
+      member.firstName,
+      member.middleName,
+      member.email,
+      member.phoneNumber,
+      member.groupName,
+      ...(member.mentoredGroupNames ?? []),
+      ...this.tagService.resolve(member.tagKeys).map(tag => tag.name)
+    ].some(field => field?.toLowerCase().includes(needle));
+  }
 
   /** Панель «Теги куреня» — для того, кому курінь дав право ними керувати. */
   readonly tagsOpen = signal(false);
@@ -352,9 +368,7 @@ export class RegistryComponent implements OnInit {
     }
 
     this.exporting.set(true);
-    // Теги у вивантаженні — TAG-02; поки що сервер їх не знає.
-    const columns = this.selectedColumnIds().filter(id => id !== 'tags');
-    this.kurinService.exportRegistry(this.kurinKey, columns).subscribe({
+    this.kurinService.exportRegistry(this.kurinKey, this.selectedColumnIds()).subscribe({
       next: response => {
         if (response.body) {
           this.saveBlob(response.body, this.fileNameFrom(response));
