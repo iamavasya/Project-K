@@ -15,6 +15,7 @@ public interface IUnitOfWork
 {
     IKraiRepository Krais { get; }
     IKurinRepository Kurins { get; }
+    IKurinBranchRequestRepository KurinBranchRequests { get; }
     IGroupRepository Groups { get; }
     IMembershipRepository Memberships { get; }
     // Members, MemberAwards and MemberWarnings are deliberately absent: it lives on IMemberUnitOfWork so that reaching a person

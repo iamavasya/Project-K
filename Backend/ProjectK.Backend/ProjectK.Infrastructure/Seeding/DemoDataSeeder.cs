@@ -252,7 +252,7 @@ public class DemoDataSeeder : IDemoDataSeeder
         kurin.NamedAfter = "Івана Богуна";
         kurin.Stanytsia = "Люксембург";
         kurin.RegionOrCountry = "Люксембург";
-        kurin.Branch = KurinBranch.UPYu;
+        kurin.SetBranches([new KurinNumbering(KurinBranch.UPYu, KurinNumber)]);
         kurin.ProfileVerificationEnabled = true;
         kurin.Description =
             "Курінь УПЮ при станиці Люксембург. Три гуртки, сходини щосуботи в домівці в Бонневуа, "

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Models;
 
@@ -18,6 +19,9 @@ public class KurinResponse
 
     /// <summary>Яка гілка. Read by the UI, which shows юнацькі речі only where they mean something.</summary>
     public KurinBranch Branch { get; set; }
+
+    /// <summary>Every гілка with the kurin's number there, main one first: «5-й курінь УСП · 20-й курінь УПС».</summary>
+    public IReadOnlyList<KurinNumbering> Branches { get; set; } = [];
     public string KraiCode { get; set; } = string.Empty;
     public string? Stanytsia { get; set; }
     public string? RegionOrCountry { get; set; }

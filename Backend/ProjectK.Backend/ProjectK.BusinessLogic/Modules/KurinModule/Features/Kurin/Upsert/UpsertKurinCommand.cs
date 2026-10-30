@@ -116,7 +116,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
             // Update existing Kurin
             var before = Snapshot(existing);
             _mapper.Map(request, existing);
-            existing.Number = request.Number;
+            existing.SetNumber(request.Number);
             existing.Stanytsia = stanytsia;
             existing.RegionOrCountry = regionOrCountry;
             existing.NamedAfter = namedAfter;
@@ -182,7 +182,18 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
     private async Task<ServiceResult<KurinResponse>?> NumberRefusalAsync(Common.Entities.KurinModule.Kurin? existing, int? requestedNumber, string kraiCode, CancellationToken cancellationToken)
     {
         var numberChanges = existing is null || existing.Number != requestedNumber;
-        if (!numberChanges || requestedNumber is not int number)
+        if (!numberChanges)
+        {
+            return null;
+        }
+
+        // A senior kurin's numbers are the administrators' to hand out: it asks through a request.
+        if (existing is not null && KurinBranchSet.IsSenior(existing.Branch))
+        {
+            return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, "SeniorNumberByRequest", "A senior kurin changes its numbers by request to an administrator.");
+        }
+
+        if (requestedNumber is not int number)
         {
             return null;
         }
@@ -195,7 +206,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
                 $"Kurin number must be between {KurinNumberOptions.MinNumber} and {_numbers.MaxNumber}.");
         }
 
-        var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(kraiCode, number, cancellationToken);
+        var existingByNumber = await _unitOfWork.Kurins.GetByNumberAsync(kraiCode, number, cancellationToken, existing?.Branch ?? KurinBranch.UPYu);
         if (existingByNumber is not null)
         {
             return existing is null

@@ -27,6 +27,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<Krai> Krais { get; set; }
     public DbSet<KraiProfileRevision> KraiProfileRevisions { get; set; }
     public DbSet<Kurin> Kurins { get; set; }
+    public DbSet<KurinBranchRequest> KurinBranchRequests { get; set; }
     public DbSet<Group> Groups { get; set; }
     public DbSet<Member> Members { get; set; }
     public DbSet<Membership> Memberships { get; set; }
@@ -146,8 +147,16 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .WithMany()
                   .HasForeignKey(e => e.KraiCode)
                   .OnDelete(DeleteBehavior.Restrict);
-            // A number is the kurin's within its край: two краї can each have a kurin 12.
-            entity.HasIndex(e => new { e.KraiCode, e.Number }).IsUnique();
+            // A number is the kurin's within its край and гілка: two краї can each have a kurin 12,
+            // and a УПЮ kurin 5 stands beside a УСП kurin 5. This guards the main гілка; a second
+            // гілка's number is checked by the handlers that set it (IKurinRepository.IsNumberTakenAsync).
+            entity.HasIndex(e => new { e.KraiCode, e.Branch, e.Number }).IsUnique();
+            entity.HasMany(e => e.Branches)
+                  .WithOne()
+                  .HasForeignKey(b => b.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.Navigation(e => e.Branches).AutoInclude();
+            entity.Ignore(e => e.Numbering);
             entity.Property(e => e.Stanytsia)
                 .HasMaxLength(120);
             entity.Property(e => e.RegionOrCountry)
@@ -156,6 +165,26 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .HasMaxLength(200);
             entity.Property(e => e.Description)
                 .HasMaxLength(4000);
+        });
+
+        builder.Entity<KurinBranchNumber>(entity =>
+        {
+            entity.ToTable("KurinBranches");
+            entity.HasKey(e => new { e.KurinKey, e.Branch });
+            entity.Property(e => e.Branch).HasConversion<int>();
+        });
+
+        builder.Entity<KurinBranchRequest>(entity =>
+        {
+            entity.HasKey(e => e.KurinBranchRequestKey);
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.Note).HasMaxLength(1000);
+            entity.Ignore(e => e.WantedBranches);
+            entity.HasIndex(e => new { e.KurinKey, e.Status });
+            entity.HasOne<Kurin>()
+                  .WithMany()
+                  .HasForeignKey(e => e.KurinKey)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<Group>(entity =>
@@ -715,6 +744,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         builder.Entity<WaitlistEntry>(entity =>
         {
             entity.HasKey(e => e.WaitlistEntryKey);
+            entity.Ignore(e => e.ClaimedSeniorBranches);
             entity.Property(e => e.Stanytsia)
                 .HasMaxLength(120);
             entity.Property(e => e.RegionOrCountry)
