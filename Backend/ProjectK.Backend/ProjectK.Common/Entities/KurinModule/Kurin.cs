@@ -121,6 +121,9 @@ public class Kurin : Entity
     /// </summary>
     public string? RoleNames { get; set; }
 
+    /// <summary>A senior kurin's emblem, shown instead of the УПЮ number plate; null shows a plain placeholder.</summary>
+    public string? EmblemBlobName { get; set; }
+
     /// <summary>Точкування as the kurin has it now: on in УПЮ and off in the older гілки unless the kurin chose.</summary>
     public bool IsScoreEnabled => ScoreEnabled ?? !KurinBranchSet.IsSenior(Branch);
 

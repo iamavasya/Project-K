@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { TagModule } from '@openng/optimus-ui/tag';
-import { KurinNumberComponent } from '../../../kurinModule/components/kurin-number/kurin-number';
+import { KurinMarkComponent } from '../../../kurinModule/components/kurin-mark/kurin-mark';
 import { MEMBERSHIP_KIND_LABELS } from '../../../kurinModule/models/enums/membership-kind.enum';
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MyGroupDto } from '../../models/me.dto';
@@ -19,7 +19,7 @@ export interface KurinRow {
  */
 @Component({
   selector: 'app-my-kurins-tile',
-  imports: [SkeletonModule, TagModule, KurinNumberComponent],
+  imports: [SkeletonModule, TagModule, KurinMarkComponent],
   templateUrl: './my-kurins-tile.html',
   styleUrl: './my-kurins-tile.css',
   changeDetection: ChangeDetectionStrategy.OnPush

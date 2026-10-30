@@ -17,6 +17,10 @@ public sealed record BlobUploadContext(
     public static BlobUploadContext GroupSilhouette { get; } =
         new(BlobUploadFolders.GroupSilhouettes, BlobUploadProcessingMode.EncodeAsPng, "image/png");
 
+    /// <summary>A senior kurin's emblem: kept as PNG like a silhouette, so its transparency survives.</summary>
+    public static BlobUploadContext KurinEmblem { get; } =
+        new(BlobUploadFolders.KurinEmblems, BlobUploadProcessingMode.EncodeAsPng, "image/png");
+
     /// <summary>
     /// A screenshot attached to a problem report. Re-encoded like everything else, so nothing but
     /// a decoded image is stored; never resized, a screenshot is read for detail.
@@ -29,6 +33,7 @@ public static class BlobUploadFolders
 {
     public const string MemberPhotos = "member-photos";
     public const string GroupSilhouettes = "group-silhouettes";
+    public const string KurinEmblems = "kurin-emblems";
 
     /// <summary>
     /// Not a scenario folder on purpose: nothing in the database references these blobs, and the
@@ -39,6 +44,7 @@ public static class BlobUploadFolders
     public static IReadOnlyCollection<string> ScenarioFolders { get; } =
     [
         MemberPhotos,
-        GroupSilhouettes
+        GroupSilhouettes,
+        KurinEmblems
     ];
 }

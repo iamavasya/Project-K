@@ -15,6 +15,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.ProbeEdition;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Import;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.AccessPolicy;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Emblem;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.ExportReportPdf;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.SetKrai;
@@ -414,6 +415,53 @@ public class KurinController : ControllerBase
     public async Task<IActionResult> RejectBranchRequest(Guid requestKey, CancellationToken cancellationToken)
     {
         var response = await _mediator.Send(new ReviewKurinBranchRequestCommand(requestKey, Approve: false), cancellationToken);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Stores a senior kurin's emblem, shown instead of the УПЮ number plate. Same types and size
+    /// as a гурток's silhouette; a УПЮ kurin is refused.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpPost("{kurinKey:guid}/emblem")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [RequestSizeLimit(ImageUploadRules.MaxRequestBytes)]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UploadEmblem(Guid kurinKey, [FromForm] UploadImageRequest form, CancellationToken cancellationToken)
+    {
+        var file = form.File;
+        if (file == null || file.Length == 0)
+        {
+            return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
+        }
+
+        if (ImageUploadRules.Refusal(file) is { } refusal)
+        {
+            return this.Failure(ResultType.BadRequest, refusal.Code, refusal.Message);
+        }
+
+        var bytes = await file.ToByteArrayAsync(cancellationToken);
+        if (bytes == null || bytes.Length == 0)
+        {
+            return this.Failure(ResultType.BadRequest, "MissingImage", "Image file is required.");
+        }
+
+        var response = await _mediator.Send(new UploadKurinEmblemCommand(kurinKey, bytes, file.FileName), cancellationToken);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Takes a senior kurin's emblem off.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpDelete("{kurinKey:guid}/emblem")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(KurinResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteEmblem(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(new DeleteKurinEmblemCommand(kurinKey), cancellationToken);
         return response.ToActionResult(this);
     }
 

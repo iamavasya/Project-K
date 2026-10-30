@@ -173,6 +173,19 @@ export class KurinService {
     );
   }
 
+  /** A senior kurin's emblem; the server keeps it as PNG and refuses it for УПЮ. */
+  uploadEmblem(kurinKey: string, file: File | Blob): Observable<KurinDto> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<KurinDto>(`${this.apiUrl}/${kurinKey}/emblem`, formData, { context: requestFeedback('silent') })
+      .pipe(tap(() => this.cache.invalidateByPrefix(KURIN_CACHE_PREFIX)));
+  }
+
+  deleteEmblem(kurinKey: string): Observable<KurinDto> {
+    return this.http.delete<KurinDto>(`${this.apiUrl}/${kurinKey}/emblem`)
+      .pipe(tap(() => this.cache.invalidateByPrefix(KURIN_CACHE_PREFIX)));
+  }
+
   updateKurin(kurin: KurinDto): Observable<KurinDto> {
     return this.http.put<KurinDto>(
       `${this.apiUrl}/${kurin.kurinKey}`,

@@ -24,6 +24,8 @@ export interface KurinDto {
   scoreEnabled?: boolean;
   /** The kurin's own role names: «Pysar» → «Скриптор» (web kurin.dto). */
   roleNames?: Record<string, string>;
+  /** A senior kurin's emblem, shown instead of the УПЮ plate (web kurin.dto). */
+  emblemUrl?: string | null;
 }
 
 export interface GroupDto {

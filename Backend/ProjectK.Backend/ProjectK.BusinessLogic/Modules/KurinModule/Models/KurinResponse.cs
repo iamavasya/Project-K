@@ -36,6 +36,9 @@ public class KurinResponse
     /// <summary>The kurin's own names for its roles, by role: «Pysar» → «Скриптор». Empty keeps the usual names.</summary>
     public IReadOnlyDictionary<string, string> RoleNames { get; set; } = new Dictionary<string, string>();
 
+    /// <summary>A senior kurin's emblem, as a link that expires; null when it has none or is УПЮ.</summary>
+    public string? EmblemUrl { get; set; }
+
     /// <summary>Whether the kurin may rename its roles at all: senior kurins for now.</summary>
     public bool CanRenameRoles { get; set; }
 }

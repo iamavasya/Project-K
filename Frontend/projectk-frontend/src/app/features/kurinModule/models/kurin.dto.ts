@@ -22,4 +22,6 @@ export interface KurinDto {
   roleNames?: Record<string, string>;
   /** Чи може курінь перейменовувати ролі: поки що старші курені. */
   canRenameRoles?: boolean;
+  /** Емблема старшого куреня — замість червоної таблички УПЮ; null, поки не завантажили. */
+  emblemUrl?: string | null;
 }

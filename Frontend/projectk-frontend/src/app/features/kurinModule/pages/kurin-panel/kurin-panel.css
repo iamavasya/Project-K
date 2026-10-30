@@ -10,6 +10,10 @@
     align-items: flex-start;
 }
 
+.kurin-emblem-input {
+    display: none;
+}
+
 .kurin-identity {
     min-width: 0;
 }
@@ -180,8 +184,8 @@
         justify-content: flex-start;
     }
 
-    .kurin-number-slot app-kurin-number {
-        --kurin-number-size: 6.5rem;
+    .kurin-number-slot app-kurin-mark {
+        --kurin-mark-size: 6.5rem;
     }
 
     /* Поруч стоїть число куреня 6.5rem; повний h1 із ним у рядок не вміщається. */

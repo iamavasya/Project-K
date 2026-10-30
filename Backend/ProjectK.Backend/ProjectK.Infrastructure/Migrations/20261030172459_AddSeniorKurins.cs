@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProjectK.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddKurinBranches : Migration
+    public partial class AddSeniorKurins : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -25,6 +25,26 @@ namespace ProjectK.Infrastructure.Migrations
                 name: "ClaimedUspNumber",
                 table: "WaitlistEntries",
                 type: "int",
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "EmblemBlobName",
+                table: "Kurins",
+                type: "nvarchar(512)",
+                maxLength: 512,
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "RoleNames",
+                table: "Kurins",
+                type: "nvarchar(2000)",
+                maxLength: 2000,
+                nullable: true);
+
+            migrationBuilder.AddColumn<bool>(
+                name: "ScoreEnabled",
+                table: "Kurins",
+                type: "bit",
                 nullable: true);
 
             migrationBuilder.CreateTable(
@@ -116,6 +136,18 @@ namespace ProjectK.Infrastructure.Migrations
             migrationBuilder.DropColumn(
                 name: "ClaimedUspNumber",
                 table: "WaitlistEntries");
+
+            migrationBuilder.DropColumn(
+                name: "EmblemBlobName",
+                table: "Kurins");
+
+            migrationBuilder.DropColumn(
+                name: "RoleNames",
+                table: "Kurins");
+
+            migrationBuilder.DropColumn(
+                name: "ScoreEnabled",
+                table: "Kurins");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Kurins_KraiCode_Number",

@@ -12,8 +12,8 @@ using ProjectK.Infrastructure.DbContexts;
 namespace ProjectK.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261030143006_AddKurinBranches")]
-    partial class AddKurinBranches
+    [Migration("20261030172459_AddSeniorKurins")]
+    partial class AddSeniorKurins
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1923,6 +1923,10 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
+                    b.Property<string>("EmblemBlobName")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
                     b.Property<string>("HiddenCardFields")
                         .HasColumnType("nvarchar(max)");
 
@@ -1946,6 +1950,13 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<string>("RegionOrCountry")
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("RoleNames")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool?>("ScoreEnabled")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Stanytsia")
                         .HasMaxLength(120)

@@ -229,6 +229,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, CancellationToken>>(nameof(KurinController.GetPendingBranchRequests), "RequireAdmin");
         yield return Row<Action<KurinController, Guid, CancellationToken>>(nameof(KurinController.ApproveBranchRequest), "RequireAdmin");
         yield return Row<Action<KurinController, Guid, CancellationToken>>(nameof(KurinController.RejectBranchRequest), "RequireAdmin");
+        yield return Row<Action<KurinController, Guid, UploadImageRequest, CancellationToken>>(nameof(KurinController.UploadEmblem), "RequireUser");
+        yield return Row<Action<KurinController, Guid, CancellationToken>>(nameof(KurinController.DeleteEmblem), "RequireUser");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetCardFields), "RequireUser");
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinCardFieldsRequest>>(nameof(KurinController.SetCardFields), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.GetProbeEditions), "RequireUser");

@@ -2,7 +2,9 @@
 <section class="kurin-tile kurin-header">
     <div class="kurin-header-main">
         <div class="kurin-number-slot">
-            <app-kurin-number [number]="kurinNumber" />
+            <app-kurin-mark [number]="kurinNumber" [branch]="kurinData?.branch" [emblemUrl]="kurinData?.emblemUrl" [name]="kurinData?.namedAfter" />
+            <input #emblemInput type="file" class="kurin-emblem-input" accept="image/png,image/jpeg,image/webp"
+                (change)="onEmblemPicked($event)" aria-label="Файл емблеми куреня" />
         </div>
 
         <div class="kurin-identity">

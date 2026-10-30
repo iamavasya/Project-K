@@ -1920,6 +1920,10 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
+                    b.Property<string>("EmblemBlobName")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
                     b.Property<string>("HiddenCardFields")
                         .HasColumnType("nvarchar(max)");
 
@@ -1943,6 +1947,10 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<string>("RegionOrCountry")
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("RoleNames")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<bool?>("ScoreEnabled")
                         .HasColumnType("bit");

@@ -30,7 +30,7 @@ import {
 } from '@ionic/angular';
 import { HeaderActions } from '../../nav/header-actions';
 import { addIcons } from 'ionicons';
-import { add, alertCircle, checkmarkCircle, people, personAdd, ribbon, settingsOutline, swapVertical, trophy } from 'ionicons/icons';
+import { add, alertCircle, checkmarkCircle, flagOutline, people, personAdd, ribbon, settingsOutline, swapVertical, trophy } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
 import { apiErrorText } from '../../core/api';
 import { canShareFile, saveFile, shareFile } from '../../core/file-share';
@@ -123,6 +123,21 @@ const DESCRIPTION_LIMIT = 360;
       display: flex;
       gap: 14px;
       align-items: center;
+    }
+    .emblem {
+      width: 48px;
+      height: 48px;
+      flex: none;
+      object-fit: contain;
+    }
+    .emblem--empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed var(--lk-line);
+      border-radius: 12px;
+      color: var(--ion-color-medium);
+      font-size: 20px;
     }
     .head .edit {
       margin: -6px -8px 0 auto;
@@ -235,7 +250,15 @@ const DESCRIPTION_LIMIT = 360;
                 @default {
                   @if (kurinValue(); as k) {
                     <div class="head">
-                      <app-kurin-plaque [number]="k.number" [size]="48" data-testid="kurin-plaque" />
+                      @if (isSenior(k)) {
+                        @if (k.emblemUrl) {
+                          <img class="emblem" [src]="k.emblemUrl" alt="Емблема куреня" width="48" height="48" data-testid="kurin-emblem" />
+                        } @else {
+                          <span class="emblem emblem--empty" role="img" aria-label="Емблему ще не завантажено"><ion-icon name="flag-outline" aria-hidden="true" /></span>
+                        }
+                      } @else {
+                        <app-kurin-plaque [number]="k.number" [size]="48" data-testid="kurin-plaque" />
+                      }
                       <div>
                         <h2>{{ heading(k) }}</h2>
                         @if (isSenior(k)) {
@@ -495,7 +518,7 @@ export class KurinPage implements OnInit, OnDestroy {
   });
 
   constructor() {
-    addIcons({ add, personAdd, trophy, ribbon, people, swapVertical, checkmarkCircle, alertCircle, settingsOutline });
+    addIcons({ add, personAdd, trophy, ribbon, people, swapVertical, checkmarkCircle, alertCircle, settingsOutline, flagOutline });
     afterRenderEffect(() => {
       this.section();
       this.glass.sync();

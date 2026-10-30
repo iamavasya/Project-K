@@ -1,3 +1,4 @@
+import { MessageService } from '@openng/optimus-ui/api';
 ﻿import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -85,6 +86,7 @@ describe('KurinPanelComponent', () => {
     await TestBed.configureTestingModule({
       imports: [KurinPanelComponent],
       providers: [
+        MessageService,
         { provide: ActivatedRoute, useValue: {} },
         { provide: GroupService, useValue: groupService },
         { provide: KurinService, useValue: kurinService },
