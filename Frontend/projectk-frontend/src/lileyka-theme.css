@@ -373,7 +373,18 @@ a.lil-sidebar-brand:hover {
   color: var(--p-navigation-item-icon-active-color);
 }
 
-/* Крапка «є що вирішити» (BRANDBOOK §сайдбар): 7px, терракота, без числа. */
+/* Крапка «є що вирішити» (BRANDBOOK §сайдбар): 7px, терракота, без числа. Заголовок пункту — блок
+   із посиланням на всю ширину, тож без flex крапка падає під посилання. */
+:root .p-panelmenu.lil-menu .lil-menu-item--attention .p-panelmenu-header-content {
+  align-items: center;
+  display: flex;
+}
+
+:root .p-panelmenu.lil-menu .lil-menu-item--attention .p-panelmenu-header-link {
+  flex: 1;
+  min-width: 0;
+}
+
 :root .p-panelmenu.lil-menu .lil-menu-item--attention .p-panelmenu-header-content::after {
   background: var(--lil-clay-500);
   border-radius: 50%;
