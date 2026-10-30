@@ -1,4 +1,4 @@
-import { ProbeProjectArea, ProbeProjectReach, ThirdProbeDto } from './kurin.models';
+import { ProbeProjectArea, ProbeProjectReach, ThirdProbeDto, ThirdProbeStagesRequest } from './kurin.models';
 
 /** The areas with the letters the programme gives them (web third-probe.function.ts). */
 export const PROJECT_AREAS: readonly { value: ProbeProjectArea; letter: string; label: string }[] = [
@@ -82,9 +82,9 @@ export function thirdProbeChecklist(tab: ThirdProbeDto): ChecklistItem[] {
   const required = tab.limits.requiredBadges;
   return [
     {
-      label: 'Конференція',
-      detail: confirmation(file?.conferenceConfirmedAtUtc, !!file?.conferenceOn, 'підтверджено', 'ще не відбулася'),
-      done: !!file?.conferenceConfirmedAtUtc,
+      label: 'Рефлексія',
+      detail: confirmation(file?.reflectionConfirmedAtUtc, !!file?.reflectionOn, 'підтверджено', 'ще не відбулася'),
+      done: !!file?.reflectionConfirmedAtUtc,
     },
     {
       label: 'Проєкти',
@@ -93,8 +93,8 @@ export function thirdProbeChecklist(tab: ThirdProbeDto): ChecklistItem[] {
     },
     {
       label: 'Табір',
-      detail: confirmation(file?.campConfirmedAtUtc, !!file?.campName, 'зараховано', 'ще не вказано'),
-      done: !!file?.campConfirmedAtUtc,
+      detail: file?.campName ? 'додано' : 'ще не вказано',
+      done: !!file?.campName,
     },
     {
       label: 'Вмілості',
@@ -108,3 +108,14 @@ export function thirdProbeChecklist(tab: ThirdProbeDto): ChecklistItem[] {
     },
   ];
 }
+
+/** The referent's stages, in the order a probe goes through them (web THIRD_PROBE_STAGES). */
+export const THIRD_PROBE_STAGES: readonly { key: keyof ThirdProbeStagesRequest; label: string; hint?: string; closing: boolean }[] = [
+  { key: 'motivationLetterOn', label: 'Мотиваційний лист', hint: 'план здачі проби; пише 15-річний', closing: false },
+  { key: 'selfReflectionOn', label: 'Саморефлексія', closing: false },
+  { key: 'applicationSubmittedOn', label: 'Зголошення до краю', closing: false },
+  { key: 'openedOn', label: 'Пробу відкрито', closing: false },
+  { key: 'completedOn', label: 'Пробу завершено', closing: true },
+  { key: 'namedOn', label: 'Іменовано', closing: true },
+  { key: 'archivedOn', label: 'В архіві', closing: true },
+];

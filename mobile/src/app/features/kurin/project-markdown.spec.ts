@@ -28,3 +28,16 @@ describe('parseProjectMarkdown (phone)', () => {
     expect(hasContent(parseProjectMarkdown('**так**', resolve))).toBe(true);
   });
 });
+
+describe('a phone-written text', () => {
+  it('comes back from the editor as the same Markdown the web writes', async () => {
+    const { quillDeltaToMarkdown } = await import('./delta-markdown');
+    const { markdownBlocksToDelta } = await import('./project-markdown');
+    const toKey = (src: string) => (src === URL ? `project-image:${KEY}` : null);
+    const markdown = `## План\n**Мета**: _зійти_ на Говерлу\n\n1. Зібрати\n  - Намет\n> Не забути воду\n![зображення](project-image:${KEY})`;
+
+    const delta = markdownBlocksToDelta(parseProjectMarkdown(markdown, resolve));
+
+    expect(quillDeltaToMarkdown(delta, { imageAlt: 'зображення', imageTarget: toKey })).toBe(markdown);
+  });
+});

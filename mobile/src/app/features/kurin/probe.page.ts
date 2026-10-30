@@ -162,7 +162,7 @@ const CONFLICT = {
           </ion-card>
         }
 
-        @if (thirdProbe(); as tab) { <app-third-probe [data]="tab" [dateOfBirth]="member()?.dateOfBirth" /> }
+        @if (thirdProbe(); as tab) { <app-third-probe [memberKey]="memberKey" [probeId]="probeId" [data]="tab" [dateOfBirth]="member()?.dateOfBirth" [readOnly]="archive()" (changed)="thirdProbe.set($event)" /> }
 
         <ion-accordion-group expand="inset" [multiple]="true" [value]="openSections()" (ionChange)="openSections.set($any($event).detail.value ?? [])">
           @for (section of sections(); track section.sectionId) {
@@ -218,8 +218,8 @@ export class ProbePage implements OnInit {
   private readonly toasts = inject(Toasts);
   private readonly route = inject(ActivatedRoute);
 
-  private readonly memberKey = this.route.snapshot.paramMap.get('memberKey') ?? '';
-  private readonly probeId = this.route.snapshot.queryParamMap.get('id') ?? '';
+  protected readonly memberKey = this.route.snapshot.paramMap.get('memberKey') ?? '';
+  protected readonly probeId = this.route.snapshot.queryParamMap.get('id') ?? '';
 
   protected readonly failedText = FAILED_TEXT;
   protected readonly loading = signal(true);

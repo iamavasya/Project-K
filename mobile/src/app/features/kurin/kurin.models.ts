@@ -332,7 +332,8 @@ export interface ProbeProjectDto {
   eventLeads: string | null;
   coordinatorName: string | null;
   coordinatorContact: string | null;
-  /** Markdown, like plan and results; pictures are written as `project-image:{imageKey}`. */
+  /** Markdown, like goal, plan and results; pictures are written as `project-image:{imageKey}`. */
+  description: string;
   goal: string;
   plan: string;
   results: string;
@@ -346,23 +347,74 @@ export interface ProbeProjectDto {
   images: ProbeProjectImageDto[];
 }
 
+/** The stages the referent of the third probe tracks, each the day it happened. */
+export interface ThirdProbeStagesDto {
+  motivationLetterOn: string | null;
+  selfReflectionOn: string | null;
+  applicationSubmittedOn: string | null;
+  openedOn: string | null;
+  completedOn: string | null;
+  namedOn: string | null;
+  archivedOn: string | null;
+  updatedAtUtc: string | null;
+  updatedByName: string | null;
+}
+
+export type ThirdProbeStagesRequest = Omit<ThirdProbeStagesDto, 'updatedAtUtc' | 'updatedByName'>;
+
 export interface ThirdProbeFileDto {
   openedOn: string | null;
   openedOnIsDerived: boolean;
-  mentors: string | null;
-  conferenceOn: string | null;
-  conferenceWith: string | null;
-  conferenceConfirmedAtUtc: string | null;
-  conferenceConfirmedByName: string | null;
+  mentorZvyazkovyi: string | null;
+  mentorVporiadnyk: string | null;
+  mentorReferent: string | null;
+  reflectionOn: string | null;
+  reflectionWith: string | null;
+  reflectionConfirmedAtUtc: string | null;
+  reflectionConfirmedByName: string | null;
   campKind: 'Kvt' | 'Alternative' | null;
   campName: string | null;
   campFrom: string | null;
   campTo: string | null;
   campCertificate: { url: string; contentType: string; fileName: string | null } | null;
-  campConfirmedAtUtc: string | null;
-  campConfirmedByName: string | null;
   physicalBadgeId: string | null;
   resume: string;
+  stages: ThirdProbeStagesDto;
+  storedBytes: number;
+}
+
+/** `PUT …/third-probe`: what the person writes; confirmations and stages go their own way. */
+export interface ThirdProbeFileRequest {
+  mentorZvyazkovyi: string | null;
+  mentorVporiadnyk: string | null;
+  mentorReferent: string | null;
+  reflectionOn: string | null;
+  reflectionWith: string | null;
+  campKind: 'Kvt' | 'Alternative' | null;
+  campName: string | null;
+  campFrom: string | null;
+  campTo: string | null;
+  physicalBadgeId: string | null;
+  resume: string;
+}
+
+/** `POST|PUT …/projects`: a project as the template lays it out. */
+export interface ProbeProjectRequest {
+  title: string;
+  area: ProbeProjectArea | null;
+  reach: ProbeProjectReach[];
+  isShared: boolean;
+  sharedWith: string | null;
+  startsOn: string | null;
+  endsOn: string | null;
+  location: string | null;
+  eventLeads: string | null;
+  coordinatorName: string | null;
+  coordinatorContact: string | null;
+  description: string;
+  goal: string;
+  plan: string;
+  results: string;
 }
 
 export interface ThirdProbeBadgeDto {
@@ -383,5 +435,16 @@ export interface ThirdProbeDto {
   file: ThirdProbeFileDto | null;
   projects: ProbeProjectDto[];
   badges: ThirdProbeBadgeDto[];
-  limits: { maxMainProjects: number; requiredBadges: number; youthEndsAtAge: number };
+  limits: {
+    maxMainProjects: number;
+    maxSpareProjects: number;
+    maxSharedMainProjects: number;
+    maxImagesPerProject: number;
+    maxImageBytes: number;
+    maxCertificateBytes: number;
+    maxStoredBytes: number;
+    maxTextLength: number;
+    requiredBadges: number;
+    youthEndsAtAge: number;
+  };
 }

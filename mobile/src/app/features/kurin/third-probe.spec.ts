@@ -10,7 +10,10 @@ function tab(overrides: Partial<ThirdProbeDto> = {}): ThirdProbeDto {
     file: null,
     projects: [],
     badges: [],
-    limits: { maxMainProjects: 5, requiredBadges: 4, youthEndsAtAge: 18 },
+    limits: {
+      maxMainProjects: 5, maxSpareProjects: 1, maxSharedMainProjects: 2, maxImagesPerProject: 5, maxImageBytes: 1048576,
+      maxCertificateBytes: 2097152, maxStoredBytes: 15728640, maxTextLength: 10000, requiredBadges: 4, youthEndsAtAge: 18,
+    },
     ...overrides,
   };
 }
@@ -38,5 +41,7 @@ describe('third probe on the phone', () => {
     expect(checklist.map((item) => item.done)).toEqual([false, false, false, false, false]);
     expect(checklist[1].detail).toBe('виконано 0 з 5 · ділянок 0 з 5');
     expect(checklist[3].detail).toBe('0 з 4 · без тіловиховання');
+    expect(checklist[0].label).toBe('Рефлексія');
+    expect(checklist[2].detail).toBe('ще не вказано');
   });
 });

@@ -1,3 +1,5 @@
+import { DeltaAttributes, DeltaOp } from './delta-markdown';
+
 /** A run of text inside a line, or a picture. */
 export interface MarkdownRun {
   text: string;
@@ -19,8 +21,8 @@ export type MarkdownBlock =
   | { kind: 'code'; text: string };
 
 /**
- * Reads the Markdown a third-probe project is stored in (web `project-markdown.function.ts`, which
- * also turns it back into the editor's delta; the phone only shows it). The template renders the
+ * Reads the Markdown a third-probe project is stored in, and turns it back into the editor's delta
+ * (web `project-markdown.function.ts`). The template renders the
  * blocks itself, so nothing a person wrote reaches `innerHTML`.
  */
 export function parseProjectMarkdown(markdown: string, resolveImage: (target: string) => string | null): MarkdownBlock[] {
@@ -51,6 +53,30 @@ export function parseProjectMarkdown(markdown: string, resolveImage: (target: st
   }
 
   return blocks;
+}
+
+/** The blocks as a Quill delta, so a saved description opens in the editor as it was written. */
+export function markdownBlocksToDelta(blocks: MarkdownBlock[]): DeltaOp[] {
+  const ops: DeltaOp[] = [];
+
+  for (const block of blocks) {
+    if (block.kind === 'code') {
+      for (const line of block.text.split('\n')) {
+        if (line) {
+          ops.push({ insert: line });
+        }
+        ops.push({ insert: '\n', attributes: { 'code-block': true } });
+      }
+      continue;
+    }
+
+    for (const run of block.runs) {
+      ops.push(runOp(run));
+    }
+    ops.push(lineEnd(block));
+  }
+
+  return ops;
 }
 
 /** Whether there is anything to show: blank lines alone are not a description. */
@@ -154,4 +180,31 @@ function listKind(numbered: string | undefined, box: string | undefined): 'order
     return 'bullet';
   }
   return box === ' [x]' ? 'checked' : 'unchecked';
+}
+
+function runOp(run: MarkdownRun): DeltaOp {
+  if (run.image) {
+    return { insert: { image: run.image } };
+  }
+
+  const attributes: DeltaAttributes = {};
+  if (run.bold) attributes.bold = true;
+  if (run.italic) attributes.italic = true;
+  if (run.strike) attributes.strike = true;
+  if (run.code) attributes.code = true;
+  if (run.link) attributes.link = run.link;
+  return Object.keys(attributes).length ? { insert: run.text, attributes } : { insert: run.text };
+}
+
+function lineEnd(block: Exclude<MarkdownBlock, { kind: 'code' }>): DeltaOp {
+  switch (block.kind) {
+    case 'heading':
+      return { insert: '\n', attributes: { header: block.level } };
+    case 'item':
+      return { insert: '\n', attributes: block.indent ? { list: block.list, indent: block.indent } : { list: block.list } };
+    case 'quote':
+      return { insert: '\n', attributes: { blockquote: true } };
+    default:
+      return { insert: '\n' };
+  }
 }

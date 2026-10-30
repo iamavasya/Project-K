@@ -184,9 +184,11 @@ export class MemberProgressService {
     coordinatorComment: string | null = null
   ): Observable<ThirdProbeDto> {
     const url = `${this.projectsUrl(memberKey, probeId)}/${projectKey}/${part}`;
-    return sign
-      ? this.http.put<ThirdProbeDto>(url, part === 'completion' ? { coordinatorComment } : {}, { context: requestFeedback('auto', [400]) })
-      : this.http.delete<ThirdProbeDto>(url);
+    if (!sign) {
+      return this.http.delete<ThirdProbeDto>(url);
+    }
+    const body = part === 'completion' ? { coordinatorComment } : {};
+    return this.http.put<ThirdProbeDto>(url, body, { context: requestFeedback('auto', [400]) });
   }
 
   uploadProbeProjectImage(memberKey: string, probeId: string, projectKey: string, file: File): Observable<ProbeProjectImageDto> {
