@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import {
   ActionSheetController,
+  AlertController,
   IonAvatar,
   IonBadge,
   IonIcon,
@@ -28,6 +29,7 @@ import {
   flag,
   grid,
   home,
+  idCard,
   informationCircle,
   key,
   notifications,
@@ -183,6 +185,12 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
               }
             </ion-item>
           }
+          @if (me.memberKey) {
+            <ion-item [button]="true" [detail]="false" (click)="showTransferCode()" data-testid="transfer-code">
+              <ion-icon class="lk-tile" slot="start" name="id-card" aria-hidden="true" style="--lk-tile: #8e8e93" />
+              <ion-label>Мій код для переходу</ion-label>
+            </ion-item>
+          }
           <ion-item [button]="true" [detail]="false" (click)="addAccount()" data-testid="add-account">
             <ion-icon class="lk-tile" slot="start" name="person-add" aria-hidden="true" style="--lk-tile: #8e8e93" />
             <ion-label>Додати акаунт</ion-label>
@@ -290,6 +298,7 @@ export class NavMenu implements OnInit {
   private readonly router = inject(Router);
   private readonly menus = inject(MenuController);
   private readonly sheets = inject(ActionSheetController);
+  private readonly alerts = inject(AlertController);
   private readonly appearance = inject(AppearanceService);
   private readonly toasts = inject(Toasts);
   protected readonly push = inject(PushService);
@@ -368,6 +377,7 @@ export class NavMenu implements OnInit {
       flag,
       grid,
       home,
+      idCard,
       informationCircle,
       key,
       notifications,
@@ -462,6 +472,47 @@ export class NavMenu implements OnInit {
         (accounts) => this.savedAccounts.set(accounts),
         () => undefined,
       );
+    }
+  }
+
+  /**
+   * «Мій код для переходу» (web transfer-code-dialog): the code the person hands to the Звʼязковий of
+   * the kurin that takes them in. Read when asked; the server sends it to its owner only.
+   */
+  protected async showTransferCode(): Promise<void> {
+    const memberKey = this.user()?.memberKey;
+    if (!memberKey) return;
+    let code: string | null = null;
+    try {
+      code = (await this.me.member(memberKey)).publicId ?? null;
+    } catch {
+      code = null;
+    }
+    if (!code) {
+      await this.toasts.show('Код не завантажився. Спробуй ще раз.', 'danger');
+      return;
+    }
+    const alert = await this.alerts.create({
+      header: 'Мій код для переходу',
+      subHeader: code,
+      message:
+        'Коли тебе приймає інший курінь, передай цей код його Звʼязковому. ' +
+        'Код бачиш лише ти — провід куреня його не бачить. Не публікуй його.',
+      cssClass: 'transfer-code-alert',
+      buttons: [
+        { text: 'Закрити', role: 'cancel' },
+        { text: 'Скопіювати', handler: () => void this.copyCode(code) },
+      ],
+    });
+    await alert.present();
+  }
+
+  private async copyCode(code: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(code);
+      await this.toasts.show('Код скопійовано.');
+    } catch {
+      await this.toasts.show(`Не вдалося скопіювати: ${code}`, 'danger');
     }
   }
 

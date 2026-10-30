@@ -97,7 +97,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         {
             if (entry.State == EntityState.Added && string.IsNullOrEmpty(entry.Entity.PublicId))
             {
-                entry.Entity.PublicId = MemberPublicId.For(entry.Entity.MemberKey);
+                entry.Entity.PublicId = MemberPublicId.New();
             }
         }
 
