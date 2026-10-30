@@ -25,6 +25,7 @@
     display: grid;
     gap: 0.5rem;
     min-width: 0;
+    justify-items: start;
 }
 
 .kurin-title {

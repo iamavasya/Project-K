@@ -9,9 +9,16 @@
             <div class="kurin-identity__top">
                 <div class="kurin-title-block">
                     <h1 class="kurin-title">
-                        <span>{{ kurinData ? (kurinNumber === null ? 'Підготовчий' : kurinNumber) : '-' }} курінь</span>
-                        @if (kurinData?.namedAfter) {
-                            <span class="kurin-title__patron">ім. {{ kurinData.namedAfter }}</span>
+                        @if (isSenior) {
+                            <span>{{ seniorTitle }}</span>
+                            @if (kurinData?.namedAfter) {
+                                <span class="kurin-title__patron">«{{ kurinData.namedAfter }}»</span>
+                            }
+                        } @else {
+                            <span>{{ kurinData ? (kurinNumber === null ? 'Підготовчий' : kurinNumber) : '-' }} курінь</span>
+                            @if (kurinData?.namedAfter) {
+                                <span class="kurin-title__patron">ім. {{ kurinData.namedAfter }}</span>
+                            }
                         }
                     </h1>
                     <p-tag [value]="branchLabel" severity="secondary" pTooltip="Пластова гілка куреня" tooltipPosition="bottom" />

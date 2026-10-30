@@ -2,11 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { KurinNumberComponent } from '../../../kurinModule/components/kurin-number/kurin-number';
-import { KURIN_BRANCH_LABELS } from '../../../kurinModule/models/enums/kurin-branch.enum';
 import { MEMBERSHIP_KIND_LABELS } from '../../../kurinModule/models/enums/membership-kind.enum';
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MyGroupDto } from '../../models/me.dto';
-import { compareKurinNumbers, kurinLabel } from '../../../../shared/functions/kurin-label.function';
+import { compareKurinNumbers, kurinBranchTags, kurinLabel, kurinWithName } from '../../../../shared/functions/kurin-label.function';
 
 export interface KurinRow {
   option: KurinScopeOption;
@@ -26,6 +25,7 @@ export interface KurinRow {
 })
 export class MyKurinsTileComponent {
   protected readonly numberLabel = kurinLabel;
+  protected readonly branchTags = kurinBranchTags;
   readonly kurins = input<KurinScopeOption[]>([]);
   readonly groups = input<MyGroupDto[]>([]);
   readonly currentKurinKey = input<string | null>(null);
@@ -36,7 +36,6 @@ export class MyKurinsTileComponent {
   readonly open = output<KurinScopeOption>();
   readonly openGroup = output<MyGroupDto>();
 
-  readonly branchLabels = KURIN_BRANCH_LABELS;
   readonly kindLabels = MEMBERSHIP_KIND_LABELS;
 
   readonly rows = computed<KurinRow[]>(() => {
@@ -54,7 +53,7 @@ export class MyKurinsTileComponent {
   );
 
   kurinLabel(option: KurinScopeOption): string {
-    return option.namedAfter ? `${kurinLabel(option.kurinNumber)} ім. ${option.namedAfter}` : kurinLabel(option.kurinNumber);
+    return kurinWithName({ number: option.kurinNumber, branch: option.branch, branches: option.branches, namedAfter: option.namedAfter });
   }
 
   /** Leading one's own гурток is sitting in its провід; leading another's is being its впорядник. */

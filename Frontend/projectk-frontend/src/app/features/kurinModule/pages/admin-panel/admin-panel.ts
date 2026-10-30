@@ -15,6 +15,8 @@ import { AuthService } from '../../../authModule/services/auth-service/auth.serv
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { HttpErrorResponse } from '@angular/common/http';
+import { isSeniorBranch } from '../../models/enums/kurin-branch.enum';
+import { kurinBranchesName, kurinWithName } from '../../../../shared/functions/kurin-label.function';
 
 /** The create form: the kurin, and optionally the person invited to be its Звʼязковий. */
 type KurinCreateForm = KurinDto & {
@@ -78,6 +80,7 @@ export class AdminPanelComponent implements OnInit {
       { name: 'founderLastName', label: 'Прізвище Звʼязкового', type: 'text', hiddenOn: ['update', 'delete'] }
     ],
     displayName: (entity: KurinDto) => {
+      if (isSeniorBranch(entity.branch)) return kurinWithName(entity);
       const name = entity.number === null ? 'Підготовчий курінь' : `${entity.number} курінь`;
       return entity.namedAfter ? `${name} ім. ${entity.namedAfter}` : name;
     },
@@ -239,6 +242,14 @@ export class AdminPanelComponent implements OnInit {
 
   kraiName(code?: string): string {
     return this.krais.find(krai => krai.code === code)?.name ?? code ?? '';
+  }
+
+  isSenior(kurin: KurinDto): boolean {
+    return isSeniorBranch(kurin.branch);
+  }
+
+  seniorTitle(kurin: KurinDto): string {
+    return kurinBranchesName(kurin.branches);
   }
 
   kurinCountInKrai(code?: string): number {

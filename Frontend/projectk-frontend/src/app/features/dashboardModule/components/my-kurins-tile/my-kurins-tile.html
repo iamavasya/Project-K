@@ -24,7 +24,7 @@
             <span class="kurins-tile__body">
               <span class="kurins-tile__name">{{ kurinLabel(row.option) }}</span>
               <span class="kurins-tile__meta">
-                <p-tag [value]="branchLabels[row.option.branch]" severity="secondary" />
+                <p-tag [value]="branchTags(row.option.branches, row.option.branch)" severity="secondary" />
                 <span>{{ kindLabels[row.option.kind] }}</span>
               </span>
               @if (row.isCurrent && currentOffices().length) {

@@ -38,7 +38,6 @@ import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
 import { GlassEffects } from '../../ui/glass';
 import {
-  BRANCH_LABELS,
   KvRow,
   MemberSort,
   currentOffices,
@@ -64,7 +63,7 @@ import { ProfileEditResult, ProfileEditSheet } from './profile-edit.sheet';
 import { KurinEditSheet } from './kurin-edit.sheet';
 import { reportFileName } from './kurin-profile';
 import { LeadershipSheet } from './leadership.sheet';
-import { kurinTitle } from '../../core/kurin-label';
+import { isSeniorBranch, kurinBranchTags, kurinBranchesName, kurinTitle } from '../../core/kurin-label';
 
 type Section = 'overview' | 'members';
 
@@ -237,8 +236,8 @@ const DESCRIPTION_LIMIT = 360;
                     <div class="head">
                       <app-kurin-plaque [number]="k.number" [size]="48" data-testid="kurin-plaque" />
                       <div>
-                        <h2>{{ title(k.number) }}</h2>
-                        @if (k.namedAfter) { <p>ім. {{ k.namedAfter }}</p> }
+                        <h2>{{ heading(k) }}</h2>
+                        @if (k.namedAfter) { <p>{{ isSenior(k) ? '«' + k.namedAfter + '»' : 'ім. ' + k.namedAfter }}</p> }
                         <ion-badge class="lk-tag--secondary">{{ branchLabel(k) }}</ion-badge>
                       </div>
                       @if (canManageGroups()) {
@@ -427,7 +426,7 @@ const DESCRIPTION_LIMIT = 360;
   `,
 })
 export class KurinPage implements OnInit, OnDestroy {
-  protected readonly title = kurinTitle;
+
   private readonly data = inject(KurinApi);
   private readonly auth = inject(AuthService);
   private readonly sheets = inject(ActionSheetController);
@@ -523,7 +522,16 @@ export class KurinPage implements OnInit, OnDestroy {
   }
 
   protected branchLabel(kurin: KurinDto): string {
-    return BRANCH_LABELS[kurin.branch ?? 'UPYu'];
+    return kurinBranchTags(kurin.branches, kurin.branch ?? 'UPYu');
+  }
+
+  protected isSenior(kurin: KurinDto): boolean {
+    return isSeniorBranch(kurin.branch);
+  }
+
+  /** «47 курінь»; a senior kurin by every гілка, «5-й курінь УСП · 20-й курінь УПС». */
+  protected heading(kurin: KurinDto): string {
+    return this.isSenior(kurin) ? kurinBranchesName(kurin.branches) : kurinTitle(kurin.number);
   }
 
   /** The ступінь above the office tags; «Учасник» only for someone with neither (web «Статус»). */
@@ -590,7 +598,7 @@ export class KurinPage implements OnInit, OnDestroy {
   /** The web's «Редагувати» menu on the kurin's header. */
   protected async kurinActions(kurin: KurinDto): Promise<void> {
     const sheet = await this.sheets.create({
-      header: kurinTitle(kurin.number),
+      header: this.heading(kurin),
       buttons: [
         { text: 'Редагування даних куреня', data: 'edit' },
         { text: 'Експорт звіту куреня', data: 'report' },

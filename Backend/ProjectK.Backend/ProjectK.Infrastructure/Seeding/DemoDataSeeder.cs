@@ -37,7 +37,7 @@ namespace ProjectK.Infrastructure.Seeding;
 /// the docs and the screenshot script say it means.
 /// </para>
 /// </summary>
-public class DemoDataSeeder : IDemoDataSeeder
+public partial class DemoDataSeeder : IDemoDataSeeder
 {
     private const int KurinNumber = 1;
     private const string Sokoly = "Соколи";
@@ -238,6 +238,8 @@ public class DemoDataSeeder : IDemoDataSeeder
         SeedDues(kurinKey, groups, youth, mentors, zvyazkovyi, memberships);
         SeedScore(kurinKey, groups, youth, mentors, zvyazkovyi, memberships);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await SeedSeniorKurinsAsync(cancellationToken);
     }
 
     private async Task<Kurin> EnsureKurinAsync(CancellationToken cancellationToken)

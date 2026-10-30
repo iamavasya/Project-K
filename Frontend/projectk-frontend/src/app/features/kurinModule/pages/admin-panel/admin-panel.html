@@ -45,10 +45,17 @@
         <ng-template #body let-item>
             <tr class="admin-kurin-row">
                 <td data-mobile-label="Курінь">
-                    <div class="kurin-number-cell">
-                        <span>{{ item.number ?? 'Підготовчий' }}</span>
-                        <small>{{ item.namedAfter ? 'ім. ' + item.namedAfter : (item.number === null ? 'ще без числа' : 'число куреня') }}</small>
-                    </div>
+                    @if (isSenior(item)) {
+                        <div class="kurin-number-cell">
+                            <span>{{ seniorTitle(item) }}</span>
+                            <small>{{ item.namedAfter ? '«' + item.namedAfter + '»' : 'старший курінь' }}</small>
+                        </div>
+                    } @else {
+                        <div class="kurin-number-cell">
+                            <span>{{ item.number ?? 'Підготовчий' }}</span>
+                            <small>{{ item.namedAfter ? 'ім. ' + item.namedAfter : (item.number === null ? 'ще без числа' : 'число куреня') }}</small>
+                        </div>
+                    }
                 </td>
                 <td class="admin-kurin-actions" data-mobile-label="Дії">
                     <p-splitButton label="Відкрити" icon="pi pi-arrow-right" (onClick)="onOpenClick(item.kurinKey)" [model]="actions" (onDropdownClick)="prepareItemActions(item)" />

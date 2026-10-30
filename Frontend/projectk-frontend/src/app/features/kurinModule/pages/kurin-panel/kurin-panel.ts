@@ -20,7 +20,8 @@ import { AuthService } from '../../../authModule/services/auth-service/auth.serv
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { MemberListComponent } from '../../components/member-list/member-list';
 import { KurinDto } from '../../models/kurin.dto';
-import { KURIN_BRANCH_LABELS, KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { KurinBranch, isSeniorBranch } from '../../models/enums/kurin-branch.enum';
+import { kurinBranchTags, kurinBranchesName } from '../../../../shared/functions/kurin-label.function';
 import { KvPanelComponent } from '../../components/kv-panel/kv-panel';
 import { LeadershipPanelComponent } from '../../components/leadership/leadership-panel/leadership-panel';
 import { MenuItemsCache } from '../../functions/menu-items-cache';
@@ -127,7 +128,17 @@ export class KurinPanelComponent implements OnInit {
 
   /** Гілка куреня. Курені, заведені до появи поділу, — УПЮ, і це не заглушка, а те, чим вони є. */
   get branchLabel(): string {
-    return KURIN_BRANCH_LABELS[this.kurinData?.branch ?? KurinBranch.UPYu];
+    return kurinBranchTags(this.kurinData?.branches, this.kurinData?.branch ?? KurinBranch.UPYu);
+  }
+
+  /** Старший курінь (УСП, УПС чи обидві) — називається числами в гілках, а не одним числом. */
+  get isSenior(): boolean {
+    return isSeniorBranch(this.kurinData?.branch);
+  }
+
+  /** «5-й курінь УСП · 20-й курінь УПС». */
+  get seniorTitle(): string {
+    return kurinBranchesName(this.kurinData?.branches);
   }
 
   get isDescriptionLong(): boolean {

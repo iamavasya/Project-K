@@ -17,7 +17,9 @@ import { AgendaArchivePolicyComponent } from '../../components/agenda-archive-po
 import { KurinCardFieldsComponent } from '../../components/kurin-card-fields/kurin-card-fields';
 import { KurinAccessPolicyComponent } from '../../components/kurin-access-policy/kurin-access-policy';
 import { KurinProbeEditionsComponent } from '../../components/kurin-probe-editions/kurin-probe-editions';
-import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
+import { hasYouthProgram, isSeniorBranch } from '../../models/enums/kurin-branch.enum';
+import { KurinBranchRequestComponent } from '../../components/kurin-branch-request/kurin-branch-request';
+import { kurinBranchesName } from '../../../../shared/functions/kurin-label.function';
 
 @Component({
   selector: 'app-kurin-settings',
@@ -32,7 +34,8 @@ import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
     AgendaArchivePolicyComponent,
     KurinCardFieldsComponent,
     KurinAccessPolicyComponent,
-    KurinProbeEditionsComponent
+    KurinProbeEditionsComponent,
+    KurinBranchRequestComponent
   ],
   templateUrl: './kurin-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -52,6 +55,17 @@ export class KurinSettingsComponent implements OnInit {
 
   /** Проби є лише в юнацькому курені; в УСП чи УПС розділу проби гуртків немає. */
   protected readonly hasYouthProgram = hasYouthProgram;
+
+  /** A senior kurin's numbers are the admin's to change, so its settings ask instead of edit. */
+  get isSenior(): boolean {
+    return isSeniorBranch(this.kurin?.branch);
+  }
+
+  get title(): string {
+    if (!this.kurin) return '-';
+    if (this.isSenior) return kurinBranchesName(this.kurin.branches);
+    return `${this.kurin.number ?? 'Підготовчий'} курінь`;
+  }
 
   kurinKey = '';
   kurin: KurinDto | null = null;
