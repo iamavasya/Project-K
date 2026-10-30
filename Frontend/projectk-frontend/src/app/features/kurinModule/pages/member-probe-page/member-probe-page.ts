@@ -28,6 +28,7 @@ import { failureDetail } from '../../../../shared/functions/failure-detail.funct
 import { parseOfficeRole } from '../../functions/system-role.function';
 import { leadershipRoleDisplayName } from '../../functions/leadership-role-display.function';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
+import { ProbeProjectsComponent } from '../../components/probe-projects/probe-projects';
 
 interface ProbeDetailSectionView {
   sectionId: string;
@@ -38,7 +39,7 @@ interface ProbeDetailSectionView {
 
 @Component({
   selector: 'app-member-probe-page',
-  imports: [ButtonModule, ProgressBarModule, AccordionModule, SkeletonModule, TagModule, ConfirmDialogModule],
+  imports: [ButtonModule, ProgressBarModule, AccordionModule, SkeletonModule, TagModule, ConfirmDialogModule, ProbeProjectsComponent],
   providers: [ConfirmationService],
   templateUrl: './member-probe-page.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -103,6 +104,14 @@ export class MemberProbePageComponent implements OnInit {
   /** Take a signature back; a kurin may give it to fewer people than signing. */
   get canUnsignProbePoints(): boolean {
     return !this.isArchive && this.abilities.probes.unsign;
+  }
+
+  /**
+   * A probe the catalogue gives no points (the third: it is made of projects). Its point list
+   * would only be an empty accordion, so the page leaves it out.
+   */
+  get hasNoPoints(): boolean {
+    return !this.isLoading && !this.loadFailed && !!this.groupedProbe && this.groupedProbe.pointsCount === 0;
   }
 
   get canManageProbePoints(): boolean {

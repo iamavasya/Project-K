@@ -307,3 +307,31 @@ export interface GroupRequest {
   name: string;
   description: string | null;
 }
+
+/** A picture of a project's description; the link expires, the key stays in the Markdown. */
+export interface ProbeProjectImageDto {
+  imageKey: string;
+  url: string;
+}
+
+/** One project of the third probe (`GET member/{key}/probes/{probeId}/projects`). */
+export interface ProbeProjectDto {
+  projectKey: string;
+  title: string;
+  isIndividual: boolean;
+  /** Markdown; pictures are written as `project-image:{imageKey}`. */
+  description: string;
+  directionMentorName: string | null;
+  directionMentorContact: string | null;
+  updatedAtUtc: string;
+  updatedByName: string | null;
+  images: ProbeProjectImageDto[];
+}
+
+export interface ProbeProjectsDto {
+  /** Only the probe at the third place of the person's line has projects. */
+  isProjectProbe: boolean;
+  canEdit: boolean;
+  projects: ProbeProjectDto[];
+  limits: { maxProjects: number; maxImagesPerProject: number; maxImageBytes: number; maxDescriptionLength: number };
+}

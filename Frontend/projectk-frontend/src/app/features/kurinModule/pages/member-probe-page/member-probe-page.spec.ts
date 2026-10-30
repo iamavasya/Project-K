@@ -63,7 +63,9 @@ describe('MemberProbePageComponent', () => {
       getProbeProgress: vi.fn(),
       updateProbeProgressStatus: vi.fn(),
       signProbePoint: vi.fn(),
-      unsignProbePoint: vi.fn()
+      unsignProbePoint: vi.fn(),
+      // A points probe is not the third: no projects to show.
+      getProbeProjects: vi.fn().mockReturnValue(of({ isProjectProbe: false, canEdit: false, projects: [], limits: { maxProjects: 5, maxImagesPerProject: 5, maxImageBytes: 1048576, maxDescriptionLength: 20000 } }))
     } as MockedObject<MemberProgressService>;
     authServiceSpy = {
       getAuthStateValue: vi.fn()

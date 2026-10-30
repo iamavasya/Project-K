@@ -1,0 +1,210 @@
+@if (isLoading() && !data()) {
+<section class="kurin-tile">
+    <p-skeleton width="100%" height="6rem" borderRadius="0.75rem" />
+</section>
+} @else if (loadFailed()) {
+<section class="kurin-tile">
+    <p class="projects-muted text-sm">Не вдалося завантажити проєкти. Спробуй оновити сторінку.</p>
+</section>
+} @else if (data()?.isProjectProbe) {
+<section class="kurin-tile" data-testid="probe-projects">
+    <div class="projects-head">
+        <div class="min-w-0">
+            <h2 class="projects-title">Проєкти</h2>
+            @if (limits(); as l) {
+            <p class="projects-muted text-xs">
+                {{ projects().length }} з {{ l.maxProjects }} · один із них індивідуальний
+            </p>
+            }
+        </div>
+        @if (canAdd() && projects().length) {
+        <p-button label="Додати проєкт" icon="pi pi-plus" (onClick)="openNew()" />
+        }
+    </div>
+
+    @if (!projects().length) {
+    <app-empty-state art="list"
+        title="Тут будуть проєкти"
+        [body]="canEdit() ? 'Третя проба — це пʼять проєктів, один з них індивідуальний. Опиши, що задумано, а фото додаси по ходу.' : 'Проєктів третьої проби ще не описано.'">
+        @if (canAdd()) {
+        <p-button label="Додати проєкт" icon="pi pi-plus" (onClick)="openNew()" />
+        }
+    </app-empty-state>
+    } @else {
+    <div class="projects-list">
+        @for (item of projects(); track item.project.projectKey) {
+        <article class="project-card" data-testid="probe-project">
+            <div class="project-card__head">
+                <h3 class="project-card__title">{{ item.project.title }}</h3>
+                @if (item.project.isIndividual) {
+                <p-tag value="Індивідуальний" severity="secondary" styleClass="!rounded-full !text-[10px] !font-semibold" />
+                }
+            </div>
+
+            @if (item.project.directionMentorName || item.project.directionMentorContact) {
+            <p class="projects-muted text-xs">
+                Ментор з напряму:
+                <span class="project-card__mentor">{{ item.project.directionMentorName || 'без імені' }}</span>
+                @if (item.project.directionMentorContact) {
+                · {{ item.project.directionMentorContact }}
+                }
+            </p>
+            }
+
+            @if (item.hasDescription) {
+            <div class="project-text">
+                @for (block of item.blocks; track $index) {
+                @switch (block.kind) {
+                @case ('heading') {
+                <p class="project-text__heading" [attr.data-level]="block.level">
+                    <ng-container *ngTemplateOutlet="runsTpl; context: { $implicit: block.runs }" />
+                </p>
+                }
+                @case ('item') {
+                <p class="project-text__item" [style.padding-left.rem]="1.25 + block.indent * 1.25">
+                    <span class="project-text__marker" aria-hidden="true">
+                        @switch (block.list) {
+                        @case ('ordered') { {{ block.ordinal }}. }
+                        @case ('checked') { <span class="pi pi-check-square"></span> }
+                        @case ('unchecked') { <span class="pi pi-stop"></span> }
+                        @default { • }
+                        }
+                    </span>
+                    <ng-container *ngTemplateOutlet="runsTpl; context: { $implicit: block.runs }" />
+                </p>
+                }
+                @case ('quote') {
+                <blockquote class="project-text__quote">
+                    <ng-container *ngTemplateOutlet="runsTpl; context: { $implicit: block.runs }" />
+                </blockquote>
+                }
+                @case ('code') {
+                <pre class="project-text__code">{{ block.text }}</pre>
+                }
+                @default {
+                <p class="project-text__paragraph">
+                    <ng-container *ngTemplateOutlet="runsTpl; context: { $implicit: block.runs }" />
+                </p>
+                }
+                }
+                }
+            </div>
+            } @else {
+            <p class="projects-muted text-xs">Опису ще немає.</p>
+            }
+
+            <div class="project-card__foot">
+                <p class="projects-muted text-xs">{{ item.updatedLabel }}</p>
+                @if (canEdit()) {
+                <div class="flex gap-1">
+                    <p-button label="Редагувати" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="edit(item.project)" />
+                    <p-button label="Видалити" icon="pi pi-trash" size="small" severity="danger" variant="text" (onClick)="remove(item.project)" />
+                </div>
+                }
+            </div>
+        </article>
+        }
+    </div>
+    }
+</section>
+
+<p-dialog
+    [header]="editingKey() ? 'Проєкт' : 'Новий проєкт'"
+    [visible]="dialogVisible()"
+    (visibleChange)="dialogVisible.set($event)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: 'min(96vw, 46rem)' }"
+    styleClass="probe-project-dialog">
+
+    <div class="project-field">
+        <label for="project-title">Назва</label>
+        <input pInputText id="project-title" class="w-full"
+            [attr.maxlength]="200"
+            placeholder="Наприклад: «Мандрівка Карпатами»"
+            [ngModel]="title()" (ngModelChange)="title.set($event)" />
+    </div>
+
+    <div class="project-field project-field--inline">
+        <p-checkbox inputId="project-individual" [binary]="true" [ngModel]="isIndividual()" (ngModelChange)="isIndividual.set($event)" />
+        <label for="project-individual">Індивідуальний проєкт</label>
+    </div>
+
+    <div class="project-field-row">
+        <div class="project-field">
+            <label for="project-mentor">Ментор з напряму</label>
+            <input pInputText id="project-mentor" class="w-full" [attr.maxlength]="200"
+                placeholder="Імʼя та прізвище"
+                [ngModel]="mentorName()" (ngModelChange)="mentorName.set($event)" />
+        </div>
+        <div class="project-field">
+            <label for="project-mentor-contact">Як звʼязатися</label>
+            <input pInputText id="project-mentor-contact" class="w-full" [attr.maxlength]="200"
+                placeholder="Телефон чи пошта"
+                [ngModel]="mentorContact()" (ngModelChange)="mentorContact.set($event)" />
+        </div>
+    </div>
+    <p class="projects-muted project-hint">Ментором може бути й не пластун: тренер, майстер, учитель.</p>
+
+    <div class="project-field">
+        <span class="project-label" id="project-description-label">Опис</span>
+        <p-editor
+            [formats]="editorFormats"
+            placeholder="Що задумано, навіщо, як і до коли. Фото — кнопкою на панелі або Ctrl+V."
+            [style]="{ height: '16rem' }"
+            (onInit)="onEditorInit($any($event))"
+            (onTextChange)="onTextChange()">
+            <ng-template #header>
+                <span class="ql-formats">
+                    <button class="ql-header" value="2" type="button" aria-label="Заголовок"></button>
+                    <button class="ql-bold" type="button" aria-label="Жирний"></button>
+                    <button class="ql-italic" type="button" aria-label="Курсив"></button>
+                    <button class="ql-strike" type="button" aria-label="Закреслений"></button>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-list" value="ordered" type="button" aria-label="Нумерований список"></button>
+                    <button class="ql-list" value="bullet" type="button" aria-label="Список"></button>
+                    <button class="ql-list" value="check" type="button" aria-label="Список справ"></button>
+                    <button class="ql-blockquote" type="button" aria-label="Цитата"></button>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-link" type="button" aria-label="Посилання"></button>
+                    <button class="ql-image" type="button" aria-label="Зображення"></button>
+                </span>
+            </ng-template>
+        </p-editor>
+        @if (limits(); as l) {
+        <p class="projects-muted project-hint" data-testid="project-limits">
+            @if (isUploading()) { <span class="pi pi-spin pi-spinner" aria-hidden="true"></span> Завантажую… · }
+            Зображень {{ imageCount() }} з {{ l.maxImagesPerProject }}, кожне до {{ maxImageLabel() }} МБ (PNG, JPEG, WebP)
+            · {{ descriptionLength() }} з {{ l.maxDescriptionLength }} знаків
+        </p>
+        }
+    </div>
+
+    @if (errorMessage(); as message) {
+    <p class="project-error" role="alert">{{ message }}</p>
+    }
+
+    <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="close()" />
+        <p-button label="Зберегти" icon="pi pi-check" [loading]="isSaving()" [disabled]="isUploading()" (onClick)="save()" />
+    </ng-template>
+</p-dialog>
+}
+
+<ng-template #runsTpl let-runs>
+    @for (run of runs; track $index) {
+    @if (run.image) {
+    <img class="project-text__image" [src]="run.image" [alt]="run.text || 'Зображення проєкту'" loading="lazy" />
+    } @else if (run.link) {
+    <a [href]="run.link" target="_blank" rel="noopener noreferrer"
+        [class.font-semibold]="run.bold" [class.italic]="run.italic" [class.line-through]="run.strike">{{ run.text }}</a>
+    } @else if (run.code) {
+    <code>{{ run.text }}</code>
+    } @else {
+    <span [class.font-semibold]="run.bold" [class.italic]="run.italic" [class.line-through]="run.strike">{{ run.text }}</span>
+    }
+    }
+</ng-template>

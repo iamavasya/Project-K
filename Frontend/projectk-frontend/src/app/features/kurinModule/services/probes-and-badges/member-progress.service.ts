@@ -5,6 +5,12 @@ import { environment } from '../../../../../environments/environment';
 import { BadgeProgressDto } from '../../models/probes-and-badges/badge-progress.dto';
 import { ProbeProgressDto } from '../../models/probes-and-badges/probe-progress.dto';
 import { ProbeSummaryDto } from '../../models/probes-and-badges/probe-summary.dto';
+import {
+  ProbeProjectDto,
+  ProbeProjectImageDto,
+  ProbeProjectsDto,
+  SaveProbeProjectRequestDto
+} from '../../models/probes-and-badges/probe-project.dto';
 import { ReviewBadgeProgressRequestDto } from '../../models/probes-and-badges/requests/review-badge-progress-request.dto';
 import { SubmitBadgeProgressRequestDto } from '../../models/probes-and-badges/requests/submit-badge-progress-request.dto';
 import { UpdateProbePointSignatureRequestDto } from '../../models/probes-and-badges/requests/update-probe-point-signature-request.dto';
@@ -107,6 +113,41 @@ export class MemberProgressService {
     ).pipe(
       tap(() => this.invalidateMemberProgress(memberKey, probeId))
     );
+  }
+
+  /** The projects of the third probe; not cached, since its picture links expire. */
+  getProbeProjects(memberKey: string, probeId: string): Observable<ProbeProjectsDto> {
+    return this.http.get<ProbeProjectsDto>(this.projectsUrl(memberKey, probeId));
+  }
+
+  addProbeProject(memberKey: string, probeId: string, request: SaveProbeProjectRequestDto): Observable<ProbeProjectDto> {
+    return this.http.post<ProbeProjectDto>(this.projectsUrl(memberKey, probeId), request, { context: requestFeedback('auto', [400, 403]) });
+  }
+
+  updateProbeProject(memberKey: string, probeId: string, projectKey: string, request: SaveProbeProjectRequestDto): Observable<ProbeProjectDto> {
+    return this.http.put<ProbeProjectDto>(
+      `${this.projectsUrl(memberKey, probeId)}/${projectKey}`,
+      request,
+      { context: requestFeedback('auto', [400, 403, 404]) }
+    );
+  }
+
+  deleteProbeProject(memberKey: string, probeId: string, projectKey: string): Observable<boolean> {
+    return this.http.delete<boolean>(`${this.projectsUrl(memberKey, probeId)}/${projectKey}`);
+  }
+
+  uploadProbeProjectImage(memberKey: string, probeId: string, projectKey: string, file: File): Observable<ProbeProjectImageDto> {
+    const form = new FormData();
+    form.append('file', file, file.name || 'image.png');
+    return this.http.post<ProbeProjectImageDto>(
+      `${this.projectsUrl(memberKey, probeId)}/${projectKey}/images`,
+      form,
+      { context: requestFeedback('silent', [400, 403, 404, 413]) }
+    );
+  }
+
+  private projectsUrl(memberKey: string, probeId: string): string {
+    return `${this.apiUrl}/${memberKey}/probes/${encodeURIComponent(probeId)}/projects`;
   }
 
   unsignProbePoint(
