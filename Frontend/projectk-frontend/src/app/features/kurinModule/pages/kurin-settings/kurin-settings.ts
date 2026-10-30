@@ -20,6 +20,17 @@ import { KurinProbeEditionsComponent } from '../../components/kurin-probe-editio
 import { hasYouthProgram, isSeniorBranch } from '../../models/enums/kurin-branch.enum';
 import { KurinBranchRequestComponent } from '../../components/kurin-branch-request/kurin-branch-request';
 import { kurinBranchesName } from '../../../../shared/functions/kurin-label.function';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { LeadershipRole } from '../../models/enums/leadership-role.enum';
+import { ROLE_DISPLAY_NAMES } from '../../models/role-display-name.model';
+import { useKurinRoleNames } from '../../functions/leadership-role-display.function';
+
+/** Ролі, які курінь може назвати по-своєму (сервер: KurinRoleNames.Renamable). Гурткових тут немає. */
+const RENAMABLE_ROLES: LeadershipRole[] = [
+  LeadershipRole.Zvyazkovyi, LeadershipRole.Kurinnuy, LeadershipRole.Pysar, LeadershipRole.Skarbnyk,
+  LeadershipRole.Suddya, LeadershipRole.Horunjiy, LeadershipRole.Gospodar, LeadershipRole.Hronikar,
+  LeadershipRole.Instruktor, LeadershipRole.Vykhovnyk, LeadershipRole.OtherKurin
+];
 
 @Component({
   selector: 'app-kurin-settings',
@@ -30,6 +41,7 @@ import { kurinBranchesName } from '../../../../shared/functions/kurin-label.func
     ToggleSwitchModule,
     CheckboxModule,
     InputNumberModule,
+    InputTextModule,
     AgendaCategoryManagerComponent,
     AgendaArchivePolicyComponent,
     KurinCardFieldsComponent,
@@ -55,6 +67,14 @@ export class KurinSettingsComponent implements OnInit {
 
   /** Проби є лише в юнацькому курені; в УСП чи УПС розділу проби гуртків немає. */
   protected readonly hasYouthProgram = hasYouthProgram;
+
+  /** Рядки «Назви ролей»: звична назва і те, як її називає курінь (порожнє — звична). */
+  protected readonly renamableRoles = RENAMABLE_ROLES.map(role => ({ role, usual: ROLE_DISPLAY_NAMES[role] }));
+  protected roleNames: Record<string, string> = {};
+
+  private trimmedRoleNames(): Record<string, string> {
+    return Object.fromEntries(Object.entries(this.roleNames).map(([role, name]) => [role, name.trim()]).filter(([, name]) => name));
+  }
 
   /** A senior kurin's numbers are the admin's to change, so its settings ask instead of edit. */
   get isSenior(): boolean {
@@ -121,6 +141,7 @@ export class KurinSettingsComponent implements OnInit {
         this.kurin = kurin;
         this.profileVerificationEnabled = kurin.profileVerificationEnabled ?? false;
         this.scoreEnabled = kurin.scoreEnabled ?? true;
+        this.roleNames = { ...(kurin.roleNames ?? {}) };
         this.preparatory = kurin.number === null;
         this.number = kurin.number;
         this.loading = false;
@@ -144,6 +165,7 @@ export class KurinSettingsComponent implements OnInit {
 
     const request: KurinDto = {
       ...this.kurin,
+      roleNames: this.kurin?.canRenameRoles ? this.trimmedRoleNames() : this.kurin?.roleNames,
       number: this.preparatory ? null : this.number,
       profileVerificationEnabled: this.profileVerificationEnabled,
       scoreEnabled: this.scoreEnabled
@@ -166,6 +188,8 @@ export class KurinSettingsComponent implements OnInit {
         this.kurin = updated;
         this.profileVerificationEnabled = updated.profileVerificationEnabled ?? false;
         this.scoreEnabled = updated.scoreEnabled ?? true;
+        this.roleNames = { ...(updated.roleNames ?? {}) };
+        useKurinRoleNames(updated.roleNames);
         this.preparatory = updated.number === null;
         this.number = updated.number;
         this.saving = false;

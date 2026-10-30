@@ -28,10 +28,16 @@ public partial class DemoDataSeeder
             + "сходини щочетверга й мандрівки Карпатами.",
             cancellationToken);
         await EnsureSeniorLeaderAsync(orden.KurinKey, OrdenEmail, "Остап", "Гнатюк", 1979, cancellationToken);
+        var ordenMembers = new List<Member>();
         foreach (var (first, last, login, year) in OrdenMembers)
         {
-            await EnsureSeniorMemberAsync(orden.KurinKey, first, last, $"orden.{login}@projectk.com", year, cancellationToken);
+            ordenMembers.Add(await EnsureSeniorMemberAsync(orden.KurinKey, first, last, $"orden.{login}@projectk.com", year, cancellationToken));
         }
+
+        // The Order calls its писар «Скриптор»: same role, same rights, its own word.
+        orden.RoleNames = KurinRoleNames.Normalize(new Dictionary<string, string?> { [nameof(LeadershipRole.Pysar)] = "Скриптор" }, out _);
+        var ordenLeadership = await EnsureLeadershipAsync(LeadershipType.Kurin, orden.KurinKey, null, new DateOnly(2025, 9, 1), cancellationToken);
+        SeatOffice(ordenLeadership, ordenMembers[1].MemberKey, LeadershipRole.Pysar, new DateOnly(2025, 9, 1));
 
         var chorty = await EnsureSeniorKurinAsync(
             [new KurinNumbering(KurinBranch.USP, 7)],
@@ -126,9 +132,9 @@ public partial class DemoDataSeeder
         return member;
     }
 
-    private async Task EnsureSeniorMemberAsync(Guid kurinKey, string firstName, string lastName, string email, int birthYear, CancellationToken cancellationToken)
+    private async Task<Member> EnsureSeniorMemberAsync(Guid kurinKey, string firstName, string lastName, string email, int birthYear, CancellationToken cancellationToken)
     {
-        await DataSeeder.EnsureMemberAsync(
+        return await DataSeeder.EnsureMemberAsync(
             _dbContext,
             _userManager,
             new DataSeeder.SeededPerson(email, firstName, null, lastName, kurinKey, null, NextPhone(), new DateOnly(birthYear, 2, 3), MembershipKind.Youth, _now.AddYears(-4)),

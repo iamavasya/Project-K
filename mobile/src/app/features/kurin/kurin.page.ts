@@ -51,6 +51,7 @@ import {
   officeTag,
   plastLevelLabel,
   sortMembers,
+  useKurinRoleNames,
 } from './kurin.labels';
 import { GroupDto, KurinDto, LeadershipDto, MemberLookupDto } from './kurin.models';
 import { KurinApi } from './kurin.service';
@@ -464,6 +465,8 @@ export class KurinPage implements OnInit, OnDestroy {
   protected readonly reportBusy = signal(false);
 
   protected readonly kurinValue = computed(() => valueOf(this.kurin()));
+  /** The kurin's own role names reach every role tag once the kurin is read. */
+  private readonly roleNamesFollowKurin = effect(() => useKurinRoleNames(this.kurinValue()?.roleNames));
   protected readonly groupList = computed(() => valueOf(this.groups()) ?? []);
   /** A senior kurin has no гуртки: the section is not there at all. */
   protected readonly kurinIsSenior = computed(() => isSeniorBranch(this.kurinValue()?.branch));

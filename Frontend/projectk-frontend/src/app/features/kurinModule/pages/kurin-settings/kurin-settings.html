@@ -103,6 +103,27 @@
     </div>
   </section>
 
+  @if (kurin?.canRenameRoles) {
+    <section class="kurin-tile" aria-labelledby="role-names-title">
+      <div class="setting-copy">
+        <h2 id="role-names-title">Назви ролей</h2>
+        <p>
+          Як курінь називає свої ролі. Змінюється лише назва: права ролі лишаються ті самі, тож
+          «Скриптор» може те саме, що й писар. Порожнє поле — звична назва.
+        </p>
+      </div>
+      <div class="role-names">
+        @for (row of renamableRoles; track row.role) {
+          <label class="role-names__row" [for]="'role-name-' + row.role">
+            <span class="role-names__usual">{{ row.usual }}</span>
+            <input pInputText [id]="'role-name-' + row.role" maxlength="60" [placeholder]="row.usual"
+              [(ngModel)]="roleNames[row.role]" [disabled]="loading || saving" />
+          </label>
+        }
+      </div>
+    </section>
+  }
+
   @if (kurinKey) {
     <section class="kurin-tile" aria-labelledby="event-groups-title">
       <div class="setting-copy">

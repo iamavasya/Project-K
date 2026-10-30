@@ -22,6 +22,8 @@ export interface KurinDto {
   profileVerificationEnabled?: boolean;
   /** Whether the kurin keeps точкування now (web kurin.dto). */
   scoreEnabled?: boolean;
+  /** The kurin's own role names: «Pysar» → «Скриптор» (web kurin.dto). */
+  roleNames?: Record<string, string>;
 }
 
 export interface GroupDto {

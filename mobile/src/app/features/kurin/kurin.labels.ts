@@ -157,8 +157,18 @@ const ROLE_ORDER = [
   'OtherGroup',
 ];
 
+/**
+ * The current kurin's own names for its roles (web leadership-role-display.function), set when its
+ * kurin is read. Rights stay with the role; only the word changes.
+ */
+let kurinRoleNames: Record<string, string> = {};
+
+export function useKurinRoleNames(names: Record<string, string> | null | undefined): void {
+  kurinRoleNames = { ...(names ?? {}) };
+}
+
 export function roleName(role: string): string {
-  return ROLE_NAMES[role] ?? role;
+  return kurinRoleNames[role] ?? ROLE_NAMES[role] ?? role;
 }
 
 export function roleWeight(role: string | null | undefined): number {
