@@ -162,9 +162,11 @@ export class MemberAwardsTileComponent {
 
   confirmDelete(award: MemberAwardDto): void {
     this.confirmationService.confirm({
-      message: 'Ви впевнені, що хочете видалити це відзначення?',
-      header: 'Підтвердження видалення',
-      icon: 'pi pi-exclamation-triangle',
+      message: 'Відзначення зникне з картки людини.',
+      header: 'Видалити відзначення?',
+      icon: 'pi pi-trash',
+      acceptButtonProps: { label: 'Видалити', severity: 'danger' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {
         this.deleteAward.emit(award.memberAwardKey);
       }

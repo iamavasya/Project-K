@@ -70,9 +70,11 @@ export class UsersListComponent implements OnInit {
 
   deleteUser(user: UserDto) {
     this.confirmationService.confirm({
-      message: `Видалити користувача ${user.firstName} ${user.lastName}? Цю дію неможливо скасувати.`,
-      header: 'Підтвердження видалення',
-      icon: 'pi pi-exclamation-triangle',
+      message: `${user.firstName} ${user.lastName} зникне з Лілейки разом з акаунтом. Цю дію неможливо скасувати.`,
+      header: 'Видалити користувача?',
+      icon: 'pi pi-trash',
+      acceptButtonProps: { label: 'Видалити', severity: 'danger' },
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {
         this.userService.deleteUser(user.userId).subscribe({
           next: () => {
@@ -97,7 +99,7 @@ export class UsersListComponent implements OnInit {
       icon: 'pi pi-pause',
       acceptLabel: 'Призупинити',
       rejectLabel: 'Скасувати',
-      acceptButtonProps: { label: 'Призупинити', severity: 'warn' },
+      acceptButtonProps: { label: 'Призупинити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {
         this.userService.suspendUser(user.userId).subscribe({

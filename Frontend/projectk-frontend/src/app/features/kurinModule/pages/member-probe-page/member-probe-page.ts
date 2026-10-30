@@ -238,17 +238,17 @@ export class MemberProbePageComponent implements OnInit {
     }
 
     this.confirmationService.confirm({
-      header: 'Скасування підпису',
-      message: `Скасувати підпис точки "${point.pointTitle}"?`,
-      icon: 'pi pi-exclamation-triangle',
-      rejectLabel: 'Ні',
+      header: 'Зняти підпис?',
+      message: `Точка «${point.pointTitle}» знову чекатиме підпису.`,
+      icon: 'pi pi-times-circle',
+      rejectLabel: 'Скасувати',
       rejectButtonProps: {
-        label: 'Ні',
+        label: 'Скасувати',
         severity: 'secondary',
         outlined: true
       },
       acceptButtonProps: {
-        label: 'Так, скасувати',
+        label: 'Зняти підпис',
         severity: 'danger'
       },
       accept: () => {
@@ -265,9 +265,9 @@ export class MemberProbePageComponent implements OnInit {
     const confirmationText = 'Буде зафіксовано дату закриття, і відкриється наступна проба, якщо вона є.';
 
     this.confirmationService.confirm({
-      header: 'Закриття проби',
+      header: 'Закрити пробу?',
       message: confirmationText,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-check',
       rejectLabel: 'Скасувати',
       rejectButtonProps: {
         label: 'Скасувати',
@@ -275,8 +275,7 @@ export class MemberProbePageComponent implements OnInit {
         outlined: true
       },
       acceptButtonProps: {
-        label: 'Закрити',
-        severity: 'contrast'
+        label: 'Закрити'
       },
       accept: () => {
         this.executeCloseProbe();

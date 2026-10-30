@@ -614,8 +614,8 @@ export class MemberCardComponent implements OnInit {
       message: verified
         ? 'Профіль знову чекатиме перевірки.'
         : 'Підтвердити, що дані в профілі правильні?',
-      icon: verified ? 'pi pi-exclamation-triangle' : 'pi pi-verified',
-      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', variant: 'text' },
+      icon: verified ? 'pi pi-times-circle' : 'pi pi-verified',
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       acceptButtonProps: verified
         ? { label: 'Зняти', severity: 'danger' }
         : { label: 'Верифікувати' },
@@ -1013,9 +1013,9 @@ export class MemberCardComponent implements OnInit {
     }
 
     this.confirmationService.confirm({
-      header: 'Видалення підтвердженої вмілості',
+      header: 'Видалити підтверджену вмілість?',
       message: `Видалити підтверджену вмілість "${skill.title}"?`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       rejectLabel: 'Скасувати',
       rejectButtonProps: {
         label: 'Скасувати',

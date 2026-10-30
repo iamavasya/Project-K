@@ -268,9 +268,9 @@ export class KurinDuesComponent implements OnInit {
 
   confirmDelete(entry: DuesEntryDto): void {
     this.confirmation.confirm({
-      header: 'Видалити операцію',
+      header: 'Видалити операцію?',
       message: `${DUES_ENTRY_KIND_LABELS[entry.kind]} на ${this.money(entry.amount)} зникне з каси. Запис про неї лишиться в історії змін.`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => {

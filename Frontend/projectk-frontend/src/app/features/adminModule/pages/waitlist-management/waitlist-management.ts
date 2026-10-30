@@ -301,9 +301,11 @@ export class WaitlistManagementComponent implements OnInit {
 
   resend(entry: WaitlistEntry) {
     this.confirmationService.confirm({
-        message: `Надіслати запрошення на ${entry.email} ще раз?`,
+        message: `Запрошення піде на ${entry.email} ще раз.`,
         header: 'Надіслати ще раз?',
-        icon: 'pi pi-refresh',
+        icon: 'pi pi-envelope',
+        acceptButtonProps: { label: 'Надіслати' },
+        rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
         accept: () => {
             this.onboardingService.resendInvitation(entry.waitlistEntryKey).subscribe({
                 next: () => {
