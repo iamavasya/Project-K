@@ -8,7 +8,7 @@ import { MEMBER_CACHE_PREFIX, GROUP_CACHE_PREFIX, KURIN_CACHE_PREFIX } from '../
 
 /**
  * Той, хто був у курені й пішов. Курінь пам'ятає рівно свій відтинок: хто, в якому гуртку, з коли
- * до коли. Ні контактів, ні того, де людина зараз — це вже не його справа.
+ * до коли. Ні контактів, ні того, що людина робить тепер; де вона стоїть зараз, бачить лише Звʼязковий, коли повертає її.
  */
 export interface FormerMemberDto {
   memberKey: string;
@@ -77,6 +77,12 @@ export interface MembershipRequestSentDto {
   joined: boolean;
 }
 
+/** Колишній член і курені, де він стоїть зараз (лише номери). Порожньо — ніде: повертаємо без запиту. */
+export interface FormerMemberStandingDto {
+  former: FormerMemberDto;
+  standsIn: MembershipRequestKurinDto[];
+}
+
 /**
  * Належність до куреня — окремо від профілю людини. Профіль редагується один раз і скрізь, а
  * членство відкривається й закривається в кожному курені окремо, і це різні дії з різними правами.
@@ -129,6 +135,11 @@ export class MembershipService {
   /** Запити куреня в обидва боки. */
   requests(kurinKey: string): Observable<MembershipRequestsDto> {
     return this.http.get<MembershipRequestsDto>(`${this.apiUrl}/${kurinKey}/membership-requests`);
+  }
+
+  /** Колишні члени для Звʼязкового — з куренями, де вони стоять зараз. */
+  formerStanding(kurinKey: string): Observable<FormerMemberStandingDto[]> {
+    return this.http.get<FormerMemberStandingDto[]>(`${this.apiUrl}/${kurinKey}/membership-requests/former`);
   }
 
   /** 409 сторінка пояснює сама: людина вже тут, запит уже чекає, або треба вибрати курінь. */

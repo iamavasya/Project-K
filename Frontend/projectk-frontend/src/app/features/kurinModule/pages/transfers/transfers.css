@@ -69,3 +69,8 @@
 .transfers__actions p-button + p-button {
   margin-left: 0.25rem;
 }
+
+.transfers__dialog {
+  display: grid;
+  gap: 1rem;
+}

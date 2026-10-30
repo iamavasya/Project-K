@@ -282,7 +282,7 @@ const DESCRIPTION_LIMIT = 360;
               @if (canManageGroups()) {
                 <ion-item [button]="true" [detail]="true" routerLink="/tabs/kurin/transfers" data-testid="transfers">
                   <ion-icon class="lk-tile" slot="start" name="swap-horizontal" aria-hidden="true" style="--lk-tile: #0e6e4e" />
-                  <ion-label>Переходи</ion-label>
+                  <ion-label>Склад куреня</ion-label>
                 </ion-item>
               }
               @if (canReviewSkills()) {

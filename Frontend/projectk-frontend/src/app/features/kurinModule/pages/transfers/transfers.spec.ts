@@ -2,10 +2,11 @@ import type { MockedObject } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { of, throwError } from 'rxjs';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
-import { MembershipCandidateDto, MembershipRequestDto, MembershipService } from '../../services/membership-service/membership.service';
+import { FormerMemberStandingDto, MembershipCandidateDto, MembershipRequestDto, MembershipService } from '../../services/membership-service/membership.service';
 import { TransfersComponent } from './transfers';
 
 describe('TransfersComponent', () => {
@@ -34,22 +35,30 @@ describe('TransfersComponent', () => {
     currentKurins
   });
 
-  function create(incoming: MembershipRequestDto[] = [], outgoing: MembershipRequestDto[] = []) {
+  const formerPerson = (memberKey: string, standsIn: ReturnType<typeof kurin>[]): FormerMemberStandingDto => ({
+    former: { memberKey, firstName: 'Віталій', lastName: 'Бойко', groupName: 'Соколи', joinedAtUtc: '2023-09-01', leftAtUtc: '2026-10-01' },
+    standsIn
+  });
+
+  function create(incoming: MembershipRequestDto[] = [], outgoing: MembershipRequestDto[] = [], former: FormerMemberStandingDto[] = []) {
     memberships = {
       requests: vi.fn(),
       candidate: vi.fn(),
       createRequest: vi.fn(),
       approveRequest: vi.fn(),
       declineRequest: vi.fn(),
-      cancelRequest: vi.fn()
+      cancelRequest: vi.fn(),
+      formerStanding: vi.fn()
     } as MockedObject<MembershipService>;
     memberships.requests.mockReturnValue(of({ incoming, outgoing }));
+    memberships.formerStanding.mockReturnValue(of(former));
     memberships.createRequest.mockReturnValue(of({ membershipRequestKey: 'r9', joined: false }));
 
     TestBed.configureTestingModule({
       imports: [TransfersComponent],
       providers: [
         provideNoopAnimations(),
+        provideRouter([]),
         MessageService,
         { provide: MembershipService, useValue: memberships },
         { provide: AuthService, useValue: { getAuthState: () => of({ kurinKey: 'k15' }) } }
@@ -151,5 +160,45 @@ describe('TransfersComponent', () => {
 
     expect(confirm.mock.calls[0][0].acceptButtonProps).toEqual({ label: 'Перевести', severity: 'danger' });
     expect(memberships.approveRequest).toHaveBeenCalledWith('k15', 'r1');
+  });
+
+  it('lists former members with where they stand now, and marks those already asked for', () => {
+    const fixture = create([], [request({ memberKey: 'asked', fromKurin: kurin(1) })],
+      [formerPerson('nowhere', []), formerPerson('asked', [kurin(1)])]);
+
+    expect(text(fixture)).toContain('Колишні члени');
+    expect(text(fixture)).toContain('Ніде');
+    expect(text(fixture)).toContain('Запит чекає');
+    expect(fixture.componentInstance.askedFor().has('asked')).toBe(true);
+  });
+
+  it('takes back at once a former member who stands nowhere', () => {
+    const fixture = create([], [], [formerPerson('nowhere', [])]);
+    const component = fixture.componentInstance;
+    memberships.createRequest.mockReturnValue(of({ membershipRequestKey: null, joined: true }));
+
+    component.openReturn(component.former()[0]);
+    component.returnMembershipKind.set('Staff');
+    component.sendReturn();
+
+    expect(memberships.createRequest).toHaveBeenCalledWith('k15', {
+      memberKey: 'nowhere', kind: 'Transfer', membershipKind: 'Staff', fromKurinKey: null
+    });
+    expect(component.returning()).toBeNull();
+  });
+
+  it('asks the kurin a former member stands in, «ще й до нас» when chosen', () => {
+    const fixture = create([], [], [formerPerson('elsewhere', [kurin(1), kurin(7)])]);
+    const component = fixture.componentInstance;
+
+    component.openReturn(component.former()[0]);
+    component.returnKind.set('AlsoJoin');
+    expect(component.canReturn()).toBe(false);
+    component.returnFrom.set('k7');
+    component.sendReturn();
+
+    expect(memberships.createRequest).toHaveBeenCalledWith('k15', {
+      memberKey: 'elsewhere', kind: 'AlsoJoin', membershipKind: 'Youth', fromKurinKey: 'k7'
+    });
   });
 });

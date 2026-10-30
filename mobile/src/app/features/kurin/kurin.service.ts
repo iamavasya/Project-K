@@ -19,6 +19,7 @@ import {
   MemberDuesDto,
   MemberLookupDto,
   MembershipCandidateDto,
+  FormerMemberStandingDto,
   MembershipRequestDto,
   MembershipRequestKind,
   MemberWarningDto,
@@ -282,7 +283,12 @@ export class KurinApi {
   }
 
 
-  /** The kurin's requests both ways (web «Переходи»). */
+  /** Former members with the kurins they stand in now, for taking someone back. */
+  formerStanding(kurinKey: string): Promise<FormerMemberStandingDto[]> {
+    return this.api.get(`kurin/${kurinKey}/membership-requests/former`);
+  }
+
+  /** The kurin's requests both ways (web «Склад куреня»). */
   membershipRequests(kurinKey: string): Promise<{ incoming: MembershipRequestDto[]; outgoing: MembershipRequestDto[] }> {
     return this.api.get(`kurin/${kurinKey}/membership-requests`);
   }
@@ -295,7 +301,7 @@ export class KurinApi {
   /** Asks for a person; someone who stands nowhere is taken in at once (`joined`). */
   async requestMembership(
     kurinKey: string,
-    body: { publicId: string; kind: MembershipRequestKind; membershipKind: 'Youth' | 'Staff'; fromKurinKey: string | null },
+    body: { publicId?: string; memberKey?: string; kind: MembershipRequestKind; membershipKind: 'Youth' | 'Staff'; fromKurinKey: string | null },
   ): Promise<{ membershipRequestKey: string | null; joined: boolean }> {
     const sent = await this.api.post<{ membershipRequestKey: string | null; joined: boolean }>(`kurin/${kurinKey}/membership-requests`, body);
     if (sent.joined) this.membersChanged.update((n) => n + 1);

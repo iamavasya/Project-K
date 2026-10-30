@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { member, ok, shot, signIn, type ExtraApi } from './support/mock-api';
 
 /**
- * «Переходи» on a phone, the Звʼязковий's (web pages/transfers): another kurin's request is approved
+ * «Склад куреня» on a phone, the Звʼязковий's (web pages/transfers): another kurin's request is approved
  * from a sheet, a person is asked for by code, and «перевести» is not offered while the person owes.
  */
 
@@ -14,8 +14,9 @@ const request = (over: Record<string, unknown>) => ({
   expiresAtUtc: '2026-11-13T10:00:00Z', decidedAtUtc: null, owedToLeave: 0, ...over,
 });
 
-function transfersApi(world: { incoming: Record<string, unknown>[]; outgoing: Record<string, unknown>[] }): ExtraApi {
+function transfersApi(world: { incoming: Record<string, unknown>[]; outgoing: Record<string, unknown>[]; former?: Record<string, unknown>[] }): ExtraApi {
   return ({ method, path, body }) => {
+    if (method === 'GET' && path === 'kurin/k1/membership-requests/former') return ok(world.former ?? []);
     if (method === 'GET' && path === 'kurin/k1/membership-requests') return ok(world);
     if (method === 'GET' && path === 'kurin/k1/memberships/candidate') {
       return ok({ member: { memberKey: 'm9', publicId: 'PL-4F7A2-9D4A1', fullName: 'Віталій Романюк' }, alreadyInThisKurin: false, currentKurins: [k(1)] });
@@ -72,4 +73,32 @@ test('asks for a person by the code they gave', async ({ page }, info) => {
   });
   await expect(page.getByTestId('outgoing')).toContainText('Віталій Романюк');
   await shot(page, info.project.name, 'transfers-sent');
+});
+
+test('asks back a former member who now stands in another kurin, «ще й до нас»', async ({ page }, info) => {
+  const former = (memberKey: string, firstName: string, standsIn: ReturnType<typeof k>[]) => ({
+    former: { memberKey, firstName, lastName: 'Коваль', groupName: 'Ведмеді', joinedAtUtc: '2022-10-05T00:00:00Z', leftAtUtc: '2026-10-30T00:00:00Z' },
+    standsIn,
+  });
+  const world = {
+    incoming: [] as Record<string, unknown>[],
+    outgoing: [] as Record<string, unknown>[],
+    former: [former('m2', 'Назар', [k(15)]), former('m3', 'Віталій', [])],
+  };
+  const log = await signIn(page, member, transfersApi(world), ZVYAZKOVYI);
+  await page.goto('./tabs/kurin/transfers');
+  await page.locator('ion-segment-button[value="former"]').click();
+  await expect(page.getByTestId('former')).toContainText('Зараз у к. ч. 15');
+  await expect(page.getByTestId('former')).toContainText('Зараз ніде не стоїть');
+  await shot(page, info.project.name, 'transfers-former');
+
+  await page.getByTestId('former-member').first().click();
+  const sheet = page.locator('ion-action-sheet:not(.overlay-hidden)');
+  await sheet.getByRole('button', { name: 'Прийняти ще й до нас', exact: true }).click();
+  await page.locator('ion-action-sheet:not(.overlay-hidden)').getByRole('button', { name: 'Впорядник', exact: true }).click();
+  await expect(page.locator('ion-toast').last()).toContainText('Запит надіслано');
+  expect(log.writes.find((w) => w.path === 'kurin/k1/membership-requests')?.body).toEqual({
+    memberKey: 'm2', kind: 'AlsoJoin', membershipKind: 'Staff', fromKurinKey: 'k15',
+  });
+  await expect(page.getByTestId('former-member').first()).toContainText('запит чекає');
 });

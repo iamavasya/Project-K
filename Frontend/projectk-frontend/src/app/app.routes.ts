@@ -185,8 +185,8 @@ export const routes: Routes = [
     canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement')],
     loadComponent: () => import('./features/kurinModule/pages/transfers/transfers')
       .then(m => m.TransfersComponent),
-    title: 'Переходи',
-    data: { breadcrumb: 'Переходи', parent: '/kurin', titleContext: 'kurin' }
+    title: 'Склад куреня',
+    data: { breadcrumb: 'Склад куреня', parent: '/kurin', titleContext: 'kurin' }
   },
   {
     path: 'kurin/registry',

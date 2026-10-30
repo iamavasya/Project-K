@@ -342,3 +342,17 @@ export interface MembershipCandidateDto {
   alreadyInThisKurin: boolean;
   currentKurins: MembershipRequestKurinDto[];
 }
+
+/** A former member and the kurins they stand in now (web FormerMemberStandingDto); empty — nowhere, taken back at once. */
+export interface FormerMemberStandingDto {
+  former: {
+    memberKey: string;
+    firstName: string;
+    middleName?: string | null;
+    lastName: string;
+    groupName?: string | null;
+    joinedAtUtc: string;
+    leftAtUtc: string;
+  };
+  standsIn: MembershipRequestKurinDto[];
+}

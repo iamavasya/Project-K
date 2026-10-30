@@ -28,7 +28,7 @@ import { AuthService } from '../../auth/auth.service';
 import { apiErrorText } from '../../core/api';
 import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
-import { MembershipCandidateDto, MembershipRequestDto, MembershipRequestKind, MembershipRequestKurinDto, MembershipRequestStatus } from './kurin.models';
+import { FormerMemberStandingDto, MembershipCandidateDto, MembershipRequestDto, MembershipRequestKind, MembershipRequestKurinDto, MembershipRequestStatus } from './kurin.models';
 import { KurinApi } from './kurin.service';
 
 const STATUS: Record<MembershipRequestStatus, string> = {
@@ -53,8 +53,9 @@ const ERRORS: Record<string, string> = {
 const kurinNo = (k: MembershipRequestKurinDto): string => (k.number != null ? `к. ч. ${k.number}` : 'підготовчий курінь');
 
 /**
- * «Переходи» on a phone (web pages/transfers): the Звʼязковий asks for a person by the code they
- * gave, and answers other kurins' requests. A tap on a request opens what can be done with it.
+ * «Склад куреня» on a phone (web pages/transfers): the Звʼязковий asks for a person by the code they
+ * gave, answers other kurins' requests and takes former members back. A tap on a row opens what can
+ * be done with it.
  */
 @Component({
   selector: 'app-transfers',
@@ -91,14 +92,14 @@ const kurinNo = (k: MembershipRequestKurinDto): string => (k.number != null ? `�
     <ion-header [translucent]="true">
       <ion-toolbar>
         <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/kurin" text="" /></ion-buttons>
-        <ion-title>Переходи</ion-title>
+        <ion-title>Склад куреня</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content [fullscreen]="true">
       <ion-refresher slot="fixed" (ionRefresh)="refresh($event)"><ion-refresher-content /></ion-refresher>
 
       <ion-list [inset]="true" data-testid="ask">
-        <ion-list-header><ion-label>Попросити людину</ion-label></ion-list-header>
+        <ion-list-header><ion-label>Прийняти за кодом</ion-label></ion-list-header>
         <ion-item-group>
           <ion-item>
             <ion-input
@@ -153,11 +154,37 @@ const kurinNo = (k: MembershipRequestKurinDto): string => (k.number != null ? `�
       </ion-list>
 
       <ion-segment [value]="part()" (ionChange)="part.set($any($event).detail.value)">
-        <ion-segment-button value="incoming"><ion-label>Чекають відповіді</ion-label></ion-segment-button>
+        <ion-segment-button value="incoming"><ion-label>Вхідні</ion-label></ion-segment-button>
         <ion-segment-button value="outgoing"><ion-label>Надіслані</ion-label></ion-segment-button>
+        <ion-segment-button value="former"><ion-label>Колишні</ion-label></ion-segment-button>
       </ion-segment>
 
-      @if (requests().state === 'failed') {
+      @if (part() === 'former') {
+        @if (former().state === 'failed') {
+          <ion-list [inset]="true"><ion-item><ion-label>{{ failed }}</ion-label></ion-item></ion-list>
+        } @else {
+          <ion-list [inset]="true" data-testid="former">
+            <ion-item-group>
+              @for (p of formerList(); track p.former.memberKey) {
+                <ion-item [button]="!askedFor().has(p.former.memberKey)" [detail]="false" (click)="takeBack(p)" data-testid="former-member">
+                  <ion-label class="ion-text-wrap">
+                    <h2>{{ formerName(p) }}</h2>
+                    <p>{{ p.former.groupName ?? 'без гуртка' }} · вибув {{ p.former.leftAtUtc.slice(0, 10).split('-').reverse().join('.') }}</p>
+                    <p>{{ p.standsIn.length ? 'Зараз у ' + standsIn(p) : 'Зараз ніде не стоїть' }}</p>
+                  </ion-label>
+                  @if (askedFor().has(p.former.memberKey)) {
+                    <ion-badge slot="end" class="lk-tag--secondary">запит чекає</ion-badge>
+                  }
+                </ion-item>
+              } @empty {
+                <ion-item>
+                  <ion-label class="ion-text-wrap"><p>Колишніх немає. Коли курінь виведе людину, її можна буде повернути звідси.</p></ion-label>
+                </ion-item>
+              }
+            </ion-item-group>
+          </ion-list>
+        }
+      } @else if (requests().state === 'failed') {
         <ion-list [inset]="true"><ion-item><ion-label>{{ failed }}</ion-label></ion-item></ion-list>
       } @else {
         <ion-list [inset]="true" [attr.data-testid]="part()">
@@ -195,7 +222,13 @@ export class TransfersPage implements OnInit {
   protected readonly failed = FAILED_TEXT;
   protected readonly status = STATUS;
   protected readonly kurinNo = kurinNo;
-  protected readonly part = signal<'incoming' | 'outgoing'>('incoming');
+  protected readonly part = signal<'incoming' | 'outgoing' | 'former'>('incoming');
+  protected readonly former = signal<Loaded<FormerMemberStandingDto[]>>({ state: 'loading' });
+  protected readonly formerList = computed(() => valueOf(this.former()) ?? []);
+  /** Former members a sent request already waits about: not asked for twice. */
+  protected readonly askedFor = computed(
+    () => new Set((valueOf(this.requests())?.outgoing ?? []).filter((r) => r.status === 'Pending').map((r) => r.memberKey)),
+  );
   protected readonly requests = signal<Loaded<{ incoming: MembershipRequestDto[]; outgoing: MembershipRequestDto[] }>>({ state: 'loading' });
   protected readonly shown = computed(() => {
     const all = valueOf(this.requests());
@@ -302,8 +335,77 @@ export class TransfersPage implements OnInit {
     await this.load();
   }
 
+  protected formerName(p: FormerMemberStandingDto): string {
+    return [p.former.lastName, p.former.firstName, p.former.middleName].filter(Boolean).join(' ');
+  }
+
+  protected standsIn(p: FormerMemberStandingDto): string {
+    return p.standsIn.map(kurinNo).join(', ');
+  }
+
+  /**
+   * Takes a former member back: at once when they stand nowhere, otherwise by a request to the kurin
+   * they stand in — «перевести» or «ще й до нас». One sheet per choice, so each stays short.
+   */
+  protected async takeBack(p: FormerMemberStandingDto): Promise<void> {
+    if (this.askedFor().has(p.former.memberKey)) return;
+    const name = this.formerName(p);
+
+    let from: MembershipRequestKurinDto | null = p.standsIn[0] ?? null;
+    if (p.standsIn.length > 1) {
+      from = await this.choose<MembershipRequestKurinDto>(name, 'Кого питати', p.standsIn.map((k) => ({ text: kurinNo(k), data: k })));
+      if (!from) return;
+    }
+
+    let kind: MembershipRequestKind = 'Transfer';
+    if (from) {
+      const chosen = await this.choose<MembershipRequestKind>(name, `Зараз у ${kurinNo(from)}. Відповідь дасть його Звʼязковий.`, [
+        { text: 'Перевести до нас', data: 'Transfer' },
+        { text: 'Прийняти ще й до нас', data: 'AlsoJoin' },
+      ]);
+      if (!chosen) return;
+      kind = chosen;
+    }
+
+    const membershipKind = await this.choose<'Youth' | 'Staff'>(name, from ? 'У вашому курені як' : 'Ніде не стоїть — повертаєш одразу. У курені як', [
+      { text: 'Юнак', data: 'Youth' },
+      { text: 'Впорядник', data: 'Staff' },
+    ]);
+    if (!membershipKind) return;
+
+    this.busy.set(true);
+    try {
+      const sent = await this.data.requestMembership(this.kurinKey, {
+        memberKey: p.former.memberKey,
+        kind,
+        membershipKind,
+        fromKurinKey: from?.kurinKey ?? null,
+      });
+      await this.toasts.show(sent.joined ? `${name} знову у вашому курені.` : 'Запит надіслано. Він діє 14 днів.');
+      await this.load();
+    } catch (error) {
+      await this.toasts.show(apiErrorText(error, 'Не вдалося. Спробуй ще раз.', ERRORS), 'danger');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  private async choose<T>(header: string, subHeader: string, options: { text: string; data: T }[]): Promise<T | null> {
+    const sheet = await this.sheets.create({
+      header,
+      subHeader,
+      buttons: [...options, { text: 'Скасувати', role: 'cancel' }],
+    });
+    await sheet.present();
+    const { data } = await sheet.onWillDismiss<T>();
+    return data ?? null;
+  }
+
   private async load(): Promise<void> {
     if (!this.kurinKey) return;
-    await settle(this.data.membershipRequests(this.kurinKey), this.requests);
+    await Promise.all([
+      settle(this.data.membershipRequests(this.kurinKey), this.requests),
+      settle(this.data.formerStanding(this.kurinKey), this.former),
+    ]);
   }
 }
