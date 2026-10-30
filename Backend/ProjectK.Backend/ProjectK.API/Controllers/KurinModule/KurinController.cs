@@ -23,6 +23,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Lookup;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Cancel;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Create;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Former;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Decide;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
@@ -530,6 +531,19 @@ public class KurinController : ControllerBase
     public async Task<IActionResult> MembershipRequests(Guid kurinKey)
     {
         var response = await _mediator.Send(new GetMembershipRequestsQuery(kurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Former members with the kurins they stand in now, for the Звʼязковий deciding how to take someone back.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpGet("{kurinKey:guid}/membership-requests/former")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(IReadOnlyList<FormerMemberStanding>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> FormerStanding(Guid kurinKey)
+    {
+        var response = await _mediator.Send(new GetFormerStandingQuery(kurinKey));
         return response.ToActionResult(this);
     }
 

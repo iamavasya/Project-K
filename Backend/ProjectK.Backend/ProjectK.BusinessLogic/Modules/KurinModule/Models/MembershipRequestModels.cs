@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Models;
@@ -34,3 +35,9 @@ public sealed record MembershipRequestsResponse(
 /// at once and <see cref="Joined"/> is true.
 /// </summary>
 public sealed record MembershipRequestSent(Guid? MembershipRequestKey, bool Joined);
+
+/// <summary>
+/// A former member and the kurins they stand in now, named only by number. Empty when they stand
+/// nowhere: then the kurin takes them back without asking anyone.
+/// </summary>
+public sealed record FormerMemberStanding(FormerMember Former, IReadOnlyList<MembershipRequestKurin> StandsIn);

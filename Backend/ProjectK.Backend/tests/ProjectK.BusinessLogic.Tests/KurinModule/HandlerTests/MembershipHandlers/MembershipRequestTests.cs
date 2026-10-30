@@ -4,6 +4,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Cancel;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Create;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Decide;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Former;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
@@ -307,5 +308,39 @@ public class MembershipRequestTests
 
         result.ErrorCode.Should().Be("StandsInAnotherKurin");
         _opened.Should().BeEmpty();
+    }
+
+    // ── Former members ──────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task FormerMembers_ComeWithTheKurinsTheyStandInNow()
+    {
+        ActingIn(_kurinB);
+        StandsIn(_kurinA);
+        var nowhere = Guid.NewGuid();
+        _memberships.Setup(r => r.GetFormerInKurinAsync(_kurinB, It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new FormerMember(_person, "Назар", null, "Коваль", null, null, Now.UtcDateTime.AddYears(-3), Now.UtcDateTime.AddYears(-1)),
+            new FormerMember(nowhere, "Віталій", null, "Бойко", null, null, Now.UtcDateTime.AddYears(-3), Now.UtcDateTime.AddMonths(-2))
+        ]);
+        _memberships.Setup(r => r.GetActiveForMemberAsync(nowhere, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _unitOfWork.SetupGet(u => u.Kurins).Returns(Mock.Of<IKurinRepository>(r =>
+            r.GetByKeyAsync(_kurinA, It.IsAny<CancellationToken>()) == Task.FromResult<Kurin?>(new Kurin(1))));
+
+        var result = await new GetFormerStandingQueryHandler(_unitOfWork.Object, _user.Object).Handle(new GetFormerStandingQuery(_kurinB), default);
+
+        result.Data!.Should().HaveCount(2);
+        result.Data![0].StandsIn.Should().ContainSingle().Which.Number.Should().Be(1);
+        result.Data![1].StandsIn.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task FormerMembers_OfAnotherKurin_AreForbidden()
+    {
+        ActingIn(_kurinA);
+
+        var result = await new GetFormerStandingQueryHandler(_unitOfWork.Object, _user.Object).Handle(new GetFormerStandingQuery(_kurinB), default);
+
+        result.Type.Should().Be(ResultType.Forbidden);
     }
 }
