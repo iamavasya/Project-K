@@ -62,4 +62,27 @@ describe('AgendaAssignSelectComponent', () => {
     expect(nodes.find(node => node.key === 'group:g2')).toBeUndefined();
     expect(nodes[0].children?.find(child => child.key === 'member:m1')?.selectable).toBe(true);
   });
+
+  // «Усі з тегом» stands beside the гуртки, as its own branch, and a chosen tag goes out as a Tag target.
+  it('offers the kurin tags as their own branch and sends a chosen one as a Tag target', () => {
+    agendaService.getAssignTargets.mockReturnValue(of({
+      ...targetsForGroupProvid,
+      tags: [{ kurinTagKey: 't-new', name: 'Новики', colorHex: '#2F855A' }]
+    }));
+    fixture = TestBed.createComponent(AgendaAssignSelectComponent);
+    fixture.componentRef.setInput('kurinKey', 'k1');
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance as unknown as {
+      nodes: () => { key?: string; selectable?: boolean; children?: { key?: string; label?: string; data?: unknown }[] }[];
+      onSelectionChange: (nodes: unknown[]) => void;
+    };
+    const tags = component.nodes().find(node => node.key === 'tags');
+
+    expect(tags?.selectable).toBe(false);
+    expect(tags?.children?.map(child => child.label)).toEqual(['Усі з тегом «Новики»']);
+
+    component.onSelectionChange([tags!.children![0]]);
+    expect(fixture.componentInstance.targets()).toEqual([{ targetType: 'Tag', targetKey: 't-new' }]);
+  });
 });

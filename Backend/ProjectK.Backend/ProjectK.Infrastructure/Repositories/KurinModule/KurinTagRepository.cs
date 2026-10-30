@@ -63,6 +63,12 @@ public class KurinTagRepository : BaseEntityRepository<KurinTag>, IKurinTagRepos
             .Select(g => new { MemberKey = g.Key, Count = g.Count() })
             .ToDictionaryAsync(row => row.MemberKey, row => row.Count, cancellationToken);
 
+    public async Task<IReadOnlyList<Guid>> GetMemberKeysAsync(Guid kurinTagKey, CancellationToken cancellationToken = default) =>
+        await Context.MemberTags
+            .Where(a => a.KurinTagKey == kurinTagKey)
+            .Select(a => a.MemberKey)
+            .ToListAsync(cancellationToken);
+
     public void AddAssignment(MemberTag assignment) => Context.MemberTags.Add(assignment);
 
     public void RemoveAssignment(MemberTag assignment) => Context.MemberTags.Remove(assignment);

@@ -4,7 +4,7 @@
  */
 export type AgendaItemKind = 'Event' | 'Task';
 export type AgendaItemStatus = 'Todo' | 'InProgress' | 'Done';
-export type AgendaTargetType = 'Kurin' | 'Group' | 'Member' | 'Leadership';
+export type AgendaTargetType = 'Kurin' | 'Group' | 'Member' | 'Leadership' | 'Tag';
 export type AgendaRsvpStatus = 'Going' | 'NotGoing' | 'Maybe';
 export type RecurrenceFrequency = 'None' | 'Weekly' | 'Monthly' | 'Yearly';
 /** Once for all, closed by its провід (`Shared`) or by anyone in it, or by each person on their own. */
@@ -204,4 +204,13 @@ export interface AgendaAssignTargets {
   kurinLabel: string;
   kurinLeaderships: AgendaLeadershipTarget[];
   groups: AgendaGroupTarget[];
+  /** The kurin's tags, when it uses them and its policy lets this person aim at them. */
+  tags?: AgendaTagTarget[];
+}
+
+/** Everyone carrying a tag now or later, as one target. */
+export interface AgendaTagTarget {
+  kurinTagKey: string;
+  name: string;
+  colorHex: string;
 }

@@ -23,6 +23,7 @@ export type KurinCapability =
   | 'AssignGroups'
   | 'AssignMembers'
   | 'AssignProvid'
+  | 'AssignTags'
   | 'ReadJournal'
   | 'SeeTags'
   | 'ManageTags';
@@ -68,6 +69,7 @@ export const CAPABILITY_LABELS: Record<KurinCapability, string> = {
   AssignGroups: 'Призначати гурткам',
   AssignMembers: 'Призначати окремим людям',
   AssignProvid: 'Призначати проводу й КВ',
+  AssignTags: 'Призначати всім з тегом',
   ReadJournal: 'Бачити журнал дій',
   SeeTags: 'Бачити теги людей',
   ManageTags: 'Заводити теги й ставити їх людям'

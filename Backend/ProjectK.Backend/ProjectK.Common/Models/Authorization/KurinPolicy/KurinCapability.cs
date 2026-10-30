@@ -79,6 +79,9 @@ public enum KurinCapability
     /// <summary>Assign an event or a task to a провід: a гурток's, the курінний провід or the КВ.</summary>
     AssignProvid,
 
+    /// <summary>Assign an event or a task to everyone carrying a tag. Reaches the kurin or nobody.</summary>
+    AssignTags,
+
     /// <summary>Read the kurin's Журнал дій.</summary>
     ReadJournal,
 

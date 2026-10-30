@@ -1,7 +1,7 @@
 /** Mirrors the backend AgendaItemKind / AgendaItemStatus / AgendaTargetType enums (serialized as strings). */
 export type AgendaItemKind = 'Event' | 'Task';
 export type AgendaItemStatus = 'Todo' | 'InProgress' | 'Done';
-export type AgendaTargetType = 'Kurin' | 'Group' | 'Member' | 'Leadership';
+export type AgendaTargetType = 'Kurin' | 'Group' | 'Member' | 'Leadership' | 'Tag';
 export type AgendaRsvpStatus = 'Going' | 'NotGoing' | 'Maybe';
 export type RecurrenceFrequency = 'None' | 'Weekly' | 'Monthly' | 'Yearly';
 /**
@@ -266,4 +266,13 @@ export interface AgendaAssignTargets {
   kurinLabel: string;
   kurinLeaderships: AgendaLeadershipTarget[];
   groups: AgendaGroupTarget[];
+  /** Теги куреня, коли курінь ними користується й політика дозволяє призначати тегам; інакше порожньо. */
+  tags?: AgendaTagTarget[];
+}
+
+/** «Усі з тегом»: подія чи задача для кожного, хто має тег зараз або отримає його пізніше. */
+export interface AgendaTagTarget {
+  kurinTagKey: string;
+  name: string;
+  colorHex: string;
 }

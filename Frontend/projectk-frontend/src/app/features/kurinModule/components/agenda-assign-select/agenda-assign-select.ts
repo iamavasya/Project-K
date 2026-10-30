@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { TreeSelectModule } from '@openng/optimus-ui/treeselect';
 import { TreeNode } from '@openng/optimus-ui/api';
 import { AgendaService } from '../../services/agenda-service/agenda.service';
-import { AgendaAssignTargets, AgendaLeadershipTarget, AgendaTargetInput, AgendaTargetType } from '../../models/agenda';
+import { AgendaAssignTargets, AgendaLeadershipTarget, AgendaTagTarget, AgendaTargetInput, AgendaTargetType } from '../../models/agenda';
 
 interface TargetNodeData {
   targetType: AgendaTargetType;
@@ -11,7 +11,7 @@ interface TargetNodeData {
 }
 
 /**
- * «Призначити для»: дерево Курінь → Гуртки → Учасники з пошуком (`filter`). Бекенд позначає кожну ціль
+ * «Призначити для»: дерево Курінь → Гуртки → Учасники, а під ними Теги, з пошуком (`filter`). Бекенд позначає кожну ціль
  * тим, чи дає її поточному користувачу політика куреня, тож тут немає власної перевірки прав. Вузол,
  * який не можна обрати і під яким нема чого обрати, не малюється зовсім: Гуртковому нема чого
  * дивитись на «весь курінь», якого він не може вибрати.
@@ -117,7 +117,29 @@ export class AgendaAssignSelectComponent implements OnInit {
       });
     }
 
+    // Теги — окремою гілкою після гуртків: «усі з тегом» поруч із гуртком, а не всередині нього.
+    const tags = tree.tags ?? [];
+    if (tags.length > 0) {
+      roots.push({
+        key: 'tags',
+        label: 'Теги',
+        icon: 'pi pi-tags',
+        selectable: false,
+        children: tags.map(tag => this.tagNode(tag))
+      });
+    }
+
     return this.prune(roots);
+  }
+
+  private tagNode(tag: AgendaTagTarget): TreeNode<TargetNodeData> {
+    return {
+      key: `tag:${tag.kurinTagKey}`,
+      label: `Усі з тегом «${tag.name}»`,
+      icon: 'pi pi-tag',
+      selectable: true,
+      data: { targetType: 'Tag' as AgendaTargetType, targetKey: tag.kurinTagKey }
+    };
   }
 
   /** Keeps a node when it can be picked itself or holds something that can; the rest is noise. */

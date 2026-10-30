@@ -27,13 +27,17 @@ public sealed record AgendaViewerContext(
     IReadOnlyCollection<Guid> ViewerLeadershipKeys,
     bool CanSeeWholeKurin,
     bool IsLeadership,
-    IReadOnlyCollection<Guid>? LedGroupKeysOrNull = null)
+    IReadOnlyCollection<Guid>? LedGroupKeysOrNull = null,
+    IReadOnlyCollection<Guid>? ViewerTagKeysOrNull = null)
 {
+    /// <summary>The kurin's tags the viewer carries now; whoever gets a tag later sees what was assigned to it.</summary>
+    public IReadOnlyCollection<Guid> ViewerTagKeys => ViewerTagKeysOrNull ?? Array.Empty<Guid>();
+
     /// <summary>The гуртки the viewer runs as провід or впорядник — narrower than what they see, which also holds their own гурток.</summary>
     public IReadOnlyCollection<Guid> LedGroupKeys => LedGroupKeysOrNull ?? Array.Empty<Guid>();
 
     public AgendaViewerScope ToScope() =>
-        new(KurinKey, ViewerUserKey, ViewerMemberKey, VisibilityGroupKeys, ViewerLeadershipKeys, CanSeeWholeKurin);
+        new(KurinKey, ViewerUserKey, ViewerMemberKey, VisibilityGroupKeys, ViewerLeadershipKeys, CanSeeWholeKurin, ViewerTagKeys);
 }
 
 /// <summary>
@@ -45,6 +49,7 @@ public sealed record AgendaViewerContext(
 /// <param name="Groups">The reach of <see cref="KurinCapability.AssignGroups"/>.</param>
 /// <param name="Members">The reach of <see cref="KurinCapability.AssignMembers"/>.</param>
 /// <param name="Provid">The reach of <see cref="KurinCapability.AssignProvid"/>.</param>
+/// <param name="Tags">The reach of <see cref="KurinCapability.AssignTags"/>: the kurin or nobody.</param>
 /// <param name="LedGroupKeys">The гуртки the user leads, their own member гурток included; empty unless some reach is own-group.</param>
 /// <param name="UserKey">The user's account, which an own-group reach always covers.</param>
 public sealed record AgendaAssignReach(
@@ -53,11 +58,15 @@ public sealed record AgendaAssignReach(
     CapabilityReach Members,
     CapabilityReach Provid,
     IReadOnlySet<Guid> LedGroupKeys,
-    Guid? UserKey)
+    Guid? UserKey,
+    CapabilityReach Tags = CapabilityReach.None)
 {
     /// <summary>Whether the user may author an item at all: some kind of target is within reach.</summary>
     public bool CanAuthor => Kurin > CapabilityReach.None || Groups > CapabilityReach.None
-        || Members > CapabilityReach.None || Provid > CapabilityReach.None;
+        || Members > CapabilityReach.None || Provid > CapabilityReach.None || Tags > CapabilityReach.None;
+
+    /// <summary>Whether a tag may be a target: tags are the kurin's, so only a kurin-wide reach covers them.</summary>
+    public bool ReachesTags => Tags == CapabilityReach.Kurin;
 
     /// <summary>Whether the whole kurin may be a target.</summary>
     public bool ReachesKurin => Kurin == CapabilityReach.Kurin;
@@ -108,7 +117,8 @@ public sealed class AgendaAccess : IAgendaAccess
 {
     private static readonly KurinCapability[] AssignCapabilities =
     [
-        KurinCapability.AssignKurin, KurinCapability.AssignGroups, KurinCapability.AssignMembers, KurinCapability.AssignProvid
+        KurinCapability.AssignKurin, KurinCapability.AssignGroups, KurinCapability.AssignMembers, KurinCapability.AssignProvid,
+        KurinCapability.AssignTags
     ];
 
     private readonly ICurrentUserContext _currentUser;
@@ -160,6 +170,11 @@ public sealed class AgendaAccess : IAgendaAccess
             ? await _uow.Leaderships.GetActiveLeadershipKeysForMemberAsync(memberKey.Value, cancellationToken)
             : (IReadOnlyList<Guid>)Array.Empty<Guid>();
 
+        // The tags the viewer carries in this kurin: an item aimed at a tag reaches whoever has it now.
+        var tagKeys = memberKey.HasValue
+            ? (await _uow.KurinTags.GetAssignmentsAsync(kurinKey, [memberKey.Value], cancellationToken)).Select(a => a.KurinTagKey).ToList()
+            : [];
+
         var visibilityGroups = new HashSet<Guid>();
         if (ownGroupKey.HasValue)
         {
@@ -188,7 +203,8 @@ public sealed class AgendaAccess : IAgendaAccess
             ViewerLeadershipKeys: leadershipKeys,
             CanSeeWholeKurin: canSeeWholeKurin,
             IsLeadership: isLeadership,
-            LedGroupKeysOrNull: ledGroups);
+            LedGroupKeysOrNull: ledGroups,
+            ViewerTagKeysOrNull: tagKeys);
     }
 
     public Task<ResourceAccessDecision> AuthorizeTargetAsync(
@@ -201,6 +217,7 @@ public sealed class AgendaAccess : IAgendaAccess
             AgendaTargetType.Group => (KurinCapability.AssignGroups, ResourceType.Group),
             AgendaTargetType.Member => (KurinCapability.AssignMembers, ResourceType.Member),
             AgendaTargetType.Leadership => (KurinCapability.AssignProvid, ResourceType.Leadership),
+            AgendaTargetType.Tag => (KurinCapability.AssignTags, ResourceType.MemberTag),
             _ => null
         };
 
@@ -230,6 +247,7 @@ public sealed class AgendaAccess : IAgendaAccess
         var groups = await _permissions.ReachAsync(KurinCapability.AssignGroups, cancellationToken);
         var members = await _permissions.ReachAsync(KurinCapability.AssignMembers, cancellationToken);
         var provid = await _permissions.ReachAsync(KurinCapability.AssignProvid, cancellationToken);
+        var tags = await _permissions.ReachAsync(KurinCapability.AssignTags, cancellationToken);
 
         var userKey = _currentUser.UserId;
         IReadOnlySet<Guid> ledGroups = new HashSet<Guid>();
@@ -238,7 +256,7 @@ public sealed class AgendaAccess : IAgendaAccess
             ledGroups = (await _scopeReader.GetLedGroupKeysAsync(userKey.Value, kurinKey, cancellationToken)).ToHashSet();
         }
 
-        return new AgendaAssignReach(kurin, groups, members, provid, ledGroups, userKey);
+        return new AgendaAssignReach(kurin, groups, members, provid, ledGroups, userKey, tags);
     }
 }
 

@@ -31,6 +31,9 @@ public interface IKurinTagRepository : IBaseEntityRepository<KurinTag>
         IReadOnlyCollection<Guid> memberKeys,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Everyone carrying the tag now.</summary>
+    Task<IReadOnlyList<Guid>> GetMemberKeysAsync(Guid kurinTagKey, CancellationToken cancellationToken = default);
+
     void AddAssignment(MemberTag assignment);
     void RemoveAssignment(MemberTag assignment);
 

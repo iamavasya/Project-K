@@ -20,12 +20,14 @@ public sealed class GetAssignTargetsQueryHandler
     private readonly IUnitOfWork _uow;
     private readonly IMemberDirectory _members;
     private readonly IAgendaAccess _access;
+    private readonly IKurinTagVisibility _tags;
 
-    public GetAssignTargetsQueryHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access)
+    public GetAssignTargetsQueryHandler(IUnitOfWork uow, IMemberDirectory members, IAgendaAccess access, IKurinTagVisibility tags)
     {
         _uow = uow;
         _members = members;
         _access = access;
+        _tags = tags;
     }
 
     public async Task<ServiceResult<AgendaAssignTargetsResponse>> Handle(GetAssignTargetsQuery request, CancellationToken cancellationToken)
@@ -89,13 +91,23 @@ public sealed class GetAssignTargetsQueryHandler
             .Where(g => g.CanTargetGroup || g.Leadership?.CanTarget == true || g.Members.Any(m => m.CanTarget))
             .ToList();
 
+        // Tags are offered only while the kurin uses them; an item aimed at one earlier keeps it.
+        var tagTargets = new List<AgendaTagTargetDto>();
+        if (reach.ReachesTags && (await _tags.SettingsAsync(request.KurinKey, cancellationToken))?.Enabled == true)
+        {
+            tagTargets = (await _uow.KurinTags.GetForKurinAsync(request.KurinKey, cancellationToken))
+                .Select(tag => new AgendaTagTargetDto { KurinTagKey = tag.KurinTagKey, Name = tag.Name, ColorHex = tag.ColorHex })
+                .ToList();
+        }
+
         var response = new AgendaAssignTargetsResponse
         {
             CanTargetKurin = reach.ReachesKurin,
             KurinKey = request.KurinKey,
             KurinLabel = AgendaLookups.KurinLabel,
             KurinLeaderships = kurinLeaderships,
-            Groups = groupTargets
+            Groups = groupTargets,
+            Tags = tagTargets
         };
 
         return new ServiceResult<AgendaAssignTargetsResponse>(ResultType.Success, response);

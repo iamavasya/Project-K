@@ -18,7 +18,7 @@ public static class AgendaItemResponseFactory
         IReadOnlyDictionary<Guid, string> groupNames,
         IReadOnlyDictionary<Guid, string> memberNames,
         IReadOnlyDictionary<Guid, string> creatorNames,
-        IReadOnlyDictionary<Guid, string> leadershipLabels,
+        IReadOnlyDictionary<Guid, string> targetLabels,
         IReadOnlyDictionary<Guid, AgendaCategory> categories,
         AgendaRoster roster,
         DateTime? occurrenceStartUtc = null,
@@ -79,7 +79,7 @@ public static class AgendaItemResponseFactory
             SeriesStartUtc = AsUtc(item.StartUtc),
             SeriesEndUtc = AsUtc(item.EndUtc),
             Assignments = item.Assignments
-                .Select(a => ToDto(item, a, viewer, roster, kurinLabel, groupNames, memberNames, creatorNames, leadershipLabels))
+                .Select(a => ToDto(item, a, viewer, roster, kurinLabel, groupNames, memberNames, creatorNames, targetLabels))
                 .ToList()
         };
     }
@@ -93,7 +93,7 @@ public static class AgendaItemResponseFactory
         IReadOnlyDictionary<Guid, string> groupNames,
         IReadOnlyDictionary<Guid, string> memberNames,
         IReadOnlyDictionary<Guid, string> userNames,
-        IReadOnlyDictionary<Guid, string> leadershipLabels)
+        IReadOnlyDictionary<Guid, string> targetLabels)
     {
         var mode = AgendaCompletion.ModeOf(assignment);
         var dto = new AgendaAssignmentDto
@@ -101,7 +101,7 @@ public static class AgendaItemResponseFactory
             AgendaAssignmentKey = assignment.AgendaAssignmentKey,
             TargetType = assignment.TargetType,
             TargetKey = assignment.TargetKey,
-            Label = ResolveLabel(assignment, kurinLabel, groupNames, memberNames, leadershipLabels),
+            Label = ResolveLabel(assignment, kurinLabel, groupNames, memberNames, targetLabels),
             CompletionMode = mode,
             Status = AgendaCompletion.TargetStatus(assignment, roster),
             StatusChangedByName = NameOf(assignment.StatusChangedByUserKey, userNames),
@@ -155,14 +155,15 @@ public static class AgendaItemResponseFactory
         string kurinLabel,
         IReadOnlyDictionary<Guid, string> groupNames,
         IReadOnlyDictionary<Guid, string> memberNames,
-        IReadOnlyDictionary<Guid, string> leadershipLabels)
+        IReadOnlyDictionary<Guid, string> targetLabels)
     {
         return assignment.TargetType switch
         {
             AgendaTargetType.Kurin => kurinLabel,
             AgendaTargetType.Group => groupNames.TryGetValue(assignment.TargetKey, out var name) ? name : "—",
             AgendaTargetType.Member => memberNames.TryGetValue(assignment.TargetKey, out var name) ? name : "—",
-            AgendaTargetType.Leadership => leadershipLabels.TryGetValue(assignment.TargetKey, out var name) ? name : "—",
+            AgendaTargetType.Leadership => targetLabels.TryGetValue(assignment.TargetKey, out var name) ? name : "—",
+            AgendaTargetType.Tag => targetLabels.TryGetValue(assignment.TargetKey, out var name) ? name : AgendaLookups.TagLabel(null),
             _ => "—"
         };
     }

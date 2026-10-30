@@ -35,6 +35,12 @@ public class ResourceScopeReader : IResourceScopeReader
 
             ResourceType.KurinJournal => await GetJournalScopeAsync(resourceKey, cancellationToken),
 
+            // A tag is the kurin's; addressed by its own key when an agenda item is aimed at it.
+            ResourceType.MemberTag => await _context.KurinTags
+                .Where(t => t.KurinTagKey == resourceKey)
+                .Select(t => new ResourceScope(t.KurinKey, null, null))
+                .FirstOrDefaultAsync(cancellationToken),
+
             ResourceType.Group => await _context.Groups
                 .Where(g => g.GroupKey == resourceKey)
                 .Select(g => new ResourceScope(g.KurinKey, g.GroupKey, null))
