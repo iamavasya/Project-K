@@ -6,11 +6,9 @@ import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { EditorModule } from '@openng/optimus-ui/editor';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
-import { RadioButtonModule } from '@openng/optimus-ui/radiobutton';
 import { SelectModule } from '@openng/optimus-ui/select';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { TagModule } from '@openng/optimus-ui/tag';
-import { TextareaModule } from '@openng/optimus-ui/textarea';
 import { formatUtcDateTime } from '../../../../shared/functions/utc-date-time.function';
 import { DeltaOp, quillDeltaToMarkdown } from '../../../systemModule/functions/quill-delta-to-markdown.function';
 import { leadershipRoleDisplayName } from '../../functions/leadership-role-display.function';
@@ -18,15 +16,18 @@ import { resolveBadgeImageUrl } from '../../functions/member-skills-view-mapper.
 import { hasContent, markdownBlocksToDelta, parseProjectMarkdown } from '../../functions/project-markdown.function';
 import {
   CAMP_KINDS,
+  THIRD_PROBE_STAGES,
   campKindLabel,
   dayLabel,
   fromIsoDate,
+  megabytesLabel,
   thirdProbeChecklist,
   toIsoDate
 } from '../../functions/third-probe.function';
 import { MemberDto } from '../../models/member.dto';
 import {
   SaveThirdProbeFileRequestDto,
+  SetThirdProbeStagesRequestDto,
   ThirdProbeBadgeDto,
   ThirdProbeCampKind,
   ThirdProbeDto
@@ -42,6 +43,8 @@ interface QuillLike {
   setContents(delta: unknown, source?: string): unknown;
 }
 
+type StageKey = keyof SetThirdProbeStagesRequestDto;
+
 const CERTIFICATE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
 
 const FILE_REFUSALS: Record<string, string> = {
@@ -50,23 +53,26 @@ const FILE_REFUSALS: Record<string, string> = {
   ForeignImage: 'У резюме лише текст, без зображень.',
   EndsBeforeStart: 'Табір не може закінчитися раніше, ніж почався.',
   BadgeNotHeld: 'Ця вмілість ще не підтверджена.',
-  NothingToConfirm: 'Спершу запиши дату й деталі, тоді можна підтвердити.',
+  NothingToConfirm: 'Спершу запиши дату рефлексії, тоді можна підтвердити.',
   CertificateTooLarge: 'Посвідка завелика: до 2 МБ.',
   InvalidCertificate: 'Посвідка — це фото (PNG, JPEG, WebP) або PDF.',
+  StorageFull: 'Файли третьої проби вже займають майже все місце. Прибери зайві фото.',
+  StagesOutOfOrder: 'Етапи не по черзі: завершити можна після відкриття, іменувати — після завершення.',
   NotProjectProbe: 'Це не третя проба.'
 };
 
 /**
- * The «Третя проба» tab as the УПЮ third-prober file has it: how long is left until the 18th
- * birthday, what is done and what is not, the opening and the mentors, the camp with its посвідка,
- * the вмілості, five projects and a spare, and the пластове резюме. The person and whoever may sign
- * their probe write it; leaders confirm the conference, the camp and each project.
+ * The «Третя проба» tab as the УПЮ third-prober file has it: how long is left to close it, what is
+ * done and what is not, the stages the referent tracks, the mentors and the reflection, the camp
+ * with its посвідка, the вмілості, five projects and a spare, and the пластове резюме. The person
+ * and whoever may sign their probe write it; leaders confirm the reflection and each project, and
+ * set the stages.
  */
 @Component({
   selector: 'app-third-probe',
   imports: [
-    FormsModule, ButtonModule, DatePickerModule, DialogModule, EditorModule, InputTextModule, RadioButtonModule, SelectModule,
-    SkeletonModule, TagModule, TextareaModule, ProbeProjectsComponent, MarkdownViewComponent, ThirdProbeCountdownComponent
+    FormsModule, ButtonModule, DatePickerModule, DialogModule, EditorModule, InputTextModule, SelectModule,
+    SkeletonModule, TagModule, ProbeProjectsComponent, MarkdownViewComponent, ThirdProbeCountdownComponent
   ],
   templateUrl: './third-probe.html',
   styleUrl: './third-probe.css',
@@ -91,20 +97,25 @@ export class ThirdProbeComponent {
   readonly errorMessage = signal<string | null>(null);
 
   readonly fileDialogVisible = signal(false);
-  readonly openedOn = signal<Date | null>(null);
-  readonly mentors = signal('');
-  readonly conferenceOn = signal<Date | null>(null);
-  readonly conferenceWith = signal('');
+  readonly mentorZvyazkovyi = signal('');
+  readonly mentorVporiadnyk = signal('');
+  readonly mentorReferent = signal('');
+  readonly reflectionOn = signal<Date | null>(null);
+  readonly reflectionWith = signal('');
   readonly campKind = signal<ThirdProbeCampKind | null>(null);
   readonly campName = signal('');
   readonly campFrom = signal<Date | null>(null);
   readonly campTo = signal<Date | null>(null);
   readonly dialogError = signal<string | null>(null);
 
+  readonly stagesDialogVisible = signal(false);
+  readonly stageDates = signal<Record<StageKey, Date | null>>(emptyStages());
+
   readonly resumeDialogVisible = signal(false);
   readonly showAllBadges = signal(false);
 
   readonly campKinds = [...CAMP_KINDS];
+  readonly stageList = THIRD_PROBE_STAGES;
   readonly resumeFormats = ['bold', 'italic', 'list', 'link', 'header'];
   readonly certificateAccept = CERTIFICATE_TYPES.join(',');
 
@@ -114,8 +125,7 @@ export class ThirdProbeComponent {
   readonly canUnsign = computed(() => !this.readOnly() && !!this.tab()?.canUnsign);
   readonly checklist = computed(() => this.tab() ? thirdProbeChecklist(this.tab()!) : []);
   readonly doneCount = computed(() => this.checklist().filter(item => item.done).length);
-  readonly openedLabel = computed(() => dayLabel(this.file()?.openedOn ?? null));
-  readonly conferenceLabel = computed(() => dayLabel(this.file()?.conferenceOn ?? null));
+  readonly reflectionLabel = computed(() => dayLabel(this.file()?.reflectionOn ?? null));
   readonly campDates = computed(() => {
     const from = dayLabel(this.file()?.campFrom ?? null);
     const to = dayLabel(this.file()?.campTo ?? null);
@@ -127,6 +137,28 @@ export class ThirdProbeComponent {
   readonly earlierBadges = computed(() => this.tab()?.badges.filter(badge => !badge.duringProbe) ?? []);
   readonly resumeBlocks = computed(() => parseProjectMarkdown(this.file()?.resume ?? '', () => null));
   readonly hasResume = computed(() => hasContent(this.resumeBlocks()));
+  readonly storage = computed(() => {
+    const tab = this.tab();
+    return tab?.file ? `${megabytesLabel(tab.file.storedBytes)} з ${megabytesLabel(tab.limits.maxStoredBytes)}` : null;
+  });
+
+  readonly mentors = computed(() => {
+    const file = this.file();
+    return [
+      { role: 'Звʼязковий', name: file?.mentorZvyazkovyi },
+      { role: 'Впорядник', name: file?.mentorVporiadnyk },
+      { role: 'Референт ІІІ проби', name: file?.mentorReferent }
+    ];
+  });
+
+  /** Each stage with its day, the opening ones first; the derived opening day says where it came from. */
+  readonly stages = computed(() => {
+    const stages = this.file()?.stages;
+    return THIRD_PROBE_STAGES.map(stage => ({
+      ...stage,
+      day: dayLabel(stages?.[stage.key] ?? null)
+    }));
+  });
 
   /** Offices held since the probe opened: «Які діловодства ти виконував протягом проби». */
   readonly offices = computed(() => {
@@ -159,10 +191,11 @@ export class ThirdProbeComponent {
 
   openFileDialog(): void {
     const file = this.file();
-    this.openedOn.set(file?.openedOnIsDerived ? null : fromIsoDate(file?.openedOn ?? null));
-    this.mentors.set(file?.mentors ?? '');
-    this.conferenceOn.set(fromIsoDate(file?.conferenceOn ?? null));
-    this.conferenceWith.set(file?.conferenceWith ?? '');
+    this.mentorZvyazkovyi.set(file?.mentorZvyazkovyi ?? '');
+    this.mentorVporiadnyk.set(file?.mentorVporiadnyk ?? '');
+    this.mentorReferent.set(file?.mentorReferent ?? '');
+    this.reflectionOn.set(fromIsoDate(file?.reflectionOn ?? null));
+    this.reflectionWith.set(file?.reflectionWith ?? '');
     this.campKind.set(file?.campKind ?? null);
     this.campName.set(file?.campName ?? '');
     this.campFrom.set(fromIsoDate(file?.campFrom ?? null));
@@ -173,15 +206,42 @@ export class ThirdProbeComponent {
 
   saveFileDialog(): void {
     this.saveFile({
-      openedOn: toIsoDate(this.openedOn()),
-      mentors: this.mentors().trim() || null,
-      conferenceOn: toIsoDate(this.conferenceOn()),
-      conferenceWith: this.conferenceWith().trim() || null,
+      mentorZvyazkovyi: this.mentorZvyazkovyi().trim() || null,
+      mentorVporiadnyk: this.mentorVporiadnyk().trim() || null,
+      mentorReferent: this.mentorReferent().trim() || null,
+      reflectionOn: toIsoDate(this.reflectionOn()),
+      reflectionWith: this.reflectionWith().trim() || null,
       campKind: this.campKind(),
       campName: this.campName().trim() || null,
       campFrom: toIsoDate(this.campFrom()),
       campTo: toIsoDate(this.campTo())
     }, () => this.fileDialogVisible.set(false));
+  }
+
+  openStagesDialog(): void {
+    const stages = this.file()?.stages;
+    const dates = emptyStages();
+    for (const stage of THIRD_PROBE_STAGES) {
+      dates[stage.key] = fromIsoDate(stages?.[stage.key] ?? null);
+    }
+    // A derived opening day is not a stage anyone set; the dialog starts it empty.
+    if (this.file()?.openedOnIsDerived) {
+      dates.openedOn = null;
+    }
+    this.stageDates.set(dates);
+    this.dialogError.set(null);
+    this.stagesDialogVisible.set(true);
+  }
+
+  setStage(key: StageKey, value: Date | null): void {
+    this.stageDates.update(dates => ({ ...dates, [key]: value }));
+  }
+
+  saveStages(): void {
+    const dates = this.stageDates();
+    const request = Object.fromEntries(THIRD_PROBE_STAGES.map(stage => [stage.key, toIsoDate(dates[stage.key])])) as SetThirdProbeStagesRequestDto;
+    this.dialogError.set(null);
+    this.run(this.progress.setThirdProbeStages(this.memberKey(), this.probeId(), request), () => this.stagesDialogVisible.set(false), this.dialogError);
   }
 
   choosePhysical(badgeId: string): void {
@@ -204,8 +264,8 @@ export class ThirdProbeComponent {
     this.saveFile({ resume }, () => this.resumeDialogVisible.set(false));
   }
 
-  confirm(part: 'conference' | 'camp', sign: boolean): void {
-    this.run(this.progress.confirmThirdProbePart(this.memberKey(), this.probeId(), part, sign));
+  confirmReflection(sign: boolean): void {
+    this.run(this.progress.confirmReflection(this.memberKey(), this.probeId(), sign));
   }
 
   onCertificatePicked(event: Event): void {
@@ -241,10 +301,11 @@ export class ThirdProbeComponent {
   private saveFile(changes: Partial<SaveThirdProbeFileRequestDto>, done?: () => void): void {
     const file = this.file();
     const request: SaveThirdProbeFileRequestDto = {
-      openedOn: file?.openedOnIsDerived ? null : file?.openedOn ?? null,
-      mentors: file?.mentors ?? null,
-      conferenceOn: file?.conferenceOn ?? null,
-      conferenceWith: file?.conferenceWith ?? null,
+      mentorZvyazkovyi: file?.mentorZvyazkovyi ?? null,
+      mentorVporiadnyk: file?.mentorVporiadnyk ?? null,
+      mentorReferent: file?.mentorReferent ?? null,
+      reflectionOn: file?.reflectionOn ?? null,
+      reflectionWith: file?.reflectionWith ?? null,
       campKind: file?.campKind ?? null,
       campName: file?.campName ?? null,
       campFrom: file?.campFrom ?? null,
@@ -288,4 +349,8 @@ export class ThirdProbeComponent {
       }
     });
   }
+}
+
+function emptyStages(): Record<StageKey, Date | null> {
+  return Object.fromEntries(THIRD_PROBE_STAGES.map(stage => [stage.key, null])) as Record<StageKey, Date | null>;
 }

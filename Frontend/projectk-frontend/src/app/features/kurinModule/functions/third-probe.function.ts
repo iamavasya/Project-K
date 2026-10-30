@@ -2,6 +2,7 @@ import {
   ProbeProjectArea,
   ProbeProjectReach,
   ThirdProbeCampKind,
+  SetThirdProbeStagesRequestDto,
   ThirdProbeDto
 } from '../models/probes-and-badges/probe-project.dto';
 
@@ -87,7 +88,7 @@ export function countdownMood(parts: CountdownParts): 'calm' | 'soon' | 'urgent'
 }
 
 export interface ChecklistItem {
-  key: 'conference' | 'projects' | 'camp' | 'badges' | 'resume';
+  key: 'reflection' | 'projects' | 'camp' | 'badges' | 'resume';
   label: string;
   detail: string;
   done: boolean;
@@ -108,10 +109,10 @@ export function thirdProbeChecklist(tab: ThirdProbeDto): ChecklistItem[] {
 
   return [
     {
-      key: 'conference',
-      label: 'Конференція зі звʼязковим',
-      detail: confirmationDetail(file?.conferenceConfirmedAtUtc, !!file?.conferenceOn, 'підтверджено', 'ще не відбулася'),
-      done: !!file?.conferenceConfirmedAtUtc
+      key: 'reflection',
+      label: 'Рефлексія зі звʼязковим',
+      detail: confirmationDetail(file?.reflectionConfirmedAtUtc, !!file?.reflectionOn, 'підтверджено', 'ще не відбулася'),
+      done: !!file?.reflectionConfirmedAtUtc
     },
     {
       key: 'projects',
@@ -122,8 +123,8 @@ export function thirdProbeChecklist(tab: ThirdProbeDto): ChecklistItem[] {
     {
       key: 'camp',
       label: 'Табір',
-      detail: confirmationDetail(file?.campConfirmedAtUtc, !!file?.campName, 'зараховано', 'ще не вказано'),
-      done: !!file?.campConfirmedAtUtc
+      detail: file?.campName ? 'додано' : 'ще не вказано',
+      done: !!file?.campName
     },
     {
       key: 'badges',
@@ -170,4 +171,20 @@ export function fromIsoDate(value: string | null): Date | null {
 /** A day as people read it: «1 листопада 2026». */
 export function dayLabel(value: string | null): string | null {
   return fromIsoDate(value)?.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' }) ?? null;
+}
+
+/** The referent's stages, in the order a probe goes through them. */
+export const THIRD_PROBE_STAGES: readonly { key: keyof SetThirdProbeStagesRequestDto; label: string; hint?: string; closing: boolean }[] = [
+  { key: 'motivationLetterOn', label: 'Мотиваційний лист', hint: 'план здачі проби; пише 15-річний', closing: false },
+  { key: 'selfReflectionOn', label: 'Саморефлексія', closing: false },
+  { key: 'applicationSubmittedOn', label: 'Зголошення до краю', closing: false },
+  { key: 'openedOn', label: 'Пробу відкрито', closing: false },
+  { key: 'completedOn', label: 'Пробу завершено', closing: true },
+  { key: 'namedOn', label: 'Іменовано', closing: true },
+  { key: 'archivedOn', label: 'В архіві', closing: true }
+];
+
+/** Bytes as people read them: «3,2 МБ». */
+export function megabytesLabel(bytes: number): string {
+  return (bytes / (1024 * 1024)).toLocaleString('uk-UA', { maximumFractionDigits: 1 }) + ' МБ';
 }

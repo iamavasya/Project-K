@@ -28,7 +28,8 @@ export interface ProbeProjectDto {
   eventLeads: string | null;
   coordinatorName: string | null;
   coordinatorContact: string | null;
-  /** Markdown, like `plan` and `results`; pictures are written as `project-image:{imageKey}`. */
+  /** Markdown, like the goal, plan and results; pictures are written as `project-image:{imageKey}`. */
+  description: string;
   goal: string;
   plan: string;
   results: string;
@@ -49,24 +50,42 @@ export interface ThirdProbeCertificateDto {
   fileName: string | null;
 }
 
+/** The stages the referent of the third probe tracks, each the day it happened. */
+export interface ThirdProbeStagesDto {
+  /** «План здачі проби», asked of a 15-year-old. */
+  motivationLetterOn: string | null;
+  selfReflectionOn: string | null;
+  /** «Зголошення» sent to the край. */
+  applicationSubmittedOn: string | null;
+  openedOn: string | null;
+  completedOn: string | null;
+  namedOn: string | null;
+  archivedOn: string | null;
+  updatedAtUtc: string | null;
+  updatedByName: string | null;
+}
+
 export interface ThirdProbeFileDto {
-  /** Written down, or else the day the previous probe was closed (`openedOnIsDerived`). */
+  /** The day the probe opened, or else the day the previous probe was closed (`openedOnIsDerived`). */
   openedOn: string | null;
   openedOnIsDerived: boolean;
-  mentors: string | null;
-  conferenceOn: string | null;
-  conferenceWith: string | null;
-  conferenceConfirmedAtUtc: string | null;
-  conferenceConfirmedByName: string | null;
+  mentorZvyazkovyi: string | null;
+  mentorVporiadnyk: string | null;
+  mentorReferent: string | null;
+  reflectionOn: string | null;
+  reflectionWith: string | null;
+  reflectionConfirmedAtUtc: string | null;
+  reflectionConfirmedByName: string | null;
   campKind: ThirdProbeCampKind | null;
   campName: string | null;
   campFrom: string | null;
   campTo: string | null;
   campCertificate: ThirdProbeCertificateDto | null;
-  campConfirmedAtUtc: string | null;
-  campConfirmedByName: string | null;
   physicalBadgeId: string | null;
   resume: string;
+  stages: ThirdProbeStagesDto;
+  /** What the person's pictures and посвідка take, against `limits.maxStoredBytes`. */
+  storedBytes: number;
   updatedAtUtc: string | null;
   updatedByName: string | null;
 }
@@ -90,6 +109,7 @@ export interface ProbeProjectLimitsDto {
   maxImagesPerProject: number;
   maxImageBytes: number;
   maxCertificateBytes: number;
+  maxStoredBytes: number;
   maxTextLength: number;
   requiredBadges: number;
   youthEndsAtAge: number;
@@ -100,7 +120,7 @@ export interface ThirdProbeDto {
   isProjectProbe: boolean;
   /** The person themself, or whoever the kurin lets sign their probe. */
   canEdit: boolean;
-  /** Confirms the conference, the camp, a project's start and its completion. */
+  /** Confirms the reflection, a project's start and its completion; sets the stages. */
   canSign: boolean;
   canUnsign: boolean;
   file: ThirdProbeFileDto | null;
@@ -126,16 +146,18 @@ export interface SaveProbeProjectRequestDto {
   eventLeads: string | null;
   coordinatorName: string | null;
   coordinatorContact: string | null;
+  description: string;
   goal: string;
   plan: string;
   results: string;
 }
 
 export interface SaveThirdProbeFileRequestDto {
-  openedOn: string | null;
-  mentors: string | null;
-  conferenceOn: string | null;
-  conferenceWith: string | null;
+  mentorZvyazkovyi: string | null;
+  mentorVporiadnyk: string | null;
+  mentorReferent: string | null;
+  reflectionOn: string | null;
+  reflectionWith: string | null;
   campKind: ThirdProbeCampKind | null;
   campName: string | null;
   campFrom: string | null;
@@ -143,6 +165,9 @@ export interface SaveThirdProbeFileRequestDto {
   physicalBadgeId: string | null;
   resume: string;
 }
+
+/** `PUT …/third-probe/stages`: whole, a null clears the stage. */
+export type SetThirdProbeStagesRequestDto = Omit<ThirdProbeStagesDto, 'updatedAtUtc' | 'updatedByName'>;
 
 /** The scheme of a picture's target in the Markdown. */
 export const PROJECT_IMAGE_SCHEME = 'project-image:';

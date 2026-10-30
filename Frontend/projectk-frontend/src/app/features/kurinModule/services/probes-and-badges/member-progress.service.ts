@@ -10,6 +10,7 @@ import {
   ProbeProjectSavedDto,
   SaveProbeProjectRequestDto,
   SaveThirdProbeFileRequestDto,
+  SetThirdProbeStagesRequestDto,
   ThirdProbeDto
 } from '../../models/probes-and-badges/probe-project.dto';
 import { ReviewBadgeProgressRequestDto } from '../../models/probes-and-badges/requests/review-badge-progress-request.dto';
@@ -125,10 +126,17 @@ export class MemberProgressService {
     return this.http.put<ThirdProbeDto>(`${this.probeUrl(memberKey, probeId)}/third-probe`, request, { context: requestFeedback('auto', [400, 403]) });
   }
 
-  /** Confirms (`sign`) or takes back the conference or the camp. */
-  confirmThirdProbePart(memberKey: string, probeId: string, part: 'conference' | 'camp', sign: boolean): Observable<ThirdProbeDto> {
-    const url = `${this.probeUrl(memberKey, probeId)}/third-probe/${part}/confirmation`;
+  /** Confirms (`sign`) or takes back the reflection with the Звʼязковий. */
+  confirmReflection(memberKey: string, probeId: string, sign: boolean): Observable<ThirdProbeDto> {
+    const url = `${this.probeUrl(memberKey, probeId)}/third-probe/reflection/confirmation`;
     return sign ? this.http.put<ThirdProbeDto>(url, {}, { context: requestFeedback('auto', [400]) }) : this.http.delete<ThirdProbeDto>(url);
+  }
+
+  /** The referent's stages, whole: a null clears the stage. */
+  setThirdProbeStages(memberKey: string, probeId: string, stages: SetThirdProbeStagesRequestDto): Observable<ThirdProbeDto> {
+    return this.http.put<ThirdProbeDto>(`${this.probeUrl(memberKey, probeId)}/third-probe/stages`, stages, {
+      context: requestFeedback('auto', [400, 403])
+    });
   }
 
   uploadCampCertificate(memberKey: string, probeId: string, file: File): Observable<ThirdProbeDto> {

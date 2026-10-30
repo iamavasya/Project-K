@@ -247,7 +247,7 @@
 
     <p class="projects-muted project-hint" data-testid="project-limits">
         @if (isUploading()) { <span class="pi pi-spin pi-spinner" aria-hidden="true"></span> Завантажую… · }
-        Зображень {{ imageCount() }} з {{ limits().maxImagesPerProject }} на проєкт, кожне до {{ maxImageLabel() }} МБ (PNG, JPEG, WebP)
+        Зображень {{ imageCount() }} з {{ limits().maxImagesPerProject }} на проєкт, кожне до {{ maxImageLabel() }} МБ (PNG, JPEG, WebP) · усі файли проби — до {{ storedLimitLabel() }}
         · кожен текст до {{ limits().maxTextLength.toLocaleString('uk-UA') }} знаків
     </p>
 

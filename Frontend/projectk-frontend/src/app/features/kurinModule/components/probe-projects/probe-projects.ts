@@ -53,10 +53,11 @@ interface QuillLike {
   setContents(delta: unknown, source?: string): unknown;
 }
 
-/** The template's three texts: what, how, and what came of it. */
-export type ProjectText = 'goal' | 'plan' | 'results';
+/** What the project is and the person's part in it, then the template's three: what, how, what came of it. */
+export type ProjectText = 'description' | 'goal' | 'plan' | 'results';
 
 export const PROJECT_TEXTS: readonly { field: ProjectText; label: string; hint: string }[] = [
+  { field: 'description', label: 'Опис і моя роль', hint: 'Що це за проєкт, навіщо його створено, яка твоя роль у ньому — скільки треба абзаців' },
   { field: 'goal', label: 'Ціль', hint: 'Що? Чому? Для кого?' },
   { field: 'plan', label: 'Підготовка', hint: 'План, як я знатиму, що осягнув ціль, з ким співпрацюю, реченець, які є перешкоди' },
   { field: 'results', label: 'Підсумки виконання', hint: 'Що осягнув? Чого навчився? Що би змінив? Фото, афіші — сюди' }
@@ -86,6 +87,7 @@ const REFUSALS: Record<string, string> = {
   DescriptionTooLong: 'Текст задовгий. Скороти його.',
   EndsBeforeStart: 'Проєкт не може закінчитися раніше, ніж почався.',
   ForeignImage: 'Зображення можна лише завантажити в проєкт, а не вставити посиланням.',
+  StorageFull: 'Файли третьої проби вже займають майже все місце (до 15 МБ). Прибери зайві фото.',
   NotProjectProbe: 'Проєкти є лише в третій пробі.'
 };
 
@@ -157,6 +159,7 @@ export class ProbeProjectsComponent {
   readonly canUnsign = computed(() => !this.readOnly() && this.tab().canUnsign);
   readonly limits = computed(() => this.tab().limits);
   readonly maxImageLabel = computed(() => megabytes(this.limits().maxImageBytes));
+  readonly storedLimitLabel = computed(() => `${megabytes(this.limits().maxStoredBytes)} МБ`);
   readonly views = computed<ProjectView[]>(() => this.tab().projects.map(project => this.view(project)));
   readonly mains = computed(() => this.views().filter(view => !view.project.isSpare));
   readonly spares = computed(() => this.views().filter(view => view.project.isSpare));
@@ -382,6 +385,7 @@ export class ProbeProjectsComponent {
       eventLeads: this.eventLeads().trim() || null,
       coordinatorName: this.coordinatorName().trim() || null,
       coordinatorContact: this.coordinatorContact().trim() || null,
+      description: this.markdown('description'),
       goal: this.markdown('goal'),
       plan: this.markdown('plan'),
       results: this.markdown('results')
@@ -415,7 +419,7 @@ export class ProbeProjectsComponent {
     }
 
     this.isUploading.set(true);
-    this.progress.addProbeProject(this.memberKey(), this.probeId(), { ...request, goal: '', plan: '', results: '' }).subscribe({
+    this.progress.addProbeProject(this.memberKey(), this.probeId(), { ...request, description: '', goal: '', plan: '', results: '' }).subscribe({
       next: (saved: ProbeProjectSavedDto) => {
         this.editingKey.set(saved.projectKey);
         this.tabChange.emit(saved.tab);

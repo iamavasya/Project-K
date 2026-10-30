@@ -29,7 +29,8 @@ describe('ThirdProbeComponent', () => {
     progress = {
       getThirdProbe: vi.fn(),
       saveThirdProbeFile: vi.fn(),
-      confirmThirdProbePart: vi.fn(),
+      confirmReflection: vi.fn(),
+      setThirdProbeStages: vi.fn(),
       uploadCampCertificate: vi.fn(),
       deleteCampCertificate: vi.fn()
     } as MockedObject<MemberProgressService>;
@@ -63,6 +64,8 @@ describe('ThirdProbeComponent', () => {
     expect(page.textContent).toContain('Що вже є');
     expect(page.textContent).toContain('КВТ «Говерла»');
     expect(page.textContent).toContain('коли закрили другу пробу');
+    expect(page.textContent).toContain('Референт ІІІ проби');
+    expect(page.textContent).toContain('Зараховує табір край');
     expect(page.textContent).toContain('Легка атлетика');
     expect(page.textContent).not.toContain('Плавання');
     expect(page.textContent).toContain('Усі вмілості юнацтва (2)');
@@ -70,7 +73,7 @@ describe('ThirdProbeComponent', () => {
 
   it('marks the вмілість for тіловиховання by writing the file whole', async () => {
     await render(thirdProbeTab({
-      file: { ...thirdProbeTab().file!, mentors: 'Звʼязковий', resume: 'Мій шлях' },
+      file: { ...thirdProbeTab().file!, mentorZvyazkovyi: 'Звʼязковий', resume: 'Мій шлях' },
       badges: [{ badgeId: 'run', title: 'Біг', imagePath: null, specialization: null, confirmedAtUtc: null, duringProbe: true }]
     }));
     progress.saveThirdProbeFile.mockReturnValue(of(thirdProbeTab()));
@@ -78,7 +81,7 @@ describe('ThirdProbeComponent', () => {
     fixture.componentInstance.choosePhysical('run');
 
     expect(progress.saveThirdProbeFile).toHaveBeenCalledWith('m-1', 'probe-3', expect.objectContaining({
-      physicalBadgeId: 'run', mentors: 'Звʼязковий', resume: 'Мій шлях', openedOn: null
+      physicalBadgeId: 'run', mentorZvyazkovyi: 'Звʼязковий', resume: 'Мій шлях'
     }));
   });
 
@@ -94,11 +97,30 @@ describe('ThirdProbeComponent', () => {
     expect(fixture.componentInstance.errorMessage()).toBe('Посвідка завелика: до 2 МБ.');
   });
 
-  it('lets a leader confirm the camp, and nobody else', async () => {
-    const tab = thirdProbeTab({ file: { ...thirdProbeTab().file!, campName: 'КВТ' } });
-    expect((await render(tab)).textContent).not.toContain('Зарахувати табір');
+  it('lets a leader confirm the reflection and set the stages, and nobody else', async () => {
+    const tab = thirdProbeTab({ file: { ...thirdProbeTab().file!, reflectionOn: '2026-03-01' } });
+    const youth = (await render(tab)).textContent!;
+    expect(youth).not.toContain('Підтвердити рефлексію');
+    expect(youth).not.toContain('Змінити етапи');
 
     fixture.destroy();
-    expect((await render({ ...tab, canSign: true })).textContent).toContain('Зарахувати табір');
+    const leader = (await render({ ...tab, canSign: true })).textContent!;
+    expect(leader).toContain('Підтвердити рефлексію');
+    expect(leader).toContain('Змінити етапи');
+  });
+
+  it('sends the stages whole, a cleared day as null', async () => {
+    await render(thirdProbeTab({ canSign: true }));
+    progress.setThirdProbeStages.mockReturnValue(of(thirdProbeTab()));
+    const component = fixture.componentInstance;
+
+    component.openStagesDialog();
+    component.setStage('applicationSubmittedOn', new Date(2025, 9, 1));
+    component.saveStages();
+
+    expect(progress.setThirdProbeStages).toHaveBeenCalledWith('m-1', 'probe-3', {
+      motivationLetterOn: null, selfReflectionOn: null, applicationSubmittedOn: '2025-10-01', openedOn: null,
+      completedOn: null, namedOn: null, archivedOn: null
+    });
   });
 });

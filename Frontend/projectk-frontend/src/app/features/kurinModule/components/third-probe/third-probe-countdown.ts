@@ -4,7 +4,7 @@ import { countdownMood, countdownParts, youthEndsOn } from '../../functions/thir
 const TICK_MS = 1000;
 
 /**
- * How long is left until the 18th birthday, when youth ends and the third probe with it. It ticks
+ * How long is left to close the third probe: until the 18th birthday, when youth ends. It ticks
  * every second on purpose: the old УПЮ services showed the same clock, and a third-prober is meant
  * to feel it. Shown only to someone who may see the birth date; the page passes null otherwise.
  */
@@ -16,9 +16,9 @@ const TICK_MS = 1000;
     <section class="countdown kurin-tile" [attr.data-mood]="mood()" data-testid="third-probe-countdown" aria-live="off">
       <div class="countdown__head">
         <p class="countdown__label">
-          @if (parts().isOver) { Юнацтво закінчилося } @else { До {{ age() }}-річчя — кінця юнацтва й третьої проби }
+          @if (parts().isOver) { Строк третьої проби минув } @else { До закриття третьої проби }
         </p>
-        <p class="countdown__date">{{ deadlineLabel() }}</p>
+        <p class="countdown__date">останній день — {{ deadlineLabel() }}, {{ age() }}-річчя</p>
       </div>
       @if (!parts().isOver) {
       <div class="countdown__digits" role="timer" [attr.aria-label]="ariaLabel()">

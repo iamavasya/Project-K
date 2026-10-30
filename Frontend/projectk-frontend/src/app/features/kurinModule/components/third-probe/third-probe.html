@@ -30,31 +30,56 @@
     </ul>
 </section>
 
+<section class="kurin-tile" data-testid="third-probe-stages">
+    <div class="tp-head">
+        <div>
+            <h2 class="tp-title">Відкриття й закриття проби</h2>
+            <p class="tp-muted text-xs">Етапи, які веде референт ІІІ проби@if (t.file?.stages.updatedByName) { · востаннє {{ t.file.stages.updatedByName }} }</p>
+        </div>
+        @if (canSign()) {
+        <p-button label="Змінити етапи" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="openStagesDialog()" />
+        }
+    </div>
+    <ol class="tp-stages">
+        @for (stage of stages(); track stage.key) {
+        <li class="tp-stage" [class.tp-stage--done]="stage.day" [class.tp-stage--closing]="stage.closing">
+            <span class="tp-stage__dot pi" [class.pi-check]="stage.day" [class.pi-circle]="!stage.day" aria-hidden="true"></span>
+            <span class="tp-stage__label">{{ stage.label }}</span>
+            <span class="tp-muted text-xs">
+                @if (stage.day) { {{ stage.day }} } @else { — }
+                @if (stage.key === 'openedOn' && t.file?.openedOnIsDerived) { · коли закрили другу пробу }
+                @if (stage.hint && !stage.day) { · {{ stage.hint }} }
+            </span>
+        </li>
+        }
+    </ol>
+</section>
+
 <div class="tp-grid">
-    <section class="kurin-tile tp-section" data-testid="third-probe-opening">
+    <section class="kurin-tile tp-section" data-testid="third-probe-mentors">
         <div class="tp-head">
-            <h2 class="tp-title">Відкриття й наставники</h2>
+            <h2 class="tp-title">Ментори й рефлексія</h2>
             @if (canEdit()) {
             <p-button label="Редагувати" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="openFileDialog()" />
             }
         </div>
-        <dl class="tp-facts">
-            <dt>Відкрито</dt>
-            <dd>{{ openedLabel() ?? 'ще не відкрито' }}@if (t.file?.openedOnIsDerived) { <span class="tp-muted"> · коли закрили другу пробу</span> }</dd>
-            <dt>Наставники</dt>
-            <dd>{{ t.file?.mentors || '—' }}</dd>
-            <dt>Конференція</dt>
-            <dd>
-                @if (conferenceLabel()) { {{ conferenceLabel() }}@if (t.file?.conferenceWith) { · з {{ t.file.conferenceWith }} } } @else { ще не відбулася }
-                <span class="tp-muted tp-block">«Що для мене означає бути пластуном»</span>
-            </dd>
-        </dl>
-        @if (t.file?.conferenceConfirmedAtUtc) {
-        <p class="tp-confirmed"><span class="pi pi-check" aria-hidden="true"></span> Підтвердив {{ t.file.conferenceConfirmedByName || 'провід' }}
-            @if (canUnsign()) { <p-button label="Зняти" size="small" severity="secondary" variant="text" (onClick)="confirm('conference', false)" /> }
+        <ul class="tp-mentors">
+            @for (mentor of mentors(); track mentor.role) {
+            <li><span class="tp-muted">{{ mentor.role }}:</span> {{ mentor.name || '—' }}</li>
+            }
+        </ul>
+
+        <h3 class="tp-subtitle">Рефлексія зі звʼязковим</h3>
+        <p class="tp-line">
+            @if (reflectionLabel()) { {{ reflectionLabel() }}@if (t.file?.reflectionWith) { · з {{ t.file.reflectionWith }} } } @else { ще не відбулася }
         </p>
-        } @else if (canSign() && t.file?.conferenceOn) {
-        <p-button label="Підтвердити конференцію" icon="pi pi-check" size="small" severity="secondary" [outlined]="true" [disabled]="busy()" (onClick)="confirm('conference', true)" />
+        <p class="tp-muted text-xs">«Що для мене означає бути пластуном»</p>
+        @if (t.file?.reflectionConfirmedAtUtc) {
+        <p class="tp-confirmed"><span class="pi pi-check" aria-hidden="true"></span> Підтвердив {{ t.file.reflectionConfirmedByName || 'провід' }}
+            @if (canUnsign()) { <p-button label="Зняти" size="small" severity="secondary" variant="text" (onClick)="confirmReflection(false)" /> }
+        </p>
+        } @else if (canSign() && t.file?.reflectionOn) {
+        <p-button label="Підтвердити рефлексію" icon="pi pi-check" size="small" severity="secondary" [outlined]="true" [disabled]="busy()" (onClick)="confirmReflection(true)" />
         }
 
         <h3 class="tp-subtitle">Діловодства під час проби</h3>
@@ -78,6 +103,7 @@
         } @else {
         <p class="tp-muted text-sm">Ще не вказано. Потрібен один пластовий табір, який край зараховує на третю пробу: КВТ або інший.</p>
         }
+        <p class="tp-muted text-xs tp-note">Зараховує табір край; Лілейка лише зберігає, що це був за табір.</p>
 
         <h3 class="tp-subtitle">Посвідка</h3>
         @if (t.file?.campCertificate; as cert) {
@@ -103,13 +129,8 @@
             }
         </div>
         }
-
-        @if (t.file?.campConfirmedAtUtc) {
-        <p class="tp-confirmed"><span class="pi pi-check" aria-hidden="true"></span> Зарахував {{ t.file.campConfirmedByName || 'провід' }}
-            @if (canUnsign()) { <p-button label="Зняти" size="small" severity="secondary" variant="text" (onClick)="confirm('camp', false)" /> }
-        </p>
-        } @else if (canSign() && t.file?.campName) {
-        <p-button label="Зарахувати табір" icon="pi pi-check" size="small" severity="secondary" [outlined]="true" [disabled]="busy()" (onClick)="confirm('camp', true)" />
+        @if (storage(); as used) {
+        <p class="tp-muted text-xs">Файли третьої проби: {{ used }}</p>
         }
     </section>
 </div>
@@ -175,29 +196,33 @@
     }
 </section>
 
-<p-dialog header="Дані третьої проби" [visible]="fileDialogVisible()" (visibleChange)="fileDialogVisible.set($event)"
+<p-dialog header="Ментори, рефлексія й табір" [visible]="fileDialogVisible()" (visibleChange)="fileDialogVisible.set($event)"
     [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 40rem)' }" styleClass="third-probe-dialog">
-    <div class="tp-field">
-        <label for="tp-opened">Дата відкриття ІІІ проби</label>
-        <p-datepicker inputId="tp-opened" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
-            [ngModel]="openedOn()" (ngModelChange)="openedOn.set($event)" />
-        <span class="tp-muted tp-hint">Порожня — береться день, коли закрили другу пробу.</span>
-    </div>
-    <div class="tp-field">
-        <label for="tp-mentors">Наставники</label>
-        <input pInputText id="tp-mentors" class="w-full" maxlength="500" placeholder="Звʼязковий, референт ІІІ проби та інші"
-            [ngModel]="mentors()" (ngModelChange)="mentors.set($event)" />
-    </div>
-    <div class="tp-field-row">
+    <fieldset class="tp-fieldset">
+        <legend class="tp-legend">Ментори</legend>
         <div class="tp-field">
-            <label for="tp-conference">Конференція відбулася</label>
-            <p-datepicker inputId="tp-conference" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
-                [ngModel]="conferenceOn()" (ngModelChange)="conferenceOn.set($event)" />
+            <label for="tp-mentor-zv">Звʼязковий</label>
+            <input pInputText id="tp-mentor-zv" class="w-full" maxlength="200" [ngModel]="mentorZvyazkovyi()" (ngModelChange)="mentorZvyazkovyi.set($event)" />
         </div>
         <div class="tp-field">
-            <label for="tp-conference-with">З ким</label>
-            <input pInputText id="tp-conference-with" class="w-full" maxlength="200" placeholder="Звʼязковий, референт чи виховник"
-                [ngModel]="conferenceWith()" (ngModelChange)="conferenceWith.set($event)" />
+            <label for="tp-mentor-vp">Впорядник</label>
+            <input pInputText id="tp-mentor-vp" class="w-full" maxlength="200" [ngModel]="mentorVporiadnyk()" (ngModelChange)="mentorVporiadnyk.set($event)" />
+        </div>
+        <div class="tp-field">
+            <label for="tp-mentor-ref">Референт ІІІ проби</label>
+            <input pInputText id="tp-mentor-ref" class="w-full" maxlength="200" [ngModel]="mentorReferent()" (ngModelChange)="mentorReferent.set($event)" />
+        </div>
+    </fieldset>
+    <div class="tp-field-row">
+        <div class="tp-field">
+            <label for="tp-reflection">Рефлексія відбулася</label>
+            <p-datepicker inputId="tp-reflection" dateFormat="dd.mm.yy" [showIcon]="true" appendTo="body" styleClass="w-full"
+                [ngModel]="reflectionOn()" (ngModelChange)="reflectionOn.set($event)" />
+        </div>
+        <div class="tp-field">
+            <label for="tp-reflection-with">З ким</label>
+            <input pInputText id="tp-reflection-with" class="w-full" maxlength="200" placeholder="Звʼязковий чи референт"
+                [ngModel]="reflectionWith()" (ngModelChange)="reflectionWith.set($event)" />
         </div>
     </div>
     <div class="tp-field-row">
@@ -225,11 +250,29 @@
                 [minDate]="campFrom()" [ngModel]="campTo()" (ngModelChange)="campTo.set($event)" />
         </div>
     </div>
-    <p class="tp-muted tp-hint">Якщо змінити конференцію чи табір, їхнє підтвердження знімається: підтверджене вже не те, що записано.</p>
+    <p class="tp-muted tp-hint">Якщо змінити дату чи співрозмовника рефлексії, її підтвердження знімається.</p>
     @if (dialogError(); as message) { <p class="tp-error" role="alert">{{ message }}</p> }
     <ng-template #footer>
         <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="fileDialogVisible.set(false)" />
         <p-button label="Зберегти" icon="pi pi-check" [loading]="busy()" (onClick)="saveFileDialog()" />
+    </ng-template>
+</p-dialog>
+
+<p-dialog header="Етапи проби" [visible]="stagesDialogVisible()" (visibleChange)="stagesDialogVisible.set($event)"
+    [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 34rem)' }" styleClass="third-probe-dialog">
+    <p class="tp-muted tp-hint">День, коли етап відбувся. Порожньо — ще не було. Ці етапи бачить і інструмент референта.</p>
+    @for (stage of stageList; track stage.key) {
+    @if (stage.key === 'completedOn') { <p class="tp-legend">Закриття</p> } @else if ($first) { <p class="tp-legend">Відкриття</p> }
+    <div class="tp-field">
+        <label [for]="'stage-' + stage.key">{{ stage.label }}@if (stage.hint) { <span class="tp-muted"> · {{ stage.hint }}</span> }</label>
+        <p-datepicker [inputId]="'stage-' + stage.key" dateFormat="dd.mm.yy" [showIcon]="true" [showClear]="true" appendTo="body" styleClass="w-full"
+            [ngModel]="stageDates()[stage.key]" (ngModelChange)="setStage(stage.key, $event)" />
+    </div>
+    }
+    @if (dialogError(); as message) { <p class="tp-error" role="alert">{{ message }}</p> }
+    <ng-template #footer>
+        <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="stagesDialogVisible.set(false)" />
+        <p-button label="Зберегти" icon="pi pi-check" [loading]="busy()" (onClick)="saveStages()" />
     </ng-template>
 </p-dialog>
 
