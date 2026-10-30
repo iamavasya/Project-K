@@ -19,6 +19,11 @@ public static class AuditActions
         public const string Completed = "Probe.Completed";
         public const string Verified = "Probe.Verified";
         public const string Unverified = "Probe.Unverified";
+
+        /// <summary>A project of the third probe was described, rewritten or removed.</summary>
+        public const string ProjectAdded = "Probe.ProjectAdded";
+        public const string ProjectEdited = "Probe.ProjectEdited";
+        public const string ProjectRemoved = "Probe.ProjectRemoved";
     }
 
     /// <summary>Вмілості.</summary>

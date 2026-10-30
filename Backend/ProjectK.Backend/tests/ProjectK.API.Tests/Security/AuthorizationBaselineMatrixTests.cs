@@ -318,6 +318,11 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<MemberController>(nameof(MemberController.VerifyProfile), AuthorizationPolicies.RequireGroupLeadership);
         yield return Endpoint<MemberProgressController>(nameof(MemberProgressController.SignProbePoint), "RequireUser");
         yield return Endpoint<MemberProgressController>(nameof(MemberProgressController.UnsignProbePoint), "RequireUser");
+        yield return Endpoint<ProbeProjectController>(nameof(ProbeProjectController.GetProjects), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<ProbeProjectController>(nameof(ProbeProjectController.AddProject), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<ProbeProjectController>(nameof(ProbeProjectController.UpdateProject), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<ProbeProjectController>(nameof(ProbeProjectController.DeleteProject), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<ProbeProjectController>(nameof(ProbeProjectController.UploadImage), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberWarningsController>(nameof(MemberWarningsController.AssignWarning), "RequireUser");
         yield return Endpoint<MemberWarningsController>(nameof(MemberWarningsController.CancelWarning), "RequireUser");
         yield return Endpoint<MemberWarningsController>(nameof(MemberWarningsController.GetWarnings), AuthorizationPolicies.RequireUser);

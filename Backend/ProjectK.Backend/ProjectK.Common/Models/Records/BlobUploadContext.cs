@@ -17,6 +17,10 @@ public sealed record BlobUploadContext(
     public static BlobUploadContext GroupSilhouette { get; } =
         new(BlobUploadFolders.GroupSilhouettes, BlobUploadProcessingMode.EncodeAsPng, "image/png");
 
+    /// <summary>A picture inside a third-probe project. Resized like a photo: it is read on a phone.</summary>
+    public static BlobUploadContext ProbeProjectImage { get; } =
+        new(BlobUploadFolders.ProbeProjectImages, BlobUploadProcessingMode.CompressToJpeg, "image/jpeg");
+
     /// <summary>
     /// A screenshot attached to a problem report. Re-encoded like everything else, so nothing but
     /// a decoded image is stored; never resized, a screenshot is read for detail.
@@ -29,6 +33,7 @@ public static class BlobUploadFolders
 {
     public const string MemberPhotos = "member-photos";
     public const string GroupSilhouettes = "group-silhouettes";
+    public const string ProbeProjectImages = "probe-project-images";
 
     /// <summary>
     /// Not a scenario folder on purpose: nothing in the database references these blobs, and the
@@ -39,6 +44,7 @@ public static class BlobUploadFolders
     public static IReadOnlyCollection<string> ScenarioFolders { get; } =
     [
         MemberPhotos,
-        GroupSilhouettes
+        GroupSilhouettes,
+        ProbeProjectImages
     ];
 }

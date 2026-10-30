@@ -2589,6 +2589,88 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("ProbeProgresses");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProject", b =>
+                {
+                    b.Property<Guid>("ProbeProjectKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DirectionMentorContact")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("DirectionMentorName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsIndividual")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProbeId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("UpdatedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("UpdatedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ProbeProjectKey");
+
+                    b.HasIndex("MemberKey", "ProbeId");
+
+                    b.ToTable("ProbeProjects");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProjectImage", b =>
+                {
+                    b.Property<Guid>("ProbeProjectImageKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BlobName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ProbeProjectKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ProbeProjectImageKey");
+
+                    b.HasIndex("ProbeProjectKey");
+
+                    b.ToTable("ProbeProjectImages");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.ScoreModule.KurinScoreSettings", b =>
                 {
                     b.Property<Guid>("KurinScoreSettingsKey")
@@ -3472,6 +3554,17 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("Member");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProjectImage", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProject", "Project")
+                        .WithMany("Images")
+                        .HasForeignKey("ProbeProjectKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.DuesEntry", b =>
                 {
                     b.Navigation("Events");
@@ -3539,6 +3632,11 @@ namespace ProjectK.Infrastructure.Migrations
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Planning.PlanningSession", b =>
                 {
                     b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.ProbeProject", b =>
+                {
+                    b.Navigation("Images");
                 });
 #pragma warning restore 612, 618
         }

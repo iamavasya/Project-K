@@ -44,6 +44,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<BadgeProgress> BadgeProgresses { get; set; }
     public DbSet<ProbeProgress> ProbeProgresses { get; set; }
     public DbSet<ProbePointProgress> ProbePointProgresses { get; set; }
+    public DbSet<ProbeProject> ProbeProjects { get; set; }
+    public DbSet<ProbeProjectImage> ProbeProjectImages { get; set; }
     public DbSet<MentorAssignment> MentorAssignments { get; set; }
     public DbSet<MemberWarning> MemberWarnings { get; set; }
     public DbSet<MemberAward> MemberAwards { get; set; }
@@ -660,6 +662,39 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .HasMaxLength(50);
             entity.HasIndex(e => new { e.MemberKey, e.ProbeId, e.PointId })
                 .IsUnique();
+        });
+
+        builder.Entity<ProbeProject>(entity =>
+        {
+            entity.HasKey(e => e.ProbeProjectKey);
+            entity.Property(e => e.ProbeId)
+                .HasMaxLength(200)
+                .IsRequired();
+            entity.Property(e => e.Title)
+                .HasMaxLength(ProbeProjectRules.MaxTitleLength)
+                .IsRequired();
+            entity.Property(e => e.Description)
+                .HasMaxLength(ProbeProjectRules.MaxDescriptionLength)
+                .IsRequired();
+            entity.Property(e => e.DirectionMentorName)
+                .HasMaxLength(ProbeProjectRules.MaxMentorNameLength);
+            entity.Property(e => e.DirectionMentorContact)
+                .HasMaxLength(ProbeProjectRules.MaxMentorContactLength);
+            entity.Property(e => e.UpdatedByName)
+                .HasMaxLength(200);
+            entity.HasIndex(e => new { e.MemberKey, e.ProbeId });
+            entity.HasMany(e => e.Images)
+                .WithOne(i => i.Project)
+                .HasForeignKey(i => i.ProbeProjectKey)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ProbeProjectImage>(entity =>
+        {
+            entity.HasKey(e => e.ProbeProjectImageKey);
+            entity.Property(e => e.BlobName)
+                .HasMaxLength(300)
+                .IsRequired();
         });
 
         builder.Entity<MentorAssignment>(entity =>

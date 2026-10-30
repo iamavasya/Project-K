@@ -83,6 +83,7 @@ public static class DependencyInjection
         services.AddScoped<IMemberProgressDirectory, MemberProgressDirectory>();
         services.AddScoped<MemberProbeLine>();
         services.AddScoped<IMemberProbeLine>(sp => sp.GetRequiredService<MemberProbeLine>());
+        services.AddScoped<IProbeProjectAccess, ProbeProjectAccess>();
         services.AddScoped<IProbeEditionHolds>(sp => sp.GetRequiredService<MemberProbeLine>());
         services.AddScoped<IGroupProbeEditions, GroupProbeEditions>();
 
