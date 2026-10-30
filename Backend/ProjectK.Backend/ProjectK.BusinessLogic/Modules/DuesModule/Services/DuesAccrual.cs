@@ -14,7 +14,8 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 /// Who is charged: a youth membership standing in a гурток, from the quarter it joined — but not
 /// before the kurin's first rate — up to the last quarter that has fallen due. Paying наперед, that is
 /// the running quarter; paying за пройдений квартал, the one before it. The quarter a person left in
-/// is never charged: released at the start of a quarter, they do not take it. Впорядники stand in the
+/// is not charged here: released at the start of a quarter, they do not take it (a charge made for it
+/// while they still stood, and paid, is kept — see DuesLeavingQuarterEventHandler). Впорядники stand in the
 /// kurin and in no гурток, so they are never charged. Quarters are read on the край's clock.
 /// </remarks>
 public sealed class DuesAccrual : IDuesAccrual
