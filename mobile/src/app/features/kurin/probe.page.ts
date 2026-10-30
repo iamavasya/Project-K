@@ -39,10 +39,10 @@ import {
   signerLabel,
   utcDate,
 } from './kurin.labels';
-import { GroupedProbeDto, MemberDto, MembershipDto, ProbeProgressDto, ProbeProjectsDto } from './kurin.models';
+import { GroupedProbeDto, MemberDto, MembershipDto, ProbeProgressDto, ThirdProbeDto } from './kurin.models';
 import { KurinApi } from './kurin.service';
 import { MemberAbilities, NO_ABILITIES } from './abilities';
-import { ProbeProjectsCard } from './probe-projects';
+import { ThirdProbeCard } from './third-probe.card';
 
 const CONFLICT = {
   Conflict: 'Стан проби вже змінено. Дані оновлено.',
@@ -80,7 +80,7 @@ const CONFLICT = {
     IonProgressBar,
     IonSkeletonText,
     IonSpinner,
-    ProbeProjectsCard,
+    ThirdProbeCard,
   ],
   styles: `
     .summary h2 {
@@ -162,7 +162,7 @@ const CONFLICT = {
           </ion-card>
         }
 
-        @if (projects(); as projectsData) { <app-probe-projects [data]="projectsData" /> }
+        @if (thirdProbe(); as tab) { <app-third-probe [data]="tab" [dateOfBirth]="member()?.dateOfBirth" /> }
 
         <ion-accordion-group expand="inset" [multiple]="true" [value]="openSections()" (ionChange)="openSections.set($any($event).detail.value ?? [])">
           @for (section of sections(); track section.sectionId) {
@@ -226,13 +226,13 @@ export class ProbePage implements OnInit {
   protected readonly probe = signal<GroupedProbeDto | null>(null);
   protected readonly progress = signal<ProbeProgressDto | null>(null);
   protected readonly partial = signal(false);
-  private readonly member = signal<MemberDto | null>(null);
+  protected readonly member = signal<MemberDto | null>(null);
   private readonly memberships = signal<MembershipDto[]>([]);
   /** What the kurin's policy lets this person do to the member: sign, and separately unsign. */
   private readonly abilities = signal<MemberAbilities>(NO_ABILITIES);
   protected readonly busy = signal<string | null>(null);
-  /** The third probe's projects; null for any other probe. */
-  protected readonly projects = signal<ProbeProjectsDto | null>(null);
+  /** The «Третя проба» tab; null for any other probe. */
+  protected readonly thirdProbe = signal<ThirdProbeDto | null>(null);
 
   protected readonly sections = computed(() => probeSections(this.probe(), this.progress()));
   private readonly points = computed(() => this.sections().flatMap((s) => s.points));
@@ -343,13 +343,13 @@ export class ProbePage implements OnInit {
 
   private async load(): Promise<void> {
     const key = this.memberKey;
-    const [member, memberships, probe, progress, abilities, projects] = await Promise.all([
+    const [member, memberships, probe, progress, abilities, third] = await Promise.all([
       this.data.member(key).catch(() => null),
       this.data.memberships(key).catch(() => [] as MembershipDto[]),
       this.data.groupedProbe(this.probeId).catch(() => null),
       this.data.probeProgress(key, this.probeId).catch(() => null),
       this.data.abilities(key).catch(() => NO_ABILITIES),
-      this.data.probeProjects(key, this.probeId).catch(() => null),
+      this.data.thirdProbe(key, this.probeId).catch(() => null),
     ]);
     this.member.set(member);
     this.memberships.set(memberships);
@@ -358,7 +358,7 @@ export class ProbePage implements OnInit {
     this.progress.set(progress);
     this.partial.set(!!probe && progress === null);
     this.abilities.set(abilities);
-    this.projects.set(projects?.isProjectProbe ? projects : null);
+    this.thirdProbe.set(third?.isProjectProbe ? third : null);
     if (this.openSections() === null) {
       const next = this.sections().find((s) => s.points.some((p) => !p.isSigned));
       this.openSections.set(next ? [next.sectionId] : []);

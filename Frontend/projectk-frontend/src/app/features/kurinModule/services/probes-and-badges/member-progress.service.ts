@@ -6,10 +6,11 @@ import { BadgeProgressDto } from '../../models/probes-and-badges/badge-progress.
 import { ProbeProgressDto } from '../../models/probes-and-badges/probe-progress.dto';
 import { ProbeSummaryDto } from '../../models/probes-and-badges/probe-summary.dto';
 import {
-  ProbeProjectDto,
   ProbeProjectImageDto,
-  ProbeProjectsDto,
-  SaveProbeProjectRequestDto
+  ProbeProjectSavedDto,
+  SaveProbeProjectRequestDto,
+  SaveThirdProbeFileRequestDto,
+  ThirdProbeDto
 } from '../../models/probes-and-badges/probe-project.dto';
 import { ReviewBadgeProgressRequestDto } from '../../models/probes-and-badges/requests/review-badge-progress-request.dto';
 import { SubmitBadgeProgressRequestDto } from '../../models/probes-and-badges/requests/submit-badge-progress-request.dto';
@@ -115,25 +116,69 @@ export class MemberProgressService {
     );
   }
 
-  /** The projects of the third probe; not cached, since its picture links expire. */
-  getProbeProjects(memberKey: string, probeId: string): Observable<ProbeProjectsDto> {
-    return this.http.get<ProbeProjectsDto>(this.projectsUrl(memberKey, probeId));
+  /** The «Третя проба» tab; not cached, since its file links expire. Every write answers with it too. */
+  getThirdProbe(memberKey: string, probeId: string): Observable<ThirdProbeDto> {
+    return this.http.get<ThirdProbeDto>(`${this.probeUrl(memberKey, probeId)}/third-probe`);
   }
 
-  addProbeProject(memberKey: string, probeId: string, request: SaveProbeProjectRequestDto): Observable<ProbeProjectDto> {
-    return this.http.post<ProbeProjectDto>(this.projectsUrl(memberKey, probeId), request, { context: requestFeedback('auto', [400, 403]) });
+  saveThirdProbeFile(memberKey: string, probeId: string, request: SaveThirdProbeFileRequestDto): Observable<ThirdProbeDto> {
+    return this.http.put<ThirdProbeDto>(`${this.probeUrl(memberKey, probeId)}/third-probe`, request, { context: requestFeedback('auto', [400, 403]) });
   }
 
-  updateProbeProject(memberKey: string, probeId: string, projectKey: string, request: SaveProbeProjectRequestDto): Observable<ProbeProjectDto> {
-    return this.http.put<ProbeProjectDto>(
+  /** Confirms (`sign`) or takes back the conference or the camp. */
+  confirmThirdProbePart(memberKey: string, probeId: string, part: 'conference' | 'camp', sign: boolean): Observable<ThirdProbeDto> {
+    const url = `${this.probeUrl(memberKey, probeId)}/third-probe/${part}/confirmation`;
+    return sign ? this.http.put<ThirdProbeDto>(url, {}, { context: requestFeedback('auto', [400]) }) : this.http.delete<ThirdProbeDto>(url);
+  }
+
+  uploadCampCertificate(memberKey: string, probeId: string, file: File): Observable<ThirdProbeDto> {
+    const form = new FormData();
+    form.append('file', file, file.name || 'posvidka');
+    return this.http.post<ThirdProbeDto>(`${this.probeUrl(memberKey, probeId)}/third-probe/camp/certificate`, form, {
+      context: requestFeedback('silent', [400, 403, 413])
+    });
+  }
+
+  deleteCampCertificate(memberKey: string, probeId: string): Observable<ThirdProbeDto> {
+    return this.http.delete<ThirdProbeDto>(`${this.probeUrl(memberKey, probeId)}/third-probe/camp/certificate`);
+  }
+
+  addProbeProject(memberKey: string, probeId: string, request: SaveProbeProjectRequestDto): Observable<ProbeProjectSavedDto> {
+    return this.http.post<ProbeProjectSavedDto>(this.projectsUrl(memberKey, probeId), request, { context: requestFeedback('auto', [400, 403]) });
+  }
+
+  updateProbeProject(memberKey: string, probeId: string, projectKey: string, request: SaveProbeProjectRequestDto): Observable<ProbeProjectSavedDto> {
+    return this.http.put<ProbeProjectSavedDto>(
       `${this.projectsUrl(memberKey, probeId)}/${projectKey}`,
       request,
       { context: requestFeedback('auto', [400, 403, 404]) }
     );
   }
 
-  deleteProbeProject(memberKey: string, probeId: string, projectKey: string): Observable<boolean> {
-    return this.http.delete<boolean>(`${this.projectsUrl(memberKey, probeId)}/${projectKey}`);
+  deleteProbeProject(memberKey: string, probeId: string, projectKey: string): Observable<ThirdProbeDto> {
+    return this.http.delete<ThirdProbeDto>(`${this.projectsUrl(memberKey, probeId)}/${projectKey}`);
+  }
+
+  /** Puts the spare in place of a main project, which becomes the spare. */
+  swapSpareProject(memberKey: string, probeId: string, spareKey: string, mainKey: string): Observable<ThirdProbeDto> {
+    return this.http.post<ThirdProbeDto>(`${this.projectsUrl(memberKey, probeId)}/${spareKey}/swap/${mainKey}`, {}, {
+      context: requestFeedback('auto', [400])
+    });
+  }
+
+  /** «Дозвіл» (`approval`) or «Успішно виконав» (`completion`), given or taken back. */
+  signProbeProject(
+    memberKey: string,
+    probeId: string,
+    projectKey: string,
+    part: 'approval' | 'completion',
+    sign: boolean,
+    coordinatorComment: string | null = null
+  ): Observable<ThirdProbeDto> {
+    const url = `${this.projectsUrl(memberKey, probeId)}/${projectKey}/${part}`;
+    return sign
+      ? this.http.put<ThirdProbeDto>(url, part === 'completion' ? { coordinatorComment } : {}, { context: requestFeedback('auto', [400]) })
+      : this.http.delete<ThirdProbeDto>(url);
   }
 
   uploadProbeProjectImage(memberKey: string, probeId: string, projectKey: string, file: File): Observable<ProbeProjectImageDto> {
@@ -146,8 +191,12 @@ export class MemberProgressService {
     );
   }
 
+  private probeUrl(memberKey: string, probeId: string): string {
+    return `${this.apiUrl}/${memberKey}/probes/${encodeURIComponent(probeId)}`;
+  }
+
   private projectsUrl(memberKey: string, probeId: string): string {
-    return `${this.apiUrl}/${memberKey}/probes/${encodeURIComponent(probeId)}/projects`;
+    return `${this.probeUrl(memberKey, probeId)}/projects`;
   }
 
   unsignProbePoint(

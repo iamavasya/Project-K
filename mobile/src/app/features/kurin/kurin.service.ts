@@ -22,7 +22,7 @@ import {
   MembershipDto,
   MentorAssignmentDto,
   ProbeProgressDto,
-  ProbeProjectsDto,
+  ThirdProbeDto,
   ProbeSummaryDto,
   UpsertAwardRequest,
   UpsertLeadershipRequest,
@@ -168,9 +168,9 @@ export class KurinApi {
     return this.api.get(`member/${memberKey}/probes/${probeId}/progress`);
   }
 
-  /** The third probe's projects (web member-progress getProbeProjects). */
-  probeProjects(memberKey: string, probeId: string): Promise<ProbeProjectsDto> {
-    return this.api.get(`member/${memberKey}/probes/${encodeURIComponent(probeId)}/projects`);
+  /** The «Третя проба» tab (web member-progress getThirdProbe). */
+  thirdProbe(memberKey: string, probeId: string): Promise<ThirdProbeDto> {
+    return this.api.get(`member/${memberKey}/probes/${encodeURIComponent(probeId)}/third-probe`);
   }
 
   signPoint(memberKey: string, probeId: string, pointId: string, sign: boolean): Promise<ProbeProgressDto> {

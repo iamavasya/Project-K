@@ -28,7 +28,7 @@ import { failureDetail } from '../../../../shared/functions/failure-detail.funct
 import { parseOfficeRole } from '../../functions/system-role.function';
 import { leadershipRoleDisplayName } from '../../functions/leadership-role-display.function';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
-import { ProbeProjectsComponent } from '../../components/probe-projects/probe-projects';
+import { ThirdProbeComponent } from '../../components/third-probe/third-probe';
 
 interface ProbeDetailSectionView {
   sectionId: string;
@@ -39,7 +39,7 @@ interface ProbeDetailSectionView {
 
 @Component({
   selector: 'app-member-probe-page',
-  imports: [ButtonModule, ProgressBarModule, AccordionModule, SkeletonModule, TagModule, ConfirmDialogModule, ProbeProjectsComponent],
+  imports: [ButtonModule, ProgressBarModule, AccordionModule, SkeletonModule, TagModule, ConfirmDialogModule, ThirdProbeComponent],
   providers: [ConfirmationService],
   templateUrl: './member-probe-page.html',
   changeDetection: ChangeDetectionStrategy.Eager,

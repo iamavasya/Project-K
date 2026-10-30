@@ -39,7 +39,7 @@
         </section>
 
         @if (memberKey && probeId) {
-        <app-probe-projects [memberKey]="memberKey" [probeId]="probeId" [readOnly]="isArchive" />
+        <app-third-probe [memberKey]="memberKey" [probeId]="probeId" [member]="member" [readOnly]="isArchive" />
         }
 
         @if (!hasNoPoints) {

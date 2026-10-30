@@ -308,30 +308,80 @@ export interface GroupRequest {
   description: string | null;
 }
 
-/** A picture of a project's description; the link expires, the key stays in the Markdown. */
+/** A picture of a project's texts; the link expires, the key stays in the Markdown. */
 export interface ProbeProjectImageDto {
   imageKey: string;
   url: string;
 }
 
-/** One project of the third probe (`GET member/{key}/probes/{probeId}/projects`). */
+export type ProbeProjectArea = 'OathAndIdea' | 'Community' | 'PlastActivities' | 'Nature' | 'Leadership';
+export type ProbeProjectReach = 'GroupOrKurin' | 'Stanytsia' | 'UkrainianCommunity' | 'WiderSociety';
+
+/** One project of the third probe, as the УПЮ template lays it out (web probe-project.dto.ts). */
 export interface ProbeProjectDto {
   projectKey: string;
   title: string;
-  isIndividual: boolean;
-  /** Markdown; pictures are written as `project-image:{imageKey}`. */
-  description: string;
-  directionMentorName: string | null;
-  directionMentorContact: string | null;
+  area: ProbeProjectArea | null;
+  reach: ProbeProjectReach[];
+  isShared: boolean;
+  sharedWith: string | null;
+  isSpare: boolean;
+  startsOn: string | null;
+  endsOn: string | null;
+  location: string | null;
+  eventLeads: string | null;
+  coordinatorName: string | null;
+  coordinatorContact: string | null;
+  /** Markdown, like plan and results; pictures are written as `project-image:{imageKey}`. */
+  goal: string;
+  plan: string;
+  results: string;
+  approvedAtUtc: string | null;
+  approvedByName: string | null;
+  completedAtUtc: string | null;
+  completedByName: string | null;
+  coordinatorComment: string | null;
   updatedAtUtc: string;
   updatedByName: string | null;
   images: ProbeProjectImageDto[];
 }
 
-export interface ProbeProjectsDto {
-  /** Only the probe at the third place of the person's line has projects. */
+export interface ThirdProbeFileDto {
+  openedOn: string | null;
+  openedOnIsDerived: boolean;
+  mentors: string | null;
+  conferenceOn: string | null;
+  conferenceWith: string | null;
+  conferenceConfirmedAtUtc: string | null;
+  conferenceConfirmedByName: string | null;
+  campKind: 'Kvt' | 'Alternative' | null;
+  campName: string | null;
+  campFrom: string | null;
+  campTo: string | null;
+  campCertificate: { url: string; contentType: string; fileName: string | null } | null;
+  campConfirmedAtUtc: string | null;
+  campConfirmedByName: string | null;
+  physicalBadgeId: string | null;
+  resume: string;
+}
+
+export interface ThirdProbeBadgeDto {
+  badgeId: string;
+  title: string;
+  imagePath: string | null;
+  specialization: string | null;
+  confirmedAtUtc: string | null;
+  duringProbe: boolean;
+}
+
+/** `GET member/{key}/probes/{probeId}/third-probe`: only the probe at the third place of the line has one. */
+export interface ThirdProbeDto {
   isProjectProbe: boolean;
   canEdit: boolean;
+  canSign: boolean;
+  canUnsign: boolean;
+  file: ThirdProbeFileDto | null;
   projects: ProbeProjectDto[];
-  limits: { maxProjects: number; maxImagesPerProject: number; maxImageBytes: number; maxDescriptionLength: number };
+  badges: ThirdProbeBadgeDto[];
+  limits: { maxMainProjects: number; requiredBadges: number; youthEndsAtAge: number };
 }

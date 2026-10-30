@@ -14,15 +14,48 @@
     margin: 0;
 }
 
+.projects-subtitle {
+    color: var(--p-text-color);
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 1.25rem 0 0.15rem;
+}
+
 .projects-muted {
     color: var(--p-text-muted-color);
     margin: 0;
+}
+
+.projects-areas {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.45rem;
+}
+
+.area-chip {
+    align-items: center;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: 8px;
+    color: var(--p-text-muted-color);
+    display: inline-flex;
+    flex: none;
+    font-size: 0.75rem;
+    font-weight: 700;
+    height: 1.5rem;
+    justify-content: center;
+    width: 1.5rem;
+}
+
+.area-chip--covered {
+    border-color: var(--p-primary-color);
+    color: var(--p-primary-color);
 }
 
 .projects-list {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    margin-top: 0.5rem;
 }
 
 .project-card {
@@ -30,8 +63,12 @@
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.6rem;
     padding: 0.875rem 1rem;
+}
+
+.project-card--spare {
+    border-style: dashed;
 }
 
 .project-card__head {
@@ -49,9 +86,56 @@
     overflow-wrap: anywhere;
 }
 
-.project-card__mentor {
+.project-facts {
+    display: grid;
+    font-size: 0.8125rem;
+    gap: 0.2rem 0.75rem;
+    grid-template-columns: max-content minmax(0, 1fr);
+    margin: 0;
+}
+
+.project-facts dt {
+    color: var(--p-text-muted-color);
+}
+
+.project-facts dd {
     color: var(--p-text-color);
-    font-weight: 600;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.project-text__label {
+    color: var(--p-text-muted-color);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin: 0.25rem 0 0.2rem;
+    text-transform: uppercase;
+}
+
+.project-signs {
+    border-top: 1px solid var(--p-content-border-color);
+    color: var(--p-text-color);
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8125rem;
+    gap: 0.2rem;
+    padding-top: 0.5rem;
+}
+
+.project-signs p {
+    margin: 0;
+}
+
+.project-signs .pi {
+    color: var(--p-primary-color);
+    margin-right: 0.3rem;
+}
+
+.project-comment {
+    color: var(--p-text-muted-color);
+    font-style: italic;
+    margin: 0.15rem 0 0;
 }
 
 .project-card__foot {
@@ -62,93 +146,49 @@
     justify-content: space-between;
 }
 
-.project-text {
-    color: var(--p-text-color);
-    font-size: 0.9375rem;
-    line-height: 1.55;
-    overflow-wrap: anywhere;
+.project-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
 }
 
-.project-text p {
-    margin: 0;
-    min-height: 0.75em;
-}
-
-.project-text__heading {
-    font-size: 1.0625rem;
-    font-weight: 700;
-    margin-top: 0.5rem !important;
-}
-
-.project-text__heading[data-level="1"] {
-    font-size: 1.1875rem;
-}
-
-.project-text__item {
-    position: relative;
-}
-
-.project-text__marker {
-    color: var(--p-text-muted-color);
-    display: inline-block;
-    margin-left: -1.25rem;
-    width: 1.25rem;
-}
-
-.project-text__quote {
-    border-left: 1px solid var(--p-content-border-color);
-    color: var(--p-text-muted-color);
-    margin: 0.25rem 0;
-    padding-left: 0.75rem;
-}
-
-.project-text__code,
-.project-text code {
-    background: var(--p-content-hover-background);
-    border: 1px solid var(--p-content-border-color);
-    border-radius: 8px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.875em;
-}
-
-.project-text code {
-    padding: 0.1em 0.4em;
-}
-
-.project-text__code {
-    margin: 0.35rem 0;
-    overflow-x: auto;
-    padding: 0.5rem 0.75rem;
-    white-space: pre-wrap;
-}
-
-.project-text a {
-    color: var(--p-primary-color);
-    text-decoration: underline;
-}
-
-.project-text__image {
-    border: 1px solid var(--p-content-border-color);
-    border-radius: 8px;
-    display: block;
-    margin: 0.5rem 0;
-    max-height: 22rem;
-    max-width: 100%;
-}
-
-/* The dialog is appended to <body>, outside this host. */
+/* The dialogs are appended to <body>, outside this host. */
 ::ng-deep .probe-project-dialog .project-field {
     display: flex;
-    flex: 1 1 14rem;
+    flex: 1 1 13rem;
     flex-direction: column;
     gap: 0.35rem;
     margin-bottom: 1rem;
+    min-width: 0;
 }
 
 ::ng-deep .probe-project-dialog .project-field--inline {
     align-items: center;
     flex-direction: row;
     gap: 0.5rem;
+}
+
+::ng-deep .probe-project-dialog .project-fieldset {
+    border: 0;
+    padding: 0;
+}
+
+::ng-deep .probe-project-dialog .project-checks,
+::ng-deep .probe-project-dialog .project-swap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+}
+
+::ng-deep .probe-project-dialog .project-swap {
+    flex-direction: column;
+}
+
+::ng-deep .probe-project-dialog .project-check {
+    align-items: center;
+    display: inline-flex;
+    font-size: 0.875rem;
+    gap: 0.4rem;
 }
 
 ::ng-deep .probe-project-dialog .project-field-row {
@@ -172,8 +212,8 @@
     margin: 0 0 1rem;
 }
 
-::ng-deep .probe-project-dialog .project-field .project-hint {
-    margin: 0.25rem 0 0;
+::ng-deep .probe-project-dialog .project-hint--tight {
+    margin: -0.2rem 0 0.15rem;
 }
 
 ::ng-deep .probe-project-dialog .project-error {
