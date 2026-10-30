@@ -28,6 +28,11 @@ export function hasYouthProgram(branch: KurinBranch | null | undefined): boolean
   return (branch ?? KurinBranch.UPYu) === KurinBranch.UPYu;
 }
 
+/** Чи є в курені гуртки. У старшому курені їх немає зовсім: людей там розрізняють теги. */
+export function hasGroups(branch: KurinBranch | null | undefined): boolean {
+  return !isSeniorBranch(branch);
+}
+
 /** УСП чи УПС — старші гілки, де курінь відкривають і змінюють через адміністратора. */
 export function isSeniorBranch(branch: KurinBranch | null | undefined): boolean {
   return branch === KurinBranch.USP || branch === KurinBranch.UPS;

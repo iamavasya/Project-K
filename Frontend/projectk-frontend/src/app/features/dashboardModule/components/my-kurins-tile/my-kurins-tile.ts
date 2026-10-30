@@ -6,6 +6,7 @@ import { MEMBERSHIP_KIND_LABELS } from '../../../kurinModule/models/enums/member
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MyGroupDto } from '../../models/me.dto';
 import { compareKurinNumbers, kurinHeadline, kurinLabel, kurinSubline } from '../../../../shared/functions/kurin-label.function';
+import { hasGroups } from '../../../kurinModule/models/enums/kurin-branch.enum';
 
 export interface KurinRow {
   option: KurinScopeOption;
@@ -28,6 +29,9 @@ export class MyKurinsTileComponent {
 
   readonly kurins = input<KurinScopeOption[]>([]);
   readonly groups = input<MyGroupDto[]>([]);
+
+  /** Гуртки згадуються в назві лише там, де вони є: у старших куренях їх немає. */
+  readonly hasAnyGroups = computed(() => this.groups().length > 0 || this.kurins().some(k => hasGroups(k.branch)));
   readonly currentKurinKey = input<string | null>(null);
   readonly currentOffices = input<string[]>([]);
   /** The kurin or гурток being opened; every row waits while the token switches. */

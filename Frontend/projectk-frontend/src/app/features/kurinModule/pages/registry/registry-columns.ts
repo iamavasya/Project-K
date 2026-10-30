@@ -1,5 +1,5 @@
 import { MemberDto } from '../../models/member.dto';
-import { KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { KurinBranch, hasGroups } from '../../models/enums/kurin-branch.enum';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { PLAST_LADDER, PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../../models/enums/plast-ladder';
 
@@ -93,10 +93,15 @@ export function defaultColumnIdsFor(branch: KurinBranch | null | undefined): str
   return [
     'dateOfBirth',
     'plastLevel',
-    'groupName',
+    ...(hasGroups(branch) ? ['groupName'] : []),
     'phoneNumber',
     ...defaultLevelsFor(branch).map(level => `level:${level}`)
   ];
+}
+
+/** Колонки, які курінь може обрати: у старшому курені гуртків немає, тож і колонок про них. */
+export function columnsFor(columns: readonly RegistryColumn[], branch: KurinBranch | null | undefined): RegistryColumn[] {
+  return hasGroups(branch) ? [...columns] : columns.filter(column => column.id !== 'groupName' && column.id !== 'mentoredGroups');
 }
 
 /**

@@ -100,6 +100,7 @@
 </section>
 
 <div class="group-panel">
+    @if (!isSenior) {
     <section class="kurin-tile">
         <p-table [value]="groups" styleClass="project-table">
             <ng-template #caption>
@@ -158,6 +159,7 @@
             </div>
         }
     </section>
+    }
 
     <div class="kurin-side-tiles">
         <section class="kurin-tile">

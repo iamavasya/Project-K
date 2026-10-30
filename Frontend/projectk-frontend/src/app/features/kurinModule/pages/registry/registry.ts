@@ -19,11 +19,11 @@ import { KurinService } from '../../services/kurin-service/kurin.service';
 import { FormerMemberDto, MembershipService } from '../../services/membership-service/membership.service';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { MemberDto } from '../../models/member.dto';
-import { KurinBranch, KURIN_BRANCH_LABELS } from '../../models/enums/kurin-branch.enum';
+import { KurinBranch, KURIN_BRANCH_LABELS, hasGroups } from '../../models/enums/kurin-branch.enum';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../../models/enums/plast-ladder';
-import { REGISTRY_COLUMNS, RegistryColumn, defaultColumnIdsFor, staffColumnsOf } from './registry-columns';
+import { REGISTRY_COLUMNS, RegistryColumn, columnsFor, defaultColumnIdsFor, staffColumnsOf } from './registry-columns';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.function';
 
@@ -91,7 +91,10 @@ export class RegistryComponent implements OnInit {
    * Колонки, які можна вмикати. `mentoredGroups` не серед них: у таблиці впорядників вона стоїть
    * завжди, а в таблиці юнаків не значить нічого — вибирати там нічого.
    */
-  readonly allColumns: RegistryColumn[] = REGISTRY_COLUMNS.filter(column => column.id !== 'mentoredGroups');
+  readonly allColumns = computed<RegistryColumn[]>(() =>
+    columnsFor(REGISTRY_COLUMNS.filter(column => column.id !== 'mentoredGroups'), this.branch()));
+  /** Чи є в курені гуртки: у старшому їх немає, і реєстр про них не питає. */
+  readonly hasGroups = computed(() => hasGroups(this.branch()));
 
   readonly branchLabel = computed(() => {
     const branch = this.branch();
@@ -101,7 +104,7 @@ export class RegistryComponent implements OnInit {
   /** Обрані колонки в порядку драбини, а не в порядку кліків. */
   readonly visibleColumns = computed<RegistryColumn[]>(() => {
     const chosen = new Set(this.selectedColumnIds());
-    return this.allColumns.filter(column => chosen.has(column.id));
+    return this.allColumns().filter(column => chosen.has(column.id));
   });
 
   /**
@@ -367,7 +370,7 @@ export class RegistryComponent implements OnInit {
         return defaultColumnIdsFor(branch);
       }
 
-      const known = new Set(this.allColumns.map(column => column.id));
+      const known = new Set(this.allColumns().map(column => column.id));
       const kept = parsed.filter((id): id is string => typeof id === 'string' && known.has(id));
       return kept.length ? kept : defaultColumnIdsFor(branch);
     } catch {

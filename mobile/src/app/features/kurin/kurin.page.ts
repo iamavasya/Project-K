@@ -293,6 +293,7 @@ const DESCRIPTION_LIMIT = 360;
             </ion-item-group>
           </ion-list>
 
+          @if (!kurinIsSenior()) {
           <ion-list [inset]="true" data-testid="groups">
             <ion-list-header><ion-label>Гуртки</ion-label></ion-list-header>
             <ion-item-group>
@@ -318,6 +319,7 @@ const DESCRIPTION_LIMIT = 360;
               }
             </ion-item-group>
           </ion-list>
+          }
 
           <ion-list [inset]="true" data-testid="kv">
             <ion-list-header><ion-label>КВ</ion-label></ion-list-header>
@@ -463,6 +465,8 @@ export class KurinPage implements OnInit, OnDestroy {
 
   protected readonly kurinValue = computed(() => valueOf(this.kurin()));
   protected readonly groupList = computed(() => valueOf(this.groups()) ?? []);
+  /** A senior kurin has no гуртки: the section is not there at all. */
+  protected readonly kurinIsSenior = computed(() => isSeniorBranch(this.kurinValue()?.branch));
   protected readonly kvList = computed(() => valueOf(this.kv()) ?? []);
   protected readonly offices = computed(() => currentOffices(valueOf(this.leadership())?.leadershipHistories));
   protected readonly description = computed(() => this.kurinValue()?.description?.trim() ?? '');
