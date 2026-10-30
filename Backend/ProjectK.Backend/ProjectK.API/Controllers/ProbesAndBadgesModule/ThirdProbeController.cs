@@ -115,7 +115,7 @@ public class ThirdProbeController : ControllerBase
 
     /// <summary>
     /// Lists a kurin's third-probers with their stages and how far the requirements are: the list the
-    /// referent of the third probe works from, and what their own tool polls.
+    /// referent's tool in Lilejka will be built on.
     /// </summary>
     /// <remarks>Only people whose probe the caller may sign are listed.</remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]

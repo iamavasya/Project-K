@@ -117,9 +117,9 @@ public sealed record ThirdProbeResponse(
     ProbeProjectLimitsResponse Limits);
 
 /// <summary>
-/// One third-prober as the referent's tool reads them (`GET api/kurin/{kurinKey}/third-probers`):
-/// who, which probe, the stages, and how far the requirements are. A stable contract — fields are
-/// added, never renamed — so the tool can poll it and write the stages back.
+/// One third-prober as the referent's tool in Lilejka will read them (`GET api/kurin/{kurinKey}/third-probers`):
+/// who, which probe, the stages, and how far the requirements are. Fields are added, never renamed,
+/// so that tool can be built on top of this list.
 /// </summary>
 public sealed record ThirdProberStatusResponse(
     Guid MemberKey,
