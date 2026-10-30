@@ -134,6 +134,11 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.FormerMembers), "RequireUser");
         yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.Leave), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<KurinController, Guid, Guid, KurinController.MoveToGroupRequest>>(nameof(KurinController.MoveToGroup), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.MembershipRequests), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid, KurinController.CreateMembershipRequestRequest>>(nameof(KurinController.CreateMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.ApproveMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.DeclineMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.CancelMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
 
         // Dues: every action is resource-checked against the гурток; the policy is only "signed in".
         yield return Row<Action<GroupDuesController, Guid>>(nameof(GroupDuesController.Get), "RequireUser");

@@ -115,6 +115,7 @@ public static class DependencyInjection
     private static void AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
+        services.AddScoped<MembershipMoves>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
     }
 }

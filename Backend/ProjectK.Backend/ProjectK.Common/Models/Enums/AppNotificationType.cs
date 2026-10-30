@@ -15,5 +15,7 @@ public enum AppNotificationType
     AgendaItemStatusChanged = 10,
     AgendaItemDeleted = 11,
     WaitlistEntrySubmitted = 12,
-    CalendarFeedRevoked = 13
+    CalendarFeedRevoked = 13,
+    MembershipRequested = 14,
+    MembershipRequestDecided = 15
 }

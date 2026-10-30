@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Leave;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
@@ -58,7 +59,7 @@ public class MembershipJournalTests
     [Fact]
     public async Task Leaving_IsRecordedWithTheGroupTheyLeftFrom()
     {
-        var handler = new LeaveKurinCommandHandler(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), _members.Object, _journal.Audit, Mock.Of<IDuesDirectory>(), Mock.Of<IDomainEventPublisher>());
+        var handler = new LeaveKurinCommandHandler(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), _members.Object, new MembershipMoves(_unitOfWork.Object, _journal.Audit, Mock.Of<IDomainEventPublisher>(), Mock.Of<IDuesDirectory>()));
 
         await handler.Handle(new LeaveKurinCommand(_membership.MemberKey, _kurinKey), default);
 

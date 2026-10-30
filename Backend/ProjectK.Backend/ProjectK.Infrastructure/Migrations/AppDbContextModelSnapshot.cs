@@ -2301,6 +2301,62 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("Memberships");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MembershipRequest", b =>
+                {
+                    b.Property<Guid>("MembershipRequestKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DecidedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DecidedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FromKurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("MembershipKind")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ToKurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MembershipRequestKey");
+
+                    b.HasIndex("FromKurinKey");
+
+                    b.HasIndex("MemberKey");
+
+                    b.HasIndex("ToKurinKey");
+
+                    b.ToTable("MembershipRequests");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MentorAssignment", b =>
                 {
                     b.Property<Guid>("MentorAssignmentKey")

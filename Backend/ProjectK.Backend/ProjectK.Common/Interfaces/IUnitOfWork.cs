@@ -17,6 +17,7 @@ public interface IUnitOfWork
     IKurinRepository Kurins { get; }
     IGroupRepository Groups { get; }
     IMembershipRepository Memberships { get; }
+    IMembershipRequestRepository MembershipRequests { get; }
     // Members, MemberAwards and MemberWarnings are deliberately absent: it lives on IMemberUnitOfWork so that reaching a person
     // from another module is a contract call (IMemberDirectory) rather than a property access.
     ILeadershipRepository Leaderships { get; }

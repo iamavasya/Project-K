@@ -21,6 +21,10 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Leave;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Lookup;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Cancel;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Create;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Decide;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
@@ -437,7 +441,7 @@ public class KurinController : ControllerBase
     public async Task<IActionResult> Join(Guid kurinKey, [FromBody] JoinKurinRequest request)
     {
         var response = await _mediator.Send(
-            new JoinKurinCommand(request.MemberKey, kurinKey, request.GroupKey, request.Kind, request.PublicId));
+            new JoinKurinCommand(request.MemberKey, kurinKey, request.GroupKey, request.Kind, request.PublicId, OnlyIfStandingNowhere: true));
         return response.ToActionResult(this);
     }
 
@@ -497,6 +501,92 @@ public class KurinController : ControllerBase
     public async Task<IActionResult> Leave(Guid kurinKey, Guid memberKey)
     {
         var response = await _mediator.Send(new LeaveKurinCommand(memberKey, kurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Body of <c>POST {kurinKey}/membership-requests</c>.</summary>
+    public sealed class CreateMembershipRequestRequest
+    {
+        /// <summary>The code the person handed over.</summary>
+        public string? PublicId { get; set; }
+
+        /// <summary>Instead of a code: someone who once stood in this kurin.</summary>
+        public Guid? MemberKey { get; set; }
+
+        public MembershipRequestKind Kind { get; set; } = MembershipRequestKind.Transfer;
+        public MembershipKind MembershipKind { get; set; } = MembershipKind.Youth;
+
+        /// <summary>The kurin to ask, when the person stands in several.</summary>
+        public Guid? FromKurinKey { get; set; }
+    }
+
+    /// <summary>
+    /// This kurin's requests both ways: those its Звʼязковий answers and those it sent.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpGet("{kurinKey:guid}/membership-requests")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(MembershipRequestsResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> MembershipRequests(Guid kurinKey)
+    {
+        var response = await _mediator.Send(new GetMembershipRequestsQuery(kurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Asks the kurin a person stands in to let them go («перевести») or to let them stand here too
+    /// («прийняти ще й до нас»). Someone who stands in no kurin is taken in at once.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpPost("{kurinKey:guid}/membership-requests")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(MembershipRequestSent), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CreateMembershipRequest(Guid kurinKey, [FromBody] CreateMembershipRequestRequest request)
+    {
+        var response = await _mediator.Send(new CreateMembershipRequestCommand(
+            kurinKey, request.PublicId, request.MemberKey, request.Kind, request.MembershipKind, request.FromKurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>The person's kurin approves a request. «Перевести» waits until the person owes it no dues.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpPost("{kurinKey:guid}/membership-requests/{requestKey:guid}/approve")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ApproveMembershipRequest(Guid kurinKey, Guid requestKey)
+    {
+        var response = await _mediator.Send(new DecideMembershipRequestCommand(kurinKey, requestKey, Approve: true));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>The person's kurin declines a request.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpPost("{kurinKey:guid}/membership-requests/{requestKey:guid}/decline")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeclineMembershipRequest(Guid kurinKey, Guid requestKey)
+    {
+        var response = await _mediator.Send(new DecideMembershipRequestCommand(kurinKey, requestKey, Approve: false));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>The asking kurin withdraws a request nobody has answered.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpDelete("{kurinKey:guid}/membership-requests/{requestKey:guid}")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CancelMembershipRequest(Guid kurinKey, Guid requestKey)
+    {
+        var response = await _mediator.Send(new CancelMembershipRequestCommand(kurinKey, requestKey));
         return response.ToActionResult(this);
     }
 

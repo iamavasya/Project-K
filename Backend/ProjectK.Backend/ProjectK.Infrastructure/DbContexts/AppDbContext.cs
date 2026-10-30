@@ -30,6 +30,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<Group> Groups { get; set; }
     public DbSet<Member> Members { get; set; }
     public DbSet<Membership> Memberships { get; set; }
+    public DbSet<MembershipRequest> MembershipRequests { get; set; }
     public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
     public DbSet<Leadership> Leaderships { get; set; }
     public DbSet<LeadershipHistory> LeadershipHistories { get; set; }
@@ -186,6 +187,19 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .WithOne()
                   .HasForeignKey<Member>(e => e.UserKey)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Requests between kurins hold the person and both kurins by key: the record of who asked whom
+        // outlives either side changing.
+        builder.Entity<MembershipRequest>(entity =>
+        {
+            entity.HasKey(e => e.MembershipRequestKey);
+            entity.Property(e => e.Kind).HasConversion<int>();
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.MembershipKind).HasConversion<int>();
+            entity.HasIndex(e => e.FromKurinKey);
+            entity.HasIndex(e => e.ToKurinKey);
+            entity.HasIndex(e => e.MemberKey);
         });
 
         builder.Entity<Membership>(entity =>
