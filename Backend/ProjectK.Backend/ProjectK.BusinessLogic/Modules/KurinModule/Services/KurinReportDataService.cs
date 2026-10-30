@@ -3,6 +3,7 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Extensions;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
@@ -27,6 +28,8 @@ public sealed class KurinReportDataService
     private readonly IConfiguration _configuration;
     // What people have earned belongs to another module; the report asks for it, all at once.
     private readonly IMemberProgressDirectory _progress;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IKurinTagVisibility _tags;
 
     public KurinReportDataService(
         IKurinReportSource source,
@@ -36,7 +39,9 @@ public sealed class KurinReportDataService
         IProbesCatalogService probesCatalogService,
         IBadgesCatalogService badgesCatalogService,
         IConfiguration configuration,
-        IMemberProgressDirectory progress)
+        IMemberProgressDirectory progress,
+        IUnitOfWork unitOfWork,
+        IKurinTagVisibility tags)
     {
         _source = source;
         _currentUser = currentUser;
@@ -46,6 +51,8 @@ public sealed class KurinReportDataService
         _badgesCatalogService = badgesCatalogService;
         _configuration = configuration;
         _progress = progress;
+        _unitOfWork = unitOfWork;
+        _tags = tags;
     }
 
     public async Task<KurinReportData?> BuildAsync(Guid kurinKey, CancellationToken cancellationToken)
@@ -81,6 +88,10 @@ public sealed class KurinReportDataService
                     .OrderBy(name => name, StringComparer.CurrentCulture)
                     .ToArray());
 
+        // The report is read only by whoever holds the whole kurin, so it carries every tag when the kurin uses them.
+        var tagsOn = (await _tags.SettingsAsync(kurinKey, cancellationToken))?.Enabled == true;
+        var tagNamesByMember = tagsOn ? await TagNamesByMemberAsync(kurinKey, cancellationToken) : new Dictionary<Guid, IReadOnlyList<string>>();
+
         var reportMembers = new List<KurinReportMember>(members.Count);
         foreach (var member in members)
         {
@@ -91,6 +102,7 @@ public sealed class KurinReportDataService
                 kurinKey,
                 groupNamesByKey,
                 mentoredGroupsByUserKey,
+                tagNamesByMember.GetValueOrDefault(member.MemberKey) ?? [],
                 cancellationToken));
         }
 
@@ -167,7 +179,8 @@ public sealed class KurinReportDataService
             staff,
             youth,
             BuildLevelTally(kurin.Branch, youth),
-            reportMembers);
+            reportMembers,
+            tagsOn);
     }
 
     /// <summary>
@@ -233,6 +246,7 @@ public sealed class KurinReportDataService
         Guid kurinKey,
         IReadOnlyDictionary<Guid, string> groupNamesByKey,
         IReadOnlyDictionary<Guid, IReadOnlyList<string>> mentoredGroupsByUserKey,
+        IReadOnlyList<string> tagNames,
         CancellationToken cancellationToken)
     {
         return new KurinReportMember(
@@ -338,7 +352,23 @@ public sealed class KurinReportDataService
                     ResolveLeadershipScopeName(item.Leadership, groupNamesByKey),
                     item.StartDate,
                     item.EndDate))
-                .ToArray());
+                .ToArray(),
+            tagNames);
+    }
+
+    // Every person's tags in the kurin by name, in one read of the tags and one of who carries them.
+    private async Task<Dictionary<Guid, IReadOnlyList<string>>> TagNamesByMemberAsync(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        var names = (await _unitOfWork.KurinTags.GetForKurinAsync(kurinKey, cancellationToken))
+            .ToDictionary(tag => tag.KurinTagKey, tag => tag.Name);
+        return (await _unitOfWork.KurinTags.GetAssignmentsAsync(kurinKey, cancellationToken))
+            .Where(assignment => names.ContainsKey(assignment.KurinTagKey))
+            .GroupBy(assignment => assignment.MemberKey)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<string>)group.Select(assignment => names[assignment.KurinTagKey])
+                    .Order(StringComparer.CurrentCulture)
+                    .ToArray());
     }
 
     private static IReadOnlyList<string> ResolveMentorNames(
