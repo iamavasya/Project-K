@@ -72,6 +72,12 @@ public sealed class GetAttendanceSheetQueryHandler : IRequestHandler<GetAttendan
         var aimedGroups = item.Assignments.Where(a => a.TargetType == AgendaTargetType.Group).Select(a => a.TargetKey).ToHashSet();
         var aimedMembers = item.Assignments.Where(a => a.TargetType == AgendaTargetType.Member).Select(a => a.TargetKey).ToHashSet();
 
+        // Whoever carries an aimed tag today is among those the event is for, like a гурток's members.
+        foreach (var tagKey in item.Assignments.Where(a => a.TargetType == AgendaTargetType.Tag).Select(a => a.TargetKey).Distinct())
+        {
+            aimedMembers.UnionWith(await _unitOfWork.KurinTags.GetMemberKeysAsync(tagKey, cancellationToken));
+        }
+
         var people = book.CurrentYouths()
             .Select(y => new SheetPersonDto
             {

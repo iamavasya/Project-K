@@ -250,6 +250,8 @@ export interface AgendaLeadershipTarget {
   leadershipKey: string;
   label: string;
   canTarget: boolean;
+  /** Члени КВ поза гуртками, щоб обрати когось окремо; в інших проводів порожньо. */
+  members?: AgendaMemberTarget[];
 }
 
 export interface AgendaGroupTarget {
@@ -266,6 +268,8 @@ export interface AgendaAssignTargets {
   kurinLabel: string;
   kurinLeaderships: AgendaLeadershipTarget[];
   groups: AgendaGroupTarget[];
+  /** Люди поза гуртками й поза КВ; у старшому курені — усі. */
+  unplacedMembers?: AgendaMemberTarget[];
   /** Теги куреня, коли курінь ними користується й політика дозволяє призначати тегам; інакше порожньо. */
   tags?: AgendaTagTarget[];
 }

@@ -63,6 +63,27 @@ describe('AgendaAssignSelectComponent', () => {
     expect(nodes[0].children?.find(child => child.key === 'member:m1')?.selectable).toBe(true);
   });
 
+  // People in no гурток are picked one by one: a КВ member under the КВ, everyone else in a branch of their own.
+  it('offers the КВ members under the КВ and people outside гуртки on their own', () => {
+    agendaService.getAssignTargets.mockReturnValue(of({
+      ...targetsForGroupProvid,
+      canTargetKurin: true,
+      kurinLeaderships: [{ leadershipKey: 'l-kv', label: 'КВ', canTarget: true, members: [{ memberKey: 'm-kv', fullName: 'Олег Кравець', canTarget: true }] }],
+      unplacedMembers: [{ memberKey: 'm-out', fullName: 'Ірина Сорока', canTarget: true }]
+    }));
+    fixture = TestBed.createComponent(AgendaAssignSelectComponent);
+    fixture.componentRef.setInput('kurinKey', 'k1');
+    fixture.detectChanges();
+
+    interface Node { key?: string; label?: string; children?: Node[] }
+    const nodes = (fixture.componentInstance as unknown as { nodes: () => Node[] }).nodes();
+    const kv = nodes.find(node => node.key === 'kurin:k1')?.children?.find(child => child.key === 'leadership:l-kv');
+
+    expect(kv?.children?.map(child => child.key)).toEqual(['member:m-kv']);
+    expect(nodes.find(node => node.key === 'unplaced')?.label).toBe('Поза гуртками');
+    expect(nodes.find(node => node.key === 'unplaced')?.children?.map(child => child.key)).toEqual(['member:m-out']);
+  });
+
   // «Усі з тегом» stands beside the гуртки, as its own branch, and a chosen tag goes out as a Tag target.
   it('offers the kurin tags as their own branch and sends a chosen one as a Tag target', () => {
     agendaService.getAssignTargets.mockReturnValue(of({

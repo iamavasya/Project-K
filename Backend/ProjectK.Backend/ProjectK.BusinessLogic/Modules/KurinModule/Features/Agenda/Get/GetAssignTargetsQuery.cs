@@ -51,6 +51,20 @@ public sealed class GetAssignTargetsQueryHandler
             .GroupBy(l => l.GroupKey!.Value)
             .ToDictionary(g => g.Key, g => g.First());
 
+        // People in no гурток are picked one by one: the КВ's under the КВ, everyone else on their own.
+        // In a senior kurin, with no гуртки at all, that is the whole kurin.
+        AgendaMemberTargetDto Person(MemberSummary m) => new()
+        {
+            MemberKey = m.MemberKey,
+            FullName = $"{m.FirstName} {m.LastName}".Trim(),
+            CanTarget = reach.ReachesMember(m.GroupKey, m.UserKey)
+        };
+        var unplaced = members.Where(m => m.GroupKey is null).OrderBy(m => m.LastName).ToList();
+        var kv = leaderships.FirstOrDefault(l => l.Type == LeadershipType.KV);
+        var kvMembers = kv is null
+            ? new HashSet<Guid>()
+            : (await _uow.Leaderships.GetActiveMemberKeysForLeadershipAsync(kv.LeadershipKey, cancellationToken)).ToHashSet();
+
         var kurinLeaderships = leaderships
             .Where(l => l.Type is LeadershipType.KV or LeadershipType.Kurin)
             .OrderBy(l => l.Type)
@@ -58,7 +72,10 @@ public sealed class GetAssignTargetsQueryHandler
             {
                 LeadershipKey = l.LeadershipKey,
                 Label = AgendaLookups.LabelFor(l.Type, l.GroupKey, groupNames),
-                CanTarget = reach.ReachesProvid(null)
+                CanTarget = reach.ReachesProvid(null),
+                Members = l.Type == LeadershipType.KV
+                    ? unplaced.Where(m => kvMembers.Contains(m.MemberKey)).Select(Person).ToList()
+                    : []
             })
             .ToList();
 
@@ -107,6 +124,7 @@ public sealed class GetAssignTargetsQueryHandler
             KurinLabel = AgendaLookups.KurinLabel,
             KurinLeaderships = kurinLeaderships,
             Groups = groupTargets,
+            UnplacedMembers = unplaced.Where(m => !kvMembers.Contains(m.MemberKey)).Select(Person).Where(p => p.CanTarget).ToList(),
             Tags = tagTargets
         };
 

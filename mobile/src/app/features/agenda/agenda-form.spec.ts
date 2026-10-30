@@ -25,6 +25,20 @@ describe('agenda form targets', () => {
     expect([...targetNames(tree).values()]).toContain('Усі з тегом «Повні члени»');
   });
 
+  // With no гуртки, the people stand on their own; a КВ member is offered under the kurin, next to the КВ.
+  it('lists people outside гуртки one by one, and the КВ members next to the КВ', () => {
+    const sections = targetSections({
+      ...tree,
+      kurinLeaderships: [{ leadershipKey: 'kv', label: 'КВ', canTarget: true, members: [{ memberKey: 'm-kv', fullName: 'Олег Кравець', canTarget: true }] }],
+      unplacedMembers: [{ memberKey: 'm-1', fullName: 'Ірина Сорока', canTarget: true }],
+      tags: []
+    });
+
+    expect(sections.map((section) => section.title)).toEqual(['5 курінь', 'Люди куреня']);
+    expect(sections[0].rows.map((r) => r.label)).toEqual(['КВ', 'Олег Кравець']);
+    expect(sections[1].rows.map((r) => r.targetType)).toEqual(['Member']);
+  });
+
   it('shows no tags heading when there are none to pick', () => {
     expect(targetSections({ ...tree, tags: [] })).toEqual([]);
   });

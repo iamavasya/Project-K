@@ -173,6 +173,12 @@ public record AgendaAssignTargetsResponse
     public List<AgendaLeadershipTargetDto> KurinLeaderships { get; set; } = [];
     public List<AgendaGroupTargetDto> Groups { get; set; } = [];
 
+    /// <summary>
+    /// People in no гурток and not in the КВ — in a senior kurin, everyone. Listed one by one, so an
+    /// item can be aimed at a person a гурток would never reach.
+    /// </summary>
+    public List<AgendaMemberTargetDto> UnplacedMembers { get; set; } = [];
+
     /// <summary>The kurin's tags, when it uses them and the viewer may aim at them; empty otherwise.</summary>
     public List<AgendaTagTargetDto> Tags { get; set; } = [];
 }
@@ -203,6 +209,12 @@ public record AgendaLeadershipTargetDto
     public Guid LeadershipKey { get; set; }
     public string Label { get; set; } = string.Empty;
     public bool CanTarget { get; set; }
+
+    /// <summary>
+    /// The КВ's members who are in no гурток, to pick one by one; a member placed in a гурток is
+    /// picked there. Empty for every other провід.
+    /// </summary>
+    public List<AgendaMemberTargetDto> Members { get; set; } = [];
 }
 
 public record AgendaMemberTargetDto
