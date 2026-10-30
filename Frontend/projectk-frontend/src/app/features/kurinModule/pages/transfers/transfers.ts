@@ -24,10 +24,10 @@ import {
   MembershipService
 } from '../../services/membership-service/membership.service';
 
-type TagSeverity = 'success' | 'secondary' | 'warn' | 'danger';
+type TagSeverity = 'success' | 'secondary';
 
 const STATUS: Record<MembershipRequestStatus, { label: string; severity: TagSeverity }> = {
-  Pending: { label: 'Чекає', severity: 'warn' },
+  Pending: { label: 'Чекає', severity: 'secondary' },
   Approved: { label: 'Підтверджено', severity: 'success' },
   Declined: { label: 'Відхилено', severity: 'secondary' },
   Cancelled: { label: 'Скасовано', severity: 'secondary' },

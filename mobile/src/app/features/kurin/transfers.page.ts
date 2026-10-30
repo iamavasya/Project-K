@@ -171,7 +171,7 @@ const kurinNo = (k: MembershipRequestKurinDto): string => (k.number != null ? `�
                     <p class="owes">Винна куреню вкладку — перевести можна після сплати.</p>
                   }
                 </ion-label>
-                <ion-badge slot="end" [class]="r.status === 'Pending' ? 'lk-tag--warn' : 'lk-tag--secondary'">{{ status[r.status] }}</ion-badge>
+                <ion-badge slot="end" [class]="r.status === 'Approved' ? 'lk-tag--success' : 'lk-tag--secondary'">{{ status[r.status] }}</ion-badge>
               </ion-item>
             } @empty {
               <ion-item>
