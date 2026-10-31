@@ -179,7 +179,7 @@ const kurinNo = (k: MembershipRequestKurinDto): string => (k.number != null ? `�
                 </ion-item>
               } @empty {
                 <ion-item>
-                  <ion-label class="ion-text-wrap"><p>Колишніх немає. Коли курінь виведе людину, її можна буде повернути звідси.</p></ion-label>
+                  <ion-label class="ion-text-wrap"><p>Колишніх немає.</p></ion-label>
                 </ion-item>
               }
             </ion-item-group>
@@ -196,7 +196,7 @@ const kurinNo = (k: MembershipRequestKurinDto): string => (k.number != null ? `�
                   <h2>{{ r.memberName }}</h2>
                   <p>{{ line(r) }}</p>
                   @if (part() === 'incoming' && r.status === 'Pending' && r.owedToLeave > 0) {
-                    <p class="owes">Винна куреню вкладку — перевести можна після сплати.</p>
+                    <p class="owes">Борг за минулі квартали</p>
                   }
                 </ion-label>
                 <ion-badge slot="end" [class]="r.status === 'Approved' ? 'lk-tag--success' : 'lk-tag--secondary'">{{ status[r.status] }}</ion-badge>
@@ -264,7 +264,7 @@ export class TransfersPage implements OnInit {
 
   protected whereNow(c: MembershipCandidateDto): string {
     if (c.alreadyInThisKurin) return 'Уже у вашому курені.';
-    if (!c.currentKurins.length) return 'Ніде не стоїть — приймеш одразу.';
+    if (!c.currentKurins.length) return 'Ніде не стоїть';
     return `Зараз у ${c.currentKurins.map(kurinNo).join(', ')}`;
   }
 
@@ -367,7 +367,7 @@ export class TransfersPage implements OnInit {
 
     let kind: MembershipRequestKind = 'Transfer';
     if (from) {
-      const chosen = await this.choose<MembershipRequestKind>(name, `Зараз у ${kurinNo(from)}. Відповідь дасть його Звʼязковий.`, [
+      const chosen = await this.choose<MembershipRequestKind>(name, `Зараз у ${kurinNo(from)}`, [
         { text: 'Перевести до нас', data: 'Transfer' },
         { text: 'Прийняти ще й до нас', data: 'AlsoJoin' },
       ]);
@@ -375,7 +375,7 @@ export class TransfersPage implements OnInit {
       kind = chosen;
     }
 
-    const membershipKind = await this.choose<'Youth' | 'Staff'>(name, from ? 'У вашому курені як' : 'Ніде не стоїть — повертаєш одразу. У курені як', [
+    const membershipKind = await this.choose<'Youth' | 'Staff'>(name, from ? 'У вашому курені як' : 'Ніде не стоїть. У курені як', [
       { text: 'Юнак', data: 'Youth' },
       { text: 'Впорядник', data: 'Staff' },
     ]);

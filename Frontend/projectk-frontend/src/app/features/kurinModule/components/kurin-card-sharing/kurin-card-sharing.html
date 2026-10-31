@@ -2,12 +2,12 @@
   <div class="card-sharing">
     <div class="card-sharing__switch">
       <p-toggleswitch [ngModel]="v.minorsMayShare" (ngModelChange)="setShare($event)" inputId="minors-may-share" />
-      <label for="minors-may-share">Дозволити юнакам до 18 показувати картку</label>
+      <label for="minors-may-share">Показувати картку</label>
     </div>
 
     @if (v.minorsMayShare) {
       <fieldset class="card-sharing__fields">
-        <legend>Що вони можуть показати</legend>
+        <legend>Що на картці</legend>
         @for (field of fieldList; track field.name) {
           <div class="card-sharing__field">
             <p-checkbox [binary]="true" [ngModel]="has(field.name)" (ngModelChange)="setField(field.name, $event)"
@@ -19,10 +19,7 @@
 
       <div class="card-sharing__switch">
         <p-toggleswitch [ngModel]="v.minorsMayLink" (ngModelChange)="setLink($event)" inputId="minors-may-link" />
-        <label for="minors-may-link">
-          Також постійне посилання
-          <small>Без нього картку можна лише показати для перевірки, QR діє три хвилини.</small>
-        </label>
+        <label for="minors-may-link">Постійне посилання</label>
       </div>
     }
   </div>

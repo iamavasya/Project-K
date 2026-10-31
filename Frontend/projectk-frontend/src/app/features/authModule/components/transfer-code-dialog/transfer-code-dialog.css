@@ -18,17 +18,6 @@
   user-select: all;
 }
 
-.transfer-code__lead,
-.transfer-code__note {
-  margin: 0;
-  text-wrap: pretty;
-}
-
-.transfer-code__lead {
-  color: var(--lil-ink-soft);
-}
-
-.transfer-code__note,
 .transfer-code__fallback {
   color: var(--p-text-muted-color);
   font-size: var(--lil-text-caption);

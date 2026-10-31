@@ -40,8 +40,8 @@ const columnChoiceKey = (kurinKey: string) => `registry:columns:${kurinKey}`;
 
 /** Чому «Повернути» не вдалося, коли людина тим часом стала в іншому курені. */
 const TAKE_BACK_ERRORS: Record<string, string> = {
-  RequestPending: 'Запит щодо цієї людини вже чекає відповіді — він у «Складі куреня».',
-  ChooseKurin: 'Людина стоїть у кількох куренях. Вибрати, кого питати, можна в «Складі куреня» серед колишніх членів.'
+  RequestPending: 'Запит щодо цієї людини вже чекає відповіді.',
+  ChooseKurin: 'Людина в кількох куренях — попроси її в «Складі куреня».'
 };
 
 @Component({
@@ -263,7 +263,7 @@ export class RegistryComponent implements OnInit {
           this.messageService.add({
             severity: 'success',
             summary: 'Запит надіслано',
-            detail: `${this.formerName(person)} зараз в іншому курені. Перехід підтвердить його Звʼязковий — стежте в «Складі куреня».`
+            detail: `${this.formerName(person)}: запит надіслано до його куреня.`
           });
           return;
         }

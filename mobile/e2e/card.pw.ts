@@ -44,7 +44,7 @@ test('shows the card as a QR with the time to the next one', async ({ page }, in
 test('says the kurin has not allowed it yet', async ({ page }) => {
   await signIn(page, member, cardApi({ fields: 6, maxFields: 0, mayShare: false }));
   await page.goto('./tabs/more/card');
-  await expect(page.getByTestId('check')).toContainText('до 18 років це дозволяє курінь');
+  await expect(page.getByTestId('check')).toContainText('Курінь ще не дозволив');
 });
 
 test('shows the transfer code with its QR from the Меню tab', async ({ page }, info) => {
@@ -53,7 +53,6 @@ test('shows the transfer code with its QR from the Меню tab', async ({ page 
   await page.getByTestId('transfer-code').click();
   await expect(page.getByTestId('transfer-code-value')).toHaveText('PL-4F7A2-9D4A1');
   await expect(page.getByTestId('transfer-qr')).toBeVisible();
-  await expect(page.getByTestId('transfer')).toContainText('провід куреня його не бачить');
   await shot(page, info.project.name, 'transfer-code');
 });
 

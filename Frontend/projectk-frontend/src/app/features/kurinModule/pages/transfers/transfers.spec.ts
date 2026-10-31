@@ -86,7 +86,7 @@ describe('TransfersComponent', () => {
   it('will not offer to approve a transfer while the person owes', () => {
     const fixture = create([request({ owedToLeave: 460 })]);
 
-    expect(text(fixture)).toContain('Винна куреню вкладку');
+    expect(text(fixture)).toContain('Борг за минулі квартали');
     const approve = (fixture.nativeElement as HTMLElement).querySelector('.transfers__actions button') as HTMLButtonElement;
     expect(approve.disabled).toBe(true);
   });

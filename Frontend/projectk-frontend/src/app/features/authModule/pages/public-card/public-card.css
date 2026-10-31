@@ -15,14 +15,6 @@
   text-decoration: none;
 }
 
-.public-card__note {
-  color: var(--p-text-muted-color);
-  font-size: var(--lil-text-caption);
-  margin: 0;
-  text-align: center;
-  text-wrap: pretty;
-}
-
 .public-card__missing {
   display: grid;
   gap: 0.5rem;

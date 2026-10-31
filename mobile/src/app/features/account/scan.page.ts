@@ -48,11 +48,6 @@ declare global {
       object-fit: cover;
       width: 100%;
     }
-    .hint {
-      color: var(--ion-color-medium);
-      margin: 0 16px;
-      text-align: center;
-    }
   `,
   template: `
     <ion-header [translucent]="true">
@@ -67,7 +62,7 @@ declare global {
           <ion-item>
             <ion-label class="ion-text-wrap">
               <h2>Це не посилання Лілейки</h2>
-              <p>Ми його не відкриваємо. Ось що в ньому:</p>
+
               <p data-testid="foreign-text">{{ text }}</p>
             </ion-label>
           </ion-item>
@@ -81,7 +76,7 @@ declare global {
         </ion-list>
       } @else {
         <div class="viewfinder"><video #video playsinline muted data-testid="viewfinder"></video></div>
-        <p class="hint">Наведи камеру на QR: картку іншого пластуна чи код для переходу.</p>
+        
       }
     </ion-content>
   `,
@@ -116,14 +111,14 @@ export class ScanPage implements ViewDidEnter, ViewWillLeave, OnDestroy {
 
   private async start(): Promise<void> {
     if (!navigator.mediaDevices?.getUserMedia) {
-      this.problem.set('Цей браузер не дає доступу до камери. Відскануй QR камерою телефона — посилання відкриється само.');
+      this.problem.set('Браузер не дає доступу до камери.');
       return;
     }
 
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     } catch {
-      this.problem.set('Немає доступу до камери. Дозволь його в налаштуваннях браузера або відскануй QR камерою телефона.');
+      this.problem.set('Немає доступу до камери.');
       return;
     }
 

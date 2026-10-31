@@ -51,7 +51,7 @@ test('does not offer «перевести» while the person owes', async ({ pag
   const world = { incoming: [request({ owedToLeave: 460 })], outgoing: [] as Record<string, unknown>[] };
   await signIn(page, member, transfersApi(world), ZVYAZKOVYI);
   await page.goto('./tabs/kurin/transfers');
-  await expect(page.getByTestId('request')).toContainText('Винна куреню вкладку');
+  await expect(page.getByTestId('request')).toContainText('Борг за минулі квартали');
 
   await page.getByTestId('request').click();
   const sheet = page.locator('ion-action-sheet:not(.overlay-hidden)');

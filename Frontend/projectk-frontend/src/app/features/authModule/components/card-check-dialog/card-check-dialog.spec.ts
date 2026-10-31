@@ -57,6 +57,6 @@ describe('CardCheckDialogComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.notAllowed()).toBe(true);
-    expect((fixture.nativeElement as HTMLElement).ownerDocument.body.textContent).toContain('до 18 років це дозволяє курінь');
+    expect((fixture.nativeElement as HTMLElement).ownerDocument.body.textContent).toContain('Курінь ще не дозволив');
   });
 });

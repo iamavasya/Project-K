@@ -274,9 +274,8 @@ export class TransfersComponent implements OnInit {
     this.confirmation.confirm({
       header: transfer ? 'Перевести людину?' : 'Прийняти ще й туди?',
       message: transfer
-        ? `${request.memberName} вийде з вашого куреня й стане членом ${kurinLabel(request.toKurin.number)}. `
-          + 'Проби, вмілості, відзначення й перестороги йдуть із людиною.'
-        : `${request.memberName} лишається у вашому курені й стане ще й членом ${kurinLabel(request.toKurin.number)}.`,
+        ? `${request.memberName}: з вашого куреня до ${kurinLabel(request.toKurin.number)}.`
+        : `${request.memberName}: ще й до ${kurinLabel(request.toKurin.number)}.`,
       icon: transfer ? 'pi pi-sign-out' : 'pi pi-user-plus',
       acceptButtonProps: transfer ? { label: 'Перевести', severity: 'danger' } : { label: 'Підтвердити' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
@@ -296,7 +295,7 @@ export class TransfersComponent implements OnInit {
   confirmDecline(request: MembershipRequestDto): void {
     this.confirmation.confirm({
       header: 'Відхилити запит?',
-      message: `${kurinLabel(request.toKurin.number)} дізнається, що ви відхилили запит. ${request.memberName} лишається у вашому курені.`,
+      message: `${request.memberName}: запит від ${kurinLabel(request.toKurin.number)}.`,
       icon: 'pi pi-times-circle',
       acceptButtonProps: { label: 'Відхилити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
@@ -307,7 +306,7 @@ export class TransfersComponent implements OnInit {
   confirmCancel(request: MembershipRequestDto): void {
     this.confirmation.confirm({
       header: 'Скасувати запит?',
-      message: `Запит до ${kurinLabel(request.fromKurin.number)} (${request.memberName}) більше не чекатиме відповіді.`,
+      message: `${request.memberName}: запит до ${kurinLabel(request.fromKurin.number)}.`,
       icon: 'pi pi-times-circle',
       acceptButtonProps: { label: 'Скасувати запит', severity: 'danger' },
       rejectButtonProps: { label: 'Лишити', severity: 'secondary', outlined: true },

@@ -4,7 +4,6 @@
   <header class="lil-page-head">
     <div>
       <h1>Склад куреня</h1>
-      <p>Справи Звʼязкового: запити між куренями, нові люди й колишні члени.</p>
     </div>
     <p-button label="Реєстр" icon="pi pi-table" severity="secondary" [outlined]="true" routerLink="/kurin/registry" />
   </header>
@@ -15,7 +14,6 @@
         <div class="lil-tile-head">
           <div>
             <h2>Чекають вашої відповіді <span class="lil-count">{{ pendingIncoming() }}</span></h2>
-            <p>Інші курені просять ваших людей. Запит діє 14 днів.</p>
           </div>
         </div>
       </ng-template>
@@ -26,7 +24,7 @@
             {{ kindLine(r, true) }}
             <span class="transfers__meta">як {{ r.membershipKind === 'Staff' ? 'впорядника' : 'юнака' }} · до {{ r.expiresAtUtc | date:'dd.MM.yyyy' }}</span>
             @if (r.status === 'Pending' && r.owedToLeave > 0) {
-              <span class="transfers__owes">Винна куреню вкладку за квартали, що минули. Перевести можна після сплати.</span>
+              <span class="transfers__owes">Борг за минулі квартали</span>
             }
           </td>
           <td data-mobile-label="Стан"><p-tag [value]="statusLabel(r)" [severity]="statusSeverity(r)" /></td>
@@ -41,7 +39,7 @@
       </ng-template>
       <ng-template #emptymessage>
         <tr><td colspan="4" class="lil-empty-cell">
-          <app-empty-state art="list" title="Запитів немає" body="Коли інший курінь попросить вашу людину, запит зʼявиться тут." />
+          <app-empty-state art="list" title="Запитів немає" />
         </td></tr>
       </ng-template>
     </p-table>
@@ -51,7 +49,6 @@
     <div class="lil-tile-head">
       <div>
         <h2>Прийняти людину за кодом</h2>
-        <p>Людина дає свій код із меню акаунта. Якщо вона вже в іншому курені, перехід підтверджує його Звʼязковий.</p>
       </div>
     </div>
 
@@ -79,7 +76,7 @@
         @if (c.alreadyInThisKurin) {
           <p class="transfers__hint">Уже у вашому курені.</p>
         } @else if (standsNowhere()) {
-          <p class="transfers__hint">Зараз не стоїть у жодному курені — приймеш одразу, питати нікого.</p>
+          <p class="transfers__hint">Ніде не стоїть</p>
         } @else {
           <p class="transfers__hint">
             Зараз у
@@ -111,9 +108,6 @@
           <div class="transfers__send">
             <p-button [label]="standsNowhere() ? 'Прийняти до куреня' : 'Надіслати запит'" icon="pi pi-send"
               [loading]="sending()" [disabled]="!canSend()" (onClick)="send()" />
-            @if (!standsNowhere() && kind() === 'Transfer') {
-              <span class="transfers__hint">Перевести можна, лише коли людина нічого не винна своєму куреню.</span>
-            }
           </div>
         }
       </div>
@@ -126,7 +120,6 @@
         <div class="lil-tile-head">
           <div>
             <h2>Колишні члени <span class="lil-count">{{ former().length }}</span></h2>
-            <p>Кого курінь вивів. Повернути можна в будь-який час: якщо людина вже в іншому курені — запитом до нього.</p>
           </div>
         </div>
       </ng-template>
@@ -149,7 +142,7 @@
       </ng-template>
       <ng-template #emptymessage>
         <tr><td colspan="3" class="lil-empty-cell">
-          <app-empty-state art="list" title="Колишніх немає" body="Коли курінь виведе людину, вона буде тут — її можна повернути." />
+          <app-empty-state art="list" title="Колишніх немає" />
         </td></tr>
       </ng-template>
     </p-table>
@@ -161,7 +154,6 @@
         <div class="lil-tile-head">
           <div>
             <h2>Надіслані <span class="lil-count">{{ outgoing().length }}</span></h2>
-            <p>Кого ви просили в інших куренів.</p>
           </div>
         </div>
       </ng-template>
@@ -182,7 +174,7 @@
       </ng-template>
       <ng-template #emptymessage>
         <tr><td colspan="4" class="lil-empty-cell">
-          <app-empty-state art="trail" title="Ще нікого не просили" body="Попроси людину за її кодом — запит буде тут, доки не відповідять." />
+          <app-empty-state art="trail" title="Ще нікого не просили" />
         </td></tr>
       </ng-template>
     </p-table>
@@ -195,9 +187,9 @@
     <div class="transfers__dialog">
       <p class="transfers__name">{{ formerName(p) }}</p>
       @if (p.standsIn.length === 0) {
-        <p class="transfers__hint">Зараз не стоїть у жодному курені — повертаєш одразу, питати нікого.</p>
+        <p class="transfers__hint">Ніде не стоїть</p>
       } @else {
-        <p class="transfers__hint">Зараз у {{ standsInLine(p) }}. Відповідь дасть Звʼязковий того куреня.</p>
+        <p class="transfers__hint">Зараз у {{ standsInLine(p) }}</p>
 
         <div class="lil-dialog-field">
           <span class="lil-dialog-label" id="return-kind">Що просимо</span>
@@ -219,10 +211,6 @@
         <p-selectbutton [options]="membershipKindOptions" [ngModel]="returnMembershipKind()" (ngModelChange)="returnMembershipKind.set($event)"
           [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="return-as" />
       </div>
-
-      @if (p.standsIn.length && returnKind() === 'Transfer') {
-        <p class="transfers__hint">Перевести можна, лише коли людина нічого не винна своєму куреню.</p>
-      }
     </div>
   }
   <ng-template #footer>

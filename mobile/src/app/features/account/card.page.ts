@@ -125,11 +125,10 @@ type Part = 'check' | 'transfer' | 'settings';
         @case ('check') {
           <div class="qr" data-testid="check">
             @if (notAllowed()) {
-              <p>Показувати картку тобі поки не можна: до 18 років це дозволяє курінь. Спитай свого Звʼязкового.</p>
+              <p>Курінь ще не дозволив показувати картку.</p>
             } @else if (check(); as code) {
               <img [src]="code.qrCode" alt="QR-код картки" data-testid="card-qr" />
               <ion-note>Новий QR за {{ countdown() }}</ion-note>
-              <p>Дай відсканувати будь-якою камерою. Відкриється твоя картка просто з Лілейки — з часом перевірки.</p>
             } @else {
               <ion-spinner name="crescent" />
             }
@@ -141,10 +140,6 @@ type Part = 'check' | 'transfer' | 'settings';
               <img [src]="code.qrCode" alt="QR-код для переходу" data-testid="transfer-qr" />
               <span class="code" data-testid="transfer-code-value">{{ transferCode() }}</span>
               <ion-button fill="outline" (click)="copy(transferCode())">Скопіювати</ion-button>
-              <p>
-                Коли тебе приймає інший курінь, дай його Звʼязковому відсканувати QR або передай код. Код бачиш лише ти —
-                провід куреня його не бачить. Не публікуй його.
-              </p>
             } @else {
               <ion-spinner name="crescent" />
             }
@@ -154,7 +149,7 @@ type Part = 'check' | 'transfer' | 'settings';
           @if (card(); as c) {
             @if (!c.allowance.mayShare) {
               <ion-list [inset]="true">
-                <ion-item><ion-label class="ion-text-wrap"><p>До 18 років картку можна показувати, лише коли це дозволив твій курінь.</p></ion-label></ion-item>
+                <ion-item><ion-label class="ion-text-wrap"><p>Курінь ще не дозволив показувати картку.</p></ion-label></ion-item>
               </ion-list>
             } @else {
               <ion-list [inset]="true" data-testid="fields">
@@ -171,18 +166,14 @@ type Part = 'check' | 'transfer' | 'settings';
                       >
                     </ion-item>
                   }
-                  <ion-item>
-                    <ion-label class="ion-text-wrap"><p>Ім'я видно завжди. Телефон, пошту, адресу, дату народження й вкладку — ніколи.</p></ion-label>
-                  </ion-item>
                 </ion-item-group>
               </ion-list>
 
+              @if (c.allowance.mayLink) {
               <ion-list [inset]="true" data-testid="link">
                 <ion-list-header><ion-label>Постійне посилання</ion-label></ion-list-header>
                 <ion-item-group>
-                  @if (!c.allowance.mayLink) {
-                    <ion-item><ion-label class="ion-text-wrap"><p>До 18 років — лише якщо курінь дозволив.</p></ion-label></ion-item>
-                  } @else if (c.linkUrl; as url) {
+                  @if (c.linkUrl; as url) {
                     <ion-item [button]="true" [detail]="false" (click)="share(url)">
                       <ion-label color="primary">Поділитися посиланням</ion-label>
                     </ion-item>
@@ -196,6 +187,7 @@ type Part = 'check' | 'transfer' | 'settings';
                   }
                 </ion-item-group>
               </ion-list>
+              }
             }
           }
         }

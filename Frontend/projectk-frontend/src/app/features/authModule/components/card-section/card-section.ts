@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
-import { MessageModule } from '@openng/optimus-ui/message';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { CARD_FIELD, CARD_FIELDS, CardFieldName, CardService, MyCardDto, hasCardField } from '../../services/card-service/card.service';
 import { SharedCardComponent } from '../shared-card/shared-card';
@@ -20,7 +18,7 @@ import { CardCheckDialogComponent } from '../card-check-dialog/card-check-dialog
   selector: 'app-card-section',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    DatePipe, FormsModule, ButtonModule, ConfirmDialogModule, InputTextModule, MessageModule, ToggleSwitchModule,
+    FormsModule, ButtonModule, ConfirmDialogModule, InputTextModule, ToggleSwitchModule,
     SharedCardComponent, CardCheckDialogComponent
   ],
   providers: [ConfirmationService],
@@ -71,7 +69,7 @@ export class CardSectionComponent implements OnInit {
 
     this.confirmation.confirm({
       header: 'Створити нове посилання?',
-      message: 'Старе посилання перестане працювати: хто має його, побачить «Картку не знайдено».',
+      message: 'Старе посилання перестане працювати.',
       icon: 'pi pi-refresh',
       acceptButtonProps: { label: 'Створити нове', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
@@ -82,7 +80,7 @@ export class CardSectionComponent implements OnInit {
   protected disableLink(): void {
     this.confirmation.confirm({
       header: 'Вимкнути посилання?',
-      message: 'Хто має посилання на картку, більше її не побачить. Показати картку для перевірки можна й далі.',
+      message: 'Посилання перестане працювати.',
       icon: 'pi pi-ban',
       acceptButtonProps: { label: 'Вимкнути', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
