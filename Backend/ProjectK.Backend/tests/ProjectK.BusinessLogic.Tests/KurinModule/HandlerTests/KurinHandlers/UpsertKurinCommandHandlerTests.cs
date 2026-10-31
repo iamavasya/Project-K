@@ -297,6 +297,9 @@ public class UpsertKurinHandlerTests
         refused.ErrorCode.Should().Be(KurinRoleNames.NotAvailableCode);
         unknown.ErrorCode.Should().Be(KurinRoleNames.InvalidCode);
         youth.RoleNames.Should().BeNull();
+
+        var wholeRecord = await _handler.Handle(new UpsertKurinCommand(youth.KurinKey, 47, "Lviv") { RoleNames = new Dictionary<string, string?>() }, default);
+        wholeRecord.Type.Should().Be(ResultType.Success, "an empty map from a client that sends the whole record is no change");
     }
 
     [Fact]

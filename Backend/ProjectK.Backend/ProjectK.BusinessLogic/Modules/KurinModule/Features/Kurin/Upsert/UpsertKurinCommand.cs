@@ -133,13 +133,16 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
                 existing.ScoreEnabled = scoreEnabled;
             }
 
-            if (request.RoleNames is { } roleNames)
+            // A УПЮ kurin keeps the usual names: an empty map from a client that sends the whole
+            // record is no change, and only an actual name is refused.
+            if (request.RoleNames is { } refusedNames && !KurinRoleNames.IsAvailableFor(existing.Branch)
+                && refusedNames.Values.Any(name => !string.IsNullOrWhiteSpace(name)))
             {
-                if (!KurinRoleNames.IsAvailableFor(existing.Branch))
-                {
-                    return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, KurinRoleNames.NotAvailableCode, "This kurin keeps the usual role names.");
-                }
+                return ServiceResult<KurinResponse>.Failure(ResultType.BadRequest, KurinRoleNames.NotAvailableCode, "This kurin keeps the usual role names.");
+            }
 
+            if (request.RoleNames is { } roleNames && KurinRoleNames.IsAvailableFor(existing.Branch))
+            {
                 var stored = KurinRoleNames.Normalize(roleNames, out var valid);
                 if (!valid)
                 {
@@ -148,6 +151,7 @@ public class UpsertKurinCommandHandler : IRequestHandler<UpsertKurinCommand, Ser
 
                 existing.RoleNames = stored;
             }
+
             _unitOfWork.Kurins.Update(existing, cancellationToken);
 
             var recorded = AuditChanges.Of(before.Zip(Snapshot(existing), (was, now) => (was.Field, was.Value, now.Value)).ToArray());
