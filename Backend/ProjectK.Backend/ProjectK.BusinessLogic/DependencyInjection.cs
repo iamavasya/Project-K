@@ -66,6 +66,7 @@ public static class DependencyInjection
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
         services.AddScoped<MePerson>();
+        services.AddScoped<MemberCards>();
 
         services.AddScoped<IAgendaAccess, AgendaAccess>();
         services.AddScoped<KurinReportDataService>();

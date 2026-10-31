@@ -14,6 +14,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.AccessPolicy;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.ExportReportPdf;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.CardSharing;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.SetKrai;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Former;
@@ -294,6 +295,37 @@ public class KurinController : ControllerBase
     public async Task<IActionResult> GetProbeEditions(Guid kurinKey, CancellationToken cancellationToken)
     {
         var response = await _mediator.Send(new GetKurinProbeEditionsQuery(kurinKey), cancellationToken);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>What the kurin lets its people under 18 show on a shared card.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("{kurinKey:guid}/card-sharing")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(KurinCardSharingDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCardSharing(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(new GetKurinCardSharingQuery(kurinKey), cancellationToken);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Body of <c>PUT {kurinKey}/card-sharing</c>.</summary>
+    public sealed class SetCardSharingRequest
+    {
+        public bool MinorsMayShare { get; set; }
+        public CardField MinorFields { get; set; }
+        public bool MinorsMayLink { get; set; }
+    }
+
+    /// <summary>Sets what the kurin lets its people under 18 show; those 18 or older decide alone.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpPut("{kurinKey:guid}/card-sharing")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(KurinCardSharingDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SetCardSharing(Guid kurinKey, [FromBody] SetCardSharingRequest body, CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(
+            new SetKurinCardSharingCommand(kurinKey, body.MinorsMayShare, body.MinorFields, body.MinorsMayLink), cancellationToken);
         return response.ToActionResult(this);
     }
 

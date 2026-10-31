@@ -204,6 +204,12 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MeController>>(nameof(MeController.GetGroups), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetCalendarFeed), "RequireUser");
         yield return Row<Action<MeController, CalendarFeedOptionsRequest>>(nameof(MeController.IssueCalendarFeed), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.GetCard), "RequireUser");
+        yield return Row<Action<MeController, CardFieldsRequest>>(nameof(MeController.SetCardFields), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.IssueCardLink), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.DisableCardLink), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.GetCardCheckCode), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.GetTransferCode), "RequireUser");
         yield return Row<Action<MeController, CalendarFeedOptionsRequest>>(nameof(MeController.UpdateCalendarFeed), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.DisableCalendarFeed), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
@@ -235,6 +241,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinCardFieldsRequest>>(nameof(KurinController.SetCardFields), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.GetProbeEditions), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.GetAccessPolicy), "RequireUser");
+        yield return Endpoint<KurinController>(nameof(KurinController.GetCardSharing), "RequireUser");
+        yield return Endpoint<KurinController>(nameof(KurinController.SetCardSharing), AuthorizationPolicies.RequireKurinManagement);
         yield return Endpoint<KurinController>(nameof(KurinController.SetAccessPolicy), "RequireUser");
 
         yield return Row<Action<KraiController>>(nameof(KraiController.GetAll), "RequireAdmin");
@@ -362,6 +370,8 @@ public class AuthorizationBaselineMatrixTests
         yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.Reset));
         yield return AnonymousEndpoint<MemberAwardsController>(nameof(MemberAwardsController.GetAwardImage));
         yield return AnonymousEndpoint<CalendarFeedController>(nameof(CalendarFeedController.GetFeed));
+        yield return AnonymousEndpoint<PublicCardController>(nameof(PublicCardController.Checked));
+        yield return AnonymousEndpoint<PublicCardController>(nameof(PublicCardController.Linked));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ActivateAccount));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.RequestPasswordReset));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ResendInvitationByEmail));

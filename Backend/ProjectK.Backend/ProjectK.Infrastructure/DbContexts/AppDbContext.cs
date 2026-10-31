@@ -31,6 +31,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<Member> Members { get; set; }
     public DbSet<Membership> Memberships { get; set; }
     public DbSet<MembershipRequest> MembershipRequests { get; set; }
+    public DbSet<MemberCardShare> MemberCardShares { get; set; }
+    public DbSet<KurinCardSharing> KurinCardSharing { get; set; }
     public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
     public DbSet<Leadership> Leaderships { get; set; }
     public DbSet<LeadershipHistory> LeadershipHistories { get; set; }
@@ -292,6 +294,22 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.Value).HasPrecision(18, 2);
             entity.Property(e => e.Parts).HasConversion<int>();
             entity.Property(e => e.Reason).HasMaxLength(500);
+        });
+
+        builder.Entity<MemberCardShare>(entity =>
+        {
+            entity.HasKey(e => e.MemberCardShareKey);
+            entity.Property(e => e.Fields).HasConversion<int>();
+            entity.Property(e => e.LinkToken).HasMaxLength(64);
+            entity.HasIndex(e => e.MemberKey).IsUnique();
+            entity.HasIndex(e => e.LinkToken).IsUnique().HasFilter("[LinkToken] IS NOT NULL");
+        });
+
+        builder.Entity<KurinCardSharing>(entity =>
+        {
+            entity.HasKey(e => e.KurinCardSharingKey);
+            entity.Property(e => e.MinorFields).HasConversion<int>();
+            entity.HasIndex(e => e.KurinKey).IsUnique();
         });
 
         builder.Entity<KurinDuesSettings>(entity =>

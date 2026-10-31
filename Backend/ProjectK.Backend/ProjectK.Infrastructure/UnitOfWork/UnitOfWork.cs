@@ -38,6 +38,8 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IGroupRepository _groups;
     private IMembershipRepository _memberships;
     private IMembershipRequestRepository _membershipRequests;
+    private IMemberCardShareRepository _memberCardShares;
+    private IKurinCardSharingRepository _kurinCardSharing;
     private IMemberRepository _members;
     private ILeadershipRepository _leaderships;
     private IPlanningSessionRepository _planningSessions;
@@ -85,6 +87,8 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
     public IMembershipRepository Memberships => _memberships ??= new MembershipRepository(_context);
     public IMembershipRequestRepository MembershipRequests => _membershipRequests ??= new MembershipRequestRepository(_context);
+    public IMemberCardShareRepository MemberCardShares => _memberCardShares ??= new MemberCardShareRepository(_context);
+    public IKurinCardSharingRepository KurinCardSharing => _kurinCardSharing ??= new KurinCardSharingRepository(_context);
     public IMemberRepository Members => _members ??= new MemberRepository(_context);
     public IAppUserRepository Users => _users ??= new AppUserRepository(_context);
     public ILeadershipRepository Leaderships => _leaderships ??= new LeadershipRepository(_context);

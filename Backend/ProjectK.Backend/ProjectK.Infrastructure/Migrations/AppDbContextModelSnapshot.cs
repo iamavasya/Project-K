@@ -1989,6 +1989,41 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("Kurins");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.KurinCardSharing", b =>
+                {
+                    b.Property<Guid>("KurinCardSharingKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("MinorFields")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("MinorsMayLink")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MinorsMayShare")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("SetByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("KurinCardSharingKey");
+
+                    b.HasIndex("KurinKey")
+                        .IsUnique();
+
+                    b.ToTable("KurinCardSharing");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Leadership", b =>
                 {
                     b.Property<Guid>("LeadershipKey")
@@ -2202,6 +2237,43 @@ namespace ProjectK.Infrastructure.Migrations
                     b.HasIndex("MemberKey", "Level");
 
                     b.ToTable("MemberAwards");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MemberCardShare", b =>
+                {
+                    b.Property<Guid>("MemberCardShareKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Fields")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LinkIssuedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LinkToken")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MemberCardShareKey");
+
+                    b.HasIndex("LinkToken")
+                        .IsUnique()
+                        .HasFilter("[LinkToken] IS NOT NULL");
+
+                    b.HasIndex("MemberKey")
+                        .IsUnique();
+
+                    b.ToTable("MemberCardShares");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MemberWarning", b =>
