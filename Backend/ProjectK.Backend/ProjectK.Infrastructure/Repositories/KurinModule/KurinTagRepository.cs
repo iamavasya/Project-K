@@ -33,8 +33,14 @@ public class KurinTagRepository : BaseEntityRepository<KurinTag>, IKurinTagRepos
                 && (exceptKurinTagKey == null || t.KurinTagKey != exceptKurinTagKey),
             cancellationToken);
 
+    // Leaving a kurin keeps a person's tags for a return, but whoever is not in it now carries nothing
+    // there: no tag count, roster or «кожному окремо» target may wait on them.
+    private IQueryable<MemberTag> CurrentCarriers =>
+        Context.MemberTags.Where(a => Context.Memberships.Any(m =>
+            m.MemberKey == a.MemberKey && m.KurinKey == a.Tag!.KurinKey && m.LeftAtUtc == null));
+
     public async Task<IReadOnlyList<MemberTag>> GetAssignmentsAsync(Guid kurinKey, CancellationToken cancellationToken = default) =>
-        await Context.MemberTags
+        await CurrentCarriers
             .Where(a => a.Tag!.KurinKey == kurinKey)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -43,7 +49,7 @@ public class KurinTagRepository : BaseEntityRepository<KurinTag>, IKurinTagRepos
         Guid kurinKey,
         IReadOnlyCollection<Guid> memberKeys,
         CancellationToken cancellationToken = default) =>
-        await Context.MemberTags
+        await CurrentCarriers
             .Where(a => a.Tag!.KurinKey == kurinKey && memberKeys.Contains(a.MemberKey))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -57,14 +63,14 @@ public class KurinTagRepository : BaseEntityRepository<KurinTag>, IKurinTagRepos
         Guid kurinKey,
         IReadOnlyCollection<Guid> memberKeys,
         CancellationToken cancellationToken = default) =>
-        await Context.MemberTags
+        await CurrentCarriers
             .Where(a => a.Tag!.KurinKey == kurinKey && memberKeys.Contains(a.MemberKey))
             .GroupBy(a => a.MemberKey)
             .Select(g => new { MemberKey = g.Key, Count = g.Count() })
             .ToDictionaryAsync(row => row.MemberKey, row => row.Count, cancellationToken);
 
     public async Task<IReadOnlyList<Guid>> GetMemberKeysAsync(Guid kurinTagKey, CancellationToken cancellationToken = default) =>
-        await Context.MemberTags
+        await CurrentCarriers
             .Where(a => a.KurinTagKey == kurinTagKey)
             .Select(a => a.MemberKey)
             .ToListAsync(cancellationToken);

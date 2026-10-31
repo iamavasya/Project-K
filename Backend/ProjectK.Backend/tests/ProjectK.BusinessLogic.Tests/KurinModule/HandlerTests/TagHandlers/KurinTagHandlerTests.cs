@@ -120,6 +120,7 @@ public class KurinTagHandlerTests
     {
         var tag = Tag("Новики");
         var other = Guid.NewGuid();
+        InKurin(MemberKey, other);
         tag.Members.Add(new MemberTag { KurinTagKey = tag.KurinTagKey, MemberKey = other });
         _tags.Setup(t => t.GetWithMembersAsync(tag.KurinTagKey, It.IsAny<CancellationToken>())).ReturnsAsync(tag);
         _tags.Setup(t => t.CountPerMemberAsync(KurinKey, It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
@@ -130,6 +131,23 @@ public class KurinTagHandlerTests
         result.Data!.MemberCount.Should().Be(1);
         _tags.Verify(t => t.RemoveAssignment(It.Is<MemberTag>(a => a.MemberKey == other)), Times.Once);
         _journal.Select(entry => entry.Action).Should().BeEquivalentTo([AuditActions.Tag.Put, AuditActions.Tag.TakenOff]);
+    }
+
+    /// <summary>Who left the kurin is not in the list sent back from the screen; their tag waits for a return.</summary>
+    [Fact]
+    public async Task SetTagMembers_LeavesTheTagOnSomeoneWhoLeftTheKurin()
+    {
+        var tag = Tag("Новики");
+        var left = Guid.NewGuid();
+        tag.Members.Add(new MemberTag { KurinTagKey = tag.KurinTagKey, MemberKey = left });
+        _tags.Setup(t => t.GetWithMembersAsync(tag.KurinTagKey, It.IsAny<CancellationToken>())).ReturnsAsync(tag);
+        _tags.Setup(t => t.CountPerMemberAsync(KurinKey, It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, int>());
+
+        await TagMembersHandler().Handle(new SetTagMembersCommand(KurinKey, tag.KurinTagKey, [MemberKey]), default);
+
+        _tags.Verify(t => t.RemoveAssignment(It.IsAny<MemberTag>()), Times.Never);
+        _journal.Select(entry => entry.Action).Should().Equal(AuditActions.Tag.Put);
     }
 
     [Fact]

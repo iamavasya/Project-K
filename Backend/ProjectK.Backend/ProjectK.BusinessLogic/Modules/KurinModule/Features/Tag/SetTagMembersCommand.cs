@@ -43,7 +43,9 @@ public sealed class SetTagMembersCommandHandler : IRequestHandler<SetTagMembersC
         }
 
         var wanted = request.MemberKeys.Distinct().ToHashSet();
-        var carrying = tag.Members.ToDictionary(a => a.MemberKey);
+        // Who left keeps the tag for a return and is not in the list that was sent: leave them be.
+        var former = (await _assignments.OutsideKurinAsync(request.KurinKey, tag.Members.Select(a => a.MemberKey).ToList(), cancellationToken)).ToHashSet();
+        var carrying = tag.Members.Where(a => !former.Contains(a.MemberKey)).ToDictionary(a => a.MemberKey);
         var gaining = wanted.Where(key => !carrying.ContainsKey(key)).ToList();
 
         if ((await _assignments.OutsideKurinAsync(request.KurinKey, gaining, cancellationToken)).Count > 0)

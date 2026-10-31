@@ -13,7 +13,7 @@ public interface IKurinTagRepository : IBaseEntityRepository<KurinTag>
     /// <summary>Whether another tag of the kurin already has this name, ignoring case.</summary>
     Task<bool> NameTakenAsync(Guid kurinKey, string name, Guid? exceptKurinTagKey, CancellationToken cancellationToken = default);
 
-    /// <summary>Every tag on every person in the kurin, in one read.</summary>
+    /// <summary>Every tag on every person in the kurin now, in one read.</summary>
     Task<IReadOnlyList<MemberTag>> GetAssignmentsAsync(Guid kurinKey, CancellationToken cancellationToken = default);
 
     /// <summary>The kurin's tags on these people, in one read.</summary>
@@ -31,7 +31,7 @@ public interface IKurinTagRepository : IBaseEntityRepository<KurinTag>
         IReadOnlyCollection<Guid> memberKeys,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Everyone carrying the tag now.</summary>
+    /// <summary>Everyone carrying the tag who is in the kurin now.</summary>
     Task<IReadOnlyList<Guid>> GetMemberKeysAsync(Guid kurinTagKey, CancellationToken cancellationToken = default);
 
     void AddAssignment(MemberTag assignment);
