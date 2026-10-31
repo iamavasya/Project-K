@@ -22,10 +22,13 @@ public interface IProbeProjectAccess
 
     Task<bool> CanEditAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
-    /// <summary>Confirms the conference, the camp, a project's start or its completion: <see cref="KurinCapability.SignProbe"/>.</summary>
+    /// <summary>
+    /// Confirms the reflection, a project's start or its completion, and sets the stages:
+    /// <see cref="KurinCapability.SignProbe"/>, never on one's own probe.
+    /// </summary>
     Task<bool> CanSignAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
-    /// <summary>Takes such a confirmation back: <see cref="KurinCapability.UnsignProbe"/>.</summary>
+    /// <summary>Takes such a confirmation back: <see cref="KurinCapability.UnsignProbe"/>, never on one's own probe.</summary>
     Task<bool> CanUnsignAsync(Guid memberKey, CancellationToken cancellationToken = default);
 }
 
@@ -55,20 +58,21 @@ public sealed class ProbeProjectAccess : IProbeProjectAccess
                                  && string.Equals(probe.Id, probeId, StringComparison.Ordinal));
     }
 
-    public async Task<bool> CanEditAsync(Guid memberKey, CancellationToken cancellationToken = default)
-    {
-        if (_currentUser.UserId is { } userKey
-            && await _members.FindAccountKeyAsync(memberKey, cancellationToken) == userKey)
-        {
-            return true;
-        }
+    public async Task<bool> CanEditAsync(Guid memberKey, CancellationToken cancellationToken = default) =>
+        await IsSelfAsync(memberKey, cancellationToken)
+        || (await _access.CheckCapabilityAsync(KurinCapability.SignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
 
-        return await CanSignAsync(memberKey, cancellationToken);
-    }
-
+    // A group-scoped grant always lets a leader at their own record, so a впорядник or Звʼязковий
+    // still on the third probe would otherwise confirm it themself.
     public async Task<bool> CanSignAsync(Guid memberKey, CancellationToken cancellationToken = default) =>
-        (await _access.CheckCapabilityAsync(KurinCapability.SignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
+        !await IsSelfAsync(memberKey, cancellationToken)
+        && (await _access.CheckCapabilityAsync(KurinCapability.SignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
 
     public async Task<bool> CanUnsignAsync(Guid memberKey, CancellationToken cancellationToken = default) =>
-        (await _access.CheckCapabilityAsync(KurinCapability.UnsignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
+        !await IsSelfAsync(memberKey, cancellationToken)
+        && (await _access.CheckCapabilityAsync(KurinCapability.UnsignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
+
+    private async Task<bool> IsSelfAsync(Guid memberKey, CancellationToken cancellationToken) =>
+        _currentUser.UserId is { } userKey
+        && await _members.FindAccountKeyAsync(memberKey, cancellationToken) == userKey;
 }
