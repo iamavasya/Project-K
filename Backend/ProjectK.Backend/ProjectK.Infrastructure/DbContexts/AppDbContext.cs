@@ -616,7 +616,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         builder.Entity<KurinTagSettings>(entity =>
         {
             entity.HasKey(e => e.KurinKey);
-            entity.Property(e => e.OwnTagsVisible).HasDefaultValue(true);
             entity.HasOne<Kurin>()
                   .WithOne()
                   .HasForeignKey<KurinTagSettings>(e => e.KurinKey)

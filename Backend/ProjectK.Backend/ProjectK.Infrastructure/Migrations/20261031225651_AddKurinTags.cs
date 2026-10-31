@@ -39,7 +39,7 @@ namespace ProjectK.Infrastructure.Migrations
                 {
                     KurinKey = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Enabled = table.Column<bool>(type: "bit", nullable: true),
-                    OwnTagsVisible = table.Column<bool>(type: "bit", nullable: false, defaultValue: true)
+                    OwnTagsVisible = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {

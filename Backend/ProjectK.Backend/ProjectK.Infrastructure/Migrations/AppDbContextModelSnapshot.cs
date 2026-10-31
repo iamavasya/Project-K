@@ -2469,9 +2469,7 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("OwnTagsVisible")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
+                        .HasColumnType("bit");
 
                     b.HasKey("KurinKey");
 

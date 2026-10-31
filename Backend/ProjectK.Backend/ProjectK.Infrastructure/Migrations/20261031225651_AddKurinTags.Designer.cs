@@ -12,7 +12,7 @@ using ProjectK.Infrastructure.DbContexts;
 namespace ProjectK.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261030142239_AddKurinTags")]
+    [Migration("20261031225651_AddKurinTags")]
     partial class AddKurinTags
     {
         /// <inheritdoc />
@@ -2472,9 +2472,7 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("OwnTagsVisible")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
+                        .HasColumnType("bit");
 
                     b.HasKey("KurinKey");
 
