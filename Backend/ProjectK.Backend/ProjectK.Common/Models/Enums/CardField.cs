@@ -1,13 +1,12 @@
-using System.Text.Json.Serialization;
-
 namespace ProjectK.Common.Models.Enums;
 
 /// <summary>
 /// What a shared member card may show besides the name. Stored as flags. Contacts, address, date of
 /// birth, school, parents and the вкладка are not here on purpose: no card ever shows them.
+/// Sent as a number (each property says so): the API writes other enums by name, and a
+/// name list like «Kurin, Level» is no way to hand flags to a client.
 /// </summary>
 [Flags]
-[JsonConverter(typeof(JsonNumberEnumConverter<CardField>))]
 public enum CardField
 {
     None = 0,

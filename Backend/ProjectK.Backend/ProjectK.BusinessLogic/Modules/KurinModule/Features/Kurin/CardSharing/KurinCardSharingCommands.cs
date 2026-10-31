@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MediatR;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -8,7 +9,10 @@ using ProjectK.Common.Models.Records;
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.CardSharing;
 
 /// <summary>What the kurin lets its people under 18 share. A kurin that never set it lets them share nothing.</summary>
-public sealed record KurinCardSharingDto(bool MinorsMayShare, CardField MinorFields, bool MinorsMayLink)
+public sealed record KurinCardSharingDto(
+    bool MinorsMayShare,
+    [property: JsonConverter(typeof(JsonNumberEnumConverter<CardField>))] CardField MinorFields,
+    bool MinorsMayLink)
 {
     public static KurinCardSharingDto Of(KurinCardSharing? settings) =>
         settings is null

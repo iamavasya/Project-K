@@ -183,4 +183,16 @@ public class MemberCardsTests
         _settings[0].MinorsMayLink = true;
         (await Linked().Handle(new ReadLinkedCardQuery("link"), default)).Type.Should().Be(ResultType.Success);
     }
+
+    [Fact]
+    public void CardFields_GoOutAsANumber_EvenWhereEnumsAreWrittenByName()
+    {
+        var options = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
+        options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            new Modules.MeModule.Models.CardAllowance(true, false, CardField.Kurin | CardField.Level, false), options);
+
+        json.Should().Contain("\"maxFields\":6");
+    }
 }

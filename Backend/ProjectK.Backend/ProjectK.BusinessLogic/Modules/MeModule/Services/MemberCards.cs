@@ -155,7 +155,7 @@ public sealed class MemberCards
         if (fields.HasFlag(CardField.Awards))
         {
             awards = (await _members.GetConfirmedAwardsAsync(memberKey, cancellationToken))
-                .Select(a => new PublicCardAward(a.Level, a.DateAcquired))
+                .Select(a => new PublicCardAward((int)a.Level, a.DateAcquired))
                 .ToList();
         }
 

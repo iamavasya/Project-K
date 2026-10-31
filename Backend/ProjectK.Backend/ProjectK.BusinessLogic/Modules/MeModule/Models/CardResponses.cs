@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Models;
@@ -6,11 +7,12 @@ namespace ProjectK.BusinessLogic.Modules.MeModule.Models;
 /// Whether a person may share their card, and how much of it. Someone 18 or older decides alone;
 /// anyone younger, or with no date of birth, only as far as every kurin they stand in allows.
 /// </summary>
-public sealed record CardAllowance(bool MayShare, bool IsAdult, CardField MaxFields, bool MayLink);
+public sealed record CardAllowance(bool MayShare, bool IsAdult, [property: JsonConverter(typeof(JsonNumberEnumConverter<CardField>))] CardField MaxFields, bool MayLink);
 
 public sealed record PublicCardKurin(int? Number, string? NamedAfter, string? GroupName);
 
-public sealed record PublicCardAward(MemberAwardLevel Level, DateTime DateAcquired);
+/// <summary>One confirmed відзначення; <see cref="Level"/> is 1 to 4.</summary>
+public sealed record PublicCardAward(int Level, DateTime DateAcquired);
 
 public sealed record PublicCardBadge(string Title, string? ImagePath, DateTime? ConfirmedAtUtc);
 
@@ -33,7 +35,7 @@ public sealed record PublicCardDto(
 /// <summary>The person's own view of their card: what they may do, what they chose, and how it looks.</summary>
 public sealed record MyCardDto(
     CardAllowance Allowance,
-    CardField Fields,
+    [property: JsonConverter(typeof(JsonNumberEnumConverter<CardField>))] CardField Fields,
     string? LinkUrl,
     DateTime? LinkIssuedAtUtc,
     PublicCardDto Preview);
