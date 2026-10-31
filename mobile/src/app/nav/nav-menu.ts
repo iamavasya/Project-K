@@ -3,7 +3,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import {
   ActionSheetController,
-  AlertController,
   IonAvatar,
   IonBadge,
   IonIcon,
@@ -186,11 +185,19 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
             </ion-item>
           }
           @if (me.memberKey) {
-            <ion-item [button]="true" [detail]="false" (click)="showTransferCode()" data-testid="transfer-code">
+            <ion-item [button]="true" [detail]="true" (click)="openCard('check')" data-testid="show-card">
+              <ion-icon class="lk-tile" slot="start" name="qr-code" aria-hidden="true" style="--lk-tile: #0e6e4e" />
+              <ion-label>Показати картку</ion-label>
+            </ion-item>
+            <ion-item [button]="true" [detail]="true" (click)="openCard('transfer')" data-testid="transfer-code">
               <ion-icon class="lk-tile" slot="start" name="id-card" aria-hidden="true" style="--lk-tile: #8e8e93" />
               <ion-label>Мій код для переходу</ion-label>
             </ion-item>
           }
+          <ion-item [button]="true" [detail]="true" (click)="openScan()" data-testid="scan">
+            <ion-icon class="lk-tile" slot="start" name="scan" aria-hidden="true" style="--lk-tile: #5e5ce6" />
+            <ion-label>Сканувати QR</ion-label>
+          </ion-item>
           <ion-item [button]="true" [detail]="false" (click)="addAccount()" data-testid="add-account">
             <ion-icon class="lk-tile" slot="start" name="person-add" aria-hidden="true" style="--lk-tile: #8e8e93" />
             <ion-label>Додати акаунт</ion-label>
@@ -298,7 +305,6 @@ export class NavMenu implements OnInit {
   private readonly router = inject(Router);
   private readonly menus = inject(MenuController);
   private readonly sheets = inject(ActionSheetController);
-  private readonly alerts = inject(AlertController);
   private readonly appearance = inject(AppearanceService);
   private readonly toasts = inject(Toasts);
   protected readonly push = inject(PushService);
@@ -476,44 +482,17 @@ export class NavMenu implements OnInit {
   }
 
   /**
-   * «Мій код для переходу» (web transfer-code-dialog): the code the person hands to the Звʼязковий of
-   * the kurin that takes them in. Read when asked; the server sends it to its owner only.
+   * «Моя картка» (web card-check-dialog and transfer-code-dialog): the QR to be checked by, or the
+   * transfer code the person hands to the Звʼязковий of the kurin that takes them in.
    */
-  protected async showTransferCode(): Promise<void> {
-    const memberKey = this.user()?.memberKey;
-    if (!memberKey) return;
-    let code: string | null = null;
-    try {
-      code = (await this.me.member(memberKey)).publicId ?? null;
-    } catch {
-      code = null;
-    }
-    if (!code) {
-      await this.toasts.show('Код не завантажився. Спробуй ще раз.', 'danger');
-      return;
-    }
-    const alert = await this.alerts.create({
-      header: 'Мій код для переходу',
-      subHeader: code,
-      message:
-        'Коли тебе приймає інший курінь, передай цей код його Звʼязковому. ' +
-        'Код бачиш лише ти — провід куреня його не бачить. Не публікуй його.',
-      cssClass: 'transfer-code-alert',
-      buttons: [
-        { text: 'Закрити', role: 'cancel' },
-        { text: 'Скопіювати', handler: () => void this.copyCode(code) },
-      ],
-    });
-    await alert.present();
+  protected async openCard(part: 'check' | 'transfer'): Promise<void> {
+    if (this.drawer()) await this.menus.close();
+    await this.router.navigate(['/tabs/more/card'], { queryParams: { part } });
   }
 
-  private async copyCode(code: string): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(code);
-      await this.toasts.show('Код скопійовано.');
-    } catch {
-      await this.toasts.show(`Не вдалося скопіювати: ${code}`, 'danger');
-    }
+  protected async openScan(): Promise<void> {
+    if (this.drawer()) await this.menus.close();
+    await this.router.navigateByUrl('/tabs/more/scan');
   }
 
   protected async addAccount(): Promise<void> {

@@ -51,13 +51,3 @@ ion-toolbar {
   -webkit-user-select: none;
 }
 
-/* «Мій код для переходу» (nav-menu): the code is the point of the alert — large, and selectable as one piece. */
-.transfer-code-alert .alert-sub-title {
-  margin-top: 0.5rem;
-  color: var(--ion-text-color);
-  font-size: 1.5rem;
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  user-select: all;
-}

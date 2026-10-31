@@ -102,3 +102,11 @@ test('asks back a former member who now stands in another kurin, «ще й до 
   });
   await expect(page.getByTestId('former-member').first()).toContainText('запит чекає');
 });
+
+test('a scanned transfer QR opens with the code already looked up', async ({ page }) => {
+  const world = { incoming: [] as Record<string, unknown>[], outgoing: [] as Record<string, unknown>[] };
+  await signIn(page, member, transfersApi(world), ZVYAZKOVYI);
+  await page.goto('./tabs/kurin/transfers?code=PL-4F7A2-9D4A1');
+  await expect(page.getByTestId('ask')).toContainText('Віталій Романюк');
+  await expect(page.getByTestId('ask')).toContainText('Зараз у к. ч. 1');
+});

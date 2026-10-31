@@ -40,6 +40,7 @@
             "stylePreprocessorOptions": {
               "includePaths": ["node_modules"]
             },
+            "allowedCommonJsDependencies": ["jsqr"],
             "outputPath": {
               "base": "www",
               "browser": ""

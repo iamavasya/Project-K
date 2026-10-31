@@ -245,15 +245,3 @@ test('signs out from the Меню tab', async ({ page }, info) => {
   await expect(page).toHaveURL(/\/m\/login$/);
 });
 
-test('shows the person their own transfer code from the Меню tab', async ({ page }, info) => {
-  await signIn(page);
-  await page.locator('#tab-button-more').click();
-  await page.getByTestId('transfer-code').click();
-  const alert = page.locator('ion-alert.transfer-code-alert');
-  await expect(alert).toContainText('Мій код для переходу');
-  await expect(alert.locator('.alert-sub-title')).toHaveText('PL-4F7A2-9D4A1');
-  await expect(alert).toContainText('провід куреня його не бачить');
-  await shot(page, info.project.name, 'transfer-code');
-  await alert.getByRole('button', { name: 'Закрити' }).click();
-  await expect(alert).toHaveCount(0);
-});

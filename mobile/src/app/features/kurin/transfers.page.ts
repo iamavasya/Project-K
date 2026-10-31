@@ -1,10 +1,10 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   ActionSheetController,
   IonBackButton,
   IonBadge,
-  IonButton,
   IonButtons,
   IonContent,
   IonHeader,
@@ -14,7 +14,6 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
-  IonNote,
   IonRefresher,
   IonRefresherContent,
   IonSegment,
@@ -61,6 +60,7 @@ const kurinNo = (k: MembershipRequestKurinDto): string => (k.number != null ? `�
   selector: 'app-transfers',
   imports: [
     FormsModule,
+    RouterLink,
     IonHeader,
     IonToolbar,
     IonButtons,
@@ -76,10 +76,8 @@ const kurinNo = (k: MembershipRequestKurinDto): string => (k.number != null ? `�
     IonItemGroup,
     IonItem,
     IonLabel,
-    IonNote,
     IonBadge,
     IonInput,
-    IonButton,
     IonSelect,
     IonSelectOption,
   ],
@@ -113,6 +111,9 @@ const kurinNo = (k: MembershipRequestKurinDto): string => (k.number != null ? `�
           </ion-item>
           <ion-item [button]="true" [detail]="false" [disabled]="!code.trim() || busy()" (click)="find()" data-testid="find">
             <ion-label color="primary">Знайти</ion-label>
+          </ion-item>
+          <ion-item [button]="true" [detail]="true" routerLink="/tabs/more/scan" data-testid="scan-code">
+            <ion-label>Сканувати QR людини</ion-label>
           </ion-item>
           @if (candidate(); as c) {
             <ion-item>
@@ -218,6 +219,7 @@ export class TransfersPage implements OnInit {
   private readonly data = inject(KurinApi);
   private readonly sheets = inject(ActionSheetController);
   private readonly toasts = inject(Toasts);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly failed = FAILED_TEXT;
   protected readonly status = STATUS;
@@ -247,6 +249,12 @@ export class TransfersPage implements OnInit {
 
   ngOnInit(): void {
     void this.load();
+    // A scanned transfer QR lands here with the person's code: look them up straight away.
+    const code = this.route.snapshot.queryParamMap.get('code');
+    if (code) {
+      this.code = code;
+      void this.find();
+    }
   }
 
   protected async refresh(event: Event): Promise<void> {
