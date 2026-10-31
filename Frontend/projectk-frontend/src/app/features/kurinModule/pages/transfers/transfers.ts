@@ -10,7 +10,7 @@ import { TableModule } from '@openng/optimus-ui/table';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { DialogModule } from '@openng/optimus-ui/dialog';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
@@ -69,6 +69,7 @@ export class TransfersComponent implements OnInit {
   private readonly memberships = inject(MembershipService);
   private readonly confirmation = inject(ConfirmationService);
   private readonly messages = inject(MessageService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly kurinLabel = kurinLabel;
   readonly kindOptions: { label: string; value: MembershipRequestKind }[] = [
@@ -136,6 +137,12 @@ export class TransfersComponent implements OnInit {
 
       this.kurinKey = state.kurinKey;
       this.load();
+      // The person's QR opens this page with their code in the address: look them up straight away.
+      const code = this.route.snapshot.queryParamMap.get('code');
+      if (code) {
+        this.code.set(code);
+        this.find();
+      }
     });
   }
 

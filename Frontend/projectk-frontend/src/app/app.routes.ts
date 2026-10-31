@@ -50,6 +50,22 @@ export const routes: Routes = [
     data: { breadcrumb: 'Про Лілейку' }
   },
   {
+    // A shared card: `v` behind the three-minute «перевірити» QR, `c` behind a permanent link. Open to
+    // anyone, signed in or not, without the app's chrome.
+    path: 'v/:token',
+    loadComponent: () => import('./features/authModule/pages/public-card/public-card')
+      .then(m => m.PublicCardComponent),
+    title: 'Картка',
+    data: { mode: 'check' }
+  },
+  {
+    path: 'c/:token',
+    loadComponent: () => import('./features/authModule/pages/public-card/public-card')
+      .then(m => m.PublicCardComponent),
+    title: 'Картка',
+    data: { mode: 'link' }
+  },
+  {
     path: 'privacy',
     loadComponent: () => import('./features/systemModule/pages/privacy-page/privacy-page')
       .then(m => m.PrivacyPageComponent),

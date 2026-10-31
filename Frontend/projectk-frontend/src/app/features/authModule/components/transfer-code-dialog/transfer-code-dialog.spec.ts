@@ -6,6 +6,7 @@ import { AuthService } from '../../services/auth-service/auth.service';
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
 import { MemberDto } from '../../../kurinModule/models/member.dto';
 import { TransferCodeDialogComponent } from './transfer-code-dialog';
+import { CardService } from '../../services/card-service/card.service';
 
 describe('TransferCodeDialogComponent', () => {
   let members: MockedObject<MemberService>;
@@ -17,6 +18,7 @@ describe('TransferCodeDialogComponent', () => {
       providers: [
         { provide: MessageService, useValue: { add: vi.fn() } },
         { provide: MemberService, useValue: members },
+        { provide: CardService, useValue: { transferCode: () => of({ url: 'u', qrCode: 'data:image/png;base64,AA', expiresAtUtc: null }) } },
         { provide: AuthService, useValue: { getAuthStateValue: () => (memberKey ? { memberKey } : null) } }
       ]
     });

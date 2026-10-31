@@ -4,6 +4,7 @@ import { DialogModule } from '@openng/optimus-ui/dialog';
 import { MessageService } from '@openng/optimus-ui/api';
 import { AuthService } from '../../services/auth-service/auth.service';
 import { MemberService } from '../../../kurinModule/services/member-service/member.service';
+import { CardService } from '../../services/card-service/card.service';
 
 /**
  * «Мій код для переходу»: the code a person hands to the Звʼязковий of the kurin that takes them in.
@@ -21,9 +22,12 @@ export class TransferCodeDialogComponent {
   private readonly auth = inject(AuthService);
   private readonly members = inject(MemberService);
   private readonly messages = inject(MessageService);
+  private readonly cards = inject(CardService);
 
   readonly visible = model(false);
   readonly code = signal<string | null>(null);
+  /** The code as a QR that opens «Склад куреня» with it typed in; none if it did not load — the code still works. */
+  readonly qr = signal<string | null>(null);
   readonly failed = signal(false);
 
   constructor() {
@@ -56,5 +60,6 @@ export class TransferCodeDialogComponent {
       next: member => member.publicId ? this.code.set(member.publicId) : this.failed.set(true),
       error: () => this.failed.set(true)
     });
+    this.cards.transferCode().subscribe({ next: code => this.qr.set(code.qrCode), error: () => this.qr.set(null) });
   }
 }

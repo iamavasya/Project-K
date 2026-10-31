@@ -10,6 +10,9 @@
 
   <div class="transfer-code">
     @if (code(); as value) {
+      @if (qr(); as image) {
+        <img class="transfer-code__qr" [src]="image" alt="QR-код для переходу" data-testid="transfer-qr" />
+      }
       <span class="transfer-code__value" data-testid="transfer-code">{{ value }}</span>
       <p-button label="Скопіювати" icon="pi pi-copy" (onClick)="copy(value)" />
     } @else if (failed()) {
@@ -19,7 +22,7 @@
     }
 
     <p class="transfer-code__lead">
-      Коли тебе приймає інший курінь, передай цей код його Звʼязковому. Перехід підтверджує Звʼязковий
+      Коли тебе приймає інший курінь, дай його Звʼязковому відсканувати QR або передай код. Перехід підтверджує Звʼязковий
       твого куреня, а ти отримаєш сповіщення.
     </p>
     <p class="transfer-code__note">

@@ -38,6 +38,10 @@
                     <span class="account-switcher__avatar account-switcher__avatar--empty pi pi-id-card" aria-hidden="true"></span>
                     <span class="account-switcher__title">Мій код для переходу</span>
                 </button>
+                <button type="button" class="account-switcher__row account-switcher__add" (click)="showCard()">
+                    <span class="account-switcher__avatar account-switcher__avatar--empty pi pi-qrcode" aria-hidden="true"></span>
+                    <span class="account-switcher__title">Показати картку</span>
+                </button>
             }
 
             <button type="button" class="account-switcher__row account-switcher__add" (click)="addAccount()">
@@ -64,3 +68,4 @@
 </div>
 
 <app-transfer-code-dialog [visible]="codeVisible()" (visibleChange)="codeVisible.set($event)" />
+<app-card-check-dialog [visible]="cardVisible()" (visibleChange)="cardVisible.set($event)" />

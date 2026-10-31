@@ -128,6 +128,17 @@
       </div>
       <app-kurin-access-policy #accessPolicy [kurinKey]="kurinKey" />
     </section>
+
+    <section class="kurin-tile" aria-labelledby="card-sharing-title">
+      <div class="setting-copy">
+        <h2 id="card-sharing-title">Картки до 18 років</h2>
+        <p>
+          Людина може показати свою картку, щоб її перевірили, або дати на неї посилання. Хто має 18 років,
+          вирішує сам. Молодшим — лише якщо курінь дозволив, і лише те, що він дозволив.
+        </p>
+      </div>
+      <app-kurin-card-sharing #cardSharing [kurinKey]="kurinKey" />
+    </section>
   }
 
   <footer class="settings-actions">

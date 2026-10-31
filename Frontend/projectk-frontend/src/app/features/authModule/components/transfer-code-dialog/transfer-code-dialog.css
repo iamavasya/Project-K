@@ -38,3 +38,12 @@
   color: var(--lil-faint);
   font-size: 1.5rem;
 }
+
+.transfer-code__qr {
+  aspect-ratio: 1;
+  background: #fff;
+  border-radius: var(--lil-radius-lg);
+  max-width: 13rem;
+  padding: 0.5rem;
+  width: 100%;
+}

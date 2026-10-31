@@ -16,6 +16,7 @@ import { AgendaCategoryManagerComponent } from '../../components/agenda-category
 import { AgendaArchivePolicyComponent } from '../../components/agenda-archive-policy/agenda-archive-policy';
 import { KurinCardFieldsComponent } from '../../components/kurin-card-fields/kurin-card-fields';
 import { KurinAccessPolicyComponent } from '../../components/kurin-access-policy/kurin-access-policy';
+import { KurinCardSharingComponent } from '../../components/kurin-card-sharing/kurin-card-sharing';
 import { KurinProbeEditionsComponent } from '../../components/kurin-probe-editions/kurin-probe-editions';
 import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
 
@@ -32,6 +33,7 @@ import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
     AgendaArchivePolicyComponent,
     KurinCardFieldsComponent,
     KurinAccessPolicyComponent,
+    KurinCardSharingComponent,
     KurinProbeEditionsComponent
   ],
   templateUrl: './kurin-settings.html',
@@ -49,6 +51,7 @@ export class KurinSettingsComponent implements OnInit {
   private readonly cardFields = viewChild<KurinCardFieldsComponent>('cardFields');
   private readonly accessPolicy = viewChild<KurinAccessPolicyComponent>('accessPolicy');
   private readonly probeEditions = viewChild<KurinProbeEditionsComponent>('probeEditions');
+  private readonly cardSharing = viewChild<KurinCardSharingComponent>('cardSharing');
 
   /** Проби є лише в юнацькому курені; в УСП чи УПС розділу проби гуртків немає. */
   protected readonly hasYouthProgram = hasYouthProgram;
@@ -137,12 +140,14 @@ export class KurinSettingsComponent implements OnInit {
     const cardFields = this.cardFields();
     const accessPolicy = this.accessPolicy();
     const probeEditions = this.probeEditions();
+    const cardSharing = this.cardSharing();
     forkJoin([
       this.kurinService.updateKurin(request),
       archive ? archive.save() : of(undefined),
       cardFields ? cardFields.save() : of(undefined),
       accessPolicy ? accessPolicy.save() : of(undefined),
-      probeEditions ? probeEditions.save() : of(undefined)
+      probeEditions ? probeEditions.save() : of(undefined),
+      cardSharing ? cardSharing.save() : of(undefined)
     ]).subscribe({
       next: ([updated]) => {
         this.kurin = updated;

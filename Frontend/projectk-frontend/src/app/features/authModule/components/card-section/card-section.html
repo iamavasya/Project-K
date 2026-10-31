@@ -1,0 +1,59 @@
+<p-confirmDialog />
+
+@if (card(); as current) {
+  <div class="card-panel">
+    @if (!current.allowance.mayShare) {
+      <p-message severity="info" styleClass="w-full">
+        До 18 років картку можна показувати, лише коли це дозволив твій курінь. Поки що він не дозволив — спитай свого Звʼязкового.
+      </p-message>
+    } @else {
+      @if (!current.allowance.isAdult) {
+        <p class="card-panel__hint">До 18 років що можна показувати, вирішує курінь. Решту він вимкнув.</p>
+      }
+
+      <div class="card-panel__fields">
+        @for (field of fieldList; track field.name) {
+          <div class="card-panel__field">
+            <p-toggleswitch [ngModel]="shown(field.name)" (ngModelChange)="toggle(field.name, $event)"
+              [disabled]="!allowed(field.name)" [inputId]="'card-' + field.name" />
+            <label [for]="'card-' + field.name" [class.card-panel__off]="!allowed(field.name)">{{ field.label }}</label>
+          </div>
+        }
+      </div>
+      <p class="card-panel__hint">Ім'я видно завжди. Телефон, пошту, адресу, дату народження й вкладку картка не показує ніколи.</p>
+
+      <div class="card-panel__actions">
+        <p-button label="Показати картку" icon="pi pi-qrcode" (onClick)="checkVisible.set(true)" />
+      </div>
+
+      <div class="card-panel__link">
+        <h3>Постійне посилання</h3>
+        @if (!current.allowance.mayLink) {
+          <p class="card-panel__hint">Постійне посилання до 18 років можливе, лише коли курінь його дозволив. Показати картку для перевірки можна й так.</p>
+        } @else if (current.linkUrl; as url) {
+          <div class="card-panel__link-row">
+            <input pInputText type="text" [value]="url" readonly aria-label="Посилання на картку" (focus)="$any($event.target).select()" />
+            <p-button label="Копіювати" icon="pi pi-copy" severity="secondary" (onClick)="copy(url)" />
+          </div>
+          <small class="card-panel__hint">Створено {{ current.linkIssuedAtUtc | date:'dd.MM.yyyy' }}. Хто має посилання, бачить картку, доки ти його не вимкнеш.</small>
+          <div class="card-panel__actions">
+            <p-button label="Створити нове" icon="pi pi-refresh" severity="secondary" [loading]="busy()" (onClick)="issueLink()" />
+            <p-button label="Вимкнути" icon="pi pi-ban" severity="danger" [outlined]="true" [disabled]="busy()" (onClick)="disableLink()" />
+          </div>
+        } @else {
+          <p class="card-panel__hint">Щоб похвалитися здобутим: посилання можна дати будь-кому, а вимкнути чи замінити — будь-коли.</p>
+          <div class="card-panel__actions">
+            <p-button label="Створити посилання" icon="pi pi-link" severity="secondary" [loading]="busy()" (onClick)="issueLink()" />
+          </div>
+        }
+      </div>
+
+      <div class="card-panel__preview">
+        <h3>Так картку бачать інші</h3>
+        <app-shared-card [card]="current.preview" />
+      </div>
+    }
+  </div>
+}
+
+<app-card-check-dialog [visible]="checkVisible()" (visibleChange)="checkVisible.set($event)" />
