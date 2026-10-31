@@ -211,8 +211,9 @@ export class SidebarMenuComponent implements OnChanges {
       items.push(this.navItem({ label: 'Реєстр', icon: 'pi pi-table', routerLink: ['/kurin/registry'], disabled }));
     }
 
-    // Імпорт заводить склад цілого куреня — це дія Зв'язкового, не гурткового.
-    if (canManageKurinSettings) {
+    // Імпорт заводить склад цілого куреня — це дія Зв'язкового, не гурткового. Він розкладає людей по
+    // гуртках, тож у старшому курені, де гуртків немає, його немає теж.
+    if (canManageKurinSettings && isYouthKurin) {
       items.push(this.navItem({ label: 'Імпорт складу', icon: 'pi pi-upload', routerLink: ['/kurin/import'], disabled }));
     }
 
