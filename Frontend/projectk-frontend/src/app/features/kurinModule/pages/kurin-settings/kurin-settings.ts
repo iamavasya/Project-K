@@ -8,6 +8,8 @@ import { MessageModule } from '@openng/optimus-ui/message';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { CheckboxModule } from '@openng/optimus-ui/checkbox';
 import { InputNumberModule } from '@openng/optimus-ui/inputnumber';
+import { TagModule } from '@openng/optimus-ui/tag';
+import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { KurinNumberRange, OnboardingService } from '../../../authModule/services/onboarding-service/onboarding.service';
 import { KurinDto } from '../../models/kurin.dto';
@@ -29,6 +31,7 @@ import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
     ToggleSwitchModule,
     CheckboxModule,
     InputNumberModule,
+    TagModule,
     AgendaCategoryManagerComponent,
     AgendaArchivePolicyComponent,
     KurinCardFieldsComponent,
@@ -55,6 +58,9 @@ export class KurinSettingsComponent implements OnInit {
 
   /** Проби є лише в юнацькому курені; в УСП чи УПС розділу проби гуртків немає. */
   protected readonly hasYouthProgram = hasYouthProgram;
+
+  /** The КВ reads the page whole; only who may change the kurin edits it. */
+  readonly readOnly = !inject(PermissionService).canManageKurinSettings();
 
   kurinKey = '';
   kurin: KurinDto | null = null;

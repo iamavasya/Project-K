@@ -73,6 +73,13 @@ public class RolePermissionMapGoldenTests
         new(ChangeKind.Added, "AgendaItem:Create:OwnGroups",
             "Whom an item is assigned to became the kurin's policy (Assign*); a впорядник and a гурток's провід reach their own гурток by default.",
             [Vykhovnyk, Instruktor, .. GroupOffices]),
+        new(ChangeKind.Added, "KurinSettings:Read:KurinWide",
+            "ACCESS-04 (owner, 2026-10-30): the whole КВ reads the kurin's settings; only the Звʼязковий changes them.",
+            [Zvyazkovyi, Vykhovnyk, Instruktor, SystemRole.Admin]),
+        .. new[] { "Create", "Update", "Delete", "Manage" }.Select(action => new IntendedChange(
+            ChangeKind.Added, $"KurinSettings:{action}:KurinWide",
+            "The administrator holds every action on every resource.",
+            [SystemRole.Admin])),
         .. AdminCoversTheNewResources()
     ];
 

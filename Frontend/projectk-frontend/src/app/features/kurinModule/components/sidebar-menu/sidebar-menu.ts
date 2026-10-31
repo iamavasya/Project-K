@@ -264,7 +264,7 @@ export class SidebarMenuComponent implements OnChanges {
       items.push(this.navItem({ label: 'Вкладка куреня', icon: 'pi pi-wallet', routerLink: ['/kurin', kurinKey, 'dues'] }));
     }
 
-    if (canManageKurinSettings) {
+    if (this.permissionService.canReadKurinSettings()) {
       items.push(this.navItem({ label: 'Налаштування куреня', icon: 'pi pi-cog', routerLink: ['/kurin', kurinKey, 'settings'] }));
     }
 

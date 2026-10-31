@@ -389,11 +389,11 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/settings',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinSettings'), EntityGuard],
     loadComponent: () => import('./features/kurinModule/pages/kurin-settings/kurin-settings')
       .then(m => m.KurinSettingsComponent),
     title: 'Налаштування куреня',
-    data: { breadcrumb: 'Налаштування куреня', parent: '/kurin', entityType: 'kurin', entityAction: 'Update', titleContext: 'kurin' }
+    data: { breadcrumb: 'Налаштування куреня', parent: '/kurin', entityType: 'KurinSettings', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
   },
   {
     path: 'planning/create/:kurinKey',

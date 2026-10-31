@@ -50,5 +50,8 @@ public enum ResourceType
     KurinJournal,
 
     /// <summary>Which edition of the probe programme a гурток walks. Keyed by the гурток.</summary>
-    GroupProbeEdition
+    GroupProbeEdition,
+
+    /// <summary>The kurin's settings page, read whole by its КВ. Keyed by the kurin; changing them stays <c>Kurin:Update</c>.</summary>
+    KurinSettings
 }

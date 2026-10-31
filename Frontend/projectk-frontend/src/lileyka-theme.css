@@ -936,3 +936,17 @@ a.lil-sidebar-brand:hover {
   order: 3;
   justify-content: center;
 }
+
+/* Налаштування куреня для КВ (ACCESS-04): нічого не міняється, тож дій не видно, а поля притлумлені. */
+.settings-fieldset:disabled .p-button {
+  display: none;
+}
+
+.settings-fieldset:disabled .p-toggleswitch,
+.settings-fieldset:disabled .p-checkbox,
+.settings-fieldset:disabled .p-inputtext,
+.settings-fieldset:disabled .p-inputnumber,
+.settings-fieldset:disabled .p-select,
+.settings-fieldset:disabled .p-selectbutton {
+  opacity: 0.6;
+}

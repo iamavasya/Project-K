@@ -67,6 +67,8 @@ function kurinEntries(state: AuthState, context: MenuContext, kurinKey: string):
   const access = kurinAccess(state);
   const canSeeRegistry = state.isAdmin || access.manageWholeKurin || has(state, 'Group:Update');
   const canManageKurinSettings = state.isAdmin || has(state, 'Kurin:Update:KurinWide');
+  // The whole КВ reads the kurin's settings (web: «Лише перегляд»); only who may change the kurin edits them.
+  const canReadKurinSettings = canManageKurinSettings || has(state, 'KurinSettings:Read');
   const items: MenuEntry[] = [{ key: 'kurin', label: 'Курінь', icon: 'flag', tile: '#ff9500', link: '/tabs/kurin' }];
   if (canSeeRegistry) {
     items.push({ key: 'registry', label: 'Реєстр', icon: 'grid', tile: '#8e8e93', web: '/kurin/registry' });
@@ -107,7 +109,7 @@ function kurinEntries(state: AuthState, context: MenuContext, kurinKey: string):
   if (access.seeKurinDues) {
     items.push({ key: 'kurin-dues', label: 'Вкладка куреня', icon: 'wallet', tile: '#34a853', link: '/tabs/kurin/dues' });
   }
-  if (canManageKurinSettings) {
+  if (canReadKurinSettings) {
     items.push({
       key: 'kurin-settings',
       label: 'Налаштування куреня',

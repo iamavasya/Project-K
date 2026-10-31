@@ -61,3 +61,11 @@
     justify-content: stretch;
   }
 }
+
+/* The tiles sit in the page's own grid; the fieldset is only there to switch every control off for a reader. */
+.settings-fieldset {
+  border: 0;
+  display: contents;
+  margin: 0;
+  padding: 0;
+}

@@ -101,6 +101,11 @@ export class PermissionService {
     return this.isAdmin() || this.has('Kurin:Update:KurinWide');
   }
 
+  /** Opens the kurin's settings: the whole КВ reads them; only who may change the kurin edits them. */
+  canReadKurinSettings(): boolean {
+    return this.canManageKurinSettings() || this.has('KurinSettings:Read');
+  }
+
   /**
    * Keeps or oversees the kurin's box: the курінний скарбник and the Звʼязковий. Youth get no
    * `KurinDues` grant at all — their `GroupDues:Read:Own` is about their own balance only.

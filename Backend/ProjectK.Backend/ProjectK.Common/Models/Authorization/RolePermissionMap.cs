@@ -39,6 +39,9 @@ public static class RolePermissionMap
     // everyone's. So the гурток's score and the КВ's private one stay out of the baseline read.
     private static readonly ResourceType[] ScoreResources = [ResourceType.GroupScore, ResourceType.KurinScorePrivate];
 
+    // The kurin's settings are the КВ's to read, not every member's.
+    private static readonly ResourceType[] SettingsResources = [ResourceType.KurinSettings];
+
     private static readonly ResourceAction[] DuesKeeping =
         [ResourceAction.Read, ResourceAction.Create, ResourceAction.Update, ResourceAction.Delete];
 
@@ -316,7 +319,7 @@ public static class RolePermissionMap
     {
         var grants = new List<Permission>();
         var policyRead = AllResources.Where(resource => KurinCapabilities.IsConfigurable(resource, ResourceAction.Read));
-        foreach (var resource in AllResources.Except(DuesResources).Except(ScoreResources).Except(policyRead))
+        foreach (var resource in AllResources.Except(DuesResources).Except(ScoreResources).Except(SettingsResources).Except(policyRead))
         {
             grants.Add(new Permission(resource, ResourceAction.Read, AccessScope.KurinWide));
         }
@@ -378,6 +381,9 @@ public static class RolePermissionMap
         // He scores his гурток, and with the other впорядники keeps the КВ's own score.
         grants.AddRange(ScoreKeeping.Select(action => new Permission(ResourceType.GroupScore, action, AccessScope.OwnGroups)));
         grants.AddRange(ScoreKeeping.Select(action => new Permission(ResourceType.KurinScorePrivate, action, AccessScope.KurinWide)));
+
+        // He reads the kurin's settings with the rest of the КВ; only the Звʼязковий changes them.
+        grants.Add(new Permission(ResourceType.KurinSettings, ResourceAction.Read, AccessScope.KurinWide));
         return WithoutPolicyPairs(grants);
     }
 
@@ -405,7 +411,7 @@ public static class RolePermissionMap
         }
 
         // The baseline leaves money out of what everyone reads; he reads all of it.
-        grants.AddRange(DuesResources.Concat(ScoreResources).Select(resource => new Permission(resource, ResourceAction.Read, AccessScope.KurinWide)));
+        grants.AddRange(DuesResources.Concat(ScoreResources).Concat(SettingsResources).Select(resource => new Permission(resource, ResourceAction.Read, AccessScope.KurinWide)));
 
         // Kurin settings, but not the irreversible Delete/Manage (Admin-only).
         grants.Add(new Permission(ResourceType.Kurin, ResourceAction.Create, AccessScope.KurinWide));

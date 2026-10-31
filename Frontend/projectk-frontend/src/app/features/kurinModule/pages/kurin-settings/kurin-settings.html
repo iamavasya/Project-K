@@ -3,6 +3,9 @@
     <div>
       <p class="lil-page-head__eyebrow">Налаштування куреня</p>
       <h1>{{ kurin ? (kurin.number ?? 'Підготовчий') : '-' }} курінь</h1>
+      @if (readOnly) {
+        <p-tag value="Лише перегляд" severity="secondary" />
+      }
     </div>
     <div class="lil-page-head__actions">
       <p-button
@@ -18,6 +21,7 @@
     <p-message severity="error" icon="pi pi-exclamation-triangle">{{ errorMessage }}</p-message>
   }
 
+  <fieldset class="settings-fieldset" [disabled]="readOnly">
   <section class="kurin-tile" aria-labelledby="kurin-number-title">
     <div class="setting-copy">
       <h2 id="kurin-number-title">Число куреня</h2>
@@ -126,7 +130,7 @@
           й вмілостями. «Свій гурток» — гурток, у якому людина є або який веде; «Увесь курінь» — усі.
         </p>
       </div>
-      <app-kurin-access-policy #accessPolicy [kurinKey]="kurinKey" />
+      <app-kurin-access-policy #accessPolicy [kurinKey]="kurinKey" [readOnly]="readOnly" />
     </section>
 
     <section class="kurin-tile" aria-labelledby="card-sharing-title">
@@ -138,6 +142,9 @@
     </section>
   }
 
+  </fieldset>
+
+  @if (!readOnly) {
   <footer class="settings-actions">
     <p-button
       label="Скасувати"
@@ -152,4 +159,5 @@
       [disabled]="loading || saving || !kurin || !!numberProblem"
       (onClick)="save()" />
   </footer>
+  }
 </section>

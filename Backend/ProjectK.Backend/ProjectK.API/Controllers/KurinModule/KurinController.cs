@@ -257,7 +257,7 @@ public class KurinController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey}/card-fields")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IReadOnlyList<KurinCardFieldResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCardFields(Guid kurinKey)
@@ -289,7 +289,7 @@ public class KurinController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/probe-editions")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(KurinProbeEditionsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProbeEditions(Guid kurinKey, CancellationToken cancellationToken)
@@ -301,7 +301,7 @@ public class KurinController : ControllerBase
     /// <summary>What the kurin lets its people under 18 show on a shared card.</summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/card-sharing")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(KurinCardSharingDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCardSharing(Guid kurinKey, CancellationToken cancellationToken)
     {
@@ -335,7 +335,7 @@ public class KurinController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/access-policy")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(KurinAccessPolicyDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAccessPolicy(Guid kurinKey, CancellationToken cancellationToken)

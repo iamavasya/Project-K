@@ -82,6 +82,11 @@ describe('menuEntries', () => {
     expect(byKey['journal'].icon).toBe('time');
   });
 
+  it('opens the kurin settings to the whole КВ, not to the rest of the провід', () => {
+    expect(labels(state({ permissions: ['Group:Update:OwnGroups', 'KurinSettings:Read:KurinWide'] }))).toContain('Налаштування куреня');
+    expect(labels(state({ permissions: ['Leadership:Update:KurinWide'] }))).not.toContain('Налаштування куреня');
+  });
+
   it('follows the kurin policy for skill review and the journal, not leading a гурток', () => {
     const leader = labels(state({ permissions: ['Group:Update:OwnGroups'] }));
     expect(leader).not.toContain('Модерація вмілостей');
