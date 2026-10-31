@@ -254,6 +254,21 @@ public class ProbeProjectHandlerTests
     }
 
     [Fact]
+    public async Task Delete_ShouldKeepASharedSpare_WhenTwoSharedMainProjectsRemain()
+    {
+        Given(isShared: true);
+        Given(isShared: true);
+        var project = Given();
+        var spare = Given(isSpare: true, isShared: true);
+        var handler = new DeleteProbeProjectCommandHandler(_unitOfWork.Object, _access.Object, _photos.Object, _journal.Audit, _probes.Object, _reader.Object);
+
+        var result = await handler.Handle(new DeleteProbeProjectCommand(_memberKey, ProbeId, project.ProbeProjectKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        spare.IsSpare.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Swap_ShouldExchangeTheSpareAndAMainProject()
     {
         var main = Given(title: "Шпаківні");

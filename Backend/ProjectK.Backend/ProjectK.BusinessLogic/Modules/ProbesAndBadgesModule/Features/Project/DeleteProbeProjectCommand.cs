@@ -11,7 +11,8 @@ namespace ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
 
 /// <summary>
 /// Removes a project with its pictures, blobs included. A main project that goes leaves its place to
-/// the spare, which is what the spare is for.
+/// the spare, which is what the spare is for — unless the spare is shared and two shared main
+/// projects are already there: then it stays the spare.
 /// </summary>
 public sealed record DeleteProbeProjectCommand(Guid MemberKey, string ProbeId, Guid ProjectKey) : IRequest<ServiceResult<ThirdProbeResponse>>;
 
@@ -57,7 +58,10 @@ public sealed class DeleteProbeProjectCommandHandler : IRequestHandler<DeletePro
 
         var blobs = project.Images.Select(image => image.BlobName).ToList();
         _unitOfWork.ProbeProjects.Delete(project, cancellationToken);
-        if (!project.IsSpare && all.FirstOrDefault(p => p.IsSpare) is { } spare)
+        if (!project.IsSpare
+            && all.FirstOrDefault(p => p.IsSpare) is { } spare
+            && (!spare.IsShared
+                || all.Count(p => p != project && !p.IsSpare && p.IsShared) < ProbeProjectRules.MaxSharedMainProjects))
         {
             spare.IsSpare = false;
         }
