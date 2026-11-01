@@ -154,4 +154,22 @@ public class SeniorDuesLedgerTests
         DuesLedger.RateTagFor(rates, [Guid.NewGuid()], Q2).Should().BeNull();
         DuesLedger.RateTagFor(rates, [], Q2).Should().BeNull();
     }
+
+    [Fact]
+    public void APilhaOfTheKraiOnTheKraisPart_LowersTheShareOfAKraiPayee()
+    {
+        Charge(Usp, Q1);
+        var grant = new DuesConcessionGrant
+        {
+            KurinKey = Kurin, MembershipKey = Person, ConcessionKey = "large", Name = "Багатодітна родина",
+            Kind = ProjectK.Common.Models.KraiProfiles.KraiDues.Exempt, Parts = DuesParts.Krai, FromQuarter = Q1.Index
+        };
+
+        var withBulavaOfTheKrai = new DuesLedger(_rates, [], _concessions, _charges, _entries, [grant], [Bulava]).Accounts().Single();
+        var withBulavaApart = new DuesLedger(_rates, [], _concessions, _charges, _entries, [grant]).Accounts().Single();
+
+        withBulavaOfTheKrai.Quarters.Single().Charged.Total.Should().Be(150);
+        withBulavaOfTheKrai.Quarters.Single().ConcessionName.Should().Be("Багатодітна родина");
+        withBulavaApart.Quarters.Single().Charged.Total.Should().Be(450);
+    }
 }

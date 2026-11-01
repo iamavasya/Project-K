@@ -46,6 +46,8 @@ public class DuesLeavingQuarterHandlerTests
         dues.SetupGet(d => d.GroupDuesRates).Returns(Mock.Of<IGroupDuesRateRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(groupRates)));
         dues.SetupGet(d => d.DuesConcessions).Returns(Mock.Of<IDuesConcessionRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(concessions)));
         dues.SetupGet(d => d.DuesConcessionGrants).Returns(Mock.Of<IDuesConcessionGrantRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(grants)));
+        IReadOnlyList<KurinDuesPayee> payees = [];
+        dues.SetupGet(d => d.KurinDuesPayees).Returns(Mock.Of<IKurinDuesPayeeRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(payees)));
         dues.SetupGet(d => d.DuesEntries).Returns(Mock.Of<IDuesEntryRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(entries)));
         dues.SetupGet(d => d.DuesCharges).Returns(_charges.Object);
 

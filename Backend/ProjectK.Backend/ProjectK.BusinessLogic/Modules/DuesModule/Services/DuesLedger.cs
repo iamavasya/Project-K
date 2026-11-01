@@ -24,6 +24,7 @@ public sealed class DuesLedger
     private readonly ILookup<Guid, DuesConcessionGrant> _grants;
     private readonly IReadOnlyList<DuesCharge> _charges;
     private readonly IReadOnlyList<DuesEntry> _entries;
+    private readonly IReadOnlySet<Guid> _kraiPayees;
 
     public DuesLedger(
         IEnumerable<KurinDuesRate> kurinRates,
@@ -31,8 +32,10 @@ public sealed class DuesLedger
         IEnumerable<DuesConcession> concessions,
         IEnumerable<DuesCharge> charges,
         IEnumerable<DuesEntry> entries,
-        IEnumerable<DuesConcessionGrant>? grants = null)
+        IEnumerable<DuesConcessionGrant>? grants = null,
+        IEnumerable<Guid>? kraiPayees = null)
     {
+        _kraiPayees = (kraiPayees ?? []).ToHashSet();
         _grants = (grants ?? []).ToLookup(g => g.MembershipKey);
         _kurinRates = kurinRates.OrderBy(r => r.FromQuarter).ToList();
         _groupRates = groupRates.OrderBy(r => r.FromQuarter).ToLookup(r => r.GroupKey);
@@ -96,7 +99,7 @@ public sealed class DuesLedger
         DuesConcessionGrant? applied = null;
         foreach (var grant in GrantsIn(membershipKey, quarter))
         {
-            var granted = grant.Rule.Apply(full);
+            var granted = grant.Rule.Apply(full, _kraiPayees);
             if (granted.Total < price.Total)
             {
                 price = granted;

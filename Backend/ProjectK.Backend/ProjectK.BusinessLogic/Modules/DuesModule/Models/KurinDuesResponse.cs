@@ -158,6 +158,8 @@ public sealed class KurinDuesPayeeDto
 {
     public Guid PayeeKey { get; init; }
     public string Name { get; init; } = string.Empty;
+    /// <summary>A structure of the край, such as a булава: the край's пільги lower its share.</summary>
+    public bool IsKrai { get; init; }
     public bool IsArchived { get; init; }
     /// <summary>What people have paid towards its статті.</summary>
     public decimal Collected { get; init; }

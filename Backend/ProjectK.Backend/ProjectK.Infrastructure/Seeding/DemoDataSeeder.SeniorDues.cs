@@ -39,8 +39,8 @@ public partial class DemoDataSeeder
             });
         }
 
-        var bulavaUsp = new KurinDuesPayee { KurinKey = orden.KurinKey, Name = "Булава УСП" };
-        var bulavaUps = new KurinDuesPayee { KurinKey = orden.KurinKey, Name = "Булава УПС" };
+        var bulavaUsp = new KurinDuesPayee { KurinKey = orden.KurinKey, Name = "Булава УСП", IsKrai = true };
+        var bulavaUps = new KurinDuesPayee { KurinKey = orden.KurinKey, Name = "Булава УПС", IsKrai = true };
         _dbContext.KurinDuesPayees.AddRange(bulavaUsp, bulavaUps);
 
         var today = DateOnly.FromDateTime(_now);

@@ -12,15 +12,24 @@ public sealed record DuesConcessionRule(string Key, string Name, string Kind, de
 {
     /// <summary>
     /// The quarter's вкладка with the пільга. A sum off is shared between the parts it names in
-    /// proportion to them, so no part goes below zero and the cents add up.
+    /// proportion to them, so no part goes below zero and the cents add up. The kurin's payees that
+    /// are structures of the край (<paramref name="kraiPayees"/>, such as a булава) count as the край's
+    /// part; any other payee is left as it is.
     /// </summary>
-    public DuesAmount Apply(DuesAmount full)
+    public DuesAmount Apply(DuesAmount full, IReadOnlySet<Guid>? kraiPayees = null)
     {
-        var stanytsia = Covers(DuesParts.Stanytsia) ? full.Stanytsia : 0;
-        var krai = Covers(DuesParts.Krai) ? full.Krai : 0;
-        var kurin = Covers(DuesParts.Kurin) ? full.Kurin : 0;
-        var group = Covers(DuesParts.Group) ? full.Group : 0;
-        var covered = stanytsia + krai + kurin + group;
+        var payees = full.Payees.Shares;
+        var kraiCovered = Covers(DuesParts.Krai);
+        // The parts in the order cuts are shared: станиця, край, the край's payees, курінь, гурток.
+        var parts = new List<decimal>
+        {
+            Covers(DuesParts.Stanytsia) ? full.Stanytsia : 0,
+            kraiCovered ? full.Krai : 0
+        };
+        parts.AddRange(payees.Select(s => kraiCovered && kraiPayees?.Contains(s.PayeeKey) == true ? s.Amount : 0));
+        parts.Add(Covers(DuesParts.Kurin) ? full.Kurin : 0);
+        parts.Add(Covers(DuesParts.Group) ? full.Group : 0);
+        var covered = parts.Sum();
         if (covered <= 0)
         {
             return full;
@@ -34,11 +43,10 @@ public sealed record DuesConcessionRule(string Key, string Name, string Kind, de
         };
 
         // Shared out part by part; the last covered part takes what rounding left.
-        var parts = new[] { stanytsia, krai, kurin, group };
-        var cuts = new decimal[parts.Length];
-        var last = Array.FindLastIndex(parts, part => part > 0);
+        var cuts = new decimal[parts.Count];
+        var last = parts.FindLastIndex(part => part > 0);
         var given = 0m;
-        for (var i = 0; i < parts.Length; i++)
+        for (var i = 0; i < parts.Count; i++)
         {
             if (parts[i] <= 0)
             {
@@ -49,14 +57,14 @@ public sealed record DuesConcessionRule(string Key, string Name, string Kind, de
             given += cuts[i];
         }
 
-        // The kurin's own payees are not one of the край's parts: their shares stay as they are.
+        var payeeCut = cuts.Skip(2).Take(payees.Count).ToList();
         return new DuesAmount(
             full.Stanytsia - cuts[0],
-            full.Kurin - cuts[2],
-            full.Group - cuts[3],
+            full.Kurin - cuts[^2],
+            full.Group - cuts[^1],
             full.Krai - cuts[1])
         {
-            Payees = full.Payees
+            Payees = new DuesPayeeShares(payees.Select((s, i) => (s.PayeeKey, s.Amount - payeeCut[i])))
         };
     }
 

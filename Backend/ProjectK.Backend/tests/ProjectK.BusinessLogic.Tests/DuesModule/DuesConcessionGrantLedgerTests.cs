@@ -155,4 +155,20 @@ public class DuesConcessionGrantLedgerTests
             .Apply(new DuesAmount(10, 10, 10));
         third.Total.Should().Be(29);
     }
+
+    [Fact]
+    public void Rule_OnTheKrai_LowersTheSharesOfTheKraisPayees_AndNoOtherPayee()
+    {
+        var bulava = Guid.NewGuid();
+        var fund = Guid.NewGuid();
+        var full = new DuesAmount(0, 150, 0) { Payees = new DuesPayeeShares([(bulava, 300m), (fund, 50m)]) };
+        var half = new DuesConcessionRule("half", "Половина", KraiDues.Percent, 50, DuesParts.Krai);
+
+        var result = half.Apply(full, new HashSet<Guid> { bulava });
+
+        result.Payees.Of(bulava).Should().Be(150);
+        result.Payees.Of(fund).Should().Be(50);
+        result.Kurin.Should().Be(150);
+        half.Apply(full).Should().Be(full);
+    }
 }

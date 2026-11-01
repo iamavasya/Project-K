@@ -68,7 +68,7 @@ public sealed class CreateKurinDuesPayeeCommandHandler : IRequestHandler<CreateK
             return KurinDuesPayees.Taken<Guid>();
         }
 
-        var payee = new KurinDuesPayee { KurinKey = request.KurinKey, Name = name };
+        var payee = new KurinDuesPayee { KurinKey = request.KurinKey, Name = name, IsKrai = request.Request.IsKrai };
         _dues.KurinDuesPayees.Create(payee, cancellationToken);
         await _dues.SaveChangesAsync(cancellationToken);
         return new ServiceResult<Guid>(ResultType.Created, payee.KurinDuesPayeeKey);
@@ -109,6 +109,7 @@ public sealed class UpdateKurinDuesPayeeCommandHandler : IRequestHandler<UpdateK
         }
 
         payee.Name = name;
+        payee.IsKrai = request.Request.IsKrai;
         if (request.Request.IsArchived != payee.IsArchived)
         {
             payee.ArchivedAtUtc = request.Request.IsArchived ? _time.GetUtcNow().UtcDateTime : null;

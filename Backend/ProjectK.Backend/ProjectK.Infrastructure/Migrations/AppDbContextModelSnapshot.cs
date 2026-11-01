@@ -920,6 +920,9 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsKrai")
+                        .HasColumnType("bit");
+
                     b.Property<Guid>("KurinKey")
                         .HasColumnType("uniqueidentifier");
 

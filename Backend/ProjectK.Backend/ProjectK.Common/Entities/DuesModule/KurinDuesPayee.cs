@@ -15,6 +15,11 @@ public class KurinDuesPayee : Entity
     public Guid KurinKey { get; set; }
     /// <summary>Unique within the kurin, compared without regard to case.</summary>
     public string Name { get; set; } = string.Empty;
+    /// <summary>
+    /// A structure of the край, such as a булава: a пільга of the край that lowers the край's part
+    /// lowers this payee's share too.
+    /// </summary>
+    public bool IsKrai { get; set; }
     public DateTime? ArchivedAtUtc { get; set; }
 
     public bool IsArchived => ArchivedAtUtc.HasValue;

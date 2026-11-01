@@ -525,6 +525,11 @@
                 <input pInputText [attr.aria-label]="'Назва ' + payee.name" [maxlength]="60"
                   [ngModel]="payeeEdits()[payee.payeeKey] ?? payee.name" (ngModelChange)="setPayeeName(payee.payeeKey, $event)"
                   (keydown.enter)="savePayee(payee)" (blur)="savePayee(payee)" />
+                <span class="dues-payee__krai">
+                  <p-checkbox [binary]="true" [inputId]="'dues-payee-krai-' + payee.payeeKey" [ngModel]="!!payee.isKrai"
+                    (ngModelChange)="savePayee(payee, payee.isArchived, $event)" [disabled]="savingPayee()" />
+                  <label [for]="'dues-payee-krai-' + payee.payeeKey">Крайовий</label>
+                </span>
                 <span class="dues-payee__sum">передано {{ money(payee.sent) }}</span>
                 @if (payee.isArchived) {
                   <p-button label="Повернути" variant="text" severity="secondary" size="small" [disabled]="savingPayee()" (onClick)="savePayee(payee, false)" />
@@ -540,6 +545,10 @@
         <div class="dues-payee-new">
           <input pInputText id="dues-payee-new" aria-label="Новий отримувач" placeholder="Назва" [maxlength]="60"
             [ngModel]="newPayeeName()" (ngModelChange)="newPayeeName.set($event)" (keydown.enter)="addPayee()" />
+          <span class="dues-payee__krai">
+            <p-checkbox [binary]="true" inputId="dues-payee-new-krai" [ngModel]="newPayeeKrai()" (ngModelChange)="newPayeeKrai.set($event)" />
+            <label for="dues-payee-new-krai">Крайовий</label>
+          </span>
           <p-button label="Додати" icon="pi pi-plus" severity="secondary" [loading]="savingPayee()" [disabled]="!newPayeeName().trim()" (onClick)="addPayee()" />
         </div>
         @if (payeeError(); as message) {

@@ -215,6 +215,7 @@ export class KurinDuesComponent implements OnInit {
 
   readonly payeesDialogVisible = signal(false);
   readonly newPayeeName = signal('');
+  readonly newPayeeKrai = signal(true);
   readonly payeeEdits = signal<Record<string, string>>({});
   readonly savingPayee = signal(false);
   readonly payeeError = signal<string | null>(null);
@@ -296,15 +297,15 @@ export class KurinDuesComponent implements OnInit {
     if (!name) {
       return;
     }
-    this.runPayee(this.dues.createPayee(this.kurinKey, name), () => this.newPayeeName.set(''));
+    this.runPayee(this.dues.createPayee(this.kurinKey, name, this.newPayeeKrai()), () => this.newPayeeName.set(''));
   }
 
-  savePayee(payee: KurinDuesPayeeDto, isArchived = payee.isArchived): void {
+  savePayee(payee: KurinDuesPayeeDto, isArchived = payee.isArchived, isKrai = !!payee.isKrai): void {
     const name = (this.payeeEdits()[payee.payeeKey] ?? payee.name).trim();
-    if (!name) {
+    if (!name || (name === payee.name && isArchived === payee.isArchived && isKrai === !!payee.isKrai)) {
       return;
     }
-    this.runPayee(this.dues.updatePayee(this.kurinKey, payee.payeeKey, name, isArchived));
+    this.runPayee(this.dues.updatePayee(this.kurinKey, payee.payeeKey, name, isKrai, isArchived));
   }
 
   openConcessionDialog(account: DuesAccountDto): void {

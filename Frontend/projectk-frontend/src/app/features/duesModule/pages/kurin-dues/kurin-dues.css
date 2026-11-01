@@ -258,7 +258,7 @@
 
 .dues-payee {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   gap: 0.5rem;
   align-items: center;
   padding: 0.5rem 0.75rem;
@@ -281,8 +281,17 @@
 
 .dues-payee-new {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 0.5rem;
+  align-items: center;
+}
+
+.dues-payee__krai {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--lil-text-caption);
+  white-space: nowrap;
 }
 
 @media (max-width: 640px) {

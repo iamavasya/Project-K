@@ -12,7 +12,7 @@ using ProjectK.Infrastructure.DbContexts;
 namespace ProjectK.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261101163207_AddSeniorKurinDues")]
+    [Migration("20261101171035_AddSeniorKurinDues")]
     partial class AddSeniorKurinDues
     {
         /// <inheritdoc />
@@ -922,6 +922,9 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsKrai")
+                        .HasColumnType("bit");
 
                     b.Property<Guid>("KurinKey")
                         .HasColumnType("uniqueidentifier");

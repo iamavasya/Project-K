@@ -105,6 +105,8 @@ public sealed class SetKurinDuesSettingsRequest
 public sealed class UpsertKurinDuesPayeeRequest
 {
     public string Name { get; set; } = string.Empty;
+    /// <summary>A structure of the край: the край's пільги lower its share as they do the край's.</summary>
+    public bool IsKrai { get; set; }
     /// <summary>Put away or brought back; a new payee is never archived.</summary>
     public bool IsArchived { get; set; }
 }

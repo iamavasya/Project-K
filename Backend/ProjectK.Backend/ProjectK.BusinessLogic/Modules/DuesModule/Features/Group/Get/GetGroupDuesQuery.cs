@@ -72,7 +72,8 @@ public sealed class GetGroupDuesQueryHandler : IRequestHandler<GetGroupDuesQuery
         var grants = await _dues.DuesConcessionGrants.GetForKurinAsync(kurinKey, cancellationToken);
         var names = await DuesNames.LoadAsync(_memberships, _members, kurinKey, cancellationToken);
 
-        var ledger = new DuesLedger(kurinRates, groupRates, concessions, charges, entries, grants);
+        var ledger = new DuesLedger(kurinRates, groupRates, concessions, charges, entries, grants,
+            await DuesLedgerReader.KraiPayeesAsync(_dues, kurinKey, cancellationToken));
         var accounts = ledger.Accounts();
         var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
         var current = krai.QuarterOf(_time.GetUtcNow());

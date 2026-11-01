@@ -134,6 +134,8 @@ export interface DuesTagDto {
 export interface KurinDuesPayeeDto {
   payeeKey: string;
   name: string;
+  /** A structure of the край, such as a булава: the край's пільги lower its share. */
+  isKrai?: boolean;
   isArchived: boolean;
   collected: number;
   sent: number;

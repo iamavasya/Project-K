@@ -99,15 +99,15 @@ describe('DuesService', () => {
     service.setConcession({ kurinKey: 'k1' }, 'm1', { fromQuarter: { year: 2026, number: 4 }, isConcession: true }).subscribe();
     http.expectOne(`${kurinUrl}/members/m1/concession`).flush({});
 
-    service.createPayee('k1', 'Булава УСП').subscribe();
+    service.createPayee('k1', 'Булава УСП', true).subscribe();
     const post = http.expectOne(`${kurinUrl}/payees`);
-    expect(post.request.body).toEqual({ name: 'Булава УСП', isArchived: false });
+    expect(post.request.body).toEqual({ name: 'Булава УСП', isKrai: true, isArchived: false });
     post.flush('p1');
 
-    service.updatePayee('k1', 'p1', 'Булава УСП', true).subscribe();
+    service.updatePayee('k1', 'p1', 'Булава УСП', true, true).subscribe();
     const put = http.expectOne(`${kurinUrl}/payees/p1`);
     expect(put.request.method).toBe('PUT');
-    expect(put.request.body).toEqual({ name: 'Булава УСП', isArchived: true });
+    expect(put.request.body).toEqual({ name: 'Булава УСП', isKrai: true, isArchived: true });
     put.flush({});
   });
 });

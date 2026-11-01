@@ -48,6 +48,7 @@ namespace ProjectK.Infrastructure.Migrations
                     KurinDuesPayeeKey = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     KurinKey = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false),
+                    IsKrai = table.Column<bool>(type: "bit", nullable: false),
                     ArchivedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
