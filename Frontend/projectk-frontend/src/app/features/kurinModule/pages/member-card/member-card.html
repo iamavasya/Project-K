@@ -350,7 +350,7 @@
         <section class="member-tile rounded-2xl p-4 md:p-5">
             <app-member-awards-tile [awards]="youthAwards"
                 [kurinStamps]="kurinStamps"
-                [canEdit]="canEditMember && !youthRecordLocked"
+                [canEdit]="canEditYouthAwards"
                 [confirmLevels]="youthRecordLocked ? [] : abilities.awards.confirm"
                 [canRemove]="abilities.awards.remove && !youthRecordLocked"
                 [viewerUserKey]="currentUserKey"

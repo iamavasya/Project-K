@@ -23,7 +23,8 @@ public interface IResourceScopeReader
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Whether the person a resource is about stands in a УСП or УПС kurin now. Their probes,
+    /// Whether the person a resource is about stands in a УСП or УПС kurin now and is no longer a
+    /// юнак anywhere — no open юнацьке membership in an УПЮ kurin. Their probes,
     /// вмілості and УПЮ відзначення are then a closed youth record, which the rules guard harder.
     /// </summary>
     Task<bool> StandsInSeniorKurinAsync(

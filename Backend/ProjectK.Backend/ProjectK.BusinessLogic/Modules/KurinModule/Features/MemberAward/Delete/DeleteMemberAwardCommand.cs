@@ -73,7 +73,7 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
         }
 
         if (award.CatalogId is null
-            && await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Delete, award.MemberKey, cancellationToken: cancellationToken) is { IsAllowed: false } senior)
+            && await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Delete, award.MemberKey, cancellationToken: cancellationToken, capability: KurinCapability.RemoveAward) is { IsAllowed: false } senior)
         {
             return ServiceResult<Unit>.Failure(ResultType.Forbidden, "SeniorYouthRecord", senior.Reason);
         }

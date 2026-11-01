@@ -152,7 +152,8 @@ public class ResourceAccessService : IResourceAccessService
         ResourceAction action,
         Guid memberKey,
         bool ownerMayChange = false,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        KurinCapability? capability = null)
     {
         if (Precheck() is { } early)
         {
@@ -160,7 +161,9 @@ public class ResourceAccessService : IResourceAccessService
         }
 
         // A guard on top of the endpoint's own check, not instead of it: it only ever refuses.
-        var grantedScope = await _permissions.WidestScopeAsync(resourceType, action, cancellationToken);
+        var grantedScope = capability is { } named
+            ? (await _permissions.ReachAsync(named, cancellationToken)).ToScope()
+            : await _permissions.WidestScopeAsync(resourceType, action, cancellationToken);
         return await SeniorYouthRecordAsync(resourceType, grantedScope ?? AccessScope.Own, ResourceType.Member, memberKey, ownerMayChange, cancellationToken)
                ?? ResourceAccessDecision.Allow("Not a senior's youth record, or a change it allows.");
     }

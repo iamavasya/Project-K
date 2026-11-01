@@ -2,9 +2,9 @@ import { MessageService } from '@openng/optimus-ui/api';
 import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { KurinPanelComponent } from './kurin-panel';
@@ -253,6 +253,13 @@ describe('KurinPanelComponent', () => {
       component.onGroupManage({ action: 'delete', entity });
       expect(groupService.delete).toHaveBeenCalledWith('g1');
       expect(groupService.getAllByKurinKey).toHaveBeenCalled();
+    });
+
+    it('delete says why a гурток with money in its box stays', () => {
+      groupService.delete.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { error: 'GroupBoxNotSettled' } })));
+      const add = vi.spyOn(TestBed.inject(MessageService), 'add');
+      component.onGroupManage({ action: 'delete', entity: { groupKey: 'g1', name: 'Alpha', kurinKey: 'k1', kurinNumber: 10 } });
+      expect(add).toHaveBeenCalledWith({ severity: 'error', summary: 'У скриньці гуртка ще є гроші чи борги' });
     });
   });
 

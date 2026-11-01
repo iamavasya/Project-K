@@ -154,4 +154,23 @@ describe('KurinArchiveComponent', () => {
     expect(service.deleteOffice).toHaveBeenCalledWith('k1', 'h1', 't');
     expect(component.zone()).toBeNull();
   });
+
+  it('says why a membership with dues stays', () => {
+    service.enterDangerZone.mockReturnValue(of({ ticket: 't', expiresAtUtc: new Date(Date.now() + 600_000).toISOString(), deletionsLeft: 1 }));
+    service.deleteMembership.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { error: 'ArchiveMembershipHasDues' } })));
+    component.openEnter();
+    component.proof.set('secret');
+    component.enter();
+
+    const confirmation = fixture.debugElement.injector.get(ConfirmationService);
+    vi.spyOn(confirmation, 'confirm').mockImplementation(config => {
+      config.accept?.();
+      return confirmation;
+    });
+    const add = vi.spyOn(TestBed.inject(MessageService), 'add');
+    component.confirmDeleteMembership(archive().memberships[0]);
+
+    expect(add).toHaveBeenCalledWith({ severity: 'error', summary: 'За членством є внески' });
+    expect(component.zone()).not.toBeNull();
+  });
 });

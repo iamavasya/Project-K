@@ -129,11 +129,36 @@ public class KurinArchiveRepository : IKurinArchiveRepository
             .Where(history => history.MemberKey == memberKey
                               && (history.Leadership.KurinKey == kurinKey || groupKeys.Contains(history.Leadership.GroupKey))
                               && history.StartDate <= to
-                              && (history.EndDate == null || history.EndDate >= from))
+                              && history.EndDate != null
+                              && history.EndDate >= from)
             .ToListAsync(cancellationToken);
 
         _context.LeadershipHistories.RemoveRange(held);
         return held;
+    }
+
+    public async Task<bool> HoldsOpenOfficeSinceAsync(Guid memberKey, Guid kurinKey, DateOnly before, CancellationToken cancellationToken = default)
+    {
+        var groupKeys = AllGroupsOf(kurinKey).Select(group => (Guid?)group.GroupKey);
+        return await _context.LeadershipHistories
+            .AnyAsync(history => history.MemberKey == memberKey
+                                 && history.EndDate == null
+                                 && history.StartDate <= before
+                                 && (history.Leadership.KurinKey == kurinKey || groupKeys.Contains(history.Leadership.GroupKey)),
+                cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<(DateTime JoinedAtUtc, DateTime? LeftAtUtc)>> GetOtherPeriodsAsync(
+        Guid memberKey,
+        Guid kurinKey,
+        Guid exceptMembershipKey,
+        CancellationToken cancellationToken = default)
+    {
+        var periods = await _context.Memberships
+            .Where(membership => membership.MemberKey == memberKey && membership.KurinKey == kurinKey && membership.MembershipKey != exceptMembershipKey)
+            .Select(membership => new { membership.JoinedAtUtc, membership.LeftAtUtc })
+            .ToListAsync(cancellationToken);
+        return periods.Select(period => (period.JoinedAtUtc, period.LeftAtUtc)).ToList();
     }
 
     public void RemoveMembership(Membership membership) => _context.Memberships.Remove(membership);

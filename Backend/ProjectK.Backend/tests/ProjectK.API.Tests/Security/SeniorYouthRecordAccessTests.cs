@@ -2,6 +2,7 @@ using Moq;
 using ProjectK.API.Tests.TestHelpers;
 using ProjectK.BusinessLogic.Modules.AuthModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
+using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
@@ -127,6 +128,30 @@ public class SeniorYouthRecordAccessTests
         var (service, _) = Arrange(SystemRole.Member, senior: false, callerUserKey: _ownerUserKey);
 
         Assert.True((await service.CheckAccessAsync(ResourceType.BadgeProgress, ResourceAction.Create, ResourceType.Member, _memberKey)).IsAllowed);
+    }
+
+    [Fact]
+    public async Task ConfirmingASeniorsAward_GoesByThatLevelsReach_NotTheWidestOfTheFour()
+    {
+        // A kurin may give level 1 to the whole kurin and level 4 only within a гурток.
+        var user = new Mock<ICurrentUserContext>();
+        user.SetupGet(x => x.IsAuthenticated).Returns(true);
+        user.SetupGet(x => x.KurinKey).Returns(_kurinKey);
+        user.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+        user.SetupGet(x => x.Roles).Returns([Vykhovnyk]);
+        var permissions = new Mock<ICurrentPermissions>();
+        permissions.Setup(p => p.WidestScopeAsync(ResourceType.MemberAward, ResourceAction.Update, It.IsAny<CancellationToken>())).ReturnsAsync(AccessScope.KurinWide);
+        permissions.Setup(p => p.ReachAsync(KurinCapability.ConfirmAward1, It.IsAny<CancellationToken>())).ReturnsAsync(CapabilityReach.Kurin);
+        permissions.Setup(p => p.ReachAsync(KurinCapability.ConfirmAward4, It.IsAny<CancellationToken>())).ReturnsAsync(CapabilityReach.OwnGroup);
+        var reader = new Mock<IResourceScopeReader>();
+        reader.Setup(x => x.StandsInSeniorKurinAsync(It.IsAny<ResourceType>(), _memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var service = new ResourceAccessService(reader.Object, user.Object, new PassThroughCache(), permissions.Object);
+
+        var first = await service.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Update, _memberKey, capability: KurinCapability.ConfirmAward1);
+        var fourth = await service.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Update, _memberKey, capability: KurinCapability.ConfirmAward4);
+
+        Assert.True(first.IsAllowed);
+        Assert.False(fourth.IsAllowed);
     }
 
     private sealed class PassThroughCache : IBackendCache

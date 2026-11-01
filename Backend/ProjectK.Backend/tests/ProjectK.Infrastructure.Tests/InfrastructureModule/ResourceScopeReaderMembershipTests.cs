@@ -221,3 +221,34 @@ public class ResourceScopeReaderSeniorTests
         Assert.False(await reader.StandsInSeniorKurinAsync(ResourceType.Member, staffInUpyu));
     }
 }
+
+/// <summary>The owner's rule on two memberships (LIFE-01): while a юнак in an УПЮ kurin, they are a юнак.</summary>
+public class ResourceScopeReaderTwoMembershipsTests
+{
+    [Fact]
+    public async Task AnOpenYouthMembershipInAnUpyuKurin_KeepsTheRecordOpen_EvenBesideASeniorOne()
+    {
+        await using var context = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var upyu = Guid.NewGuid();
+        var senior = Guid.NewGuid();
+        context.Set<KurinBranchNumber>().AddRange(
+            new KurinBranchNumber { KurinKey = upyu, Branch = KurinBranch.UPYu, Number = 1 },
+            new KurinBranchNumber { KurinKey = senior, Branch = KurinBranch.USP, Number = 5 });
+        var youth = Guid.NewGuid();
+        var staff = Guid.NewGuid();
+        foreach (var (member, kurin, kind) in new[]
+                 {
+                     (youth, upyu, MembershipKind.Youth), (youth, senior, MembershipKind.Youth),
+                     (staff, upyu, MembershipKind.Staff), (staff, senior, MembershipKind.Youth)
+                 })
+        {
+            context.Memberships.Add(new Membership { MemberKey = member, KurinKey = kurin, Kind = kind, JoinedAtUtc = DateTime.UtcNow.AddYears(-1) });
+        }
+
+        await context.SaveChangesAsync();
+        var reader = new ResourceScopeReader(context);
+
+        Assert.False(await reader.StandsInSeniorKurinAsync(ResourceType.Member, youth));
+        Assert.True(await reader.StandsInSeniorKurinAsync(ResourceType.Member, staff));
+    }
+}

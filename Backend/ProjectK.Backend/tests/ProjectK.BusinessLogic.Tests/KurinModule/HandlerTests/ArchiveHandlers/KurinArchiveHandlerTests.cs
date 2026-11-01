@@ -8,6 +8,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
@@ -275,5 +276,92 @@ public class KurinArchiveHandlerTests
         var result = await CorrectOffice().Handle(new CorrectArchivedOfficeCommand(_kurinKey, office.LeadershipHistoryKey, LeadershipRole.Hurtkoviy, office.StartDate, office.EndDate!.Value), default);
 
         result.ErrorCode.Should().Be(ArchiveErrors.InvalidRole);
+    }
+
+    private readonly Mock<IDuesDirectory> _dues = new();
+    private readonly Mock<IDomainEventPublisher> _events = new();
+
+    private Membership FormerMembership(Guid? memberKey = null) => new()
+    {
+        MembershipKey = Guid.NewGuid(),
+        MemberKey = memberKey ?? Guid.NewGuid(),
+        KurinKey = _kurinKey,
+        JoinedAtUtc = new DateTime(2019, 9, 1, 0, 0, 0, DateTimeKind.Utc),
+        LeftAtUtc = new DateTime(2023, 6, 30, 0, 0, 0, DateTimeKind.Utc)
+    };
+
+    private DeleteArchivedMembershipCommandHandler DeleteMembership() => new(_unitOfWork.Object, _members.Object, Gate(), _audit.Object, _dues.Object, _events.Object);
+    private CorrectArchivedMembershipCommandHandler CorrectMembership() => new(_unitOfWork.Object, _members.Object, Reach(), _audit.Object, _dues.Object);
+
+    [Fact]
+    public async Task AMembershipWithDues_IsNotDeleted()
+    {
+        // Its charges and payments would stay under a key nobody has: a debt gone, a surplus lost.
+        var membership = FormerMembership();
+        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _dues.Setup(d => d.HasLedgerAsync(_kurinKey, It.Is<IReadOnlyCollection<Guid>>(keys => keys.Contains(membership.MembershipKey)), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await DeleteMembership().Handle(new DeleteArchivedMembershipCommand(_kurinKey, membership.MembershipKey, OpenZone()), default);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be(ArchiveErrors.HasDues);
+        _archive.Verify(a => a.RemoveMembership(It.IsAny<Membership>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AMembershipWhoseOfficeIsStillHeld_IsNotDeleted()
+    {
+        var membership = FormerMembership();
+        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _archive.Setup(a => a.HoldsOpenOfficeSinceAsync(membership.MemberKey, _kurinKey, new DateOnly(2023, 6, 30), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await DeleteMembership().Handle(new DeleteArchivedMembershipCommand(_kurinKey, membership.MembershipKey, OpenZone()), default);
+
+        result.ErrorCode.Should().Be(ArchiveErrors.OpenOffice);
+        _archive.Verify(a => a.RemoveMembership(It.IsAny<Membership>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ADeletedMembership_IsAnnounced_SoTheModulesKeyedByItForgetItToo()
+    {
+        var membership = FormerMembership();
+        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _archive.Setup(a => a.RemoveOfficesHeldAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+        var result = await DeleteMembership().Handle(new DeleteArchivedMembershipCommand(_kurinKey, membership.MembershipKey, OpenZone()), default);
+
+        result.Type.Should().Be(ResultType.Success);
+        _archive.Verify(a => a.RemoveMembership(membership), Times.Once);
+        _events.Verify(e => e.PublishAsync(It.Is<MembershipsRemoved>(raised => raised.MembershipKeys.Contains(membership.MembershipKey)), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AMembershipWithDues_KeepsItsKindAndDates()
+    {
+        var membership = FormerMembership();
+        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _archive.Setup(a => a.GetStintGroupKeysAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _dues.Setup(d => d.HasLedgerAsync(_kurinKey, It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await CorrectMembership().Handle(new CorrectArchivedMembershipCommand(_kurinKey, membership.MembershipKey, MembershipKind.Staff, new DateOnly(2019, 9, 1), new DateOnly(2023, 6, 30)), default);
+
+        result.ErrorCode.Should().Be(ArchiveErrors.HasDues);
+        membership.Kind.Should().Be(MembershipKind.Youth);
+    }
+
+    [Fact]
+    public async Task CorrectedDates_MayNotOverlapAnotherMembershipOfTheirsInTheKurin()
+    {
+        var membership = FormerMembership();
+        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _archive.Setup(a => a.GetStintGroupKeysAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _archive.Setup(a => a.GetOtherPeriodsAsync(membership.MemberKey, _kurinKey, membership.MembershipKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([(new DateTime(2024, 1, 10, 0, 0, 0, DateTimeKind.Utc), (DateTime?)null)]);
+
+        var overlapping = await CorrectMembership().Handle(new CorrectArchivedMembershipCommand(_kurinKey, membership.MembershipKey, MembershipKind.Youth, new DateOnly(2019, 9, 1), new DateOnly(2024, 3, 1)), default);
+        var fine = await CorrectMembership().Handle(new CorrectArchivedMembershipCommand(_kurinKey, membership.MembershipKey, MembershipKind.Youth, new DateOnly(2019, 9, 1), new DateOnly(2023, 12, 31)), default);
+
+        overlapping.ErrorCode.Should().Be(ArchiveErrors.Overlap);
+        fine.Type.Should().Be(ResultType.Success);
     }
 }

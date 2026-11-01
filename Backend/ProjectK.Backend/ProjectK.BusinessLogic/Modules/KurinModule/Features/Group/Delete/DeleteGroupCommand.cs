@@ -1,6 +1,8 @@
 using MediatR;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -19,9 +21,11 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
     private readonly IBackendCache _cache;
     private readonly IKurinAudit _audit;
     private readonly TimeProvider _time;
+    private readonly IDuesDirectory _dues;
 
-    public DeleteGroupCommandHandler(IUnitOfWork unitOfWork, IBackendCache cache, IKurinAudit audit, TimeProvider time)
+    public DeleteGroupCommandHandler(IUnitOfWork unitOfWork, IBackendCache cache, IKurinAudit audit, TimeProvider time, IDuesDirectory dues)
     {
+        _dues = dues;
         _unitOfWork = unitOfWork;
         _cache = cache;
         _audit = audit;
@@ -44,6 +48,15 @@ public sealed class DeleteGroupCommandHandler : IRequestHandler<DeleteGroupComma
                 ResultType.NotFound,
                 "GROUP_NOT_FOUND",
                 $"Group with key {request.GroupKey} not found.");
+        }
+
+        // A dissolved гурток's box is no longer read anywhere: money left in it would be stuck.
+        if (!await _dues.GroupBoxSettledAsync(existing.KurinKey, existing.GroupKey, cancellationToken))
+        {
+            return ServiceResult<object>.Failure(
+                ResultType.Conflict,
+                ArchiveErrors.DissolveWithDues,
+                "The гурток's box still holds money, owes the kurin or has accounts in debt.");
         }
 
         var now = _time.GetUtcNow().UtcDateTime;

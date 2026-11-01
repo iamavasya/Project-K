@@ -162,4 +162,56 @@ public class KurinArchivePersistenceTests
         Assert.Empty(await read.Memberships.ToListAsync());
         Assert.Equal([LeadershipRole.Skarbnyk], await read.LeadershipHistories.Select(history => history.Role).ToListAsync());
     }
+
+    [Fact]
+    public async Task AnOfficeStillHeld_IsNeitherTakenWithTheMembership_NorMissedByTheGuard()
+    {
+        // Left the kurin, the office stayed open, came back: deleting the old membership must not end it.
+        await using (var context = new AppDbContext(_options))
+        {
+            context.Leaderships.Add(new Leadership
+            {
+                Type = LeadershipType.Kurin,
+                KurinKey = _kurinKey,
+                StartDate = new DateOnly(2020, 1, 1),
+                LeadershipHistories =
+                {
+                    new LeadershipHistory { MemberKey = _person, Role = LeadershipRole.Hronikar, StartDate = new DateOnly(2024, 10, 1) }
+                }
+            });
+            await context.SaveChangesAsync();
+        }
+
+        await using var read = new AppDbContext(_options);
+        var archive = new KurinArchiveRepository(read);
+        Assert.True(await archive.HoldsOpenOfficeSinceAsync(_person, _kurinKey, new DateOnly(2025, 6, 30)));
+        Assert.False(await archive.HoldsOpenOfficeSinceAsync(_person, _kurinKey, new DateOnly(2024, 6, 30)));
+        Assert.Empty(await archive.RemoveOfficesHeldAsync(_person, _kurinKey, new DateOnly(2024, 9, 1), new DateOnly(2025, 6, 30)));
+    }
+
+    [Fact]
+    public async Task ThePersonsOfficesInADissolvedGurtok_KeepTheirGurtok()
+    {
+        await using (var context = new AppDbContext(_options))
+        {
+            context.Members.Add(new Member { MemberKey = _person, FirstName = "Устим", LastName = "Соловей", Email = "u@example.com", PhoneNumber = "+380501234567" });
+            var group = await context.Groups.SingleAsync(g => g.GroupKey == _sokoly.GroupKey);
+            group.DissolvedAtUtc = new DateTime(2025, 9, 1);
+            context.Leaderships.Add(new Leadership
+            {
+                Type = LeadershipType.Group,
+                GroupKey = group.GroupKey,
+                StartDate = new DateOnly(2022, 9, 1),
+                LeadershipHistories = { new LeadershipHistory { MemberKey = _person, Role = LeadershipRole.Hurtkoviy, StartDate = new DateOnly(2022, 9, 1), EndDate = new DateOnly(2025, 9, 1) } }
+            });
+            await context.SaveChangesAsync();
+        }
+
+        await using var read = new AppDbContext(_options);
+        var member = await new MemberRepository(read).GetByKeyAsync(_person);
+
+        var office = Assert.Single(member!.LeadershipHistories);
+        Assert.Equal("Соколи", office.Leadership.Group?.Name);
+        Assert.Equal(_kurinKey, office.Leadership.Group?.KurinKey);
+    }
 }

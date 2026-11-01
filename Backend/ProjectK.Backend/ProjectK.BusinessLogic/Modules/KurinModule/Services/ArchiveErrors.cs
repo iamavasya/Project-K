@@ -15,6 +15,10 @@ public static class ArchiveErrors
     public const string WrongCredentials = "WrongCredentials";
     public const string NoSecondFactor = "NoSecondFactor";
     public const string TooManyAttempts = "TooManyAttempts";
+    public const string HasDues = "ArchiveMembershipHasDues";
+    public const string OpenOffice = "ArchiveOpenOffice";
+    public const string Overlap = "ArchiveMembershipOverlap";
+    public const string DissolveWithDues = "GroupBoxNotSettled";
 
     /// <summary>A role as the kurin names it: its own name where it gave one.</summary>
     public static string RoleLabel(LeadershipRole role, IReadOnlyDictionary<LeadershipRole, string> kurinNames) =>

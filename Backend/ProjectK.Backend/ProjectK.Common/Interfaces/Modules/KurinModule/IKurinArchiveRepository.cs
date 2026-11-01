@@ -27,14 +27,28 @@ public interface IKurinArchiveRepository
     void RemoveOffice(LeadershipHistory history);
 
     /// <summary>
-    /// Marks for deletion the person's holdings in this kurin that overlap the period, and reports
-    /// them. A membership deleted «as if they had never been here» takes its offices with it.
+    /// Marks for deletion the person's holdings in this kurin that overlap the period and have ended,
+    /// and reports them. A membership deleted «as if they had never been here» takes its offices with
+    /// it; one still held is ended on the провід first (<see cref="HoldsOpenOfficeSinceAsync"/>).
     /// </summary>
     Task<IReadOnlyList<LeadershipHistory>> RemoveOfficesHeldAsync(
         Guid memberKey,
         Guid kurinKey,
         DateOnly from,
         DateOnly to,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Whether the person still holds, open, an office in this kurin that began on or before
+    /// <paramref name="before"/> — one seated during a membership and never ended.
+    /// </summary>
+    Task<bool> HoldsOpenOfficeSinceAsync(Guid memberKey, Guid kurinKey, DateOnly before, CancellationToken cancellationToken = default);
+
+    /// <summary>The person's other memberships in this kurin, as when they joined and left (null: still in).</summary>
+    Task<IReadOnlyList<(DateTime JoinedAtUtc, DateTime? LeftAtUtc)>> GetOtherPeriodsAsync(
+        Guid memberKey,
+        Guid kurinKey,
+        Guid exceptMembershipKey,
         CancellationToken cancellationToken = default);
 
     /// <summary>Marks the membership for deletion; its гурток stints go with it in the database.</summary>

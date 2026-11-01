@@ -1,7 +1,7 @@
 import { Component, ElementRef, inject, OnInit, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
@@ -317,7 +317,15 @@ export class KurinPanelComponent implements OnInit {
     switch (e.action) {
       case 'create': this.groupService.create(e.entity).subscribe(() => this.refreshData()); break;
       case 'update': this.groupService.update(e.entity.groupKey, e.entity).subscribe(() => this.refreshData()); break;
-      case 'delete': this.groupService.delete(e.entity.groupKey).subscribe(() => this.refreshData()); break;
+      case 'delete':
+        this.groupService.delete(e.entity.groupKey).subscribe({
+          next: () => this.refreshData(),
+          error: (error: unknown) => this.messageService.add({
+            severity: 'error',
+            summary: error instanceof HttpErrorResponse && error.error?.error === 'GroupBoxNotSettled' ? 'У скриньці гуртка ще є гроші чи борги' : 'Не вдалося розформувати гурток'
+          })
+        });
+        break;
     }
   }
 

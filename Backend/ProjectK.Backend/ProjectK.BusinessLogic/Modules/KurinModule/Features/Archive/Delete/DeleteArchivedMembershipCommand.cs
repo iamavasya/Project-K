@@ -1,10 +1,12 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Dtos.KurinModule;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Events;
 using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Archive.Delete;
@@ -22,9 +24,19 @@ public sealed class DeleteArchivedMembershipCommandHandler : IRequestHandler<Del
     private readonly IMemberDirectory _members;
     private readonly ArchiveDeletionGate _gate;
     private readonly IKurinAudit _audit;
+    private readonly IDuesDirectory _dues;
+    private readonly IDomainEventPublisher _events;
 
-    public DeleteArchivedMembershipCommandHandler(IUnitOfWork unitOfWork, IMemberDirectory members, ArchiveDeletionGate gate, IKurinAudit audit)
+    public DeleteArchivedMembershipCommandHandler(
+        IUnitOfWork unitOfWork,
+        IMemberDirectory members,
+        ArchiveDeletionGate gate,
+        IKurinAudit audit,
+        IDuesDirectory dues,
+        IDomainEventPublisher events)
     {
+        _dues = dues;
+        _events = events;
         _unitOfWork = unitOfWork;
         _members = members;
         _gate = gate;
@@ -55,6 +67,18 @@ public sealed class DeleteArchivedMembershipCommandHandler : IRequestHandler<Del
             return ServiceResult<ArchiveDeletionDto>.Failure(ResultType.Forbidden, ArchiveErrors.OwnRecord, "Nobody deletes their own record.");
         }
 
+        // Its money would stay under a key nobody has: a debt gone, a surplus the kurin's for good.
+        if (await _dues.HasLedgerAsync(request.KurinKey, [membership.MembershipKey], cancellationToken))
+        {
+            return ServiceResult<ArchiveDeletionDto>.Failure(ResultType.Conflict, ArchiveErrors.HasDues, "The membership carries dues; it stays.");
+        }
+
+        // Seated then and never ended: deleting the membership would take an office they hold today.
+        if (await _unitOfWork.Archive.HoldsOpenOfficeSinceAsync(membership.MemberKey, request.KurinKey, DateOnly.FromDateTime(leftAt), cancellationToken))
+        {
+            return ServiceResult<ArchiveDeletionDto>.Failure(ResultType.Conflict, ArchiveErrors.OpenOffice, "An office from that time is still held; end it on the провід first.");
+        }
+
         if (await _gate.SpendAsync(pass, request.KurinKey, cancellationToken) is not { } left)
         {
             return ArchiveDeletionGate.Closed();
@@ -65,6 +89,7 @@ public sealed class DeleteArchivedMembershipCommandHandler : IRequestHandler<Del
         var leftOn = DateOnly.FromDateTime(leftAt);
         var offices = await _unitOfWork.Archive.RemoveOfficesHeldAsync(membership.MemberKey, request.KurinKey, joinedOn, leftOn, cancellationToken);
         _unitOfWork.Archive.RemoveMembership(membership);
+        await _events.PublishAsync(new MembershipsRemoved([membership.MembershipKey]), cancellationToken);
 
         await _audit.RecordAsync(
             new AuditRecord(

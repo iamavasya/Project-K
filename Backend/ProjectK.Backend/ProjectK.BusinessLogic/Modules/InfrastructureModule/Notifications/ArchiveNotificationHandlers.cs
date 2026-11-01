@@ -51,10 +51,12 @@ public sealed class ArchiveDangerZoneEnteredEventHandler : INotificationHandler<
             .Where(holder => holder.UserRole == zvyazkovyi)
             .Concat((await _unitOfWork.Leaderships.GetOfficeMembersLookupAsync(raised.KurinKey, LeadershipType.Kurin, cancellationToken))
                 .Where(holder => holder.UserRole == kurinnyi));
+        // Only who stands in the kurin now: an office row of someone who left is history, not a seat.
+        var standing = (await _unitOfWork.Memberships.GetAccountKeysInKurinAsync(raised.KurinKey, cancellationToken)).ToHashSet();
         var recipients = holders
             .Select(holder => holder.UserKey)
             .OfType<Guid>()
-            .Where(userKey => userKey != raised.ActorUserKey)
+            .Where(userKey => userKey != raised.ActorUserKey && standing.Contains(userKey))
             .Distinct()
             .ToList();
         if (recipients.Count == 0)

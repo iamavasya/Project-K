@@ -74,8 +74,9 @@ public class ResourceAccessServiceInstrumentationDecorator : IResourceAccessServ
         ResourceAction action,
         Guid memberKey,
         bool ownerMayChange = false,
-        CancellationToken cancellationToken = default)
-        => _inner.CheckSeniorYouthRecordAsync(resourceType, action, memberKey, ownerMayChange, cancellationToken);
+        CancellationToken cancellationToken = default,
+        KurinCapability? capability = null)
+        => _inner.CheckSeniorYouthRecordAsync(resourceType, action, memberKey, ownerMayChange, cancellationToken, capability);
 
     public Task<IReadOnlySet<KurinCapability>> ReachableCapabilitiesAsync(
         ResourceType scopeResourceType,
