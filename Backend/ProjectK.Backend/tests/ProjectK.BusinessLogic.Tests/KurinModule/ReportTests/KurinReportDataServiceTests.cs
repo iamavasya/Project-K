@@ -71,7 +71,8 @@ public sealed class KurinReportDataServiceTests
             new ConfigurationBuilder().Build(),
             _progress.Object,
             _uow.Object,
-            _tagVisibility.Object);
+            _tagVisibility.Object,
+            Mock.Of<ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule.IHonoursCatalog>());
     }
 
     private void TagsOn(bool enabled, Func<Guid?, Guid?, bool>? shows = null)

@@ -24,6 +24,8 @@ public class SetKurinDuesRateTests
 
     private readonly List<KurinDuesRate> _rates = [];
     private readonly Mock<IDuesUnitOfWork> _dues = new();
+    private readonly Mock<IDuesKurinShape> _shape = new();
+    private readonly Mock<ProjectK.Common.Interfaces.IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ICurrentUserContext> _user = new();
     private string _upstream = KraiDues.Stanytsia;
 
@@ -40,7 +42,7 @@ public class SetKurinDuesRateTests
     }
 
     private Task<Common.Models.Records.ServiceResult<object>> Send(SetKurinDuesRateRequest request) =>
-        new SetKurinDuesRateCommandHandler(_dues.Object, _user.Object, KraiProfiles.Paying(Kurin, _upstream))
+        new SetKurinDuesRateCommandHandler(_dues.Object, _user.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object, _unitOfWork.Object)
             .Handle(new SetKurinDuesRateCommand(Kurin, request), CancellationToken.None);
 
     private static QuarterRequest From(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };

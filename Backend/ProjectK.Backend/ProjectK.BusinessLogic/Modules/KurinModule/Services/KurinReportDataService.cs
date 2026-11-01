@@ -30,6 +30,7 @@ public sealed class KurinReportDataService
     private readonly IMemberProgressDirectory _progress;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IKurinTagVisibility _tags;
+    private readonly IHonoursCatalog _honours;
 
     public KurinReportDataService(
         IKurinReportSource source,
@@ -41,8 +42,10 @@ public sealed class KurinReportDataService
         IConfiguration configuration,
         IMemberProgressDirectory progress,
         IUnitOfWork unitOfWork,
-        IKurinTagVisibility tags)
+        IKurinTagVisibility tags,
+        IHonoursCatalog honours)
     {
+        _honours = honours;
         _source = source;
         _currentUser = currentUser;
         _links = links;
@@ -341,7 +344,7 @@ public sealed class KurinReportDataService
                 .OrderByDescending(item => item.DateAcquired)
                 .Select(item => new KurinReportAward(
                     item.Level,
-                    KurinReportTerminology.AwardLevel(item.Level),
+                    KurinReportTerminology.Award(item.Level, item.CatalogId, id => _honours.GetById(id)?.Title),
                     item.DateAcquired,
                     item.Note,
                     item.Status,

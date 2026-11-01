@@ -29,8 +29,16 @@
                     <p-tag [value]="stage.branch" severity="secondary" />
                     @if (stage.levels.length) {
                     <ul class="life-stage__levels">
-                        @for (level of stage.levels; track level.label) {
-                        <li><span class="life-stage__level">{{ level.label }}</span><span class="life-stage__date">{{ level.date ?? 'без дати' }}</span></li>
+                        @for (level of stage.levels; track level.key) {
+                        <li>
+                            @if (level.imageUrl) {
+                            <img class="life-stage__image" [src]="level.imageUrl" [alt]="level.title" loading="lazy" />
+                            } @else {
+                            <span class="life-stage__image life-stage__image--empty pi pi-flag" aria-hidden="true"></span>
+                            }
+                            <span class="life-stage__level">{{ level.title }}</span>
+                            <span class="life-stage__date">{{ level.date ? (level.date | date: 'dd.MM.yyyy') : 'без дати' }}</span>
+                        </li>
                         }
                     </ul>
                     } @else {
@@ -340,7 +348,7 @@
 
         <ng-template [appTileDef]="{ key: 'awards', span: 'full', label: 'Нагороди' }">
         <section class="member-tile rounded-2xl p-4 md:p-5">
-            <app-member-awards-tile [awards]="member.awards || []"
+            <app-member-awards-tile [awards]="youthAwards"
                 [kurinStamps]="kurinStamps"
                 [canEdit]="canEditMember && !youthRecordLocked"
                 [confirmLevels]="youthRecordLocked ? [] : abilities.awards.confirm"
@@ -349,9 +357,23 @@
                 [ownCard]="isOwnCard"
                 (saveAward)="onSaveAward($event)"
                 (deleteAward)="onDeleteAward($event)"
-                (reviewAward)="onReviewAward($event)" />
+                (reviewAward)="onReviewAward($event)"
+                (pinAward)="onPinAward($event)" />
         </section>
         </ng-template>
+        }
+
+        @if (!isLifeView) {
+        <ng-template [appTileDef]="{ key: 'degrees', span: 'half', label: 'Ступені' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
+            <app-member-degrees-tile
+                [histories]="member.plastLevelHistories"
+                [senior]="isSeniorKurinCard"
+                [canEdit]="canEditMember"
+                (edit)="onEditMember()" />
+            </section>
+        </ng-template>
+
         }
 
         @if (isSeniorKurinCard && !isLifeView) {
@@ -383,12 +405,15 @@
         </ng-template>
 
         <ng-template [appTileDef]="{ key: 'senior-awards', span: 'half', label: 'Відзначення' }">
-            <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="senior-awards-tile">
-                <div class="mb-4">
-                    <h2 class="member-section-title">Відзначення</h2>
-                    <p class="member-section-subtitle text-sm">УСП · УПС</p>
-                </div>
-                <app-empty-state art="list" title="Відзначень ще немає" />
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
+            <app-member-senior-awards-tile
+                [awards]="member.awards ?? []"
+                [canAdd]="canEditMember"
+                [ownCard]="isOwnCard"
+                [canRemove]="abilities.awards.remove"
+                (saveAward)="onSaveAward($event)"
+                (deleteAward)="onDeleteAward($event)"
+                (pinAward)="onPinAward($event)" />
             </section>
         </ng-template>
 
@@ -473,7 +498,7 @@
                         <span class="dues-tile-balance__sub">боргу немає</span>
                     } @else if (d.balance < 0) {
                         <span class="dues-tile-balance__value">{{ money(d.balance) }}</span>
-                        <span class="dues-tile-balance__sub">борг — віддай скарбникові гуртка</span>
+                        <span class="dues-tile-balance__sub">борг — віддай скарбникові</span>
                     } @else {
                         <span class="dues-tile-balance__value">+{{ money(d.balance) }}</span>
                         <span class="dues-tile-balance__sub">надлишок — піде на наступний квартал</span>
@@ -537,6 +562,21 @@
                     (leaveKurin)="confirmLeaveKurin($event)" />
             </section>
         </ng-template>
+
+        @if (isLifeView && !hasYouthProgram) {
+        <ng-template [appTileDef]="{ key: 'life-senior-awards', span: 'half', label: 'Відзначення УСП/УПС' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="life-senior-awards">
+            <app-member-senior-awards-tile
+                [awards]="member.awards ?? []"
+                [canAdd]="canEditMember"
+                [ownCard]="isOwnCard"
+                [canRemove]="abilities.awards.remove"
+                (saveAward)="onSaveAward($event)"
+                (deleteAward)="onDeleteAward($event)"
+                (pinAward)="onPinAward($event)" />
+            </section>
+        </ng-template>
+        }
 
         @if (isLifeView) {
         <ng-template [appTileDef]="{ key: 'life-roles', span: 'half', label: 'Ролі' }">

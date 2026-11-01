@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.DuesModule.Services;
 using ProjectK.Common.Entities.DuesModule;
+using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KraiModule;
@@ -66,12 +67,16 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
     private readonly IDuesUnitOfWork _dues;
     private readonly ICurrentUserContext _currentUser;
     private readonly IKraiProfileProvider _profiles;
+    private readonly IDuesKurinShape _shape;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public SetKurinDuesRateCommandHandler(IDuesUnitOfWork dues, ICurrentUserContext currentUser, IKraiProfileProvider profiles)
+    public SetKurinDuesRateCommandHandler(IDuesUnitOfWork dues, ICurrentUserContext currentUser, IKraiProfileProvider profiles, IDuesKurinShape shape, IUnitOfWork unitOfWork)
     {
         _dues = dues;
         _currentUser = currentUser;
         _profiles = profiles;
+        _shape = shape;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<ServiceResult<object>> Handle(SetKurinDuesRateCommand request, CancellationToken cancellationToken)
@@ -81,8 +86,25 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
             return new ServiceResult<object>(ResultType.Forbidden);
         }
 
+        var tagKey = request.Request.TagKey;
+        if (tagKey is { } tag)
+        {
+            // Tags stand in for гуртки only where there are none.
+            if (!await _shape.IsSeniorAsync(request.KurinKey, cancellationToken))
+            {
+                return ServiceResult<object>.Failure(ResultType.BadRequest, "TagRatesOff", "Rates by tag are for kurins without гуртки.");
+            }
+
+            if (!(await _unitOfWork.KurinTags.GetForKurinAsync(request.KurinKey, cancellationToken)).Any(t => t.KurinTagKey == tag))
+            {
+                return ServiceResult<object>.Failure(ResultType.BadRequest, "TagNotFound", "The kurin has no such tag.");
+            }
+        }
+
         var from = new DuesQuarter(request.Request.FromQuarter.Year, request.Request.FromQuarter.Number).Index;
-        var rates = await _dues.KurinDuesRates.GetForKurinAsync(request.KurinKey, cancellationToken);
+        var rates = (await _dues.KurinDuesRates.GetForKurinAsync(request.KurinKey, cancellationToken))
+            .Where(r => r.TagKey == tagKey)
+            .ToList();
         var existing = rates.FirstOrDefault(r => r.FromQuarter == from);
         var krai = await _profiles.DuesKraiForKurinAsync(request.KurinKey, cancellationToken);
 
@@ -123,6 +145,7 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
             var rate = new KurinDuesRate
             {
                 KurinKey = request.KurinKey,
+                TagKey = tagKey,
                 FromQuarter = from,
                 SetByUserKey = _currentUser.UserId
             };

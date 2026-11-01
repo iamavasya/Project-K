@@ -102,6 +102,8 @@ public static class DependencyInjection
     private static void AddDuesModule(this IServiceCollection services)
     {
         services.AddScoped<IDuesAccrual, DuesAccrual>();
+        services.AddScoped<IDuesKurinShape, DuesKurinShape>();
+        services.AddScoped<DuesAccountRows>();
         services.AddScoped<DuesLedgerReader>();
         services.AddScoped<IDuesDirectory, DuesDirectory>();
         services.AddScoped<GroupDuesAccess>();

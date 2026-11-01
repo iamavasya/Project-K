@@ -885,7 +885,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
 
     private void AddAwardEntries(MemberAward award, Person subject, Person submitter, string submitterRole, Person? reviewer)
     {
-        var label = KurinReportTerminology.AwardLevel(award.Level);
+        var label = KurinReportTerminology.AwardLevel(award.Level!.Value);
         AddJournalEntry(
             subject, award.KurinKey, AuditArea.Award, AuditActions.Award.Added, award.MemberAwardKey, label,
             AuditChanges.Added(

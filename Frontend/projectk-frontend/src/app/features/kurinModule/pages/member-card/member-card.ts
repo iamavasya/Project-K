@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
@@ -40,11 +41,15 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { MemberWarningDto } from '../../models/member-warning.dto';
 import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum';
 import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
+import { YouthAwardDto, isYouthAward } from '../../models/member-award.dto';
+import { MemberSeniorAwardsTileComponent } from './components/member-senior-awards-tile/member-senior-awards-tile';
+import { AwardBlock } from './components/award-blocks/award-blocks.function';
+import { MemberDegreesTileComponent } from './components/member-degrees-tile/member-degrees-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
 import { MembershipDto } from '../../models/membership.dto';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { hasYouthProgram, isSeniorBranch, KURIN_BRANCH_LABELS, KurinBranch } from '../../models/enums/kurin-branch.enum';
-import { branchOfLevel, PLAST_LADDER, PLAST_LEVEL_COLUMN_LABELS } from '../../models/enums/plast-ladder';
+import { degreeRows, DegreeRow, SENIOR_LADDER, YOUTH_LADDER } from './components/member-degrees-tile/member-degrees.function';
 import { LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
 import { memberBranchHere } from '../../functions/member-branch.function';
@@ -75,6 +80,15 @@ import { MemberWarningsDialogComponent } from './components/member-warnings-dial
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
 import { MemberTagsEditorComponent } from '../../components/member-tags-editor/member-tags-editor';
+import { HonoursService } from '../../services/honours-service/honours.service';
+import { PlastLevel } from '../../models/enums/plast-level.enum';
+
+/** The stages of a life story and their ladders; the day of joining Пласт opens the УПЮ one. */
+const LIFE_LADDERS: readonly { branch: KurinBranch; ladder: readonly PlastLevel[] }[] = [
+  { branch: KurinBranch.UPYu, ladder: [PlastLevel.Entry, ...YOUTH_LADDER] },
+  { branch: KurinBranch.USP, ladder: [PlastLevel.Starshoplastun] },
+  { branch: KurinBranch.UPS, ladder: SENIOR_LADDER.filter(level => level !== PlastLevel.Starshoplastun) }
+];
 
 @Component({
   selector: 'app-member-card',
@@ -95,13 +109,15 @@ import { MemberTagsEditorComponent } from '../../components/member-tags-editor/m
     SkillMiniCardComponent,
     BadgeDetailsDialogComponent,
     MemberAwardsTileComponent,
+    MemberSeniorAwardsTileComponent,
+    MemberDegreesTileComponent,
     MemberMembershipsTileComponent,
     ProfileVerificationBadgeComponent,
     MemberWarningsDialogComponent,
     TileBoardComponent,
     TileDefDirective,
-    EmptyStateComponent,
     MemberTagsEditorComponent,
+    EmptyStateComponent,
     RouterLink
   ],
   providers: [ConfirmationService],
@@ -121,6 +137,8 @@ export class MemberCardComponent implements OnInit {
   authService = inject(AuthService);
   entityService = inject(EntityService);
   permissionService = inject(PermissionService);
+  // The catalogue's ступені, named and drawn for a пластун or a пластунка, for the life story's list.
+  private readonly honours = toSignal(inject(HonoursService).all(), { initialValue: [] });
   kurinService = inject(KurinService);
   groupService = inject(GroupService);
   membershipService = inject(MembershipService);
@@ -490,20 +508,17 @@ export class MemberCardComponent implements OnInit {
     return this.isLifeView && !this.hasYouthProgram && (this.isOwnCard || !this.isZvyazkovyiHere);
   }
 
-  /** Ступені з датами, по етапах: УПЮ → УСП → УПС, у кожному — за драбиною. */
-  get lifeStages(): { branch: string; levels: { label: string; date: string | null }[] }[] {
+  /**
+   * Усі ступені з датами, по етапах: УПЮ → УСП → УПС, кожен з назвою й рисунком із каталогу для
+   * пластуна чи пластунки (`degreeRows`, як на плитці картки). Картка показує лише найвищий.
+   */
+  get lifeStages(): { branch: string; levels: DegreeRow[] }[] {
     const histories = this.member?.plastLevelHistories ?? [];
-    return [KurinBranch.UPYu, KurinBranch.USP, KurinBranch.UPS]
-      .map(branch => ({
-        branch: KURIN_BRANCH_LABELS[branch],
-        levels: PLAST_LADDER
-          .filter(level => branchOfLevel(level) === branch)
-          .map(level => histories.find(history => history.plastLevel === level))
-          .filter((history): history is NonNullable<typeof history> => !!history)
-          .map(history => ({
-            label: PLAST_LEVEL_COLUMN_LABELS[history.plastLevel],
-            date: history.dateAchieved ? this.formatDate(String(history.dateAchieved)) : null
-          }))
+    const honours = this.honours();
+    return LIFE_LADDERS
+      .map(stage => ({
+        branch: KURIN_BRANCH_LABELS[stage.branch],
+        levels: degreeRows(histories, stage.ladder, honours).map(row => ({ ...row, title: row.title || 'Вступ до Пласту' }))
       }))
       .filter((stage, index) => index === 0 || stage.levels.length > 0);
   }
@@ -726,6 +741,11 @@ export class MemberCardComponent implements OnInit {
 
   get hasAnySkills(): boolean {
     return this.confirmedSkillsCount > 0 || this.pendingSkillsCount > 0;
+  }
+
+  /** The УПЮ відзначення, by level; a senior one is on the senior tile. */
+  get youthAwards(): YouthAwardDto[] {
+    return (this.member?.awards ?? []).filter(isYouthAward);
   }
 
   get canEditMember(): boolean {
@@ -1379,6 +1399,14 @@ export class MemberCardComponent implements OnInit {
       error: (error) => {
         console.error('Error saving award:', error);
       }
+    });
+  }
+
+  /** The person pins or unpins a відзначення of their own; the card reads the order again. */
+  onPinAward(block: AwardBlock): void {
+    this.memberAwardService.pinAward({ ...block.pin, pinned: !block.pinned }).subscribe({
+      next: () => this.refreshData(),
+      error: (error) => console.error('Error pinning award:', error)
     });
   }
 

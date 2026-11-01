@@ -415,12 +415,32 @@
   list-style: none;
 }
 
-.life-stage__levels li,
 .life-roles li {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 0.25rem 0.75rem;
+}
+
+.life-stage__levels li {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.life-stage__image {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+}
+
+.life-stage__image--empty {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 8px;
+  color: var(--p-text-muted-color);
 }
 
 .life-stage__level,

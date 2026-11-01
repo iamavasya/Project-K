@@ -24,6 +24,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Pin;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
@@ -163,6 +164,10 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinDuesController, Guid, Guid, UpsertDuesEntryRequest>>(nameof(KurinDuesController.UpdateEntry), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid, Guid>>(nameof(KurinDuesController.DeleteEntry), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid, Guid, SetDuesEntryVerifiedRequest>>(nameof(KurinDuesController.SetEntryVerified), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, SetDuesConcessionRequest>>(nameof(KurinDuesController.SetConcession), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, GrantDuesConcessionRequest>>(nameof(KurinDuesController.GrantConcession), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, UpdateDuesConcessionGrantRequest>>(nameof(KurinDuesController.UpdateConcessionGrant), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid>>(nameof(KurinDuesController.DeleteConcessionGrant), "RequireUser");
 
         // Score: the table is every member's; who scores which гурток is asked per person in the handler.
         yield return Row<Action<KurinScoreController, Guid, ScorePeriodQuery>>(nameof(KurinScoreController.Get), "RequireUser");
@@ -286,6 +291,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<BadgesCatalogController>>(nameof(BadgesCatalogController.GetMetadata), "RequireUser");
         yield return Row<Action<BadgesCatalogController, int>>(nameof(BadgesCatalogController.GetAll), "RequireUser");
         yield return Row<Action<BadgesCatalogController, string>>(nameof(BadgesCatalogController.GetById), "RequireUser");
+        yield return Row<Action<HonoursCatalogController>>(nameof(HonoursCatalogController.GetAll), "RequireUser");
+        yield return Row<Action<MyAwardsController, PinMyAwardCommand>>(nameof(MyAwardsController.Pin), "RequireUser");
 
         yield return Row<Action<ProbesCatalogController>>(nameof(ProbesCatalogController.GetAll), "RequireUser");
         yield return Row<Action<ProbesCatalogController, string>>(nameof(ProbesCatalogController.GetGroupedById), "RequireUser");

@@ -20,6 +20,8 @@ import {
   ProgressStatus,
   QuarterDto,
   WarningLevel,
+  CatalogHonour,
+  PlastLevelHistoryDto,
 } from './kurin.models';
 
 /*
@@ -767,7 +769,8 @@ export function awardGroups(awards: MemberAwardDto[] | null | undefined): AwardG
   const groups = new Map<AwardLevel, AwardGroup>();
   for (const award of awards ?? []) {
     const status = progressStatus(award.status);
-    if (status !== 'Submitted' && status !== 'Confirmed') continue;
+    // A senior відзначення has no level; it is listed on its own (seniorAwardRows).
+    if ((status !== 'Submitted' && status !== 'Confirmed') || !award.level) continue;
     const existing = groups.get(award.level);
     if (!existing) groups.set(award.level, { level: award.level, count: 1, latest: award });
     else {
@@ -847,4 +850,130 @@ export function membershipOf(m: Pick<MembershipDto, 'branch' | 'kurinNumber' | '
   return isSeniorBranch(m.branch)
     ? `Членство (${m.kurinNamedAfter || kurinNumberLabel(m.kurinNumber, m.branch)})`
     : `Членство в ${inKurin(m.kurinNumber)}`;
+}
+
+// ── Ступені й старші відзначення з каталогу ──────────────────────────────────────────────────────
+
+/** The ступені of an УПЮ membership, and of a УСП or УПС one (web member-degrees YOUTH_LADDER, SENIOR_LADDER). */
+export const YOUTH_LADDER = ['Prykhylnyk', 'Uchasnyk', 'Rozviduvach', 'Skob', 'HetmanskiySkob'] as const;
+export const SENIOR_LADDER = ['Starshoplastun', 'Senior', 'SeniorPratsi', 'SeniorDovirja', 'SeniorKerivnytstva'] as const;
+
+export interface DegreeRow {
+  key: string;
+  title: string;
+  imageUrl: string;
+  date: Date | null;
+}
+
+/**
+ * The person's ступені on one ladder, named and drawn as the catalogue has them for a пластун or a
+ * пластунка (web degreeRows). Without the catalogue a ступінь keeps its own name and no picture.
+ */
+export function degreeRows(
+  histories: PlastLevelHistoryDto[] | null | undefined,
+  ladder: readonly string[],
+  honours: readonly CatalogHonour[],
+): DegreeRow[] {
+  const byId = new Map(honours.map((item) => [item.id, item]));
+  return ladder
+    .map((level) => (histories ?? []).find((history) => history.plastLevel === level))
+    .filter((history): history is PlastLevelHistoryDto => !!history)
+    .map((history) => {
+      const item = history.catalogId ? byId.get(history.catalogId) : undefined;
+      return {
+        key: history.plastLevelHistoryKey ?? history.plastLevel,
+        title: item?.title ?? (LEVEL_LABELS[history.plastLevel] || history.plastLevel),
+        imageUrl: item?.imageUrl ?? '',
+        date: dateOnly(history.dateAchieved),
+      };
+    });
+}
+
+export interface SeniorAwardRow {
+  award: MemberAwardDto;
+  title: string;
+  imageUrl: string;
+  /** «УСП», «УПС» or «Хрести»: the same грамота is in both улади (web honourSection). */
+  section: string;
+}
+
+/** Where a senior відзначення belongs: its улад, or the хрести, which are for everyone. */
+export function honourSection(item: CatalogHonour | undefined): string {
+  if (!item) return '';
+  if (item.group === 'khresty') return 'Хрести';
+  return item.ulad === 'ups' ? 'УПС' : item.ulad === 'usp' ? 'УСП' : '';
+}
+
+/** The senior відзначення, newest first, named and drawn from the catalogue (web seniorAwardRows). */
+export function seniorAwardRows(awards: MemberAwardDto[] | null | undefined, honours: readonly CatalogHonour[]): SeniorAwardRow[] {
+  const byId = new Map(honours.map((item) => [item.id, item]));
+  return (awards ?? [])
+    .filter((award) => !!award.catalogId)
+    .sort((a, b) => b.dateAcquired.localeCompare(a.dateAcquired))
+    .map((award) => {
+      const item = byId.get(award.catalogId!);
+      return { award, title: item?.title ?? award.catalogId!, imageUrl: item?.imageUrl ?? '', section: honourSection(item) };
+    });
+}
+
+// ── Відзначення блоками (web award-blocks) ───────────────────────────────────────────────────────
+
+export interface AwardGrantRow {
+  award: MemberAwardDto;
+  pending: boolean;
+  /** The viewer may open it: change, confirm or remove. */
+  canOpen: boolean;
+}
+
+/** A відзначення on the card: every grant of it under one block (web AwardBlock). */
+export interface AwardBlockRow {
+  key: string;
+  title: string;
+  imageUrl: string | null;
+  /** «УСП», «УПС», «Хрести»; empty for an УПЮ відзначення. */
+  section: string;
+  /** Newest first. */
+  grants: AwardGrantRow[];
+  pinned: boolean;
+  pending: boolean;
+  /** For `PUT me/awards/pin`: an УПЮ level or a senior catalogue id. */
+  pin: { level?: AwardLevel | null; catalogId?: string | null };
+}
+
+/** Grants under one key each, newest first inside (web groupGrants). */
+export function groupAwardGrants(awards: MemberAwardDto[], keyOf: (award: MemberAwardDto) => string): Map<string, MemberAwardDto[]> {
+  const groups = new Map<string, MemberAwardDto[]>();
+  const time = (award: MemberAwardDto) => dateOnly(award.dateAcquired)?.getTime() ?? 0;
+  for (const award of [...awards].sort((a, b) => time(b) - time(a))) {
+    const key = keyOf(award);
+    groups.set(key, [...(groups.get(key) ?? []), award]);
+  }
+  return groups;
+}
+
+/** Pinned first, then the most recently given (web orderBlocks). */
+export function orderAwardBlocks(blocks: AwardBlockRow[]): AwardBlockRow[] {
+  const latest = (block: AwardBlockRow) => dateOnly(block.grants[0]?.award.dateAcquired)?.getTime() ?? 0;
+  return [...blocks].sort((a, b) => Number(b.pinned) - Number(a.pinned) || latest(b) - latest(a));
+}
+
+/** The senior відзначення as blocks, named and drawn from the catalogue (web seniorAwardBlocks). */
+export function seniorAwardBlocks(awards: MemberAwardDto[] | null | undefined, honours: readonly CatalogHonour[], canOpen: boolean): AwardBlockRow[] {
+  const byId = new Map(honours.map((item) => [item.id, item]));
+  const groups = groupAwardGrants((awards ?? []).filter((award) => !!award.catalogId), (award) => award.catalogId!);
+  return orderAwardBlocks(
+    [...groups.entries()].map(([catalogId, grants]) => {
+      const item = byId.get(catalogId);
+      return {
+        key: catalogId,
+        title: item?.title ?? catalogId,
+        imageUrl: item?.imageUrl || null,
+        section: honourSection(item),
+        grants: grants.map((award) => ({ award, pending: false, canOpen })),
+        pinned: grants.some((award) => award.isPinned),
+        pending: false,
+        pin: { catalogId },
+      };
+    }),
+  );
 }

@@ -135,7 +135,8 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberSummaryLookupPhotoUrlResolver>());
 
         // Plast Level History Mapping
-        CreateMap<PlastLevelHistory, PlastLevelHistoryDto>();
+        CreateMap<PlastLevelHistory, PlastLevelHistoryDto>()
+            .ForMember(dest => dest.CatalogId, opt => opt.MapFrom(src => PlastLevelDegrees.CatalogId(src.PlastLevel, src.IsPlastunka)));
 
         // Member Warning Mapping
         CreateMap<MemberWarning, MemberWarningDto>();
@@ -146,7 +147,7 @@ public class KurinModuleProfile : Profile
         // Member Award Mapping
         CreateMap<MemberAward, MemberAwardDto>()
             .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src =>
-                $"/api/awards/images/{(int)src.Level}?colored={src.Status == ProjectK.Common.Models.Enums.BadgeProgressStatus.Confirmed}"));
+                src.Level == null ? null : $"/api/awards/images/{(int)src.Level}?colored={src.Status == ProjectK.Common.Models.Enums.BadgeProgressStatus.Confirmed}"));
 
         // Leadership History Mapping
         CreateMap<LeadershipHistory, LeadershipHistoryDto>()

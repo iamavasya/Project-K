@@ -1,3 +1,4 @@
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,19 +33,22 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
     private readonly IMemberDirectory _members;
     private readonly IResourceAccessService _access;
     private readonly IKurinAudit _audit;
+    private readonly IHonoursCatalog _honours;
 
     public DeleteMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
         ICurrentUserContext currentUser,
         IMemberDirectory members,
         IResourceAccessService access,
-        IKurinAudit audit)
+        IKurinAudit audit,
+        IHonoursCatalog honours)
     {
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
         _members = members;
         _access = access;
         _audit = audit;
+        _honours = honours;
     }
 
     public async Task<ServiceResult<Unit>> Handle(DeleteMemberAwardCommand request, CancellationToken cancellationToken)
@@ -78,10 +82,11 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
                 AuditArea.Award,
                 AuditActions.Award.Deleted,
                 award.MemberAwardKey,
-                KurinReportTerminology.AwardLevel(award.Level),
+                KurinReportTerminology.Award(award.Level, award.CatalogId, id => _honours.GetById(id)?.Title),
                 award.MemberKey,
                 AuditChanges.Removed(
                     ("level", award.Level),
+                    ("catalogId", award.CatalogId),
                     ("dateAcquired", award.DateAcquired),
                     ("note", award.Note),
                     ("status", award.Status))),
@@ -94,7 +99,18 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
 
     private async Task<bool> MayWithdrawAsync(Common.Entities.KurinModule.MemberAward award, CancellationToken cancellationToken)
     {
-        if (award.Status == BadgeProgressStatus.Confirmed || _currentUser.UserId is not { } userKey)
+        if (_currentUser.UserId is not { } userKey)
+        {
+            return false;
+        }
+
+        // A senior відзначення is the person's own record, confirmed or not: they may take it back.
+        if (award.CatalogId is not null)
+        {
+            return await _members.FindAccountKeyAsync(award.MemberKey, cancellationToken) == userKey;
+        }
+
+        if (award.Status == BadgeProgressStatus.Confirmed)
         {
             return false;
         }

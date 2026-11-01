@@ -34,6 +34,7 @@ public class DuesAccrualTests
     private readonly List<DuesCharge> _created = [];
     private readonly List<KurinMembershipRecord> _memberships = [];
     private readonly Mock<IDuesUnitOfWork> _dues = new();
+    private readonly Mock<IDuesKurinShape> _shape = new();
 
     // No row: the kurin pays наперед.
     private KurinDuesSettings? _settings;
@@ -65,7 +66,7 @@ public class DuesAccrualTests
                 "ca", "Канада", 1, new KraiCatalogSettings(["ca"], []), new KraiLocaleSettings("CAD", _zone, "en-CA"), KraiCardFieldsSettings.Default, KraiDuesSettings.Default));
         }
 
-        return new DuesAccrual(_dues.Object, directory.Object, _time, profiles.Object);
+        return new DuesAccrual(_dues.Object, directory.Object, _time, profiles.Object, _shape.Object);
     }
 
     private void RateFrom(DuesQuarter quarter) =>
@@ -80,6 +81,59 @@ public class DuesAccrualTests
 
     private IEnumerable<DuesQuarter> QuartersOf(KurinMembershipRecord membership) =>
         _created.Where(c => c.MembershipKey == membership.MembershipKey).Select(c => DuesQuarter.FromIndex(c.Quarter));
+
+    private void Senior(params (Guid Member, Guid[] Tags)[] people)
+    {
+        _shape.Setup(s => s.IsSeniorAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _shape.Setup(s => s.TagsByMemberAsync(Kurin, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(people.ToDictionary(p => p.Member, p => (IReadOnlyCollection<Guid>)p.Tags));
+    }
+
+    [Fact]
+    public async Task UpyuKurin_DoesNotChargeSomeoneOutsideAGroup()
+    {
+        RateFrom(new DuesQuarter(2026, 1));
+        Member(null, new DateTime(2025, 1, 1));
+
+        await Accrual().AccrueKurinAsync(Kurin);
+
+        _created.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task SeniorKurin_ChargesEveryMemberInTheKurinsOwnBox()
+    {
+        RateFrom(new DuesQuarter(2026, 1));
+        var member = Member(null, new DateTime(2025, 1, 1));
+        Member(null, new DateTime(2025, 1, 1), MembershipKind.Staff);
+        Senior();
+
+        await Accrual().AccrueKurinAsync(Kurin);
+
+        QuartersOf(member).Should().Equal(new DuesQuarter(2026, 1), new DuesQuarter(2026, 2));
+        _created.Should().OnlyContain(c => c.GroupKey == null && c.RateTagKey == null && c.MembershipKey == member.MembershipKey);
+    }
+
+    [Fact]
+    public async Task SeniorKurin_PricesAQuarterAtTheHighestRateAmongThePersonsTags()
+    {
+        var usp = Guid.NewGuid();
+        var ups = Guid.NewGuid();
+        var other = Guid.NewGuid();
+        RateFrom(new DuesQuarter(2026, 1));
+        _rates.Add(new KurinDuesRate { KurinKey = Kurin, TagKey = usp, FromQuarter = new DuesQuarter(2026, 1).Index, KurinShare = 300 });
+        // The УПС rate is higher, but only from the second quarter.
+        _rates.Add(new KurinDuesRate { KurinKey = Kurin, TagKey = ups, FromQuarter = new DuesQuarter(2026, 2).Index, KurinShare = 450 });
+        var both = Member(null, new DateTime(2025, 1, 1));
+        var untagged = Member(null, new DateTime(2025, 1, 1));
+        Senior((both.MemberKey, [usp, ups]), (untagged.MemberKey, [other]));
+
+        await Accrual().AccrueKurinAsync(Kurin);
+
+        _created.Where(c => c.MembershipKey == both.MembershipKey).OrderBy(c => c.Quarter).Select(c => c.RateTagKey)
+            .Should().Equal(usp, ups);
+        _created.Where(c => c.MembershipKey == untagged.MembershipKey).Should().OnlyContain(c => c.RateTagKey == null);
+    }
 
     [Fact]
     public async Task WithoutAKurinRate_NothingIsCharged()

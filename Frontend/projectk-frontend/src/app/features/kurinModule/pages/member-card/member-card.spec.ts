@@ -852,8 +852,8 @@ describe('MemberCardComponent', () => {
     it('розкладає ступені по етапах і називає ролі куренем, де їх тримали', () => {
       openLife(true);
 
-      expect(component.lifeStages.map(stage => [stage.branch, stage.levels.map(level => level.label)])).toEqual([
-        ['УПЮ', ['пл. уч.', 'пл. скоб / вірл.']],
+      expect(component.lifeStages.map(stage => [stage.branch, stage.levels.map(level => level.title)])).toEqual([
+        ['УПЮ', ['пл. уч.', 'пл. скоб']],
         ['УСП', ['ст. пл.']]
       ]);
       expect(component.lifeOffices.map(office => office.kurin)).toEqual(['к. ч. 1']);

@@ -115,6 +115,22 @@ export interface PlastLevelHistoryDto {
   plastLevelHistoryKey?: string;
   plastLevel: string;
   dateAchieved?: string | null;
+  /** A пластунка's ступінь rather than a пластун's: its own name and відзнака in the catalogue. */
+  isPlastunka?: boolean;
+  /** The ступінь in the catalogue (web PlastLevelHistoryDto.catalogId). Read only. */
+  catalogId?: string | null;
+}
+
+/** A ступінь or a senior відзначення from the catalogue, with its picture (`GET api/catalog/honours`). */
+export interface CatalogHonour {
+  id: string;
+  kind: 'Degree' | 'Award';
+  title: string;
+  group: string;
+  ulad: string;
+  order: number;
+  /** Empty when the catalogue has no picture. */
+  imageUrl: string;
 }
 
 export type AwardLevel = 'First' | 'Second' | 'Third' | 'Fourth';
@@ -124,9 +140,15 @@ export interface MemberAwardDto {
   memberAwardKey: string;
   memberKey: string;
   kurinKey: string;
-  level: AwardLevel;
+  /** An УПЮ відзначення's level; null for a senior one. */
+  level?: AwardLevel | null;
+  /** A senior відзначення's catalogue id; null for an УПЮ one. */
+  catalogId?: string | null;
   dateAcquired: string;
+  /** What it was given for. */
   note?: string | null;
+  /** The person pinned it to the front of their card. */
+  isPinned?: boolean;
   status: ProgressStatus | number;
   imageUrl?: string | null;
   /** Who put it forward; they may withdraw it while it waits. */
@@ -302,7 +324,9 @@ export interface MemberDuesDto {
 
 export interface UpsertAwardRequest {
   memberAwardKey?: string;
-  level: AwardLevel;
+  level?: AwardLevel;
+  /** A senior відзначення from the catalogue, instead of a level. */
+  catalogId?: string;
   dateAcquired: string;
   note?: string;
 }
