@@ -38,6 +38,18 @@ public class ProbeProjectRepository : BaseEntityRepository<ProbeProject>, IProbe
 
     public void AddFile(ThirdProbeFile file) => Context.ThirdProbeFiles.Add(file);
 
+    public async Task LockAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default)
+    {
+        // UPDLOCK + HOLDLOCK takes a key-range lock on the unique (MemberKey, ProbeId) index, which
+        // holds even before the row exists. Other providers (tests) have nothing to lock.
+        if (Context.Database.IsSqlServer())
+        {
+            await Context.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT COUNT(*) FROM ThirdProbeFiles WITH (UPDLOCK, HOLDLOCK) WHERE MemberKey = {memberKey} AND ProbeId = {probeId}",
+                cancellationToken);
+        }
+    }
+
     public async Task<IReadOnlyList<ThirdProbeFile>> GetFilesForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
     {
         return await Context.ThirdProbeFiles

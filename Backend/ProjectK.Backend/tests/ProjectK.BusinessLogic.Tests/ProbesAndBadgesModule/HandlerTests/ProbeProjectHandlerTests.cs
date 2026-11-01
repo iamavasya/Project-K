@@ -228,7 +228,7 @@ public class ProbeProjectHandlerTests
     {
         var project = Given();
         _photos.Setup(p => p.UploadPhotoAsync(It.IsAny<byte[]>(), "a.png", BlobUploadContext.ProbeProjectImage, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PhotoUploadResult("probe-project-images/new.jpg", "ignored"));
+            .ReturnsAsync(new PhotoUploadResult("probe-project-images/new.jpg", "ignored", 3));
 
         var result = await UploadHandler().Handle(
             new UploadProbeProjectImageCommand(_memberKey, ProbeId, project.ProbeProjectKey, [1, 2, 3], "a.png"), CancellationToken.None);
@@ -391,13 +391,66 @@ public class ProbeProjectHandlerTests
     {
         var project = Given();
         _projects.Setup(r => r.GetStoredBytesAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ProbeProjectRules.MaxStoredBytes - 10);
+            .ReturnsAsync(ProbeProjectRules.MaxStoredBytes);
 
         var result = await UploadHandler().Handle(
             new UploadProbeProjectImageCommand(_memberKey, ProbeId, project.ProbeProjectKey, new byte[100], "a.png"), CancellationToken.None);
 
         result.ErrorCode.Should().Be("StorageFull");
         _photos.Verify(p => p.UploadPhotoAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<BlobUploadContext>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Upload_ShouldDropTheBlob_WhenTheStoredPictureWouldPassTheCap()
+    {
+        var project = Given();
+        _projects.Setup(r => r.GetStoredBytesAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProbeProjectRules.MaxStoredBytes - 10);
+        _photos.Setup(p => p.UploadPhotoAsync(It.IsAny<byte[]>(), "a.png", BlobUploadContext.ProbeProjectImage, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PhotoUploadResult("probe-project-images/big.jpg", "ignored", 100));
+
+        var result = await UploadHandler().Handle(
+            new UploadProbeProjectImageCommand(_memberKey, ProbeId, project.ProbeProjectKey, new byte[100], "a.png"), CancellationToken.None);
+
+        result.ErrorCode.Should().Be("StorageFull");
+        _photos.Verify(p => p.DeletePhotoAsync("probe-project-images/big.jpg", It.IsAny<CancellationToken>()), Times.Once);
+        _projects.Verify(r => r.AddImage(It.IsAny<ProbeProjectImage>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Upload_ShouldCountWhatIsStored_NotWhatWasSent()
+    {
+        var project = Given();
+        _projects.Setup(r => r.GetStoredBytesAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ProbeProjectRules.MaxStoredBytes - 50);
+        _photos.Setup(p => p.UploadPhotoAsync(It.IsAny<byte[]>(), "a.png", BlobUploadContext.ProbeProjectImage, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PhotoUploadResult("probe-project-images/small.jpg", "ignored", 40));
+
+        var result = await UploadHandler().Handle(
+            new UploadProbeProjectImageCommand(_memberKey, ProbeId, project.ProbeProjectKey, new byte[1000], "a.png"), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _projects.Verify(r => r.AddImage(It.Is<ProbeProjectImage>(i => i.Bytes == 40)), Times.Once);
+    }
+
+    [Fact]
+    public async Task LimitedWrites_ShouldLockThePersonsProbe_BeforeCounting()
+    {
+        var order = new List<string>();
+        _projects.Setup(r => r.LockAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>()))
+            .Callback(() => order.Add("lock")).Returns(Task.CompletedTask);
+        _projects.Setup(r => r.GetForMemberProbeAsync(_memberKey, ProbeId, It.IsAny<CancellationToken>()))
+            .Callback(() => order.Add("count")).ReturnsAsync(() => _stored.ToList());
+
+        await SaveHandler().Handle(new SaveProbeProjectCommand(_memberKey, ProbeId, null, Input()), CancellationToken.None);
+
+        order.Should().StartWith(["lock", "count"]);
+        new object[]
+        {
+            new SaveProbeProjectCommand(_memberKey, ProbeId, null, Input()),
+            new UploadProbeProjectImageCommand(_memberKey, ProbeId, Guid.NewGuid(), [], "a.png"),
+            new UploadCampCertificateCommand(_memberKey, ProbeId, [], "a.pdf", true)
+        }.Should().AllBeAssignableTo<ProjectK.BusinessLogic.Behaviors.ITransactionalRequest>();
     }
 
     [Fact]

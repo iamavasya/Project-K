@@ -21,7 +21,14 @@ public interface IProbeProjectRepository : IBaseEntityRepository<ProbeProject>
     /// <summary>The projects of these people, untracked, without pictures.</summary>
     Task<IReadOnlyList<ProbeProject>> GetProjectsForMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
 
-    /// <summary>What one person's pictures and посвідка of a probe take, as uploaded.</summary>
+    /// <summary>
+    /// Holds one person's third probe until the open transaction ends, so two requests that count
+    /// projects, pictures or bytes before adding one run one after the other. The lock covers the
+    /// file row and, while there is none, the place it would take.
+    /// </summary>
+    Task LockAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
+
+    /// <summary>What one person's pictures and посвідка of a probe take in storage.</summary>
     Task<long> GetStoredBytesAsync(Guid memberKey, string probeId, CancellationToken cancellationToken = default);
 
     void AddImage(ProbeProjectImage image);

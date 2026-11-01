@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
@@ -19,7 +20,7 @@ public sealed record UploadCampCertificateCommand(
     string ProbeId,
     byte[] Content,
     string FileName,
-    bool IsPdf) : IRequest<ServiceResult<ThirdProbeResponse>>;
+    bool IsPdf) : IRequest<ServiceResult<ThirdProbeResponse>>, ITransactionalRequest;
 
 /// <summary>Takes the посвідка off, file included.</summary>
 public sealed record DeleteCampCertificateCommand(Guid MemberKey, string ProbeId) : IRequest<ServiceResult<ThirdProbeResponse>>;
@@ -27,6 +28,10 @@ public sealed record DeleteCampCertificateCommand(Guid MemberKey, string ProbeId
 /// <summary>What both посвідка handlers share: their dependencies and the journal line.</summary>
 public abstract class CampCertificateHandlerBase
 {
+    protected static ServiceResult<ThirdProbeResponse> StorageFull() =>
+        ProbeProjectGuard.Refuse<ThirdProbeResponse>(
+            "StorageFull", $"The third probe's files would take more than {ProbeProjectRules.MaxStoredBytes / (1024 * 1024)} MB.");
+
     protected CampCertificateHandlerBase(
         IUnitOfWork unitOfWork,
         IProbeProjectAccess access,
@@ -83,12 +88,13 @@ public sealed class UploadCampCertificateCommandHandler
             return ProbeProjectGuard.Refuse<ThirdProbeResponse>("CertificateTooLarge", "The посвідка must be 2 MB or smaller.");
         }
 
+        await UnitOfWork.ProbeProjects.LockAsync(request.MemberKey, probeId, cancellationToken);
         var existing = await UnitOfWork.ProbeProjects.GetFileAsync(request.MemberKey, probeId, cancellationToken);
         var storedElsewhere = await UnitOfWork.ProbeProjects.GetStoredBytesAsync(request.MemberKey, probeId, cancellationToken)
                               - (existing?.CampCertificateBytes ?? 0);
-        if (storedElsewhere + request.Content.LongLength > ProbeProjectRules.MaxStoredBytes)
+        if (storedElsewhere >= ProbeProjectRules.MaxStoredBytes)
         {
-            return ProbeProjectGuard.Refuse<ThirdProbeResponse>("StorageFull", "The third probe's files would take more than 10 MB.");
+            return StorageFull();
         }
 
         var context = request.IsPdf ? BlobUploadContext.ThirdProbeCertificatePdf : BlobUploadContext.ThirdProbeCertificateImage;
@@ -103,11 +109,17 @@ public sealed class UploadCampCertificateCommandHandler
                 "InvalidCertificate", "The посвідка must be a picture (PNG, JPEG, WebP) or a PDF.");
         }
 
+        if (storedElsewhere + upload.Bytes > ProbeProjectRules.MaxStoredBytes)
+        {
+            await Photos.DeletePhotoAsync(upload.BlobName, cancellationToken);
+            return StorageFull();
+        }
+
         var file = await ThirdProbeFiles.GetOrAddAsync(UnitOfWork, request.MemberKey, probeId, cancellationToken);
         var previous = file.CampCertificateBlobName;
         file.CampCertificateBlobName = upload.BlobName;
         file.CampCertificateContentType = context.ContentType;
-        file.CampCertificateBytes = request.Content.LongLength;
+        file.CampCertificateBytes = upload.Bytes;
         file.CampCertificateFileName = Path.GetFileName(request.FileName) is { Length: > 0 and <= ProbeProjectRules.MaxShortTextLength } name ? name : null;
 
         await RecordAsync(AuditActions.Probe.CertificateAttached, file, request.MemberKey, probeId, cancellationToken);

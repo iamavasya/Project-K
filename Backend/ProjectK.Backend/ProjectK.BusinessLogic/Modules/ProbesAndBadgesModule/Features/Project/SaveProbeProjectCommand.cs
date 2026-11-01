@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Services.Audit;
@@ -41,7 +42,7 @@ public sealed record SaveProbeProjectCommand(
     Guid MemberKey,
     string ProbeId,
     Guid? ProjectKey,
-    ProbeProjectInput Input) : IRequest<ServiceResult<ProbeProjectSavedResponse>>;
+    ProbeProjectInput Input) : IRequest<ServiceResult<ProbeProjectSavedResponse>>, ITransactionalRequest;
 
 public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbeProjectCommand, ServiceResult<ProbeProjectSavedResponse>>
 {
@@ -97,6 +98,7 @@ public sealed class SaveProbeProjectCommandHandler : IRequestHandler<SaveProbePr
                 "TooManyImages", $"A project holds at most {ProbeProjectRules.MaxImagesPerProject} pictures.");
         }
 
+        await _unitOfWork.ProbeProjects.LockAsync(request.MemberKey, probeId, cancellationToken);
         var all = await _unitOfWork.ProbeProjects.GetForMemberProbeAsync(request.MemberKey, probeId, cancellationToken);
         ProbeProject project;
         string? titleBefore = null;

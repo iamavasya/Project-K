@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.BusinessLogic.Behaviors;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
@@ -18,7 +19,7 @@ public sealed record UploadProbeProjectImageCommand(
     string ProbeId,
     Guid ProjectKey,
     byte[] Content,
-    string FileName) : IRequest<ServiceResult<ProbeProjectImageResponse>>;
+    string FileName) : IRequest<ServiceResult<ProbeProjectImageResponse>>, ITransactionalRequest;
 
 public sealed class UploadProbeProjectImageCommandHandler
     : IRequestHandler<UploadProbeProjectImageCommand, ServiceResult<ProbeProjectImageResponse>>
@@ -54,6 +55,7 @@ public sealed class UploadProbeProjectImageCommandHandler
                 ResultType.BadRequest, "ImageTooLarge", "Image file must be 1 MB or smaller.");
         }
 
+        await _unitOfWork.ProbeProjects.LockAsync(request.MemberKey, probeId, cancellationToken);
         var project = await _unitOfWork.ProbeProjects.GetWithImagesAsync(request.ProjectKey, cancellationToken);
         if (project is null || project.MemberKey != request.MemberKey || project.ProbeId != probeId)
         {
@@ -68,11 +70,10 @@ public sealed class UploadProbeProjectImageCommandHandler
                 ResultType.BadRequest, "TooManyImages", $"A project holds at most {ProbeProjectRules.MaxImagesPerProject} pictures.");
         }
 
-        if (await _unitOfWork.ProbeProjects.GetStoredBytesAsync(request.MemberKey, probeId, cancellationToken) + request.Content.LongLength
-            > ProbeProjectRules.MaxStoredBytes)
+        var stored = await _unitOfWork.ProbeProjects.GetStoredBytesAsync(request.MemberKey, probeId, cancellationToken);
+        if (stored >= ProbeProjectRules.MaxStoredBytes)
         {
-            return ServiceResult<ProbeProjectImageResponse>.Failure(
-                ResultType.BadRequest, "StorageFull", "The third probe's files would take more than 10 MB.");
+            return StorageFull();
         }
 
         PhotoUploadResult upload;
@@ -87,7 +88,14 @@ public sealed class UploadProbeProjectImageCommandHandler
                 ResultType.BadRequest, "InvalidImageContent", "Uploaded file is not a valid image.");
         }
 
-        var image = new ProbeProjectImage { ProbeProjectKey = project.ProbeProjectKey, BlobName = upload.BlobName, Bytes = request.Content.LongLength };
+        // Counted as stored: the picture is re-encoded, and that, not the upload, is what is paid for.
+        if (stored + upload.Bytes > ProbeProjectRules.MaxStoredBytes)
+        {
+            await _photos.DeletePhotoAsync(upload.BlobName, cancellationToken);
+            return StorageFull();
+        }
+
+        var image = new ProbeProjectImage { ProbeProjectKey = project.ProbeProjectKey, BlobName = upload.BlobName, Bytes = upload.Bytes };
         _unitOfWork.ProbeProjects.AddImage(image);
 
         if (await _unitOfWork.SaveChangesAsync(cancellationToken) <= 0)
@@ -98,4 +106,8 @@ public sealed class UploadProbeProjectImageCommandHandler
 
         return new ServiceResult<ProbeProjectImageResponse>(ResultType.Success, ProbeProjectMapping.ToResponse(image, _links));
     }
+
+    private static ServiceResult<ProbeProjectImageResponse> StorageFull() =>
+        ServiceResult<ProbeProjectImageResponse>.Failure(
+            ResultType.BadRequest, "StorageFull", $"The third probe's files would take more than {ProbeProjectRules.MaxStoredBytes / (1024 * 1024)} MB.");
 }
