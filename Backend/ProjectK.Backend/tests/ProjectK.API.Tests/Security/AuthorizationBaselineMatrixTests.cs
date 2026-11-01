@@ -338,6 +338,14 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<PhoneAppController>(nameof(PhoneAppController.GetInstallCode), AuthorizationPolicies.RequireUser);
         yield return Endpoint<KurinController>(nameof(KurinController.GetBadgeReviewQueue), AuthorizationPolicies.RequireUser);
         yield return Endpoint<KurinJournalController>(nameof(KurinJournalController.Get), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<KurinArchiveController>(nameof(KurinArchiveController.Get), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<KurinArchiveController>(nameof(KurinArchiveController.CorrectOffice), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<KurinArchiveController>(nameof(KurinArchiveController.CorrectMembership), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<KurinArchiveController>(nameof(KurinArchiveController.EnterDangerZone), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<KurinArchiveController>(nameof(KurinArchiveController.EndDangerZone), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<KurinArchiveController>(nameof(KurinArchiveController.DeleteOffice), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<KurinArchiveController>(nameof(KurinArchiveController.DeleteMembership), AuthorizationPolicies.RequireUser);
+        yield return Endpoint<KurinArchiveController>(nameof(KurinArchiveController.DeleteGroup), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.DeleteAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.ReviewAward), AuthorizationPolicies.RequireUser);
         yield return Endpoint<MemberAwardsController>(nameof(MemberAwardsController.UpsertAward), AuthorizationPolicies.RequireUser);

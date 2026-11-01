@@ -159,6 +159,7 @@ public static class DataSeeder
 
         var kurinKey = kurin1.KurinKey;
         var groupKeys = await dbContext.Groups
+            .IgnoreQueryFilters()
             .Where(g => g.KurinKey == kurinKey)
             .Select(g => g.GroupKey)
             .ToListAsync();
@@ -284,6 +285,7 @@ public static class DataSeeder
         dbContext.Members.RemoveRange(members);
 
         var groups = await dbContext.Groups
+            .IgnoreQueryFilters()
             .Where(g => g.KurinKey == kurinKey)
             .ToListAsync();
         dbContext.Groups.RemoveRange(groups);

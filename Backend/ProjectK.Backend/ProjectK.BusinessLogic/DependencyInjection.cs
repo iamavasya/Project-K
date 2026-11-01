@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IAccessContextResolver, AccessContextResolver>();
         services.AddScoped<ILoginResponseFactory, LoginResponseFactory>();
         services.AddSingleton<ILoginThrottle, LoginThrottle>();
+        services.AddScoped<IReauthentication, Reauthentication>();
         services.AddScoped<ISavedSessionList, SavedSessionList>();
         services.AddScoped<IAccountProvisioningService, AccountProvisioningService>();
         services.AddScoped<ISystemSettingsService, SystemSettingsService>();
@@ -71,6 +72,10 @@ public static class DependencyInjection
         services.AddScoped<MemberCards>();
 
         services.AddScoped<IAgendaAccess, AgendaAccess>();
+        services.AddScoped<ArchiveReach>();
+        services.AddSingleton<ArchiveDangerZoneRegistry>();
+        services.AddScoped<ArchiveDangerZone>();
+        services.AddScoped<ArchiveDeletionGate>();
         services.AddScoped<KurinReportDataService>();
 
         services.AddScoped<INotificationService, NotificationService>();

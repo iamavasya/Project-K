@@ -19,5 +19,6 @@ public enum AppNotificationType
     KurinBranchRequestSubmitted = 14,
     KurinBranchRequestReviewed = 15,
     MembershipRequested = 16,
-    MembershipRequestDecided = 17
+    MembershipRequestDecided = 17,
+    ArchiveDangerZoneEntered = 18
 }

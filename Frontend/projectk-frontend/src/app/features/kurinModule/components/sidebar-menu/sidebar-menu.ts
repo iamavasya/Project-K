@@ -268,6 +268,10 @@ export class SidebarMenuComponent implements OnChanges {
       items.push(this.navItem({ label: 'Журнал дій', icon: 'pi pi-history', routerLink: ['/kurin', kurinKey, 'journal'] }));
     }
 
+    if (this.permissionService.canReadArchive()) {
+      items.push(this.navItem({ label: 'Архів куреня', icon: 'pi pi-box', routerLink: ['/kurin', kurinKey, 'archive'] }));
+    }
+
     items.push(...this.duesGroupItems(duesGroups));
 
     if (this.permissionService.canSeeKurinDues()) {

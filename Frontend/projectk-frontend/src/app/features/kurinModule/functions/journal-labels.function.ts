@@ -16,7 +16,8 @@ export const JOURNAL_AREA_LABELS: Record<JournalArea, string> = {
   Office: 'Ролі',
   Membership: 'Членство',
   Settings: 'Налаштування куреня',
-  Tag: 'Теги'
+  Tag: 'Теги',
+  Archive: 'Архів'
 };
 
 /**
@@ -80,6 +81,8 @@ const ACTION_LABELS: Record<string, string> = {
   'Membership.Joined': 'Прийнято до куреня',
   'Membership.Left': 'Виведено з куреня',
   'Membership.MovedToGroup': 'Переведено в інший гурток',
+  'Office.Corrected': 'Виправлено роль в архіві',
+  'Membership.Corrected': 'Виправлено членство в архіві',
   'Settings.KurinChanged': 'Змінено налаштування куреня',
   'Settings.AccessPolicyChanged': 'Змінено права й видимість',
   'Settings.CardFieldsChanged': 'Змінено поля картки',
@@ -90,7 +93,14 @@ const ACTION_LABELS: Record<string, string> = {
   'Tag.Changed': 'Змінено тег',
   'Tag.Deleted': 'Видалено тег',
   'Tag.Put': 'Поставлено тег',
-  'Tag.TakenOff': 'Знято тег'
+  'Tag.TakenOff': 'Знято тег',
+  'Archive.GroupDissolved': 'Розформовано гурток',
+  'Archive.DangerZoneEntered': 'Увімкнено небезпечний режим',
+  'Archive.DangerZoneRefused': 'Невдала спроба увімкнути небезпечний режим',
+  'Archive.DangerZoneEnded': 'Вимкнено небезпечний режим',
+  'Archive.OfficeDeleted': 'Видалено запис ролі',
+  'Archive.MembershipDeleted': 'Видалено членство',
+  'Archive.GroupDeleted': 'Видалено гурток назавжди'
 };
 
 /** For an action this build does not know yet: what part of the kurin it touched. */
@@ -104,7 +114,8 @@ const AREA_FALLBACKS: Record<JournalArea, string> = {
   Office: 'Зміна ролей',
   Membership: 'Зміна членства',
   Settings: 'Зміна налаштувань куреня',
-  Tag: 'Зміна тегів'
+  Tag: 'Зміна тегів',
+  Archive: 'Зміна в архіві'
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -162,7 +173,15 @@ const FIELD_LABELS: Record<string, string> = {
   color: 'Колір',
   carriedBy: 'Мали тег',
   enabled: 'Теги ввімкнені',
-  ownTagsVisible: 'Кожен бачить свої теги'
+  ownTagsVisible: 'Кожен бачить свої теги',
+  startDate: 'Від',
+  endDate: 'До',
+  joinedOn: 'Від',
+  leftOn: 'До',
+  offices: 'Записів ролей',
+  dissolvedOn: 'Розформовано',
+  method: 'Чим',
+  reason: 'Як'
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -174,6 +193,13 @@ const STATUS_LABELS: Record<string, string> = {
   Submitted: 'Очікує підтвердження',
   Confirmed: 'Підтверджено',
   Rejected: 'Відхилено'
+};
+
+/** The archive's own values: how the danger zone was entered and how it ended, the kind of a membership. */
+const ARCHIVE_VALUE_LABELS: Record<string, Record<string, string>> = {
+  method: { password: 'пароль', code: 'код' },
+  reason: { manual: 'вручну', left: 'вихід зі сторінки', time: 'минув час', spent: 'вичерпано видалення' },
+  kind: { Youth: 'юнацтво', Staff: 'виховний склад' }
 };
 
 const LEVEL_LABELS: Record<string, string> = {
@@ -251,6 +277,10 @@ export function journalValueLabel(field: string, value: string | null | undefine
   }
   if (field === 'level' && LEVEL_LABELS[value]) {
     return LEVEL_LABELS[value];
+  }
+  const archived = ARCHIVE_VALUE_LABELS[field]?.[value];
+  if (archived) {
+    return archived;
   }
   if (value === 'true' || value === 'false') {
     return value === 'true' ? 'так' : 'ні';

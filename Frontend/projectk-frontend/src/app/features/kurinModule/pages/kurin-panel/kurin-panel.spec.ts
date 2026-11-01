@@ -162,11 +162,11 @@ describe('KurinPanelComponent', () => {
   });
 
   describe('prepareItemActions', () => {
-    it('sets Update/Delete actions', () => {
+    it('sets the edit and dissolve actions', () => {
       component.prepareItemActions(mockGroups[0]);
       expect(component.actions).toHaveLength(2);
       expect(component.actions[0].label).toBe('Редагувати');
-      expect(component.actions[1].label).toBe('Видалити');
+      expect(component.actions[1].label).toBe('Розформувати');
     });
   });
 

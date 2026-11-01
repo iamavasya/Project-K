@@ -33,6 +33,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<Group> Groups { get; set; }
     public DbSet<Member> Members { get; set; }
     public DbSet<Membership> Memberships { get; set; }
+    public DbSet<MembershipGroupStint> MembershipGroupStints { get; set; }
     public DbSet<MembershipRequest> MembershipRequests { get; set; }
     public DbSet<MemberCardShare> MemberCardShares { get; set; }
     public DbSet<KurinCardSharing> KurinCardSharing { get; set; }
@@ -102,8 +103,31 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     /// Stamps a new member's public code before it is written. It sits here rather than in a use
     /// case because a member is also opened by the seeders and by account activation, and a person
     /// without a code cannot be found by the one thing another kurin can ask for.
+    /// <para>
+    /// The гурток stints of memberships are kept here for the same reason: a person changes гурток
+    /// on joining, moving, leaving, a transfer, an import and a dissolved гурток, and a path that
+    /// forgot to write the stint would leave a hole in the archive nobody notices.
+    /// </para>
     /// </summary>
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        StampNewMembers();
+        var moves = GroupMoves();
+        var keys = moves.Where(move => move.WasIn is not null).Select(move => move.Membership.MembershipKey).ToList();
+        ApplyGroupMoves(moves, keys.Count == 0 ? [] : MembershipGroupStints.Where(stint => keys.Contains(stint.MembershipKey) && stint.ToUtc == null).ToList());
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        StampNewMembers();
+        var moves = GroupMoves();
+        var keys = moves.Where(move => move.WasIn is not null).Select(move => move.Membership.MembershipKey).ToList();
+        ApplyGroupMoves(moves, keys.Count == 0 ? [] : await MembershipGroupStints.Where(stint => keys.Contains(stint.MembershipKey) && stint.ToUtc == null).ToListAsync(cancellationToken));
+        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void StampNewMembers()
     {
         foreach (var entry in ChangeTracker.Entries<Member>())
         {
@@ -112,8 +136,74 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 entry.Entity.PublicId = MemberPublicId.New();
             }
         }
+    }
 
-        return base.SaveChangesAsync(cancellationToken);
+    /// <summary>A membership whose гурток changed: where it stood before this save and where it stands after.</summary>
+    private sealed record GroupMove(Membership Membership, bool Added, Guid? WasIn, Guid? IsIn);
+
+    private List<GroupMove> GroupMoves()
+    {
+        var moves = new List<GroupMove>();
+        foreach (var entry in ChangeTracker.Entries<Membership>())
+        {
+            var membership = entry.Entity;
+            if (entry.State == EntityState.Added && membership.GroupKey is not null)
+            {
+                moves.Add(new GroupMove(membership, true, null, membership.GroupKey));
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                var wasIn = entry.Property(e => e.LeftAtUtc).OriginalValue is null ? entry.Property(e => e.GroupKey).OriginalValue : null;
+                var isIn = membership.LeftAtUtc is null ? membership.GroupKey : null;
+                if (wasIn != isIn)
+                {
+                    moves.Add(new GroupMove(membership, false, wasIn, isIn));
+                }
+            }
+        }
+
+        return moves;
+    }
+
+    private void ApplyGroupMoves(List<GroupMove> moves, List<MembershipGroupStint> openInStore)
+    {
+        var now = DateTime.UtcNow;
+        foreach (var move in moves)
+        {
+            var membershipKey = move.Membership.MembershipKey;
+            if (move.Added)
+            {
+                // Joined straight into a гурток — or seeded as a membership that has already ended.
+                MembershipGroupStints.Add(new MembershipGroupStint
+                {
+                    MembershipKey = membershipKey,
+                    GroupKey = move.IsIn!.Value,
+                    FromUtc = move.Membership.JoinedAtUtc == default ? now : move.Membership.JoinedAtUtc,
+                    ToUtc = move.Membership.LeftAtUtc
+                });
+                continue;
+            }
+
+            if (move.WasIn is { } leftGroup)
+            {
+                var until = move.Membership.LeftAtUtc ?? now;
+                var open = MembershipGroupStints.Local.Concat(openInStore)
+                    .FirstOrDefault(stint => stint.MembershipKey == membershipKey && stint.GroupKey == leftGroup && stint.ToUtc == null);
+                if (open is null)
+                {
+                    MembershipGroupStints.Add(new MembershipGroupStint { MembershipKey = membershipKey, GroupKey = leftGroup, ToUtc = until });
+                }
+                else
+                {
+                    open.ToUtc = until;
+                }
+            }
+
+            if (move.IsIn is { } enteredGroup)
+            {
+                MembershipGroupStints.Add(new MembershipGroupStint { MembershipKey = membershipKey, GroupKey = enteredGroup, FromUtc = now });
+            }
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -224,6 +314,20 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .WithMany(k => k.Groups)
                   .HasForeignKey(e => e.KurinKey)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            // A dissolved гурток is gone everywhere but the archive, which reads past this filter.
+            entity.HasQueryFilter(e => e.DissolvedAtUtc == null);
+        });
+
+        builder.Entity<MembershipGroupStint>(entity =>
+        {
+            entity.HasKey(e => e.MembershipGroupStintKey);
+            entity.HasOne(e => e.Membership)
+                  .WithMany()
+                  .HasForeignKey(e => e.MembershipKey)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.MembershipKey, e.ToUtc });
+            entity.HasIndex(e => e.GroupKey);
         });
 
         builder.Entity<Member>(entity =>
@@ -853,6 +957,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                 .WithMany(g => g.MentorAssignments)
                 .HasForeignKey(e => e.GroupKey)
                 .OnDelete(DeleteBehavior.Cascade);
+            // Follows the гурток's filter: a впорядник of a dissolved гурток leads nothing.
+            entity.HasQueryFilter(e => e.Group.DissolvedAtUtc == null);
             // Revoking keeps the row as history, so the pair may repeat: one active assignment at a
             // time, any number of revoked ones. Unfiltered, re-assigning a mentor to a group they
             // had been removed from failed on this index with a 500.

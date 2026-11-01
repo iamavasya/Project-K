@@ -24,6 +24,7 @@ public interface IUnitOfWork
     // Members, MemberAwards and MemberWarnings are deliberately absent: it lives on IMemberUnitOfWork so that reaching a person
     // from another module is a contract call (IMemberDirectory) rather than a property access.
     ILeadershipRepository Leaderships { get; }
+    IKurinArchiveRepository Archive { get; }
     IPlanningSessionRepository PlanningSessions { get; }
     IAgendaItemRepository AgendaItems { get; }
     IAgendaCategoryRepository AgendaCategories { get; }

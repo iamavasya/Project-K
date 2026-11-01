@@ -125,6 +125,9 @@ public static class AuditActions
 
         public const string MentorAssigned = "Office.MentorAssigned";
         public const string MentorRevoked = "Office.MentorRevoked";
+
+        /// <summary>A former holding's dates or role were corrected in the archive.</summary>
+        public const string Corrected = "Office.Corrected";
     }
 
     /// <summary>Who belongs to the kurin, and in which гурток.</summary>
@@ -133,6 +136,27 @@ public static class AuditActions
         public const string Joined = "Membership.Joined";
         public const string Left = "Membership.Left";
         public const string MovedToGroup = "Membership.MovedToGroup";
+
+        /// <summary>A former membership's dates or kind were corrected in the archive.</summary>
+        public const string Corrected = "Membership.Corrected";
+    }
+
+    /// <summary>
+    /// The kurin's archive and its danger zone. A deletion carries what was deleted in its changes:
+    /// the record itself is gone, so the entry is the only trace left of it.
+    /// </summary>
+    public static class Archive
+    {
+        public const string GroupDissolved = "Archive.GroupDissolved";
+        public const string DangerZoneEntered = "Archive.DangerZoneEntered";
+
+        /// <summary>A wrong password or code; the entry carries which, never what was typed.</summary>
+        public const string DangerZoneRefused = "Archive.DangerZoneRefused";
+
+        public const string DangerZoneEnded = "Archive.DangerZoneEnded";
+        public const string OfficeDeleted = "Archive.OfficeDeleted";
+        public const string MembershipDeleted = "Archive.MembershipDeleted";
+        public const string GroupDeleted = "Archive.GroupDeleted";
     }
 
     /// <summary>The kurin's own settings.</summary>
