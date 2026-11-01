@@ -69,7 +69,7 @@ public class AgendaAccessAuthorizeTargetTests
 
         var permissions = new CurrentPermissions(user.Object, _policies);
         var resourceAccess = new ResourceAccessService(_scopes.Object, user.Object, new PassThroughBackendCache(), permissions);
-        return new AgendaAccess(user.Object, Mock.Of<IUnitOfWork>(), Mock.Of<IMemberDirectory>(), _scopes.Object, resourceAccess, permissions);
+        return new AgendaAccess(user.Object, Mock.Of<IUnitOfWork>(), Mock.Of<IMemberDirectory>(), _scopes.Object, resourceAccess, permissions, Mock.Of<IKurinTagVisibility>());
     }
 
     private static AgendaTargetInput Target(AgendaTargetType type, Guid key) => new() { TargetType = type, TargetKey = key };

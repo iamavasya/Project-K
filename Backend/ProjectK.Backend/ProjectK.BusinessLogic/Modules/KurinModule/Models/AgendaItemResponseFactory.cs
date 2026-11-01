@@ -114,7 +114,10 @@ public static class AgendaItemResponseFactory
             return dto;
         }
 
-        var people = roster.PeopleIn(assignment);
+        // Who carries a tag is shown only as far as the viewer may see tags; the target's own state is not.
+        var people = assignment.TargetType == AgendaTargetType.Tag
+            ? roster.PeopleIn(assignment).Where(person => viewer.SeesTagCarrier(person, roster.GroupOf(person))).ToList()
+            : roster.PeopleIn(assignment);
         var parts = AgendaCompletion.PartsByMember(assignment);
         dto.PeopleCount = people.Count;
         dto.DoneCount = people.Count(person => parts.TryGetValue(person, out var part) && part.Status == AgendaItemStatus.Done);

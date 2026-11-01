@@ -2,6 +2,8 @@ using FluentAssertions;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Agenda;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
+using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using Xunit;
@@ -55,6 +57,40 @@ public class AgendaTagTargetTests
 
         AgendaCompletion.IsIn(item.Assignments.Single(), carrier).Should().BeTrue();
         AgendaCompletion.IsIn(item.Assignments.Single(), other).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// A task done «кожному окремо» for a tag names its carriers only as far as the viewer may see tags:
+    /// whoever oversees the task but is shown no tags learns neither the names nor how many there are.
+    /// </summary>
+    [Theory]
+    [InlineData(CapabilityReach.None, new string[0])]
+    [InlineData(CapabilityReach.OwnGroup, new[] { "Сокіл" })]
+    [InlineData(CapabilityReach.Kurin, new[] { "Ведмідь", "Сокіл" })]
+    public void PerPersonParts_OfATagTarget_ShowOnlyCarriersTheViewerMaySee(CapabilityReach reach, string[] expected)
+    {
+        var sokoly = Guid.NewGuid();
+        var vedmedi = Guid.NewGuid();
+        var sokil = Guid.NewGuid();
+        var vedmid = Guid.NewGuid();
+        var item = new AgendaItem { KurinKey = KurinKey, Title = "Підготувати сходини", Kind = AgendaItemKind.Task, CreatedByUserKey = Guid.NewGuid() };
+        item.Assignments.Add(new AgendaAssignment
+        {
+            AgendaItem = item, TargetType = AgendaTargetType.Tag, TargetKey = Novices, CompletionMode = AgendaCompletionMode.PerMember
+        });
+        var roster = new AgendaRoster(
+            new Dictionary<Guid, Guid?> { [sokil] = sokoly, [vedmid] = vedmedi },
+            new Dictionary<Guid, IReadOnlyList<Guid>>(),
+            new Dictionary<Guid, IReadOnlyList<Guid>> { [Novices] = [sokil, vedmid] });
+        var overseer = new AgendaViewerContext(KurinKey, Guid.NewGuid(), Guid.NewGuid(), null, [sokoly], [], true, true, TagCarriersReach: reach);
+
+        var dto = AgendaItemResponseFactory.Create(item, overseer, "Весь курінь",
+            new Dictionary<Guid, string>(), new Dictionary<Guid, string> { [sokil] = "Сокіл", [vedmid] = "Ведмідь" },
+            new Dictionary<Guid, string>(), new Dictionary<Guid, string>(), new Dictionary<Guid, AgendaCategory>(), roster)
+            .Assignments.Single();
+
+        dto.PeopleCount.Should().Be(expected.Length);
+        (dto.Parts ?? []).Select(part => part.Name).Should().BeEquivalentTo(expected);
     }
 
     [Fact]

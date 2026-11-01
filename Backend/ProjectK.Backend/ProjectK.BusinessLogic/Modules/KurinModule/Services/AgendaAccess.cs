@@ -28,8 +28,18 @@ public sealed record AgendaViewerContext(
     bool CanSeeWholeKurin,
     bool IsLeadership,
     IReadOnlyCollection<Guid>? LedGroupKeysOrNull = null,
-    IReadOnlyCollection<Guid>? ViewerTagKeysOrNull = null)
+    IReadOnlyCollection<Guid>? ViewerTagKeysOrNull = null,
+    CapabilityReach TagCarriersReach = CapabilityReach.None)
 {
+    /// <summary>
+    /// Whether the viewer may see that a person in <paramref name="groupKey"/> carries a tag: by the
+    /// kurin's «Бачити теги людей», and always for themselves.
+    /// </summary>
+    public bool SeesTagCarrier(Guid memberKey, Guid? groupKey) =>
+        memberKey == ViewerMemberKey
+        || TagCarriersReach == CapabilityReach.Kurin
+        || (TagCarriersReach == CapabilityReach.OwnGroup && groupKey is { } g && VisibilityGroupKeys.Contains(g));
+
     /// <summary>The kurin's tags the viewer carries now; whoever gets a tag later sees what was assigned to it.</summary>
     public IReadOnlyCollection<Guid> ViewerTagKeys => ViewerTagKeysOrNull ?? Array.Empty<Guid>();
 
@@ -127,6 +137,7 @@ public sealed class AgendaAccess : IAgendaAccess
     private readonly IResourceScopeReader _scopeReader;
     private readonly IResourceAccessService _resourceAccess;
     private readonly ICurrentPermissions _permissions;
+    private readonly IKurinTagVisibility _tags;
 
     public AgendaAccess(
         ICurrentUserContext currentUser,
@@ -134,8 +145,10 @@ public sealed class AgendaAccess : IAgendaAccess
         IMemberDirectory members,
         IResourceScopeReader scopeReader,
         IResourceAccessService resourceAccess,
-        ICurrentPermissions permissions)
+        ICurrentPermissions permissions,
+        IKurinTagVisibility tags)
     {
+        _tags = tags;
         _currentUser = currentUser;
         _uow = uow;
         _members = members;
@@ -204,7 +217,8 @@ public sealed class AgendaAccess : IAgendaAccess
             CanSeeWholeKurin: canSeeWholeKurin,
             IsLeadership: isLeadership,
             LedGroupKeysOrNull: ledGroups,
-            ViewerTagKeysOrNull: tagKeys);
+            ViewerTagKeysOrNull: tagKeys,
+            TagCarriersReach: await _tags.CarrierReachAsync(kurinKey, cancellationToken));
     }
 
     public Task<ResourceAccessDecision> AuthorizeTargetAsync(

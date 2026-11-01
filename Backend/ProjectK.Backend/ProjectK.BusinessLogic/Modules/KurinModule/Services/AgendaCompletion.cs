@@ -73,6 +73,9 @@ public sealed class AgendaRoster
         return new AgendaRoster(memberGroups, leadershipMembers, tagMembers);
     }
 
+    /// <summary>The гурток a person stands in, when this roster read them.</summary>
+    public Guid? GroupOf(Guid memberKey) => _memberGroups.GetValueOrDefault(memberKey);
+
     /// <summary>The member keys a target stands for; a member target is that one person.</summary>
     public IReadOnlyCollection<Guid> PeopleIn(AgendaAssignment assignment) => assignment.TargetType switch
     {
