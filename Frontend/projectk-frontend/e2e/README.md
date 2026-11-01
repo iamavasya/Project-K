@@ -28,6 +28,18 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
   - mentors can create members only in assigned groups;
   - leadership setup routes are manager/admin-only;
   - member self-edit hides destructive and warning controls.
+- Check moving people between kurins (1.4, `kurin-transfers.spec.ts`), each test on its own fresh
+  kurins and people from `e2e/support/transfers.ts`, so no seeded person is moved:
+  - a kurin finds a person by their code and asks «прийняти ще й до нас»; the person's kurin approves in
+    the confirm dialog; the asking kurin, the person's kurin and the person are notified;
+  - «перевести» after the confirm dialog leaves the person in the asking kurin only;
+  - a person owing the kurin for past quarters cannot be let go (the approve button is disabled);
+  - a senior kurin asking reads «7-й курінь УСП», not «к. ч. 7» (seeded `chorty@projectk.com`, over
+    the API only, its request withdrawn afterwards);
+  - a виховник sees the kurin settings read-only («Лише перегляд», no «Зберегти»);
+  - a member without kurin management is sent to `/forbidden` from «Склад куреня».
+- Check the permanent card link (1.4, `card-link.spec.ts`): made in the account settings, opened in a
+  browser that never signed in, switched off, and then «Картку не знайдено».
 - Check conditional organization UI:
   - kurin-level profile, group, KV, leadership and member controls by role;
   - group action menu contents by role and assigned mentor scope;
