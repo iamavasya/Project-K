@@ -2,7 +2,7 @@ import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MemberCardComponent } from './member-card';
 import { ActivatedRoute, convertToParamMap, ParamMap, Router } from '@angular/router';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { MessageService } from '@openng/optimus-ui/api';
@@ -47,6 +47,7 @@ describe('MemberCardComponent', () => {
   let routerSpy: MockedObject<Router>;
   let duesServiceSpy: MockedObject<DuesService>;
   let paramMapSubject: BehaviorSubject<ParamMap>;
+  let routeStub: { paramMap: Observable<ParamMap>; snapshot: { data: Record<string, unknown>; params: Record<string, string> } };
 
   const memberKey = 'abc123';
   /** What the kurin's defaults give a впорядник over his own гурток. */
@@ -118,6 +119,7 @@ describe('MemberCardComponent', () => {
     } as MockedObject<DuesService>;
     duesServiceSpy.getMemberDues.mockReturnValue(of({ hasAccount: false } as MemberDuesDto));
     paramMapSubject = new BehaviorSubject(convertToParamMap({ memberKey }));
+    routeStub = { paramMap: paramMapSubject.asObservable(), snapshot: { data: {}, params: { memberKey } } };
 
     badgeImageBlobServiceSpy.resolveBadgeImageForDisplay.mockImplementation((url: string | null) => url);
     authServiceSpy.getAuthStateValue.mockReturnValue({
@@ -203,7 +205,7 @@ describe('MemberCardComponent', () => {
         { provide: EntityService, useValue: entityServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: DuesService, useValue: duesServiceSpy },
-        { provide: ActivatedRoute, useValue: { paramMap: paramMapSubject.asObservable() } }
+        { provide: ActivatedRoute, useValue: routeStub }
       ]
     }).compileComponents();
   });
@@ -788,6 +790,102 @@ describe('MemberCardComponent', () => {
     expect(memberProgressServiceSpy.reviewBadgeProgress).toHaveBeenCalledWith(memberKey, 'badge-2', {
       isApproved: false,
       note: null
+    });
+  });
+
+  describe('пластовий життєпис', () => {
+    const seniorHere = {
+      membershipKey: 'ms-now',
+      kurinKey: member.kurinKey,
+      kurinNumber: 5,
+      branch: KurinBranch.USP,
+      kurinNamedAfter: 'Орден Хрестоносців',
+      groupKey: null,
+      groupName: null,
+      kind: MembershipKind.Youth,
+      joinedAtUtc: '2022-09-15T00:00:00Z',
+      leftAtUtc: null,
+      isCurrent: true
+    };
+    const youthBefore = { ...seniorHere, membershipKey: 'ms-before', kurinKey: 'kurin-youth', kurinNumber: 1, branch: KurinBranch.UPYu, kurinNamedAfter: 'Івана Богуна', leftAtUtc: '2022-06-30T00:00:00Z', isCurrent: false };
+    const senior: MemberDto = {
+      ...member,
+      plastLevelHistories: [
+        { plastLevel: PlastLevel.Uchasnyk, dateAchieved: '2016-10-08' },
+        { plastLevel: PlastLevel.Skob, dateAchieved: '2020-07-18' },
+        { plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2022-10-01' }
+      ],
+      latestPlastLevel: PlastLevel.Starshoplastun,
+      leadershipHistories: [
+        { leadershipHistoryKey: 'h1', leadershipKey: 'l1', role: 'Pysar', leadershipType: 'Kurin', kurinKey: 'kurin-youth', startDate: '2020-09-01', endDate: '2022-06-30', member: null as never }
+      ]
+    };
+
+    function openLife(asZvyazkovyi: boolean): void {
+      routeStub.snapshot.data = { view: 'life' };
+      authServiceSpy.getAuthStateValue.mockReturnValue({
+        userKey: 'user-zv',
+        memberKey: 'someone-else',
+        email: 'zv@example.com',
+        isAdmin: false,
+        permissions: asZvyazkovyi ? ['Group:Manage:KurinWide', 'Member:Update:KurinWide'] : ['Group:Update:OwnGroups'],
+        roles: [],
+        kurinKey: member.kurinKey,
+        accessToken: 'token'
+      });
+      memberServiceSpy.getByKey.mockReturnValue(of(senior));
+      memberServiceSpy.getMemberships.mockReturnValue(of([seniorHere, youthBefore]));
+      createComponent();
+      fixture.detectChanges();
+    }
+
+    it('показує юнацьке старшого, якого картка не показує, і запитує його', () => {
+      openLife(true);
+
+      expect(component.hasYouthProgram).toBe(false);
+      expect(component.showsYouthRecord).toBe(true);
+      expect(memberProgressServiceSpy.getBadgeProgresses).toHaveBeenCalledWith(memberKey);
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="life-head"]')).not.toBeNull();
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="senior-kurin-tile"]')).toBeNull();
+    });
+
+    it('розкладає ступені по етапах і називає ролі куренем, де їх тримали', () => {
+      openLife(true);
+
+      expect(component.lifeStages.map(stage => [stage.branch, stage.levels.map(level => level.label)])).toEqual([
+        ['УПЮ', ['пл. уч.', 'пл. скоб / вірл.']],
+        ['УСП', ['ст. пл.']]
+      ]);
+      expect(component.lifeOffices.map(office => office.kurin)).toEqual(['к. ч. 1']);
+    });
+
+    it('юнацьке старшого виправляє лише Звʼязковий куреня, де той стоїть зараз', () => {
+      openLife(true);
+      expect(component.youthRecordLocked).toBe(false);
+    });
+
+    it('впорядникові юнацьке старшого лише для перегляду', () => {
+      openLife(false);
+      expect(component.youthRecordLocked).toBe(true);
+    });
+
+    it('у юнака лише етап УПЮ', () => {
+      routeStub.snapshot.data = { view: 'life' };
+      memberServiceSpy.getByKey.mockReturnValue(of({ ...member, plastLevelHistories: [{ plastLevel: PlastLevel.Uchasnyk, dateAchieved: '2024-10-01' }] }));
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.lifeStages.map(stage => stage.branch)).toEqual(['УПЮ']);
+      expect(component.youthRecordLocked).toBe(false);
+    });
+
+    it('кнопка на картці відкриває життєпис', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      createComponent();
+      fixture.detectChanges();
+
+      component.openLife();
+      expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', memberKey, 'life']);
     });
   });
 

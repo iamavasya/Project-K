@@ -243,6 +243,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         await SeedSeniorKurinsAsync(cancellationToken);
+        await SeedLifeStoryAsync(kurinKey, vedmedi, kurinLeadership, mentors[vedmedi.GroupKey], zvyazkovyi, cancellationToken);
     }
 
     private async Task<Kurin> EnsureKurinAsync(CancellationToken cancellationToken)

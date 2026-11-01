@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
@@ -10,7 +11,9 @@ using ProjectK.Common.Extensions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Settings;
 using ProjectK.Infrastructure.DbContexts;
+using ProjectK.Infrastructure.Services.Catalog;
 
 namespace ProjectK.Infrastructure.Seeding;
 
@@ -69,7 +72,14 @@ public static class DataSeeder
 
         await ResetKurin1DataAsync(dbContext, userManager);
 
-        // 4. Seed comprehensive demo data (kurin, groups, mentors, members)
+        // 4. Seed comprehensive demo data (kurin, groups, mentors, members). The catalogue service
+        // starts after this, so without the built-in copy nobody would get a probe or a вмілість.
+        var catalog = scope.ServiceProvider.GetRequiredService<CatalogStore>();
+        if (!catalog.IsLoaded)
+        {
+            CatalogSyncBackgroundService.LoadBuiltIn(catalog, scope.ServiceProvider.GetRequiredService<IOptions<CatalogOptions>>().Value.BaseUrl);
+        }
+
         var demoSeeder = scope.ServiceProvider.GetRequiredService<IDemoDataSeeder>();
         await demoSeeder.SeedAsync();
 
@@ -274,8 +284,9 @@ public static class DataSeeder
 
         // The seeder wipes its own demo kurin outright, people included — the reset exists to
         // give every run the same starting point, and these are not real people.
+        // Their memberships in other kurins too: the person goes, and one left behind shows up nameless there.
         var memberships = await dbContext.Memberships
-            .Where(ms => ms.KurinKey == kurinKey)
+            .Where(ms => ms.KurinKey == kurinKey || memberKeys.Contains(ms.MemberKey))
             .ToListAsync();
         dbContext.Memberships.RemoveRange(memberships);
 

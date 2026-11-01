@@ -298,7 +298,16 @@ export const routes: Routes = [
     data: { breadcrumb: 'Проба', parent: '/member/:memberKey', entityType: 'member', titleContext: 'member' }
   },
   {
-    path: 'member/:memberKey', 
+    // The same card, about the person's whole history; opened from the card's «Пластовий життєпис».
+    path: 'member/:memberKey/life',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    loadComponent: () => import('./features/kurinModule/pages/member-card/member-card')
+      .then(m => m.MemberCardComponent),
+    title: 'Пластовий життєпис',
+    data: { breadcrumb: 'Пластовий життєпис', parent: '/member/:memberKey', entityType: 'member', titleContext: 'member', view: 'life' }
+  },
+  {
+    path: 'member/:memberKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     loadComponent: () => import('./features/kurinModule/pages/member-card/member-card')
       .then(m => m.MemberCardComponent),

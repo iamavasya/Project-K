@@ -389,3 +389,48 @@
 .senior-warnings__row--past {
   opacity: 0.75;
 }
+
+.life-stages {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.life-stage {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.life-stage p-tag {
+  justify-self: start;
+}
+
+.life-stage__levels,
+.life-roles {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.life-stage__levels li,
+.life-roles li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+}
+
+.life-stage__level,
+.life-roles__role {
+  font-weight: 600;
+}
+
+.life-stage__date,
+.life-roles__meta {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  font-variant-numeric: tabular-nums;
+}
