@@ -73,7 +73,11 @@ export class AgendaAssignSelectComponent implements OnInit {
       .map(node => node.data)
       .filter((data): data is TargetNodeData => !!data)
       .map(data => ({ targetType: data.targetType, targetKey: data.targetKey }));
-    this.targets.set(targets);
+    // A target this tree does not draw (tags off, or beyond what this editor may pick) cannot be
+    // unticked here, so it stays: the server keeps it too.
+    const drawn = this.nodeByKey();
+    const unseen = this.targets().filter(target => !drawn.has(`${target.targetType.toLowerCase()}:${target.targetKey}`));
+    this.targets.set([...unseen, ...targets]);
   }
 
   private buildNodes(tree: AgendaAssignTargets): TreeNode<TargetNodeData>[] {

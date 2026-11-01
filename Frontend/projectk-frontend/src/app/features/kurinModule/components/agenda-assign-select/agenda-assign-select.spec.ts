@@ -84,6 +84,26 @@ describe('AgendaAssignSelectComponent', () => {
     expect(nodes.find(node => node.key === 'unplaced')?.children?.map(child => child.key)).toEqual(['member:m-out']);
   });
 
+  // An older item aimed at a tag the tree no longer draws (tags off, or no right to pick tags) keeps
+  // that target when the editor changes what they can see.
+  it('keeps a target the tree does not draw when the selection changes', () => {
+    fixture.componentRef.setInput('targets', [{ targetType: 'Tag', targetKey: 't-old' }]);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance as unknown as {
+      nodes: () => { key?: string; children?: { key?: string; data?: unknown }[] }[];
+      onSelectionChange: (nodes: unknown[]) => void;
+    };
+    const marta = component.nodes()[0].children!.find(child => child.key === 'member:m1')!;
+
+    component.onSelectionChange([marta]);
+
+    expect(fixture.componentInstance.targets()).toEqual([
+      { targetType: 'Tag', targetKey: 't-old' },
+      { targetType: 'Member', targetKey: 'm1' }
+    ]);
+  });
+
   // «Усі з тегом» stands beside the гуртки, as its own branch, and a chosen tag goes out as a Tag target.
   it('offers the kurin tags as their own branch and sends a chosen one as a Tag target', () => {
     agendaService.getAssignTargets.mockReturnValue(of({
