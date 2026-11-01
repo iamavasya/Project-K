@@ -18,7 +18,20 @@ import { KurinCardFieldsComponent } from '../../components/kurin-card-fields/kur
 import { KurinAccessPolicyComponent } from '../../components/kurin-access-policy/kurin-access-policy';
 import { KurinProbeEditionsComponent } from '../../components/kurin-probe-editions/kurin-probe-editions';
 import { KurinTagSettingsComponent } from '../../components/kurin-tag-settings/kurin-tag-settings';
-import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
+import { hasYouthProgram, isSeniorBranch } from '../../models/enums/kurin-branch.enum';
+import { KurinBranchRequestComponent } from '../../components/kurin-branch-request/kurin-branch-request';
+import { kurinBranchesName } from '../../../../shared/functions/kurin-label.function';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { LeadershipRole } from '../../models/enums/leadership-role.enum';
+import { ROLE_DISPLAY_NAMES } from '../../models/role-display-name.model';
+import { rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
+
+/** Ролі, які курінь може назвати по-своєму (сервер: KurinRoleNames.Renamable). Гурткових тут немає. */
+const RENAMABLE_ROLES: LeadershipRole[] = [
+  LeadershipRole.Zvyazkovyi, LeadershipRole.Kurinnuy, LeadershipRole.Pysar, LeadershipRole.Skarbnyk,
+  LeadershipRole.Suddya, LeadershipRole.Horunjiy, LeadershipRole.Gospodar, LeadershipRole.Hronikar,
+  LeadershipRole.Instruktor, LeadershipRole.Vykhovnyk, LeadershipRole.OtherKurin
+];
 
 @Component({
   selector: 'app-kurin-settings',
@@ -29,12 +42,14 @@ import { hasYouthProgram } from '../../models/enums/kurin-branch.enum';
     ToggleSwitchModule,
     CheckboxModule,
     InputNumberModule,
+    InputTextModule,
     AgendaCategoryManagerComponent,
     AgendaArchivePolicyComponent,
     KurinCardFieldsComponent,
     KurinAccessPolicyComponent,
     KurinProbeEditionsComponent,
-    KurinTagSettingsComponent
+    KurinTagSettingsComponent,
+    KurinBranchRequestComponent
   ],
   templateUrl: './kurin-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -56,9 +71,30 @@ export class KurinSettingsComponent implements OnInit {
   /** Проби є лише в юнацькому курені; в УСП чи УПС розділу проби гуртків немає. */
   protected readonly hasYouthProgram = hasYouthProgram;
 
+  /** Рядки «Назви ролей»: звична назва і те, як її називає курінь (порожнє — звична). */
+  protected readonly renamableRoles = RENAMABLE_ROLES.map(role => ({ role, usual: ROLE_DISPLAY_NAMES[role] }));
+  protected roleNames: Record<string, string> = {};
+
+  private trimmedRoleNames(): Record<string, string> {
+    return Object.fromEntries(Object.entries(this.roleNames).map(([role, name]) => [role, name.trim()]).filter(([, name]) => name));
+  }
+
+  /** A senior kurin's numbers are the admin's to change, so its settings ask instead of edit. */
+  get isSenior(): boolean {
+    return isSeniorBranch(this.kurin?.branch);
+  }
+
+  get title(): string {
+    if (!this.kurin) return '-';
+    if (this.isSenior) return this.kurin.namedAfter || kurinBranchesName(this.kurin.branches);
+    return `${this.kurin.number ?? 'Підготовчий'} курінь`;
+  }
+
   kurinKey = '';
   kurin: KurinDto | null = null;
   profileVerificationEnabled = false;
+  /** Точкування в цьому курені; вимкнене зникає з меню, плиток і сторінок, а бали лишаються. */
+  scoreEnabled = true;
   /** A підготовчий курінь has no number; clearing the box asks for one. */
   preparatory = false;
   number: number | null = null;
@@ -107,6 +143,8 @@ export class KurinSettingsComponent implements OnInit {
       next: (kurin) => {
         this.kurin = kurin;
         this.profileVerificationEnabled = kurin.profileVerificationEnabled ?? false;
+        this.scoreEnabled = kurin.scoreEnabled ?? true;
+        this.roleNames = { ...(kurin.roleNames ?? {}) };
         this.preparatory = kurin.number === null;
         this.number = kurin.number;
         this.loading = false;
@@ -130,8 +168,10 @@ export class KurinSettingsComponent implements OnInit {
 
     const request: KurinDto = {
       ...this.kurin,
+      roleNames: this.kurin?.canRenameRoles ? this.trimmedRoleNames() : this.kurin?.roleNames,
       number: this.preparatory ? null : this.number,
-      profileVerificationEnabled: this.profileVerificationEnabled
+      profileVerificationEnabled: this.profileVerificationEnabled,
+      scoreEnabled: this.scoreEnabled
     };
 
     this.saving = true;
@@ -152,6 +192,9 @@ export class KurinSettingsComponent implements OnInit {
       next: ([updated]) => {
         this.kurin = updated;
         this.profileVerificationEnabled = updated.profileVerificationEnabled ?? false;
+        this.scoreEnabled = updated.scoreEnabled ?? true;
+        this.roleNames = { ...(updated.roleNames ?? {}) };
+        rememberKurinRoleNames(updated.kurinKey, updated.roleNames);
         this.preparatory = updated.number === null;
         this.number = updated.number;
         this.saving = false;

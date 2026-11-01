@@ -21,10 +21,14 @@
             [disabled]="switchingTo() !== null"
             (click)="switchTo(option, switcher)">
             <span class="kurin-switcher-name">
-              {{ kurinLabel(option.kurinNumber) }}@if (option.namedAfter) { <span class="kurin-switcher-named">{{ option.namedAfter }}</span> }
+              @if (isSenior(option)) {
+                {{ headline(option) }}
+              } @else {
+                {{ kurinLabel(option.kurinNumber, option.branch) }}@if (option.namedAfter) { <span class="kurin-switcher-named">{{ option.namedAfter }}</span> }
+              }
             </span>
             <span class="kurin-switcher-meta">
-              <p-tag [value]="branchLabels[option.branch]" severity="secondary" />
+              <p-tag [value]="subline(option)" severity="secondary" />
               <span class="kurin-switcher-kind">{{ kindLabels[option.kind] }}</span>
             </span>
             @if (isCurrent(option)) {

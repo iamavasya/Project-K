@@ -51,6 +51,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IMemberWarningRepository _memberWarnings;
     private IMemberAwardRepository _memberAwards;
     private IWaitlistRepository _waitlistEntries;
+    private IKurinBranchRequestRepository _kurinBranchRequests;
     private IInvitationRepository _invitations;
     private IAppNotificationRepository _appNotifications;
     private IWebPushSubscriptionRepository _webPushSubscriptions;
@@ -81,6 +82,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
 
     public IKraiRepository Krais => _krais ??= new KraiRepository(_context);
     public IKurinRepository Kurins => _kurins ??= new KurinRepository(_context);
+    public IKurinBranchRequestRepository KurinBranchRequests => _kurinBranchRequests ??= new KurinBranchRequestRepository(_context);
     public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
     public IMembershipRepository Memberships => _memberships ??= new MembershipRepository(_context);
     public IMemberRepository Members => _members ??= new MemberRepository(_context);

@@ -19,11 +19,11 @@ import { KurinService } from '../../services/kurin-service/kurin.service';
 import { FormerMemberDto, MembershipService } from '../../services/membership-service/membership.service';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { MemberDto } from '../../models/member.dto';
-import { KurinBranch, KURIN_BRANCH_LABELS } from '../../models/enums/kurin-branch.enum';
+import { KurinBranch, KURIN_BRANCH_LABELS, hasGroups } from '../../models/enums/kurin-branch.enum';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../../models/enums/plast-ladder';
-import { REGISTRY_COLUMNS, RegistryColumn, defaultColumnIdsFor, staffColumnsOf } from './registry-columns';
+import { REGISTRY_COLUMNS, RegistryColumn, columnsFor, defaultColumnIdsFor, staffColumnsOf } from './registry-columns';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.function';
 import { KurinTagService } from '../../services/kurin-tag-service/kurin-tag.service';
@@ -102,8 +102,11 @@ export class RegistryComponent implements OnInit {
    * Колонки, які можна вмикати. `mentoredGroups` не серед них: у таблиці впорядників вона стоїть
    * завжди, а в таблиці юнаків не значить нічого — вибирати там нічого.
    */
-  readonly allColumns = computed<RegistryColumn[]>(() => REGISTRY_COLUMNS.filter(column =>
-    column.id !== 'mentoredGroups' && (column.kind !== 'tags' || this.tagService.enabled())));
+  readonly allColumns = computed<RegistryColumn[]>(() => columnsFor(
+    REGISTRY_COLUMNS.filter(column => column.id !== 'mentoredGroups' && (column.kind !== 'tags' || this.tagService.enabled())),
+    this.branch()));
+  /** Чи є в курені гуртки: у старшому їх немає, і реєстр про них не питає. */
+  readonly hasGroups = computed(() => hasGroups(this.branch()));
 
   readonly branchLabel = computed(() => {
     const branch = this.branch();
@@ -416,7 +419,7 @@ export class RegistryComponent implements OnInit {
         return defaultColumnIdsFor(branch);
       }
 
-      const known = new Set(REGISTRY_COLUMNS.map(column => column.id));
+      const known = new Set(columnsFor(REGISTRY_COLUMNS, branch).map(column => column.id));
       const kept = parsed.filter((id): id is string => typeof id === 'string' && known.has(id));
       return kept.length ? kept : defaultColumnIdsFor(branch);
     } catch {

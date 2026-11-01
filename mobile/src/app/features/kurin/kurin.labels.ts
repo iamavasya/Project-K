@@ -157,8 +157,24 @@ const ROLE_ORDER = [
   'OtherGroup',
 ];
 
-export function roleName(role: string): string {
-  return ROLE_NAMES[role] ?? role;
+/**
+ * Kurins' own names for their roles, by kurin, and the kurin the person acts in (web
+ * leadership-role-display.function). KurinService remembers them as it reads a kurin; KurinRoleNames
+ * says which kurin is current. Rights stay with the role; only the word changes.
+ */
+const roleNamesByKurin = new Map<string, Record<string, string>>();
+let currentKurinKey: string | null = null;
+
+export function rememberKurinRoleNames(kurinKey: string, names: Record<string, string> | null | undefined): void {
+  roleNamesByKurin.set(kurinKey, { ...(names ?? {}) });
+}
+
+export function actInKurin(kurinKey: string | null): void {
+  currentKurinKey = kurinKey;
+}
+
+export function roleName(role: string, kurinKey: string | null = currentKurinKey): string {
+  return (kurinKey ? roleNamesByKurin.get(kurinKey)?.[role] : undefined) ?? ROLE_NAMES[role] ?? role;
 }
 
 export function roleWeight(role: string | null | undefined): number {

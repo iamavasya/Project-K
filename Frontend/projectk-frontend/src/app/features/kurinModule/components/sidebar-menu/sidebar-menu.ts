@@ -23,6 +23,14 @@ import { ReportProblemDialogComponent } from '../../../systemModule/components/r
 import { displayCodeName } from '../../../../shared/functions/release-code-name.function';
 import { WaitlistAttentionService } from '../../../adminModule/services/waitlist-attention/waitlist-attention.service';
 
+/** Чим курінь користується — від цього залежать пункти меню. */
+interface KurinMenuFeatures {
+  youth: boolean;
+  score: boolean;
+}
+
+const ALL_FEATURES: KurinMenuFeatures = { youth: true, score: true };
+
 @Component({
   selector: 'app-sidebar-menu',
   imports: [DrawerModule, ButtonModule, PanelMenuModule, MenuModule, AsyncPipe, RouterLink, ReportProblemDialogComponent, AccountSwitcherComponent, InstallOnPhoneDialogComponent],
@@ -74,11 +82,11 @@ export class SidebarMenuComponent implements OnChanges {
           }
         }),
         switchMap(([state, url]) => combineLatest([
-          this.youthProgram$(state?.kurinKey ?? null),
+          this.features$(state?.kurinKey ?? null),
           this.waitlistAttention.pending$,
           this.duesGroups$(state?.kurinKey ?? null)
         ]).pipe(
-          map(([isYouthKurin, pendingWaitlist, duesGroups]) => this.markCurrent(this.buildItems(state, isYouthKurin, pendingWaitlist, duesGroups), url))
+          map(([features, pendingWaitlist, duesGroups]) => this.markCurrent(this.buildItems(state, features, pendingWaitlist, duesGroups), url))
         ))
       );
       this.email$ = this.state$().pipe(
@@ -128,18 +136,19 @@ export class SidebarMenuComponent implements OnChanges {
   }
 
   /**
-   * Чи веде цей курінь юнацький вишкіл. Курінь читається через кеш, який і так скидається при зміні
-   * скоупу, тож перемикання куреня саме собою приносить правильну відповідь.
+   * Чим користується цей курінь: юнацький вишкіл (за гілкою) і точкування (перемикач у налаштуваннях).
+   * Курінь читається через кеш, який і так скидається при зміні скоупу, тож перемикання куреня саме
+   * собою приносить правильну відповідь.
    */
-  private youthProgram$(kurinKey: string | null): Observable<boolean> {
+  private features$(kurinKey: string | null): Observable<KurinMenuFeatures> {
     if (!kurinKey) {
-      return of(true);
+      return of(ALL_FEATURES);
     }
 
     return this.kurinService.getByKey(kurinKey).pipe(
-      map(kurin => hasYouthProgram(kurin.branch)),
+      map(kurin => ({ youth: hasYouthProgram(kurin.branch), score: kurin.scoreEnabled ?? true })),
       // Не змогли прочитати курінь — не привід ховати пункт меню, який людина має право бачити.
-      catchError(() => of(true))
+      catchError(() => of(ALL_FEATURES))
     );
   }
 
@@ -155,14 +164,14 @@ export class SidebarMenuComponent implements OnChanges {
     return this.duesService.getReadableGroups(kurinKey).pipe(catchError(() => of([])));
   }
 
-  private buildItems(state: AuthState | null, isYouthKurin = true, pendingWaitlist = 0, duesGroups: DuesGroupLinkDto[] = []): MenuItem[] {
+  private buildItems(state: AuthState | null, features: KurinMenuFeatures = ALL_FEATURES, pendingWaitlist = 0, duesGroups: DuesGroupLinkDto[] = []): MenuItem[] {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
     const isAdmin = this.permissionService.isAdmin();
 
     return [
       ...(memberKey ? this.personalItems(memberKey) : []),
-      ...(kurinKey ? this.kurinItems(kurinKey, isYouthKurin, duesGroups) : []),
+      ...(kurinKey ? this.kurinItems(kurinKey, features, duesGroups) : []),
       ...(isAdmin && !kurinKey ? this.adminItems(pendingWaitlist) : []),
       ...this.commonItems()
     ];
@@ -185,7 +194,8 @@ export class SidebarMenuComponent implements OnChanges {
     ];
   }
 
-  private kurinItems(kurinKey: string, isYouthKurin: boolean, duesGroups: DuesGroupLinkDto[]): MenuItem[] {
+  private kurinItems(kurinKey: string, features: KurinMenuFeatures, duesGroups: DuesGroupLinkDto[]): MenuItem[] {
+    const isYouthKurin = features.youth;
     const canSeeRegistry = this.permissionService.isAdmin()
       || this.permissionService.canManageWholeKurin()
       || this.permissionService.canLeadGroups();
@@ -201,8 +211,9 @@ export class SidebarMenuComponent implements OnChanges {
       items.push(this.navItem({ label: 'Реєстр', icon: 'pi pi-table', routerLink: ['/kurin/registry'], disabled }));
     }
 
-    // Імпорт заводить склад цілого куреня — це дія Зв'язкового, не гурткового.
-    if (canManageKurinSettings) {
+    // Імпорт заводить склад цілого куреня — це дія Зв'язкового, не гурткового. Він розкладає людей по
+    // гуртках, тож у старшому курені, де гуртків немає, його немає теж.
+    if (canManageKurinSettings && isYouthKurin) {
       items.push(this.navItem({ label: 'Імпорт складу', icon: 'pi pi-upload', routerLink: ['/kurin/import'], disabled }));
     }
 
@@ -212,9 +223,11 @@ export class SidebarMenuComponent implements OnChanges {
     items.push(
       this.navItem({ label: 'Календар', icon: 'pi pi-calendar', routerLink: ['/calendar', kurinKey] }),
       this.navItem({ label: 'Задачі', icon: 'pi pi-check-square', routerLink: ['/tasks', kurinKey] }),
-      this.navItem({ label: 'Планування', icon: 'pi pi-clock', routerLink: ['/planning', kurinKey] }),
-      this.navItem({ label: 'Точкування', icon: 'pi pi-trophy', routerLink: ['/kurin', kurinKey, 'score'] })
+      this.navItem({ label: 'Планування', icon: 'pi pi-clock', routerLink: ['/planning', kurinKey] })
     );
+    if (features.score) {
+      items.push(this.navItem({ label: 'Точкування', icon: 'pi pi-trophy', routerLink: ['/kurin', kurinKey, 'score'] }));
+    }
 
     // Гуртки та «Всі учасники» ще не реалізовані — повернути сюди, коли зʼявляться
     // сторінки, разом із іконками pi-sitemap і pi-address-book.

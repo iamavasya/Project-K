@@ -521,6 +521,12 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int?>("ClaimedUpsNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ClaimedUspNumber")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -1914,6 +1920,10 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
+                    b.Property<string>("EmblemBlobName")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
                     b.Property<string>("HiddenCardFields")
                         .HasColumnType("nvarchar(max)");
 
@@ -1938,6 +1948,13 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
 
+                    b.Property<string>("RoleNames")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool?>("ScoreEnabled")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Stanytsia")
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
@@ -1953,11 +1970,88 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.HasKey("KurinKey");
 
-                    b.HasIndex("KraiCode", "Number")
+                    b.HasIndex("KraiCode", "Branch", "Number")
                         .IsUnique()
                         .HasFilter("[Number] IS NOT NULL");
 
                     b.ToTable("Kurins");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.KurinBranchNumber", b =>
+                {
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Branch")
+                        .HasColumnType("int");
+
+                    b.Property<string>("KraiCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<int?>("Number")
+                        .HasColumnType("int");
+
+                    b.HasKey("KurinKey", "Branch");
+
+                    b.HasIndex("KraiCode", "Branch", "Number")
+                        .IsUnique()
+                        .HasFilter("[Number] IS NOT NULL");
+
+                    b.ToTable("KurinBranches", (string)null);
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.KurinBranchRequest", b =>
+                {
+                    b.Property<Guid>("KurinBranchRequestKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("RequestedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReviewedByUserKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpsNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UspNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("KurinBranchRequestKey");
+
+                    b.HasIndex("KurinKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_KurinBranchRequests_KurinKey_Pending")
+                        .HasFilter("[Status] = 0");
+
+                    b.HasIndex("KurinKey", "Status");
+
+                    b.ToTable("KurinBranchRequests");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Leadership", b =>
@@ -3398,6 +3492,24 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.KurinBranchNumber", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Kurin", null)
+                        .WithMany("Branches")
+                        .HasForeignKey("KurinKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.KurinBranchRequest", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Kurin", null)
+                        .WithMany()
+                        .HasForeignKey("KurinKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Leadership", b =>
                 {
                     b.HasOne("ProjectK.Common.Entities.KurinModule.Group", "Group")
@@ -3609,6 +3721,8 @@ namespace ProjectK.Infrastructure.Migrations
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Kurin", b =>
                 {
                     b.Navigation("AgendaItems");
+
+                    b.Navigation("Branches");
 
                     b.Navigation("Groups");
 

@@ -4,6 +4,7 @@ import { publicAuthRedirectGuard } from './features/authModule/guards/public-aut
 import { setupGuard } from './features/authModule/guards/setup.guard';
 import { capabilityGuard } from './features/authModule/guards/capability.guard';
 import { youthProgramGuard } from './features/kurinModule/guards/youth-program.guard';
+import { kurinFeatureGuard } from './features/kurinModule/guards/kurin-feature.guard';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
 import { EntityGuard } from './features/authModule/guards/entity.guard';
 import { leadershipAccessGuard } from './features/authModule/guards/leadership-access.guard';
@@ -123,6 +124,14 @@ export const routes: Routes = [
       .then(m => m.ForbiddenComponent),
     title: 'Тут такого немає',
     data: { breadcrumb: 'Тут такого немає', reason: 'youthProgram' }
+  },
+  {
+    path: 'feature-off/:feature',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/authModule/pages/forbidden/forbidden')
+      .then(m => m.ForbiddenComponent),
+    title: 'Тут такого немає',
+    data: { breadcrumb: 'Тут такого немає', reason: 'featureOff' }
   },
   {
     path: 'users',
@@ -333,7 +342,7 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/score',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), kurinFeatureGuard('score'), EntityGuard],
     loadComponent: () => import('./features/scoreModule/pages/kurin-score/kurin-score')
       .then(m => m.KurinScoreComponent),
     title: 'Точкування',
@@ -341,7 +350,7 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/score/settings',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), kurinFeatureGuard('score'), EntityGuard],
     loadComponent: () => import('./features/scoreModule/pages/kurin-score-settings/kurin-score-settings')
       .then(m => m.KurinScoreSettingsComponent),
     title: 'Налаштування точкування',
@@ -349,7 +358,7 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/score/private',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), kurinFeatureGuard('score'), EntityGuard],
     loadComponent: () => import('./features/scoreModule/pages/private-score/private-score')
       .then(m => m.PrivateScoreComponent),
     title: 'Точкування КВ',
@@ -357,7 +366,7 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/score/events/:itemKey/:occurrence',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), kurinFeatureGuard('score'), EntityGuard],
     loadComponent: () => import('./features/scoreModule/pages/attendance-sheet/attendance-sheet')
       .then(m => m.AttendanceSheetComponent),
     title: 'Точкування події',

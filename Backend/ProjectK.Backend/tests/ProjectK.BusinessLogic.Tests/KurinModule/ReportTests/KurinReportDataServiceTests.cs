@@ -46,7 +46,7 @@ public sealed class KurinReportDataServiceTests
 
     public KurinReportDataServiceTests()
     {
-        _kurin = new Kurin(7) { KurinKey = _kurinKey, Branch = KurinBranch.UPYu };
+        _kurin = new Kurin(7) { KurinKey = _kurinKey };
         _alpha = new Group("Alpha", _kurinKey) { GroupKey = _alphaKey };
         _beta = new Group("Beta", _kurinKey) { GroupKey = _betaKey };
 
@@ -194,7 +194,7 @@ public sealed class KurinReportDataServiceTests
 
     private Task<Common.Models.Reports.KurinReportData?> Build(KurinBranch branch = KurinBranch.UPYu)
     {
-        _kurin.Branch = branch;
+        _kurin.SetBranches([new KurinNumbering(branch, 7)]);
         _source
             .Setup(s => s.LoadAsync(_kurinKey, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new KurinReportSourceData(

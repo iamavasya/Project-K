@@ -54,7 +54,7 @@ public class ExportRegistryHandlerTests
     private void KurinOfBranch(KurinBranch branch)
         => _kurins
             .Setup(k => k.GetByKeyAsync(_kurinKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Kurin(3) { KurinKey = _kurinKey, Branch = branch });
+            .ReturnsAsync(new Kurin(3, branch) { KurinKey = _kurinKey });
 
     private static MemberResponse Person(
         string lastName,

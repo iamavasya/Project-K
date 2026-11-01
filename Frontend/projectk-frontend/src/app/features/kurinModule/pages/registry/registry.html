@@ -24,7 +24,7 @@
         type="text"
         [ngModel]="search()"
         (ngModelChange)="search.set($event)"
-        placeholder="Пошук за прізвищем, поштою, гуртком…"
+        [placeholder]="hasGroups() ? 'Пошук за прізвищем, поштою, гуртком…' : 'Пошук за прізвищем чи поштою…'"
         class="registry__search" />
     </p-iconfield>
 
@@ -174,7 +174,7 @@
             <app-empty-state
               art="trail"
               title="Нічого не знайшлось"
-              body="Спробуй коротший запит — або перевір гурток." />
+              [body]="hasGroups() ? 'Спробуй коротший запит — або перевір гурток.' : 'Спробуй коротший запит.'" />
           } @else {
             <app-empty-state
               art="list"
@@ -277,7 +277,7 @@
         <ng-template #header>
           <tr>
             <th scope="col" class="registry__name-col">Прізвище та ім'я</th>
-            <th scope="col">Гурток</th>
+            @if (hasGroups()) { <th scope="col">Гурток</th> }
             <th scope="col">У курені з</th>
             <th scope="col">Вибув</th>
             <th scope="col"></th>
@@ -286,13 +286,15 @@
         <ng-template #body let-person>
           <tr>
             <td class="registry__name-col" data-mobile-label="Прізвище та ім'я">{{ formerName(person) }}</td>
-            <td data-mobile-label="Гурток">
-              @if (person.groupName) {
-                {{ person.groupName }}
-              } @else {
-                <span class="registry__blank">—</span>
-              }
-            </td>
+            @if (hasGroups()) {
+              <td data-mobile-label="Гурток">
+                @if (person.groupName) {
+                  {{ person.groupName }}
+                } @else {
+                  <span class="registry__blank">—</span>
+                }
+              </td>
+            }
             <td data-mobile-label="У курені з">{{ person.joinedAtUtc | date:'dd.MM.yyyy' }}</td>
             <td data-mobile-label="Вибув">{{ person.leftAtUtc | date:'dd.MM.yyyy' }}</td>
             <td>

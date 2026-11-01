@@ -37,7 +37,7 @@ namespace ProjectK.Infrastructure.Seeding;
 /// the docs and the screenshot script say it means.
 /// </para>
 /// </summary>
-public class DemoDataSeeder : IDemoDataSeeder
+public partial class DemoDataSeeder : IDemoDataSeeder
 {
     private const int KurinNumber = 1;
     private const string Sokoly = "Соколи";
@@ -238,11 +238,13 @@ public class DemoDataSeeder : IDemoDataSeeder
         SeedDues(kurinKey, groups, youth, mentors, zvyazkovyi, memberships);
         SeedScore(kurinKey, groups, youth, mentors, zvyazkovyi, memberships);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await SeedSeniorKurinsAsync(cancellationToken);
     }
 
     private async Task<Kurin> EnsureKurinAsync(CancellationToken cancellationToken)
     {
-        var kurin = await _dbContext.Kurins.FirstOrDefaultAsync(k => k.KraiCode == Krai.Ukraine && k.Number == KurinNumber, cancellationToken);
+        var kurin = await _dbContext.Kurins.FirstOrDefaultAsync(k => k.KraiCode == Krai.Ukraine && k.Branch == KurinBranch.UPYu && k.Number == KurinNumber, cancellationToken);
         if (kurin == null)
         {
             kurin = new Kurin(KurinNumber);
@@ -252,7 +254,7 @@ public class DemoDataSeeder : IDemoDataSeeder
         kurin.NamedAfter = "Івана Богуна";
         kurin.Stanytsia = "Люксембург";
         kurin.RegionOrCountry = "Люксембург";
-        kurin.Branch = KurinBranch.UPYu;
+        kurin.SetBranches([new KurinNumbering(KurinBranch.UPYu, KurinNumber)]);
         kurin.ProfileVerificationEnabled = true;
         kurin.Description =
             "Курінь УПЮ при станиці Люксембург. Три гуртки, сходини щосуботи в домівці в Бонневуа, "

@@ -39,7 +39,12 @@ public sealed record KurinReportKurin(
     string? Stanytsia,
     string? RegionOrCountry,
     string? NamedAfter,
-    string? Description);
+    string? Description,
+    string? SeniorBranches = null)
+{
+    /// <summary>A УСП or УПС kurin: named by its own name and its гілки, with no УПЮ number plate.</summary>
+    public bool IsSenior => SeniorBranches is not null;
+}
 
 public sealed record KurinReportGroup(
     Guid GroupKey,

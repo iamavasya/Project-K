@@ -164,7 +164,11 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
         {
             row.RelativeItem().Column(column =>
             {
-                column.Item().Text(report.Kurin.Number is int number ? $"Курінь #{number}" : "Підготовчий курінь").FontSize(15).Bold();
+                column.Item().Text(Title(report.Kurin)).FontSize(15).Bold();
+                if (report.Kurin.IsSenior && report.Kurin.NamedAfter is not null)
+                {
+                    column.Item().Text(report.Kurin.SeniorBranches!).FontSize(9).FontColor(Colors.Grey.Darken1);
+                }
                 column.Item().Text("Beta export звіту").FontSize(8).SemiBold().FontColor(Colors.Orange.Darken2);
                 column.Item().Text($"Звіт сформовано: {ReportClock.Format(report.Header.GeneratedAtUtc, zone)} {ReportClock.Label(zone)}").FontSize(8).FontColor(Colors.Grey.Darken1);
             });
@@ -192,20 +196,40 @@ public sealed class KurinReportPdfRenderer : IKurinReportPdfRenderer
             column.Item().Element(item => SectionHeader(item, "Інформація куреня"));
             column.Item().Row(row =>
             {
-                row.ConstantItem(110).Element(item => ComposeKurinSilhouette(item, report.Kurin.Number));
-                row.RelativeItem().Element(item => KeyValueGrid(item, new[]
+                // The red number plate is a УПЮ відзнака; a senior kurin's report goes without it.
+                if (!report.Kurin.IsSenior)
                 {
-                    ("Число куреня", report.Kurin.Number?.ToString(CultureInfo.InvariantCulture) ?? "підготовчий"),
-                    ("Станиця", report.Kurin.Stanytsia ?? "-"),
-                    ("Край / країна", report.Kurin.RegionOrCountry ?? "-"),
-                    ("Ім. кого", report.Kurin.NamedAfter ?? "-"),
-                    ("Опис", report.Kurin.Description ?? "-")
-                }));
+                    row.ConstantItem(110).Element(item => ComposeKurinSilhouette(item, report.Kurin.Number));
+                }
+
+                row.RelativeItem().Element(item => KeyValueGrid(item, report.Kurin.IsSenior
+                    ? new[]
+                    {
+                        ("Улади й числа", report.Kurin.SeniorBranches!),
+                        ("Назва", report.Kurin.NamedAfter ?? "-"),
+                        ("Станиця", report.Kurin.Stanytsia ?? "-"),
+                        ("Край / країна", report.Kurin.RegionOrCountry ?? "-"),
+                        ("Опис", report.Kurin.Description ?? "-")
+                    }
+                    : new[]
+                    {
+                        ("Число куреня", report.Kurin.Number?.ToString(CultureInfo.InvariantCulture) ?? "підготовчий"),
+                        ("Станиця", report.Kurin.Stanytsia ?? "-"),
+                        ("Край / країна", report.Kurin.RegionOrCountry ?? "-"),
+                        ("Ім. кого", report.Kurin.NamedAfter ?? "-"),
+                        ("Опис", report.Kurin.Description ?? "-")
+                    }));
             });
         });
     }
 
     /// <summary>The kurin's plaque; a підготовчий курінь has no number yet, so its plaque is blank.</summary>
+    /// <summary>«Курінь #47»; a senior kurin by its own name, else its гілки.</summary>
+    private static string Title(KurinReportKurin kurin)
+        => kurin.IsSenior
+            ? kurin.NamedAfter ?? kurin.SeniorBranches!
+            : kurin.Number is int number ? $"Курінь #{number}" : "Підготовчий курінь";
+
     private static void ComposeKurinSilhouette(IContainer container, int? number)
     {
         container

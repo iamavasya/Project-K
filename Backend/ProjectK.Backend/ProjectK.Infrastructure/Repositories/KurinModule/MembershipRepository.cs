@@ -107,7 +107,8 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
                     m.Group != null ? m.Group.Name : null,
                     m.Kind,
                     m.JoinedAtUtc,
-                    m.LeftAtUtc)
+                    m.LeftAtUtc,
+                    m.Kurin.Branches.Select(b => new KurinNumbering(b.Branch, b.Number)).ToList())
             })
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -153,7 +154,8 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
                 m.Group != null ? m.Group.Name : null,
                 m.Kind,
                 m.JoinedAtUtc,
-                m.LeftAtUtc));
+                m.LeftAtUtc,
+                m.Kurin.Branches.Select(b => new KurinNumbering(b.Branch, b.Number)).ToList()));
 
     public Task<int> CountForMemberAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => Context.Memberships.CountAsync(m => m.MemberKey == memberKey, cancellationToken);

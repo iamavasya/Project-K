@@ -4,6 +4,7 @@ import { TreeSelectModule } from '@openng/optimus-ui/treeselect';
 import { TreeNode } from '@openng/optimus-ui/api';
 import { AgendaService } from '../../services/agenda-service/agenda.service';
 import { AgendaAssignTargets, AgendaLeadershipTarget, AgendaMemberTarget, AgendaTagTarget, AgendaTargetInput, AgendaTargetType } from '../../models/agenda';
+import { KurinFeaturesService } from '../../services/kurin-features-service/kurin-features.service';
 
 interface TargetNodeData {
   targetType: AgendaTargetType;
@@ -24,6 +25,7 @@ interface TargetNodeData {
   styleUrl: './agenda-assign-select.css'
 })
 export class AgendaAssignSelectComponent implements OnInit {
+  protected readonly features = inject(KurinFeaturesService);
   private readonly agendaService = inject(AgendaService);
   private readonly cdr = inject(ChangeDetectorRef);
 

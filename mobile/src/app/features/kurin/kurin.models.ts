@@ -1,3 +1,4 @@
+import { KurinNumbering } from '../../core/kurin-label';
 /**
  * The kurin, its groups and member cards as the API sends them. Kept in step with the web's
  * kurinModule/models (kurin.dto, group.dto, member.dto, membership.dto, member-award.dto,
@@ -12,11 +13,19 @@ export interface KurinDto {
   /** Null for a підготовчий курінь. */
   number: number | null;
   branch?: KurinBranch;
+  /** Every гілка with the kurin's number there, main one first. */
+  branches?: KurinNumbering[];
   stanytsia?: string | null;
   regionOrCountry?: string | null;
   namedAfter?: string | null;
   description?: string | null;
   profileVerificationEnabled?: boolean;
+  /** Whether the kurin keeps точкування now (web kurin.dto). */
+  scoreEnabled?: boolean;
+  /** The kurin's own role names: «Pysar» → «Скриптор» (web kurin.dto). */
+  roleNames?: Record<string, string>;
+  /** A senior kurin's emblem, shown instead of the УПЮ plate (web kurin.dto). */
+  emblemUrl?: string | null;
 }
 
 export interface GroupDto {

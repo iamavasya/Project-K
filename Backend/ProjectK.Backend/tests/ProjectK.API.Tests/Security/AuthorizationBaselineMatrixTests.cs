@@ -224,6 +224,13 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, KurinController.CreateKurinRequest>>(nameof(KurinController.Create), "RequireAdmin");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetProfile), "RequireUser");
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinKraiRequest>>(nameof(KurinController.SetKrai), "RequireAdmin");
+        yield return Row<Action<KurinController, Guid, CancellationToken>>(nameof(KurinController.GetBranchRequest), "RequireUser");
+        yield return Row<Action<KurinController, Guid, KurinController.KurinBranchRequestBody, CancellationToken>>(nameof(KurinController.SubmitBranchRequest), "RequireUser");
+        yield return Row<Action<KurinController, CancellationToken>>(nameof(KurinController.GetPendingBranchRequests), "RequireAdmin");
+        yield return Row<Action<KurinController, Guid, CancellationToken>>(nameof(KurinController.ApproveBranchRequest), "RequireAdmin");
+        yield return Row<Action<KurinController, Guid, CancellationToken>>(nameof(KurinController.RejectBranchRequest), "RequireAdmin");
+        yield return Row<Action<KurinController, Guid, UploadImageRequest, CancellationToken>>(nameof(KurinController.UploadEmblem), "RequireUser");
+        yield return Row<Action<KurinController, Guid, CancellationToken>>(nameof(KurinController.DeleteEmblem), "RequireUser");
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.GetCardFields), "RequireUser");
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinCardFieldsRequest>>(nameof(KurinController.SetCardFields), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.GetProbeEditions), "RequireUser");
