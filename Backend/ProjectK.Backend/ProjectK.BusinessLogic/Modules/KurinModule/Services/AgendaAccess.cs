@@ -221,10 +221,17 @@ public sealed class AgendaAccess : IAgendaAccess
             TagCarriersReach: await _tags.CarrierReachAsync(kurinKey, cancellationToken));
     }
 
-    public Task<ResourceAccessDecision> AuthorizeTargetAsync(
+    public async Task<ResourceAccessDecision> AuthorizeTargetAsync(
         AgendaTargetInput target,
         CancellationToken cancellationToken = default)
     {
+        // A kurin with tags off takes no new tag targets; those it already has stay (only new ones come here).
+        if (target.TargetType == AgendaTargetType.Tag
+            && (_currentUser.KurinKey is not { } kurinKey || (await _tags.SettingsAsync(kurinKey, cancellationToken))?.Enabled != true))
+        {
+            return ResourceAccessDecision.Deny("The kurin has tags turned off.");
+        }
+
         (KurinCapability Capability, ResourceType Scope)? right = target.TargetType switch
         {
             AgendaTargetType.Kurin => (KurinCapability.AssignKurin, ResourceType.Kurin),
@@ -238,8 +245,8 @@ public sealed class AgendaAccess : IAgendaAccess
         // A провід's scope is its гурток's, or the kurin alone for the КВ and the курінний провід —
         // so an own-group reach covers the провід of a гурток one leads and never a kurin-level one.
         return right is { } known
-            ? _resourceAccess.CheckCapabilityAsync(known.Capability, known.Scope, target.TargetKey, cancellationToken)
-            : Task.FromResult(ResourceAccessDecision.Deny($"Unknown target type {target.TargetType}."));
+            ? await _resourceAccess.CheckCapabilityAsync(known.Capability, known.Scope, target.TargetKey, cancellationToken)
+            : ResourceAccessDecision.Deny($"Unknown target type {target.TargetType}.");
     }
 
     public async Task<bool> CanAuthorAsync(CancellationToken cancellationToken = default)
