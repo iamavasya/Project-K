@@ -88,9 +88,10 @@ public sealed class KurinReportDataService
                     .OrderBy(name => name, StringComparer.CurrentCulture)
                     .ToArray());
 
-        // The report is read only by whoever holds the whole kurin, so it carries every tag when the kurin uses them.
-        var tagsOn = (await _tags.SettingsAsync(kurinKey, cancellationToken))?.Enabled == true;
-        var tagNamesByMember = tagsOn ? await TagNamesByMemberAsync(kurinKey, cancellationToken) : new Dictionary<Guid, IReadOnlyList<string>>();
+        // Tags go by the same rule as on the screen: only those of people whose tags the reader may see.
+        var showsTagsOf = await _tags.ShowsTagsOfAsync(kurinKey, cancellationToken);
+        var tagsShown = members.Any(member => showsTagsOf(member.UserKey, GroupOf(source, member.MemberKey)));
+        var tagNamesByMember = tagsShown ? await TagNamesByMemberAsync(kurinKey, cancellationToken) : new Dictionary<Guid, IReadOnlyList<string>>();
 
         var reportMembers = new List<KurinReportMember>(members.Count);
         foreach (var member in members)
@@ -102,7 +103,7 @@ public sealed class KurinReportDataService
                 kurinKey,
                 groupNamesByKey,
                 mentoredGroupsByUserKey,
-                tagNamesByMember.GetValueOrDefault(member.MemberKey) ?? [],
+                showsTagsOf(member.UserKey, GroupOf(source, member.MemberKey)) ? tagNamesByMember.GetValueOrDefault(member.MemberKey) ?? [] : [],
                 cancellationToken));
         }
 
@@ -180,7 +181,7 @@ public sealed class KurinReportDataService
             youth,
             BuildLevelTally(kurin.Branch, youth),
             reportMembers,
-            tagsOn);
+            tagsShown);
     }
 
     /// <summary>

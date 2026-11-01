@@ -74,10 +74,55 @@ public sealed class KurinReportDataServiceTests
             _tagVisibility.Object);
     }
 
-    private void TagsOn(bool enabled)
-        => _tagVisibility
+    private void TagsOn(bool enabled, Func<Guid?, Guid?, bool>? shows = null)
+    {
+        _tagVisibility
             .Setup(v => v.SettingsAsync(_kurinKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new KurinTagSettingsState(enabled, EnabledByDefault: false, OwnTagsVisible: true));
+        _tagVisibility
+            .Setup(v => v.ShowsTagsOfAsync(_kurinKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(shows ?? ((_, _) => enabled));
+    }
+
+    private (Member Alpha, Member Beta) TaggedInBothGroups()
+    {
+        var alpha = Person("Альфа", _alphaKey);
+        var beta = Person("Бета", _betaKey);
+        var tag = new KurinTag { KurinKey = _kurinKey, Name = "Новики" };
+        _tags.Setup(t => t.GetForKurinAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([tag]);
+        _tags.Setup(t => t.GetAssignmentsAsync(_kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new MemberTag { KurinTagKey = tag.KurinTagKey, MemberKey = alpha.MemberKey },
+            new MemberTag { KurinTagKey = tag.KurinTagKey, MemberKey = beta.MemberKey }
+        ]);
+        return (alpha, beta);
+    }
+
+    /// <summary>The report names tags by the reader's own «Бачити теги людей»: a гурток's reach shows that гурток only.</summary>
+    [Fact]
+    public async Task ShouldNameOnlyTheTagsTheReaderMaySee()
+    {
+        TaggedInBothGroups();
+        TagsOn(true, (_, groupKey) => groupKey == _alphaKey);
+
+        var report = await Build();
+
+        report!.ShowsTags.Should().BeTrue();
+        report.Youth.Single(member => member.FullName == "Тест Альфа").Tags.Should().Equal("Новики");
+        report.Youth.Single(member => member.FullName == "Тест Бета").Tags.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ShouldCarryNoTagsAtAll_ForAReaderTheKurinShowsNone()
+    {
+        TaggedInBothGroups();
+        TagsOn(true, (_, _) => false);
+
+        var report = await Build();
+
+        report!.ShowsTags.Should().BeFalse();
+        report.Members.Should().OnlyContain(member => member.Tags.Count == 0);
+    }
 
     private Member Person(string lastName, Guid? groupKey = null, PlastLevel? level = null, bool withAccount = false)
     {

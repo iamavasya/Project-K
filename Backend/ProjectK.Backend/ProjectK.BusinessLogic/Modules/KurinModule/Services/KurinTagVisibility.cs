@@ -111,6 +111,31 @@ public sealed class KurinTagVisibility : IKurinTagVisibility
         }
     }
 
+    public async Task<Func<Guid?, Guid?, bool>> ShowsTagsOfAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+    {
+        var settings = await SettingsAsync(kurinKey, cancellationToken);
+        return settings is { Enabled: true }
+            ? await ViewerAsync(kurinKey, settings.OwnTagsVisible, cancellationToken)
+            : (_, _) => false;
+    }
+
+    public async Task<CapabilityReach> CarrierReachAsync(Guid kurinKey, CancellationToken cancellationToken = default)
+    {
+        if ((await SettingsAsync(kurinKey, cancellationToken))?.Enabled != true)
+        {
+            return CapabilityReach.None;
+        }
+
+        if (await CanManageAsync(kurinKey, cancellationToken))
+        {
+            return CapabilityReach.Kurin;
+        }
+
+        return _currentUser.KurinKey == kurinKey
+            ? await _permissions.ReachAsync(KurinCapability.SeeTags, cancellationToken)
+            : CapabilityReach.None;
+    }
+
     // Who the viewer sees tags on, as a test of (account, гурток) of the person.
     private async Task<Func<Guid?, Guid?, bool>> ViewerAsync(Guid kurinKey, bool ownVisible, CancellationToken cancellationToken)
     {
