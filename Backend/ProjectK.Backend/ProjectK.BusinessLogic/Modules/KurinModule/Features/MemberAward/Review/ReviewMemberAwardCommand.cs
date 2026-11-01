@@ -73,7 +73,7 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
             return new ServiceResult<MemberAwardDto>(ResultType.Conflict);
         }
 
-        if (await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Update, award.MemberKey, cancellationToken: cancellationToken) is { IsAllowed: false } senior)
+        if (await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Update, award.MemberKey, cancellationToken: cancellationToken, capability: KurinCapabilities.ConfirmAward(awardLevel)) is { IsAllowed: false } senior)
         {
             return ServiceResult<MemberAwardDto>.Failure(ResultType.Forbidden, "SeniorYouthRecord", senior.Reason);
         }

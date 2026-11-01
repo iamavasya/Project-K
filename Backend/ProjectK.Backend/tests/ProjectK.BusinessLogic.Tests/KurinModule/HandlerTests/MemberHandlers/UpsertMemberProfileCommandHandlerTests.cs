@@ -328,9 +328,9 @@ public class UpsertMemberProfileCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Update_ShouldLeaveASeniorsStupeni_WhenTheSeniorGuardRefuses()
+    public async Task Handle_Update_ShouldRefuseASeniorsStupeni_WhenTheSeniorGuardRefuses()
     {
-        // LIFE-01: a group-scoped leader may edit the rest, but a senior's ступені are not theirs.
+        // LIFE-01: skipped quietly, the save answered 200 and still marked the profile stale.
         var group = MakeGroup();
         _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "KV.Zvyazkovyi" });
         var memberKey = Guid.NewGuid();
@@ -342,14 +342,15 @@ public class UpsertMemberProfileCommandHandlerTests
             Email = "kozak@example.com",
             PhoneNumber = "+380501234567",
             DateOfBirth = new DateOnly(2004, 5, 14),
-            PlastLevelHistory = [new PlastLevelHistory { MemberKey = memberKey, PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2022, 10, 1) }]
+            PlastLevelHistory = [new PlastLevelHistory { MemberKey = memberKey, PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2022, 10, 1) }],
+            ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedCurrent
         };
         ExistingMemberIs(existing, memberKey);
         GroupIs(group);
         _access.Setup(a => a.CheckSeniorYouthRecordAsync(ResourceType.Member, ResourceAction.Update, memberKey, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ResourceAccessDecision.Deny("kurin-wide only"));
 
-        await _handler.Handle(new UpsertMemberProfileCommand
+        var result = await _handler.Handle(new UpsertMemberProfileCommand
         {
             MemberKey = memberKey,
             GroupKey = group.GroupKey,
@@ -361,7 +362,11 @@ public class UpsertMemberProfileCommandHandlerTests
             PlastLevelHistories = [new PlastLevelHistoryDto { PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2020, 7, 18) }]
         }, CancellationToken.None);
 
+        result.Type.Should().Be(ResultType.Forbidden);
+        result.ErrorCode.Should().Be(UpsertMemberProfileCommandHandler.SeniorYouthRecord);
         existing.PlastLevelHistory.Select(entry => entry.PlastLevel).Should().Equal(PlastLevel.Starshoplastun);
+        existing.ProfileVerificationStatus.Should().Be(MemberProfileVerificationStatus.VerifiedCurrent);
+        _uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

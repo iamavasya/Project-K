@@ -58,13 +58,45 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
     /// </summary>
     public override async Task<Member?> GetByKeyAsync(Guid entityKey, CancellationToken cancellationToken = default)
     {
-        return await Context.Members.AsSplitQuery()
+        var member = await Context.Members.AsSplitQuery()
                                      .Include(m => m.PlastLevelHistory)
                                      .Include(m => m.LeadershipHistories)
                                         .ThenInclude(h => h.Leadership.Group)
                                      .Include(m => m.MemberWarnings)
                                      .Include(m => m.MemberAwards)
                                      .FirstOrDefaultAsync(e => e.MemberKey == entityKey, cancellationToken);
+        if (member is not null)
+        {
+            await AttachDissolvedGroupsAsync(member, cancellationToken);
+        }
+
+        return member;
+    }
+
+    /// <summary>
+    /// The include above passes through the dissolved-гурток filter, so an office held in a гурток
+    /// since dissolved comes back with no гурток — and with it no name and no kurin. The person's
+    /// history keeps them: they are read here past the filter.
+    /// </summary>
+    private async Task AttachDissolvedGroupsAsync(Member member, CancellationToken cancellationToken)
+    {
+        var missing = member.LeadershipHistories
+            .Where(history => history.Leadership.GroupKey is not null && history.Leadership.Group is null)
+            .Select(history => history.Leadership.GroupKey!.Value)
+            .Distinct()
+            .ToList();
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        var groups = await Context.Groups.IgnoreQueryFilters()
+            .Where(group => missing.Contains(group.GroupKey))
+            .ToDictionaryAsync(group => group.GroupKey, cancellationToken);
+        foreach (var history in member.LeadershipHistories.Where(history => history.Leadership.GroupKey is not null && history.Leadership.Group is null))
+        {
+            history.Leadership.Group = groups.GetValueOrDefault(history.Leadership.GroupKey!.Value);
+        }
     }
 
     /// <summary>The people currently placed in one гурток.</summary>

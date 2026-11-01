@@ -869,6 +869,33 @@ describe('MemberCardComponent', () => {
       expect(component.youthRecordLocked).toBe(true);
     });
 
+    it('відзначення УПЮ старшого Звʼязковий не додає й не править, лише розглядає', () => {
+      openLife(true);
+      expect(component.youthRecordLocked).toBe(false);
+      expect(component.canEditYouthAwards).toBe(false);
+    });
+
+    it('поки юнацьке членство в курені УПЮ відкрите, людина ще юнак', () => {
+      routeStub.snapshot.data = { view: 'life' };
+      memberServiceSpy.getByKey.mockReturnValue(of(senior));
+      memberServiceSpy.getMemberships.mockReturnValue(of([seniorHere, { ...youthBefore, leftAtUtc: null, isCurrent: true }]));
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.isClosedYouthRecord).toBe(false);
+      expect(component.youthRecordLocked).toBe(false);
+    });
+
+    it('невдале збереження відзначення показує помилку', () => {
+      openLife(true);
+      vi.spyOn(component.memberAwardService, 'upsertAward').mockReturnValue(throwError(() => new Error('boom')));
+      const add = vi.spyOn(component.messageService, 'add');
+
+      component.onSaveAward({} as never);
+
+      expect(add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error', summary: 'Не вдалося зберегти відзначення' }));
+    });
+
     it('у юнака лише етап УПЮ', () => {
       routeStub.snapshot.data = { view: 'life' };
       memberServiceSpy.getByKey.mockReturnValue(of({ ...member, plastLevelHistories: [{ plastLevel: PlastLevel.Uchasnyk, dateAchieved: '2024-10-01' }] }));

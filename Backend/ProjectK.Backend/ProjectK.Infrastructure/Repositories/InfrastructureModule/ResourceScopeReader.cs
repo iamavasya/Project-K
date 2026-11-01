@@ -112,13 +112,16 @@ public class ResourceScopeReader : IResourceScopeReader
             return false;
         }
 
-        return await (
+        var standing = await (
                 from membership in _context.Memberships
                 where membership.MemberKey == memberKey && membership.LeftAtUtc == null
                 join branch in _context.Set<KurinBranchNumber>() on membership.KurinKey equals branch.KurinKey
-                where branch.Branch == KurinBranch.USP || branch.Branch == KurinBranch.UPS
-                select branch)
-            .AnyAsync(cancellationToken);
+                select new { membership.Kind, branch.Branch })
+            .ToListAsync(cancellationToken);
+
+        // While they are still a юнак in an УПЮ kurin, they are a юнак, whatever else they are too.
+        return standing.Any(row => KurinBranchSet.IsSenior(row.Branch))
+               && !standing.Any(row => row.Branch == KurinBranch.UPYu && row.Kind == MembershipKind.Youth);
     }
 
     public async Task<Guid?> GetPersonAccountKeyAsync(

@@ -52,4 +52,25 @@ public sealed class DuesDirectory : IDuesDirectory
             .Where(q => q.Quarter < current && q.Balance < 0)
             .Sum(q => -q.Balance);
     }
+
+    public async Task<bool> HasLedgerAsync(Guid kurinKey, IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default)
+    {
+        if (membershipKeys.Count == 0)
+        {
+            return false;
+        }
+
+        var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
+        return ledger.Accounts().Any(account => membershipKeys.Contains(account.MembershipKey) && (account.Charged != 0 || account.Payments != 0));
+    }
+
+    public async Task<bool> GroupBoxSettledAsync(Guid kurinKey, Guid groupKey, CancellationToken cancellationToken = default)
+    {
+        var ledger = await _ledgers.OpenAsync(kurinKey, cancellationToken);
+        var accounts = ledger.Accounts();
+        var handover = ledger.KurinBox(accounts).Handovers.FirstOrDefault(h => h.GroupKey == groupKey);
+        return ledger.GroupBox(groupKey, accounts).Box.Total == 0
+               && (handover is null || handover.Outstanding == 0)
+               && !accounts.Any(account => account.GroupKey == groupKey && account.Balance < 0);
+    }
 }

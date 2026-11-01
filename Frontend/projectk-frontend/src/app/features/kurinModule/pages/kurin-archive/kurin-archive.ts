@@ -265,7 +265,10 @@ export class KurinArchiveComponent implements OnInit, OnDestroy {
         this.closeEdit();
         this.load();
       },
-      error: () => this.saving.set(false)
+      error: (error: unknown) => {
+        this.saving.set(false);
+        this.refuse(error);
+      }
     });
   }
 
@@ -361,12 +364,25 @@ export class KurinArchiveComponent implements OnInit, OnDestroy {
           error: (error: unknown) => {
             if (error instanceof HttpErrorResponse && error.error?.error === 'DangerZoneClosed') {
               this.closeZone();
+            } else {
+              this.refuse(error);
             }
             this.load();
           }
         });
       }
     });
+  }
+
+  /** The server keeps a record that dues, a held office or another membership still lean on. */
+  private refuse(error: unknown): void {
+    const code = error instanceof HttpErrorResponse ? error.error?.error : null;
+    const summary = ({
+      ArchiveMembershipHasDues: 'За членством є внески',
+      ArchiveOpenOffice: 'Роль із того часу ще триває',
+      ArchiveMembershipOverlap: 'Дати перетинаються з іншим членством'
+    } as Record<string, string>)[code ?? ''] ?? 'Не вдалося зберегти';
+    this.messages.add({ severity: 'error', summary });
   }
 
   private proofErrorText(error: unknown): string {

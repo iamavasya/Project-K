@@ -21,4 +21,18 @@ public interface IDuesDirectory
     /// keeps them. Zero when they are square.
     /// </summary>
     Task<decimal> GetOwedAsync(Guid kurinKey, IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Whether these memberships of the kurin carry anything in the ledger: a charge, a payment, a
+    /// surplus. Such a membership is not deleted from the archive: its money would stay under a key
+    /// nobody has any more.
+    /// </summary>
+    Task<bool> HasLedgerAsync(Guid kurinKey, IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Whether a гурток's box is square: no money in it, nothing still owed up to the kurin, and no
+    /// account of the гурток in debt. Only then may the гурток be dissolved — after that its box is
+    /// no longer read.
+    /// </summary>
+    Task<bool> GroupBoxSettledAsync(Guid kurinKey, Guid groupKey, CancellationToken cancellationToken = default);
 }

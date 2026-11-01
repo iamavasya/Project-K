@@ -47,6 +47,7 @@ import { AwardBlock } from './components/award-blocks/award-blocks.function';
 import { MemberDegreesTileComponent } from './components/member-degrees-tile/member-degrees-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
 import { MembershipDto } from '../../models/membership.dto';
+import { MembershipKind } from '../../models/enums/membership-kind.enum';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { hasYouthProgram, isSeniorBranch, KURIN_BRANCH_LABELS, KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { degreeRows, DegreeRow, SENIOR_LADDER, YOUTH_LADDER } from './components/member-degrees-tile/member-degrees.function';
@@ -505,7 +506,26 @@ export class MemberCardComponent implements OnInit {
    * вмілості й відзначення УПЮ людина собі не ставить. У юнака все лишається як на картці.
    */
   get youthRecordLocked(): boolean {
-    return this.isLifeView && !this.hasYouthProgram && (this.isOwnCard || !this.isZvyazkovyiHere);
+    return this.isLifeView && this.isClosedYouthRecord && (this.isOwnCard || !this.isZvyazkovyiHere);
+  }
+
+  /**
+   * The server's line (`StandsInSeniorKurinAsync`): someone who stands in a УСП or УПС kurin and is no
+   * longer a юнак in any УПЮ kurin. While a юнацьке membership in an УПЮ kurin is open, they are a юнак.
+   */
+  get isClosedYouthRecord(): boolean {
+    const current = this.memberships.filter(m => m.isCurrent);
+    const senior = current.some(m => isSeniorBranch(m.branch) || (m.numbering ?? []).some(n => isSeniorBranch(n.branch)));
+    const youthInUpyu = current.some(m => m.kind === MembershipKind.Youth && m.branch === KurinBranch.UPYu);
+    return senior && !youthInUpyu;
+  }
+
+  /**
+   * An УПЮ відзначення is added only in an УПЮ kurin (AWARD-02, the owner kept it so): in a senior's
+   * life story the Звʼязковий confirms or removes what is there, but adds and edits nothing.
+   */
+  get canEditYouthAwards(): boolean {
+    return this.canEditMember && !this.youthRecordLocked && !(this.isLifeView && this.isClosedYouthRecord);
   }
 
   /**
@@ -1396,8 +1416,8 @@ export class MemberCardComponent implements OnInit {
       next: () => {
         this.refreshData();
       },
-      error: (error) => {
-        console.error('Error saving award:', error);
+      error: (error: unknown) => {
+        this.messageService.add({ severity: 'error', summary: 'Не вдалося зберегти відзначення', detail: failureDetail(error, 'Спробуй ще раз.') });
       }
     });
   }

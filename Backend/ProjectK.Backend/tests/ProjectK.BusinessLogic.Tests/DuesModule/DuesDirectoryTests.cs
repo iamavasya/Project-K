@@ -117,4 +117,29 @@ public class DuesDirectoryTests
     {
         (await Directory().GetOwedAsync(Kurin, [Guid.NewGuid()])).Should().Be(0);
     }
+
+    [Fact]
+    public async Task HasLedger_OnlyForAMembershipWithChargesOrPayments()
+    {
+        var directory = Directory();
+
+        (await directory.HasLedgerAsync(Kurin, [Youth])).Should().BeTrue();
+        (await directory.HasLedgerAsync(Kurin, [Guid.NewGuid()])).Should().BeFalse();
+        (await directory.HasLedgerAsync(Kurin, [])).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AGroupBox_WithADebtOrMoneyInIt_IsNotSettled()
+    {
+        (await Directory().GroupBoxSettledAsync(Kurin, Group)).Should().BeFalse();
+
+        Pay(1200);
+        (await Directory().GroupBoxSettledAsync(Kurin, Group)).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AGroupBox_NobodyEverPaidInto_IsSettled()
+    {
+        (await Directory().GroupBoxSettledAsync(Kurin, Guid.NewGuid())).Should().BeTrue();
+    }
 }

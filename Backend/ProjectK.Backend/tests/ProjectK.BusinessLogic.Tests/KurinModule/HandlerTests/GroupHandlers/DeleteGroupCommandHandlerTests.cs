@@ -7,6 +7,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Group.Delete;
 using ProjectK.BusinessLogic.Services.Caching;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
@@ -26,6 +27,7 @@ public class DeleteGroupHandlerTests
     private readonly Mock<IMentorAssignmentRepository> _mentorRepositoryMock = new();
     private readonly Mock<IAgendaItemRepository> _agendaItemRepositoryMock = new();
     private readonly Mock<IKurinAudit> _auditMock = new();
+    private readonly Mock<IDuesDirectory> _dues = new();
     private readonly DeleteGroupCommandHandler _handler;
 
     public DeleteGroupHandlerTests()
@@ -38,11 +40,12 @@ public class DeleteGroupHandlerTests
         _leadershipRepositoryMock
             .Setup(r => r.CloseForGroupAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
+        _dues.Setup(d => d.GroupBoxSettledAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _mentorRepositoryMock
             .Setup(r => r.GetByGroupKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        _handler = new DeleteGroupCommandHandler(_unitOfWorkMock.Object, Mock.Of<IBackendCache>(), _auditMock.Object, new FixedTimeProvider(Now));
+        _handler = new DeleteGroupCommandHandler(_unitOfWorkMock.Object, Mock.Of<IBackendCache>(), _auditMock.Object, new FixedTimeProvider(Now), _dues.Object);
     }
 
     [Fact]
@@ -65,6 +68,23 @@ public class DeleteGroupHandlerTests
         _auditMock.Verify(a => a.RecordAsync(
             It.Is<AuditRecord>(record => record.Action == AuditActions.Archive.GroupDissolved && record.SubjectKey == groupKey),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_RefusesWhileTheGroupsBoxIsNotSettled()
+    {
+        // A dissolved гурток's box is read nowhere: money left in it would be stuck for good.
+        var groupKey = Guid.NewGuid();
+        var group = new Group("Alpha", Guid.NewGuid()) { GroupKey = groupKey };
+        _groupRepositoryMock.Setup(r => r.GetByKeyAsync(groupKey, default)).ReturnsAsync(group);
+        _dues.Setup(d => d.GroupBoxSettledAsync(group.KurinKey, groupKey, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var result = await _handler.Handle(new DeleteGroupCommand(groupKey), default);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be("GroupBoxNotSettled");
+        group.DissolvedAtUtc.Should().BeNull();
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(default), Times.Never);
     }
 
     [Fact]

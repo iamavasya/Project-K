@@ -42,6 +42,9 @@ public class UpsertMemberProfileCommandHandler
     /// <summary>The error a write without an email is refused with.</summary>
     public const string EmailRequired = "EmailRequired";
 
+    /// <summary>The error a change to a senior's ступені is refused with, by whoever may not make it.</summary>
+    public const string SeniorYouthRecord = "SeniorYouthRecord";
+
     public UpsertMemberProfileCommandHandler(
         IMemberUnitOfWork unitOfWork,
         IUnitOfWork kurinData,
@@ -197,6 +200,17 @@ public class UpsertMemberProfileCommandHandler
         else
         {
             isCreated = false;
+
+            // A senior's ступені: the person, or who holds the kurin-wide right where they stand now.
+            // Refused before anything changes: skipped quietly, the save answered 200 and still
+            // marked the profile stale over ступені it never wrote.
+            if (CanEditPlastLevels(existing)
+                && HasPlastLevelHistoryChange(request.PlastLevelHistories, existing.PlastLevelHistory)
+                && await _access.CheckSeniorYouthRecordAsync(ResourceType.Member, ResourceAction.Update, existing.MemberKey, ownerMayChange: true, cancellationToken) is { IsAllowed: false } senior)
+            {
+                return ServiceResult<MemberProfileWriteResult>.Failure(ResultType.Forbidden, SeniorYouthRecord, senior.Reason);
+            }
+
             var shouldMarkProfileStale = wasProfileVerifiedCurrent
                 && (HasSignificantProfileChange(request, existing, current, kurinKey, groupKey)
                     || !string.Equals(existing.CardExtras, cardExtras, StringComparison.Ordinal));
@@ -255,9 +269,7 @@ public class UpsertMemberProfileCommandHandler
                 existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
             }
 
-            // A senior's ступені: the person, or who holds the kurin-wide right where they stand now.
-            if (CanEditPlastLevels(existing)
-                && (await _access.CheckSeniorYouthRecordAsync(ResourceType.Member, ResourceAction.Update, existing.MemberKey, ownerMayChange: true, cancellationToken)).IsAllowed)
+            if (CanEditPlastLevels(existing))
             {
                 UpdatePlastLevelHistory(existing.MemberKey, kurinKey, request.PlastLevelHistories, existing.PlastLevelHistory);
                 existing.LatestPlastLevel = LatestLevelOf(existing.PlastLevelHistory);
