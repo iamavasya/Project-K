@@ -23,6 +23,15 @@ public interface IResourceScopeReader
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Whether the person a resource is about stands in a УСП or УПС kurin now. Their probes,
+    /// вмілості and УПЮ відзначення are then a closed youth record, which the rules guard harder.
+    /// </summary>
+    Task<bool> StandsInSeniorKurinAsync(
+        ResourceType resourceType,
+        Guid resourceKey,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The account of the person a resource is about — a person, their data, their progress — and
     /// null for anything else or a person without an account. Asked without a kurin: a person's
     /// own record is theirs whether or not they stand in any kurin today.

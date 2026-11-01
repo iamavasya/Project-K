@@ -73,6 +73,11 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
             return new ServiceResult<MemberAwardDto>(ResultType.Conflict);
         }
 
+        if (await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Update, award.MemberKey, cancellationToken: cancellationToken) is { IsAllowed: false } senior)
+        {
+            return ServiceResult<MemberAwardDto>.Failure(ResultType.Forbidden, "SeniorYouthRecord", senior.Reason);
+        }
+
         // The permission at the endpoint is shared by every level; which levels this person may
         // confirm is the kurin's policy.
         var level = await _access.CheckCapabilityAsync(

@@ -30,6 +30,7 @@ namespace ProjectK.BusinessLogic.Tests.KurinModule.HandlerTests.MemberHandlers;
 public class UpsertMemberProfileCommandHandlerTests
 {
     private readonly Mock<IMemberUnitOfWork> _uowMock;
+    private readonly Mock<IResourceAccessService> _access = new();
     private readonly Mock<IUnitOfWork> _kurinDataMock;
     private readonly Mock<IMemberRepository> _memberRepoMock;
     private readonly Mock<IGroupRepository> _groupRepoMock;
@@ -69,6 +70,8 @@ public class UpsertMemberProfileCommandHandlerTests
 
         _mapper = mapperConfig.CreateMapper();
         _journal = new JournalRecorder(_currentUserContextMock.Object);
+        _access.Setup(a => a.CheckSeniorYouthRecordAsync(It.IsAny<ResourceType>(), It.IsAny<ResourceAction>(), It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Allow());
         _handler = Handler(FieldAccess.SeesEverything());
     }
 
@@ -81,7 +84,8 @@ public class UpsertMemberProfileCommandHandlerTests
         _accountsMock.Object,
         _profilesMock.Object,
         fieldAccess,
-        _journal.Audit);
+        _journal.Audit,
+        _access.Object);
 
     private void AccountIs(Guid userKey, OnboardingStatus status) =>
         _accountsMock.Setup(a => a.FindAsync(userKey, It.IsAny<CancellationToken>()))
@@ -321,6 +325,43 @@ public class UpsertMemberProfileCommandHandlerTests
         created.PlastLevelHistory.Select(entry => entry.PlastLevel)
             .Should().BeEquivalentTo([PlastLevel.Uchasnyk, PlastLevel.Skob]);
         created.LatestPlastLevel.Should().Be(PlastLevel.Skob);
+    }
+
+    [Fact]
+    public async Task Handle_Update_ShouldLeaveASeniorsStupeni_WhenTheSeniorGuardRefuses()
+    {
+        // LIFE-01: a group-scoped leader may edit the rest, but a senior's ступені are not theirs.
+        var group = MakeGroup();
+        _currentUserContextMock.SetupGet(x => x.Roles).Returns(new[] { "KV.Zvyazkovyi" });
+        var memberKey = Guid.NewGuid();
+        var existing = new Member
+        {
+            MemberKey = memberKey,
+            FirstName = "Andrii",
+            LastName = "Kozak",
+            Email = "kozak@example.com",
+            PhoneNumber = "+380501234567",
+            DateOfBirth = new DateOnly(2004, 5, 14),
+            PlastLevelHistory = [new PlastLevelHistory { MemberKey = memberKey, PlastLevel = PlastLevel.Starshoplastun, DateAchieved = new DateOnly(2022, 10, 1) }]
+        };
+        ExistingMemberIs(existing, memberKey);
+        GroupIs(group);
+        _access.Setup(a => a.CheckSeniorYouthRecordAsync(ResourceType.Member, ResourceAction.Update, memberKey, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Deny("kurin-wide only"));
+
+        await _handler.Handle(new UpsertMemberProfileCommand
+        {
+            MemberKey = memberKey,
+            GroupKey = group.GroupKey,
+            FirstName = "Andrii",
+            LastName = "Kozak",
+            Email = "kozak@example.com",
+            PhoneNumber = "+380501234567",
+            DateOfBirth = new DateOnly(2004, 5, 14),
+            PlastLevelHistories = [new PlastLevelHistoryDto { PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2020, 7, 18) }]
+        }, CancellationToken.None);
+
+        existing.PlastLevelHistory.Select(entry => entry.PlastLevel).Should().Equal(PlastLevel.Starshoplastun);
     }
 
     [Fact]

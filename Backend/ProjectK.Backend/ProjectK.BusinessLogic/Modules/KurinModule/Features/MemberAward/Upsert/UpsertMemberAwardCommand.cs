@@ -105,6 +105,12 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
                 ResultType.BadRequest, "YouthAwardInSeniorKurin", "An УПЮ відзначення is recorded in an УПЮ kurin.");
         }
 
+        var action = existingAward is null ? ResourceAction.Create : ResourceAction.Update;
+        if (await _access.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, action, request.MemberKey, cancellationToken: cancellationToken) is { IsAllowed: false } senior)
+        {
+            return ServiceResult<MemberAwardDto>.Failure(ResultType.Forbidden, "SeniorYouthRecord", senior.Reason);
+        }
+
         if (existingAward != null && existingAward.MemberKey == request.MemberKey)
         {
             // An edit sends the award back for review, so editing a confirmed one un-confirms it:

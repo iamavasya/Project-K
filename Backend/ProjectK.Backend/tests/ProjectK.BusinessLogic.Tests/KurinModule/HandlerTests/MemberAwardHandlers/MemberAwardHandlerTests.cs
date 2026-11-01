@@ -155,6 +155,30 @@ public class MemberAwardHandlerTests
     }
 
     [Fact]
+    public async Task Upsert_ShouldRefuseAnUpyuAward_WhenTheSeniorGuardRefuses()
+    {
+        // LIFE-01: a senior's УПЮ відзначення is the kurin-wide holder's to add, never their own.
+        var memberKey = Guid.NewGuid();
+        _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(Guid.NewGuid());
+        _memberRepositoryMock
+            .Setup(x => x.GetByKeyAsync(memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Member { MemberKey = memberKey });
+        _access.Setup(x => x.CheckSeniorYouthRecordAsync(ResourceType.MemberAward, ResourceAction.Create, memberKey, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ResourceAccessDecision.Deny("A senior does not enter their own youth record."));
+
+        var result = await _upsertHandler.Handle(new UpsertMemberAwardCommand
+        {
+            MemberKey = memberKey,
+            Level = MemberAwardLevel.First,
+            DateAcquired = DateTime.UtcNow.AddDays(-1)
+        }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Forbidden);
+        result.ErrorCode.Should().Be("SeniorYouthRecord");
+        _memberAwardRepositoryMock.Verify(x => x.Create(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Upsert_ShouldCreateNewAward_WhenKeyIsNotProvided()
     {
         var memberKey = Guid.NewGuid();

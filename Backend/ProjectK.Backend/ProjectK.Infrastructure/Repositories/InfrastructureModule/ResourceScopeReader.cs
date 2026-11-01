@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -101,12 +102,47 @@ public class ResourceScopeReader : IResourceScopeReader
         };
     }
 
+    public async Task<bool> StandsInSeniorKurinAsync(
+        ResourceType resourceType,
+        Guid resourceKey,
+        CancellationToken cancellationToken = default)
+    {
+        if (await PersonOfAsync(resourceType, resourceKey, cancellationToken) is not { } memberKey)
+        {
+            return false;
+        }
+
+        return await (
+                from membership in _context.Memberships
+                where membership.MemberKey == memberKey && membership.LeftAtUtc == null
+                join branch in _context.Set<KurinBranchNumber>() on membership.KurinKey equals branch.KurinKey
+                where branch.Branch == KurinBranch.USP || branch.Branch == KurinBranch.UPS
+                select branch)
+            .AnyAsync(cancellationToken);
+    }
+
     public async Task<Guid?> GetPersonAccountKeyAsync(
         ResourceType resourceType,
         Guid resourceKey,
         CancellationToken cancellationToken = default)
     {
-        Guid? memberKey = resourceType switch
+        if (await PersonOfAsync(resourceType, resourceKey, cancellationToken) is not { } memberKey)
+        {
+            return null;
+        }
+
+        // From the memberships, closed ones included, like every other access answer: a person
+        // released from their last kurin still has the rows that say whose account they were.
+        return await _context.Memberships
+            .Where(ms => ms.MemberKey == memberKey && ms.UserKey != null)
+            .Select(ms => ms.UserKey)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    /// <summary>The person a resource is about: a person and their data, or the owner of a progress record.</summary>
+    private async Task<Guid?> PersonOfAsync(ResourceType resourceType, Guid resourceKey, CancellationToken cancellationToken)
+    {
+        return resourceType switch
         {
             ResourceType.Member or ResourceType.MemberContacts or ResourceType.MemberBirthDate
                 or ResourceType.MemberBirthday or ResourceType.MemberAddress or ResourceType.MemberParents
@@ -121,18 +157,6 @@ public class ResourceScopeReader : IResourceScopeReader
                 .FirstOrDefaultAsync(cancellationToken),
             _ => null
         };
-
-        if (memberKey is null)
-        {
-            return null;
-        }
-
-        // From the memberships, closed ones included, like every other access answer: a person
-        // released from their last kurin still has the rows that say whose account they were.
-        return await _context.Memberships
-            .Where(ms => ms.MemberKey == memberKey && ms.UserKey != null)
-            .Select(ms => ms.UserKey)
-            .FirstOrDefaultAsync(cancellationToken);
     }
 
     private Task<ResourceScope?> MembershipScopeAsync(
