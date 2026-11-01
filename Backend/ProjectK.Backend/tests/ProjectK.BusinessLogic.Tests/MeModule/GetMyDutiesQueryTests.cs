@@ -61,6 +61,7 @@ public class GetMyDutiesQueryTests
         leaderships.Setup(l => l.GetActiveLeadershipKeysForMemberAsync(Person, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _unitOfWork.SetupGet(u => u.AgendaItems).Returns(agenda.Object);
         _unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
+        _unitOfWork.SetupGet(u => u.KurinTags).Returns(TestHelpers.NoKurinTags.Repository());
         var dismissed = new Mock<IDismissedDutyRepository>();
         dismissed.Setup(d => d.GetForUserAsync(User, It.IsAny<CancellationToken>())).ReturnsAsync(() => _dismissed);
         _unitOfWork.SetupGet(u => u.DismissedDuties).Returns(dismissed.Object);

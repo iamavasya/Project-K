@@ -50,5 +50,11 @@ public enum ResourceType
     KurinJournal,
 
     /// <summary>Which edition of the probe programme a гурток walks. Keyed by the гурток.</summary>
-    GroupProbeEdition
+    GroupProbeEdition,
+
+    /// <summary>
+    /// The kurin's tags and who carries them. Read is seeing the tags on people; Update is defining
+    /// tags and putting them on. Keyed by the kurin or by the person; who gets it is the kurin's policy.
+    /// </summary>
+    MemberTag
 }

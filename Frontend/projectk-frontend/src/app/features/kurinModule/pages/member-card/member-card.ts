@@ -71,6 +71,7 @@ import { initials } from '../../../dashboardModule/functions/greeting.function';
 import { MemberWarningsDialogComponent } from './components/member-warnings-dialog/member-warnings-dialog';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
+import { MemberTagsEditorComponent } from '../../components/member-tags-editor/member-tags-editor';
 
 @Component({
   selector: 'app-member-card',
@@ -96,6 +97,7 @@ import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.
     MemberWarningsDialogComponent,
     TileBoardComponent,
     TileDefDirective,
+    MemberTagsEditorComponent,
     RouterLink
   ],
   providers: [ConfirmationService],
@@ -188,6 +190,13 @@ export class MemberCardComponent implements OnInit {
     MemberWarningLevel.Level2,
     MemberWarningLevel.Level3
   ];
+  /** Нові теги людини після збереження в редакторі тегів. */
+  onTagsChanged(tagKeys: string[]): void {
+    if (this.member) {
+      this.member = { ...this.member, tagKeys };
+    }
+  }
+
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.memberKey = params.get('memberKey');

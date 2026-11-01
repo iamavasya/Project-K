@@ -102,3 +102,6 @@
     flex: 1 1 100%;
   }
 }
+
+.registry__tag-option { align-items: center; display: inline-flex; gap: 0.45rem; }
+.registry__tag-dot { border-radius: 50%; height: 0.6rem; width: 0.6rem; }

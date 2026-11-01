@@ -115,5 +115,24 @@ public static class AuditActions
 
         /// <summary>A гурток moved to another edition of the probe programme.</summary>
         public const string GroupProbeEditionChanged = "Settings.GroupProbeEditionChanged";
+
+        /// <summary>Tags turned on or off, or whether people see their own.</summary>
+        public const string TagSettingsChanged = "Settings.TagSettingsChanged";
+    }
+
+    /// <summary>The kurin's tags and who carries them.</summary>
+    public static class Tag
+    {
+        public const string Created = "Tag.Created";
+        public const string Changed = "Tag.Changed";
+
+        /// <summary>The tag is gone, and with it from everyone who carried it.</summary>
+        public const string Deleted = "Tag.Deleted";
+
+        /// <summary>The tag was put on a person; one entry per person.</summary>
+        public const string Put = "Tag.Put";
+
+        /// <summary>The tag was taken off a person.</summary>
+        public const string TakenOff = "Tag.TakenOff";
     }
 }

@@ -118,12 +118,25 @@
       </section>
     }
 
+    <section class="kurin-tile" aria-labelledby="kurin-tags-title">
+      <div class="setting-copy">
+        <h2 id="kurin-tags-title">Теги</h2>
+        <p>
+          Курінь заводить свої теги й ставить їх людям: рівні, належність, власні ступені. Вимкнені
+          теги ніде не видно, але вони лишаються — увімкнеш, і все на місці. Хто бачить чужі теги й хто
+          їх ставить, — у «Правах і видимості» нижче. Самі теги заводять у реєстрі.
+        </p>
+      </div>
+      <app-kurin-tag-settings #tagSettings [kurinKey]="kurinKey" />
+    </section>
+
     <section class="kurin-tile" aria-labelledby="access-policy-title">
       <div class="setting-copy">
         <h2 id="access-policy-title">Права й видимість</h2>
         <p>
           Хто що бачить у картках юнаків і хто що може робити з пересторогами, відзначеннями, пробами
-          й вмілостями. «Свій гурток» — гурток, у якому людина є або який веде; «Увесь курінь» — усі.
+          й вмілостями, хто бачить теги людей і хто їх ставить. «Свій гурток» — гурток, у якому людина є
+          або який веде; «Увесь курінь» — усі.
         </p>
       </div>
       <app-kurin-access-policy #accessPolicy [kurinKey]="kurinKey" />

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { HttpResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -26,6 +26,14 @@ import { PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../../models/enums/
 import { REGISTRY_COLUMNS, RegistryColumn, defaultColumnIdsFor, staffColumnsOf } from './registry-columns';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.function';
+import { KurinTagService } from '../../services/kurin-tag-service/kurin-tag.service';
+import { KurinTagChipsComponent } from '../../components/kurin-tag-chips/kurin-tag-chips';
+import { KurinTagManagerComponent, TagCandidate } from '../../components/kurin-tag-manager/kurin-tag-manager';
+
+/** Рядок таблиці реєстру: людина й назви її тегів, за якими таблиця сортує колонку «Теги». */
+export interface RegistryRow extends MemberDto {
+  readonly tagSort: string;
+}
 
 /** Рядок таблиці чисельності: скільки юнаків стоїть на цьому ступені. */
 export interface TallyRow {
@@ -52,7 +60,9 @@ const columnChoiceKey = (kurinKey: string) => `registry:columns:${kurinKey}`;
     FormsModule,
     DatePipe,
     RouterLink,
-    EmptyStateComponent
+    EmptyStateComponent,
+    KurinTagChipsComponent,
+    KurinTagManagerComponent
   ],
   templateUrl: './registry.html',
   styleUrl: './registry.css',
@@ -67,6 +77,7 @@ export class RegistryComponent implements OnInit {
   private readonly membershipService = inject(MembershipService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  protected readonly tagService = inject(KurinTagService);
 
   readonly members = signal<MemberDto[]>([]);
   readonly loading = signal(true);
@@ -91,7 +102,8 @@ export class RegistryComponent implements OnInit {
    * Колонки, які можна вмикати. `mentoredGroups` не серед них: у таблиці впорядників вона стоїть
    * завжди, а в таблиці юнаків не значить нічого — вибирати там нічого.
    */
-  readonly allColumns: RegistryColumn[] = REGISTRY_COLUMNS.filter(column => column.id !== 'mentoredGroups');
+  readonly allColumns = computed<RegistryColumn[]>(() => REGISTRY_COLUMNS.filter(column =>
+    column.id !== 'mentoredGroups' && (column.kind !== 'tags' || this.tagService.enabled())));
 
   readonly branchLabel = computed(() => {
     const branch = this.branch();
@@ -101,7 +113,7 @@ export class RegistryComponent implements OnInit {
   /** Обрані колонки в порядку драбини, а не в порядку кліків. */
   readonly visibleColumns = computed<RegistryColumn[]>(() => {
     const chosen = new Set(this.selectedColumnIds());
-    return this.allColumns.filter(column => chosen.has(column.id));
+    return this.allColumns().filter(column => chosen.has(column.id));
   });
 
   /**
@@ -143,25 +155,60 @@ export class RegistryComponent implements OnInit {
    * Пошук живе тут, а не у фільтрі таблиці: таблиць дві, а поле одне, і людина шукає по складу —
    * не знаючи наперед, у якій із двох таблиць той, кого вона шукає.
    */
-  private readonly found = computed(() => {
+  private readonly found = computed<RegistryRow[]>(() => {
     const needle = this.search().trim().toLowerCase();
-    if (!needle) {
-      return this.members();
-    }
+    const wanted = new Set(this.tagFilter());
+    const withTags = (member: MemberDto): RegistryRow => ({
+      ...member,
+      tagSort: this.tagService.resolve(member.tagKeys).map(tag => tag.name).join(', ')
+    });
 
-    return this.members().filter(member =>
-      [
-        member.lastName,
-        member.firstName,
-        member.middleName,
-        member.email,
-        member.phoneNumber,
-        member.groupName,
-        ...(member.mentoredGroupNames ?? [])
-      ].some(field => field?.toLowerCase().includes(needle)));
+    return this.members()
+      .filter(member => !wanted.size || (member.tagKeys ?? []).some(key => wanted.has(key)))
+      .filter(member => !needle || this.matches(member, needle))
+      .map(withTags);
   });
 
+  /** Обрані в фільтрі теги; людина лишається в реєстрі, якщо має бодай один із них. */
+  readonly tagFilter = signal<string[]>([]);
+
+  private matches(member: MemberDto, needle: string): boolean {
+    return [
+      member.lastName,
+      member.firstName,
+      member.middleName,
+      member.email,
+      member.phoneNumber,
+      member.groupName,
+      ...(member.mentoredGroupNames ?? []),
+      ...this.tagService.resolve(member.tagKeys).map(tag => tag.name)
+    ].some(field => field?.toLowerCase().includes(needle));
+  }
+
+  /** Панель «Теги куреня» — для того, кому курінь дав право ними керувати. */
+  readonly tagsOpen = signal(false);
+
+  /** Кому можна поставити тег: увесь склад, з тегами, які людина вже має. */
+  readonly tagCandidates = computed<TagCandidate[]>(() => this.members().map(member => ({
+    memberKey: member.memberKey,
+    name: this.fullName(member),
+    tagKeys: member.tagKeys ?? []
+  })));
+
   private kurinKey = '';
+  readonly kurinKeyValue = signal('');
+
+  constructor() {
+    // Теги лежать на людях: після зміни тегів склад треба перечитати, щоб плашки збіглися.
+    let seen = this.tagService.revision();
+    effect(() => {
+      const revision = this.tagService.revision();
+      if (revision !== seen && this.kurinKey) {
+        seen = revision;
+        untracked(() => this.loadMembers());
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.authService.getAuthState().subscribe(state => {
@@ -170,8 +217,10 @@ export class RegistryComponent implements OnInit {
       }
 
       this.kurinKey = state.kurinKey;
+      this.kurinKeyValue.set(state.kurinKey);
       this.loadKurin();
       this.loadMembers();
+      this.tagService.load(this.kurinKey).subscribe({ error: () => undefined });
       this.loadFormer();
     });
   }
@@ -367,7 +416,7 @@ export class RegistryComponent implements OnInit {
         return defaultColumnIdsFor(branch);
       }
 
-      const known = new Set(this.allColumns.map(column => column.id));
+      const known = new Set(REGISTRY_COLUMNS.map(column => column.id));
       const kept = parsed.filter((id): id is string => typeof id === 'string' && known.has(id));
       return kept.length ? kept : defaultColumnIdsFor(branch);
     } catch {

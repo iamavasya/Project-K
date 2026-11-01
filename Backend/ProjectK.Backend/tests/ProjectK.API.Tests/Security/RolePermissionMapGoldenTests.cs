@@ -73,7 +73,20 @@ public class RolePermissionMapGoldenTests
         new(ChangeKind.Added, "AgendaItem:Create:OwnGroups",
             "Whom an item is assigned to became the kurin's policy (Assign*); a впорядник and a гурток's провід reach their own гурток by default.",
             [Vykhovnyk, Instruktor, .. GroupOffices]),
-        .. AdminCoversTheNewResources()
+        .. AdminCoversTheNewResources(),
+        .. new[] { "Create", "Delete", "Manage" }.Select(action => new IntendedChange(
+            ChangeKind.Added, $"MemberTag:{action}:KurinWide",
+            "New resource MemberTag (TAG-01); the admin holds every action on every resource.",
+            [SystemRole.Admin])),
+        new(ChangeKind.Added, "MemberTag:Read:KurinWide",
+            "New right SeeTags (TAG-01): by default the КВ and the kurin's провід see everyone's tags.",
+            [Zvyazkovyi, Vykhovnyk, Instruktor, SystemRole.Admin, .. KurinOffices]),
+        new(ChangeKind.Added, "MemberTag:Read:OwnGroups",
+            "New right SeeTags (TAG-01): by default a гурток's провід sees the tags in its own гурток.",
+            [.. GroupOffices]),
+        new(ChangeKind.Added, "MemberTag:Update:KurinWide",
+            "New right ManageTags (TAG-01): by default the Звʼязковий defines tags and puts them on people.",
+            [Zvyazkovyi, SystemRole.Admin])
     ];
 
     private const string Zvyazkovyi = "KV.Zvyazkovyi";

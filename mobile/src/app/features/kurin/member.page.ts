@@ -88,6 +88,7 @@ import { DEFAULT_CARD_FIELDS, cardExtraRows } from './member-edit';
 import { RoleTags } from './role-tags';
 import { ProfileEditResult, ProfileEditSheet } from './profile-edit.sheet';
 import { SkillsSheet } from './skills.sheet';
+import { KurinTags, KurinTagsDto } from './kurin-tags';
 import { inKurin, kurinLabel } from '../../core/kurin-label';
 
 interface Skills {
@@ -111,6 +112,7 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
 @Component({
   selector: 'app-member',
   imports: [
+    KurinTags,
     RoleTags,
     IonHeader,
     IonToolbar,
@@ -287,6 +289,7 @@ const STANDING: Record<string, string | null> = { Current: null, Moved: 'пер�
               </h1>
               @if (m.middleName) { <p>{{ m.middleName }}</p> }
               <ion-badge class="lk-tag--info">{{ level() }}</ion-badge>
+              <app-kurin-tags [all]="kurinTags()" [keys]="m.tagKeys" />
               @if (warning(); as w) {
                 <span class="warning" data-testid="warning">
                   <span class="dots" aria-hidden="true">
@@ -580,6 +583,8 @@ export class MemberPage implements OnInit {
   /** What the kurin's policy lets this person do to the member (web member-card abilities). */
   protected readonly abilities = signal<MemberAbilities>(NO_ABILITIES);
   protected readonly verificationEnabled = signal(false);
+  /** The kurin's tags, to name the keys on the person. */
+  protected readonly kurinTags = signal<KurinTagsDto | null>(null);
   /** What the kurin's край asks on the card; null until read (the edit sheet then reads it itself). */
   private readonly cardFields = signal<CardFields | null>(null);
   protected readonly placing = signal(false);
@@ -911,10 +916,20 @@ export class MemberPage implements OnInit {
         (dues) => this.dues.set(dues?.hasAccount ? dues : null),
         () => this.dues.set(null),
       ),
-      member.then(() => Promise.all([this.loadVerificationToggle(), this.loadCardFields()])),
+      member.then(() => Promise.all([this.loadVerificationToggle(), this.loadCardFields(), this.loadKurinTags()])),
       // Skills and probes wait for both: the branch comes from the ступінь and the kurin.
       Promise.all([member, memberships]).then(() => (this.youth() ? Promise.all([this.loadSkills(key), this.loadProbes(key)]) : null)),
     ]);
+  }
+
+  private async loadKurinTags(): Promise<void> {
+    const kurinKey = this.memberValue()?.kurinKey;
+    if (!kurinKey) return;
+    try {
+      this.kurinTags.set(await this.data.kurinTags(kurinKey));
+    } catch {
+      this.kurinTags.set(null);
+    }
   }
 
   private async loadVerificationToggle(): Promise<void> {

@@ -12,6 +12,9 @@ import { MemberDto } from '../../models/member.dto';
 import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
 import { RegistryComponent } from './registry';
+import { KurinTagService } from '../../services/kurin-tag-service/kurin-tag.service';
+import { KurinTagsDto, NO_KURIN_TAGS } from '../../models/kurin-tag.dto';
+import { computed, signal } from '@angular/core';
 
 function member(partial: Partial<MemberDto>): MemberDto {
   return {
@@ -64,6 +67,26 @@ describe('RegistryComponent', () => {
 
   let pendingConfirmations: Confirmation[] = [];
 
+  /** Теги куреня, які бачить реєстр; без тегів — як курінь, що їх не вмикав. */
+  let kurinTags: KurinTagsDto = NO_KURIN_TAGS;
+  let exported: string[] | null = null;
+
+  function tagServiceStub(): Partial<KurinTagService> {
+    const current = signal(kurinTags);
+    const byKey = computed(() => new Map(current().tags.map(tag => [tag.kurinTagKey, tag])));
+    return {
+      current,
+      enabled: computed(() => current().enabled),
+      canManage: computed(() => current().enabled && current().canManage),
+      byKey,
+      revision: signal(0),
+      resolve: (keys: readonly string[] | null | undefined) =>
+        (keys ?? []).map(key => byKey().get(key)!).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name, 'uk')),
+      ensureCurrent: () => undefined,
+      load: () => of(current())
+    };
+  }
+
   /**
    * @param setup Підмінити відповідь сервісу до того, як компонент її попросить. Ставити стаб перед
    *   `load` марно: він перестворює шпигуна, і тест на помилку проходив би, бо порожній список
@@ -93,8 +116,15 @@ describe('RegistryComponent', () => {
         { provide: MemberService, useValue: { getAll: () => of(people) } },
         {
           provide: KurinService,
-          useValue: { getByKey: () => of({ kurinKey: 'kurin-1', number: 3, branch }) }
+          useValue: {
+            getByKey: () => of({ kurinKey: 'kurin-1', number: 3, branch }),
+            exportRegistry: (_: string, columns: string[]) => {
+              exported = columns;
+              return of({ body: null, headers: { get: () => null } });
+            }
+          }
         },
+        { provide: KurinTagService, useValue: tagServiceStub() },
         { provide: AuthService, useValue: { getAuthState: () => of({ kurinKey: 'kurin-1' }) } }
       ]
     });
@@ -107,7 +137,11 @@ describe('RegistryComponent', () => {
     fixture.detectChanges();
   }
 
-  afterEach(() => localStorage.clear());
+  afterEach(() => {
+    localStorage.clear();
+    kurinTags = NO_KURIN_TAGS;
+    exported = null;
+  });
 
   /**
    * Розділяє діловодство в кадрі виховників, і бекенд уже сказав, у кого він є. Гуртковий теж має діловодство і
@@ -139,7 +173,7 @@ describe('RegistryComponent', () => {
   it('should not offer the закріплення column in the chooser', () => {
     load([]);
 
-    expect(component.allColumns.map(column => column.id)).not.toContain('mentoredGroups');
+    expect(component.allColumns().map(column => column.id)).not.toContain('mentoredGroups');
   });
 
   it('should count only юнаки, one row per ступінь', () => {
@@ -244,5 +278,51 @@ describe('RegistryComponent', () => {
 
     expect(component.youth().map(person => person.lastName)).toEqual(['Юнак']);
     expect(component.staff().map(person => person.lastName)).toEqual(['Виховна']);
+  });
+
+  describe('tags', () => {
+    const tag = (kurinTagKey: string, name: string) => ({ kurinTagKey, name, colorHex: '#2F855A', memberCount: null });
+
+    beforeEach(() => {
+      kurinTags = { enabled: true, canManage: true, maxPerMember: 10, palette: [], tags: [tag('t-new', 'Новики'), tag('t-camp', 'Табір')] };
+    });
+
+    it('should keep only people who carry one of the chosen tags', () => {
+      load([
+        member({ lastName: 'Новик', tagKeys: ['t-new'] }),
+        member({ lastName: 'Табірний', tagKeys: ['t-camp'] }),
+        member({ lastName: 'Без тегів' })
+      ]);
+
+      component.tagFilter.set(['t-new']);
+      expect(component.youth().map(person => person.lastName)).toEqual(['Новик']);
+
+      component.tagFilter.set(['t-new', 't-camp']);
+      expect(component.youth().map(person => person.lastName)).toEqual(['Новик', 'Табірний']);
+    });
+
+    it('should give each row its tag names to sort the tags column by', () => {
+      load([member({ lastName: 'Обидва', tagKeys: ['t-camp', 't-new'] })]);
+
+      expect(component.youth()[0].tagSort).toBe('Новики, Табір');
+    });
+
+    it('should offer the tags column only while the kurin uses tags', () => {
+      load([member({})]);
+      expect(component.allColumns().some(column => column.id === 'tags')).toBe(true);
+
+      kurinTags = NO_KURIN_TAGS;
+      load([member({})]);
+      expect(component.allColumns().some(column => column.id === 'tags')).toBe(false);
+    });
+
+    it('should send the tags column to the export like any other', () => {
+      load([member({})]);
+      component.selectedColumnIds.set(['groupName', 'tags']);
+
+      component.exportToExcel();
+
+      expect(exported).toEqual(['groupName', 'tags']);
+    });
   });
 });

@@ -3,6 +3,7 @@ import { AUDIENCE_LABELS, CAPABILITY_LABELS, labelOf, REACH_LABELS } from '../mo
 import { parseOfficeRole } from './system-role.function';
 import { leadershipRoleDisplayName } from './leadership-role-display.function';
 import { REGULAR_PROBE_LABEL } from '../models/group-probe-edition.dto';
+import { TAG_COLOR_NAMES } from '../models/kurin-tag.dto';
 
 /** The journal's sections, in the order the «Розділ» filter lists them. */
 export const JOURNAL_AREA_LABELS: Record<JournalArea, string> = {
@@ -14,7 +15,8 @@ export const JOURNAL_AREA_LABELS: Record<JournalArea, string> = {
   Member: 'Картки',
   Office: 'Ролі',
   Membership: 'Членство',
-  Settings: 'Налаштування куреня'
+  Settings: 'Налаштування куреня',
+  Tag: 'Теги'
 };
 
 /**
@@ -67,7 +69,13 @@ const ACTION_LABELS: Record<string, string> = {
   'Settings.AccessPolicyChanged': 'Змінено права й видимість',
   'Settings.CardFieldsChanged': 'Змінено поля картки',
   'Settings.ArchivePolicyChanged': 'Змінено строки архіву задач',
-  'Settings.GroupProbeEditionChanged': 'Змінено пробу гуртка'
+  'Settings.GroupProbeEditionChanged': 'Змінено пробу гуртка',
+  'Settings.TagSettingsChanged': 'Змінено налаштування тегів',
+  'Tag.Created': 'Заведено тег',
+  'Tag.Changed': 'Змінено тег',
+  'Tag.Deleted': 'Видалено тег',
+  'Tag.Put': 'Поставлено тег',
+  'Tag.TakenOff': 'Знято тег'
 };
 
 /** For an action this build does not know yet: what part of the kurin it touched. */
@@ -80,7 +88,8 @@ const AREA_FALLBACKS: Record<JournalArea, string> = {
   Member: 'Зміна картки',
   Office: 'Зміна ролей',
   Membership: 'Зміна членства',
-  Settings: 'Зміна налаштувань куреня'
+  Settings: 'Зміна налаштувань куреня',
+  Tag: 'Зміна тегів'
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -130,7 +139,12 @@ const FIELD_LABELS: Record<string, string> = {
   hidden: 'Приховані поля',
   purgeAfterDays: 'Видалення з архіву, днів',
   autoArchiveAfterDays: 'Перенесення в архів, днів',
-  probeEdition: 'Проба гуртка'
+  probeEdition: 'Проба гуртка',
+  name: 'Назва',
+  color: 'Колір',
+  carriedBy: 'Мали тег',
+  enabled: 'Теги ввімкнені',
+  ownTagsVisible: 'Кожен бачить свої теги'
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -213,6 +227,9 @@ export function journalValueLabel(field: string, value: string | null | undefine
   }
   if (field === 'status' && STATUS_LABELS[value]) {
     return STATUS_LABELS[value];
+  }
+  if (field === 'color' && TAG_COLOR_NAMES[value]) {
+    return TAG_COLOR_NAMES[value];
   }
   if (field === 'level' && LEVEL_LABELS[value]) {
     return LEVEL_LABELS[value];

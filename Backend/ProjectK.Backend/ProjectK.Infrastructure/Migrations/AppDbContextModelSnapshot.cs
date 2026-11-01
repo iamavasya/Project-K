@@ -2427,6 +2427,73 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("PlastLevelHistories");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Tags.KurinTag", b =>
+                {
+                    b.Property<Guid>("KurinTagKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ColorHex")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("KurinTagKey");
+
+                    b.HasIndex("KurinKey", "Name")
+                        .IsUnique();
+
+                    b.ToTable("KurinTags");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Tags.KurinTagSettings", b =>
+                {
+                    b.Property<Guid>("KurinKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool?>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("OwnTagsVisible")
+                        .HasColumnType("bit");
+
+                    b.HasKey("KurinKey");
+
+                    b.ToTable("KurinTagSettings");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Tags.MemberTag", b =>
+                {
+                    b.Property<Guid>("KurinTagKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("KurinTagKey", "MemberKey");
+
+                    b.HasIndex("MemberKey");
+
+                    b.ToTable("MemberTags");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.ProbesAndBadgesModule.BadgeProgress", b =>
                 {
                     b.Property<Guid>("BadgeProgressKey")
@@ -3472,6 +3539,43 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("Member");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Tags.KurinTag", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Kurin", "Kurin")
+                        .WithMany()
+                        .HasForeignKey("KurinKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Kurin");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Tags.KurinTagSettings", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Kurin", null)
+                        .WithOne()
+                        .HasForeignKey("ProjectK.Common.Entities.KurinModule.Tags.KurinTagSettings", "KurinKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Tags.MemberTag", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Tags.KurinTag", "Tag")
+                        .WithMany("Members")
+                        .HasForeignKey("KurinTagKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Member", null)
+                        .WithMany()
+                        .HasForeignKey("MemberKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tag");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.DuesEntry", b =>
                 {
                     b.Navigation("Events");
@@ -3539,6 +3643,11 @@ namespace ProjectK.Infrastructure.Migrations
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Planning.PlanningSession", b =>
                 {
                     b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Tags.KurinTag", b =>
+                {
+                    b.Navigation("Members");
                 });
 #pragma warning restore 612, 618
         }

@@ -30,6 +30,7 @@ import {
 import { KraiProfileCardFields, NewMemberPlacement, cardFieldsOf } from './member-edit';
 import { browserTimeZone } from './kurin-profile';
 import { MemberAbilities } from './abilities';
+import { KurinTagsDto } from './kurin-tags';
 
 /**
  * The endpoints the web's kurinModule services call (kurin, group, member, leadership,
@@ -47,6 +48,11 @@ export class KurinApi {
   readonly membersChanged = signal(0);
   /** Bumped after a провід is saved: the kurin tab and the провід page above it read it again. */
   readonly leadershipChanged = signal(0);
+
+  /** The kurin's tags (web KurinTagService); empty with `enabled: false` when the kurin has them off. */
+  kurinTags(kurinKey: string): Promise<KurinTagsDto> {
+    return this.api.get(`kurin/${kurinKey}/tags`);
+  }
 
   kurin(kurinKey: string): Promise<KurinDto> {
     return this.api.get(`kurin/${kurinKey}`);

@@ -229,6 +229,14 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<KurinController>(nameof(KurinController.GetProbeEditions), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.GetAccessPolicy), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.SetAccessPolicy), "RequireUser");
+        yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.GetTags), "RequireUser");
+        yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.CreateTag), "RequireUser");
+        yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.UpdateTag), "RequireUser");
+        yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.DeleteTag), "RequireUser");
+        yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.SetTagMembers), "RequireUser");
+        yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.SetMemberTags), "RequireUser");
+        yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.GetTagSettings), "RequireUser");
+        yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.SetTagSettings), "RequireUser");
 
         yield return Row<Action<KraiController>>(nameof(KraiController.GetAll), "RequireAdmin");
         yield return Row<Action<KraiController, CreateKraiRequest>>(nameof(KraiController.Create), "RequireAdmin");

@@ -29,7 +29,7 @@
     </p-iconfield>
 
     <p-multiselect
-      [options]="allColumns"
+      [options]="allColumns()"
       [ngModel]="selectedColumnIds()"
       (ngModelChange)="onColumnsChange($event)"
       optionLabel="header"
@@ -42,12 +42,46 @@
       [maxSelectedLabels]="0"
       styleClass="registry__columns" />
 
+    @if (tagService.enabled() && tagService.current().tags.length) {
+      <label for="registry-tag-filter" class="registry__label-hidden">Фільтр за тегами</label>
+      <p-multiselect
+        inputId="registry-tag-filter"
+        [options]="tagService.current().tags"
+        [ngModel]="tagFilter()"
+        (ngModelChange)="tagFilter.set($event ?? [])"
+        optionLabel="name"
+        optionValue="kurinTagKey"
+        [showToggleAll]="false"
+        [showClear]="true"
+        placeholder="Теги"
+        selectedItemsLabel="Тегів: {0}"
+        [maxSelectedLabels]="1"
+        appendTo="body"
+        styleClass="registry__tags">
+        <ng-template let-tag #item>
+          <span class="registry__tag-option">
+            <span class="registry__tag-dot" [style.background]="tag.colorHex" aria-hidden="true"></span>{{ tag.name }}
+          </span>
+        </ng-template>
+      </p-multiselect>
+    }
+
     <p-button
       label="За замовчуванням"
       icon="pi pi-replay"
       severity="secondary"
       [text]="true"
       (onClick)="resetColumns()" />
+
+    @if (tagService.canManage()) {
+      <p-button
+        label="Теги куреня"
+        icon="pi pi-tags"
+        severity="secondary"
+        [text]="true"
+        [attr.aria-expanded]="tagsOpen()"
+        (onClick)="tagsOpen.set(!tagsOpen())" />
+    }
 
     <p-button
       label="Вивантажити"
@@ -58,6 +92,18 @@
       (onClick)="exportToExcel()"
       styleClass="registry__export" />
   </div>
+
+  @if (tagsOpen() && tagService.canManage()) {
+    <section class="kurin-tile" aria-labelledby="registry-tags-title">
+      <div class="lil-tile-head">
+        <div>
+          <h2 id="registry-tags-title">Теги куреня</h2>
+          <span class="lil-count">{{ tagService.current().tags.length }}</span>
+        </div>
+      </div>
+      <app-kurin-tag-manager [kurinKey]="kurinKeyValue()" [candidates]="tagCandidates()" />
+    </section>
+  }
 
   <section class="kurin-tile">
   <p-table
@@ -83,7 +129,11 @@
           Прізвище та ім'я <p-sortIcon field="lastName" />
         </th>
         @for (column of visibleColumns(); track column.id) {
-          <th scope="col">{{ column.header }}</th>
+          @if (column.kind === 'tags') {
+            <th scope="col" pSortableColumn="tagSort">{{ column.header }} <p-sortIcon field="tagSort" /></th>
+          } @else {
+            <th scope="col">{{ column.header }}</th>
+          }
         }
       </tr>
     </ng-template>
@@ -95,7 +145,9 @@
         </td>
         @for (column of visibleColumns(); track column.id) {
           <td [attr.data-mobile-label]="column.header">
-            @if (column.kind === 'date') {
+            @if (column.kind === 'tags') {
+              <app-kurin-tag-chips [keys]="member.tagKeys" [compact]="true" />
+            } @else if (column.kind === 'date') {
               @if (asDate(cell(member, column)); as date) {
                 {{ date | date:'dd.MM.yyyy' }}
               } @else {
@@ -159,7 +211,11 @@
           Прізвище та ім'я <p-sortIcon field="lastName" />
         </th>
         @for (column of staffColumns(); track column.id) {
-          <th scope="col">{{ column.header }}</th>
+          @if (column.kind === 'tags') {
+            <th scope="col" pSortableColumn="tagSort">{{ column.header }} <p-sortIcon field="tagSort" /></th>
+          } @else {
+            <th scope="col">{{ column.header }}</th>
+          }
         }
       </tr>
     </ng-template>
@@ -171,7 +227,9 @@
         </td>
         @for (column of staffColumns(); track column.id) {
           <td [attr.data-mobile-label]="column.header">
-            @if (column.kind === 'date') {
+            @if (column.kind === 'tags') {
+              <app-kurin-tag-chips [keys]="member.tagKeys" [compact]="true" />
+            } @else if (column.kind === 'date') {
               @if (asDate(cell(member, column)); as date) {
                 {{ date | date:'dd.MM.yyyy' }}
               } @else {
