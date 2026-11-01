@@ -18,7 +18,7 @@ import {
   GROUP_DUES_KINDS,
   PERSONAL_DUES_KINDS
 } from '../../../../models/dues.enums';
-import { DuesAccountDto, DuesEntryDto, DuesPersonDto, KurinDuesPayeeDto, UpsertDuesEntryRequest } from '../../../../models/group-dues.dto';
+import { DuesAccountDto, DuesEntryDto, DuesPersonDto, UpsertDuesEntryRequest } from '../../../../models/group-dues.dto';
 import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, currencySymbol, money } from '../../../../functions/dues-format.function';
 
 /** The other side of an exchange: cash goes to the card, the card to cash. */
@@ -49,8 +49,6 @@ export class DuesEntryDialogComponent {
   readonly accounts = input<DuesAccountDto[]>([]);
   /** Who may have collected the money. */
   readonly people = input<DuesPersonDto[]>([]);
-  /** Whom the kurin hands money on to; only a senior kurin's box offers them. */
-  readonly payees = input<KurinDuesPayeeDto[]>([]);
   readonly personPlaceholder = input('Обери юнака');
   readonly entry = input<DuesEntryDto | null>(null);
   readonly saving = input(false);
@@ -72,7 +70,6 @@ export class DuesEntryDialogComponent {
     amount: this.fb.control<number | null>(null, Validators.required),
     occurredOn: this.fb.control<Date | null>(new Date(), Validators.required),
     membershipKey: this.fb.control<string | null>(null),
-    payeeKey: this.fb.control<string | null>(null),
     collectedByMemberKey: this.fb.control<string | null>(null),
     note: this.fb.control<string>('', Validators.maxLength(500))
   }, { validators: control => DuesEntryDialogComponent.checkShape(control) });
@@ -84,11 +81,6 @@ export class DuesEntryDialogComponent {
   readonly isPersonal = computed(() => PERSONAL_DUES_KINDS.has(this.kind()));
   readonly isExchange = computed(() => this.kind() === DuesEntryKind.Exchange);
   readonly isCorrection = computed(() => this.kind() === DuesEntryKind.Correction);
-  readonly isPayeeTransfer = computed(() => this.kind() === DuesEntryKind.TransferToPayee);
-
-  readonly payeeOptions = computed(() => this.payees()
-    .filter(payee => !payee.isArchived || payee.payeeKey === this.entry()?.payeeKey)
-    .map(payee => ({ value: payee.payeeKey, label: payee.name })));
 
   /**
    * Ready amounts for a person's вкладка: one quarter at their rate, a year ahead (four quarters
@@ -148,7 +140,6 @@ export class DuesEntryDialogComponent {
       amount: Number(value.amount),
       occurredOn: toDateOnlyString(value.occurredOn)!,
       membershipKey: personal ? value.membershipKey : null,
-      payeeKey: value.kind === DuesEntryKind.TransferToPayee ? value.payeeKey : null,
       collectedByMemberKey: value.collectedByMemberKey,
       note: value.note?.trim() || null
     });
@@ -179,10 +170,6 @@ export class DuesEntryDialogComponent {
     return this.form.hasError('amountSign') ? 'Сума має бути більшою за нуль.' : null;
   }
 
-  get payeeError(): string | null {
-    return this.form.hasError('payeeRequired') && this.form.controls.payeeKey.touched ? 'Кому передано?' : null;
-  }
-
   get personError(): string | null {
     return this.form.hasError('personRequired') && this.form.controls.membershipKey.touched ? 'Чия це вкладка?' : null;
   }
@@ -194,7 +181,6 @@ export class DuesEntryDialogComponent {
       amount: entry?.amount ?? null,
       occurredOn: entry ? parseDateOnlyString(entry.occurredOn) : new Date(),
       membershipKey: entry?.membershipKey ?? null,
-      payeeKey: entry?.payeeKey ?? null,
       collectedByMemberKey: entry?.collectedByMemberKey ?? null,
       note: entry?.note ?? ''
     });
@@ -211,10 +197,6 @@ export class DuesEntryDialogComponent {
 
     if (PERSONAL_DUES_KINDS.has(kind) && !control.get('membershipKey')?.value) {
       errors['personRequired'] = true;
-    }
-
-    if (kind === DuesEntryKind.TransferToPayee && !control.get('payeeKey')?.value) {
-      errors['payeeRequired'] = true;
     }
 
     if (Number.isFinite(amount) && (kind === DuesEntryKind.Correction ? amount === 0 : amount <= 0)) {

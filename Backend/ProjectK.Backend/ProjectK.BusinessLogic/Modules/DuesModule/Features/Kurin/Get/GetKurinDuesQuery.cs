@@ -76,9 +76,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
         var groupNames = (await _unitOfWork.Groups.GetAllAsync(kurinKey, cancellationToken))
             .ToDictionary(g => g.GroupKey, g => g.Name);
 
-        var payees = await _dues.KurinDuesPayees.GetForKurinAsync(kurinKey, cancellationToken);
-        var ledger = new DuesLedger(rates, groupRates, concessions, charges, entries, grants,
-            payees.Where(p => p.IsKrai).Select(p => p.KurinDuesPayeeKey));
+        var ledger = new DuesLedger(rates, groupRates, concessions, charges, entries, grants);
         // Memberships the kurin no longer has are removed people; see GetGroupDuesQuery.
         var accounts = ledger.Accounts().Where(a => names.Memberships.ContainsKey(a.MembershipKey)).ToList();
         var kurinBox = ledger.KurinBox(accounts);
@@ -160,22 +158,6 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             Accounts = DuesAccountRows.Map(accounts, null, ledger, names, grants, current, tags),
             Tags = tags.All,
             KraiConcessions = krai.Dues.Concessions.Select(KraiConcessionDto.From).ToList(),
-            Payees = payees
-                .Select(p =>
-                {
-                    var handover = kurinBox.Payees.FirstOrDefault(h => h.PayeeKey == p.KurinDuesPayeeKey);
-                    return new KurinDuesPayeeDto
-                    {
-                        PayeeKey = p.KurinDuesPayeeKey,
-                        Name = p.Name,
-                        IsKrai = p.IsKrai,
-                        IsArchived = p.IsArchived,
-                        Collected = handover?.Collected ?? 0,
-                        Sent = handover?.Sent ?? 0,
-                        ToForward = handover?.ToForward ?? 0
-                    };
-                })
-                .ToList(),
             Transfers = transfers,
             Entries = entries
                 .Where(e => e.GroupKey is null)

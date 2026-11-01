@@ -45,24 +45,6 @@
       </div>
     }
 
-    @if (isPayeeTransfer()) {
-      <div class="lil-dialog-field dues-entry-field--wide">
-        <label for="dues-payee">Кому</label>
-        <p-select
-          inputId="dues-payee"
-          formControlName="payeeKey"
-          [options]="payeeOptions()"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Обери отримувача"
-          appendTo="body"
-          styleClass="w-full" />
-        @if (payeeError; as message) {
-          <p class="lil-dialog-error">{{ message }}</p>
-        }
-      </div>
-    }
-
     @if (quickAmounts().length) {
       <div class="dues-entry-field--wide dues-entry-quick" role="group" aria-label="Готові суми">
         @for (quick of quickAmounts(); track quick.label) {

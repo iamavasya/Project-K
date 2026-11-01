@@ -10,8 +10,7 @@ export enum DuesEntryKind {
   OtherIncome = 'OtherIncome',
   Exchange = 'Exchange',
   Correction = 'Correction',
-  TransferToKrai = 'TransferToKrai',
-  TransferToPayee = 'TransferToPayee'
+  TransferToKrai = 'TransferToKrai'
 }
 
 export enum DuesPaymentMethod {
@@ -19,12 +18,11 @@ export enum DuesPaymentMethod {
   Card = 'Card'
 }
 
-/** Where the money of a стаття goes: up to the станиця, up to the край on its own transfer, to one of the kurin's payees, or kept by the kurin. */
+/** Where the money of a стаття goes: up to the станиця, up to the край on its own transfer, or kept by the kurin. */
 export enum DuesRecipient {
   Stanytsia = 'Stanytsia',
   Kurin = 'Kurin',
-  Krai = 'Krai',
-  Payee = 'Payee'
+  Krai = 'Krai'
 }
 
 /** Where the край's kurins hand the вкладка up: through the станиця, straight to the край, or both. */
@@ -46,8 +44,7 @@ export const paysKrai = (upstream: DuesUpstream): boolean => upstream !== DuesUp
 export const DUES_RECIPIENT_LABELS: Record<DuesRecipient, string> = {
   [DuesRecipient.Stanytsia]: 'Станиці',
   [DuesRecipient.Krai]: 'Краю',
-  [DuesRecipient.Kurin]: 'Куреню',
-  [DuesRecipient.Payee]: 'Отримувачу'
+  [DuesRecipient.Kurin]: 'Куреню'
 };
 
 export const DUES_ENTRY_KIND_LABELS: Record<DuesEntryKind, string> = {
@@ -56,7 +53,6 @@ export const DUES_ENTRY_KIND_LABELS: Record<DuesEntryKind, string> = {
   [DuesEntryKind.TransferToKurin]: 'Передача курінному',
   [DuesEntryKind.TransferToStanytsia]: 'Передача в станицю',
   [DuesEntryKind.TransferToKrai]: 'Передача в край',
-  [DuesEntryKind.TransferToPayee]: 'Передача отримувачу',
   [DuesEntryKind.Expense]: 'Витрата',
   [DuesEntryKind.OtherIncome]: 'Інший прихід',
   [DuesEntryKind.Exchange]: 'Обмін готівка ↔ картка',
@@ -95,17 +91,16 @@ export const KURIN_DUES_KINDS: readonly DuesEntryKind[] = [
   DuesEntryKind.Exchange
 ];
 
-/** What a senior kurin's box records besides: each person's own вкладка, and transfers to the kurin's payees. */
+/** What a senior kurin's box records besides: each person's own вкладка. */
 export const SENIOR_KURIN_DUES_KINDS: readonly DuesEntryKind[] = [
   DuesEntryKind.Contribution,
   DuesEntryKind.Refund,
-  DuesEntryKind.Correction,
-  DuesEntryKind.TransferToPayee
+  DuesEntryKind.Correction
 ];
 
 /**
  * What the kurin's box offers under its край's setting: a transfer only where the край takes money,
- * and in a kurin without гуртки the people's own вкладка and transfers to payees.
+ * and in a kurin without гуртки the people's own вкладка.
  */
 export function kurinDuesKinds(upstream: DuesUpstream, isSenior = false): DuesEntryKind[] {
   const kinds = isSenior ? [...SENIOR_KURIN_DUES_KINDS, ...KURIN_DUES_KINDS] : KURIN_DUES_KINDS;

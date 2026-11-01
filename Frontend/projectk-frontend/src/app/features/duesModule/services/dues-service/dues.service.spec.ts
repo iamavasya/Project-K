@@ -94,20 +94,11 @@ describe('DuesService', () => {
     expect(http.expectOne(`${baseUrl}/concessions/k1`).request.method).toBe('DELETE');
   });
 
-  it('пільга в касі старшого куреня іде маршрутом куреня, отримувачі — своїм', () => {
+  it('пільга в касі старшого куреня іде маршрутом куреня', () => {
     const kurinUrl = `${environment.apiUrl}/kurin/k1/dues`;
     service.setConcession({ kurinKey: 'k1' }, 'm1', { fromQuarter: { year: 2026, number: 4 }, isConcession: true }).subscribe();
-    http.expectOne(`${kurinUrl}/members/m1/concession`).flush({});
-
-    service.createPayee('k1', 'Булава УСП', true).subscribe();
-    const post = http.expectOne(`${kurinUrl}/payees`);
-    expect(post.request.body).toEqual({ name: 'Булава УСП', isKrai: true, isArchived: false });
-    post.flush('p1');
-
-    service.updatePayee('k1', 'p1', 'Булава УСП', true, true).subscribe();
-    const put = http.expectOne(`${kurinUrl}/payees/p1`);
+    const put = http.expectOne(`${kurinUrl}/members/m1/concession`);
     expect(put.request.method).toBe('PUT');
-    expect(put.request.body).toEqual({ name: 'Булава УСП', isKrai: true, isArchived: true });
     put.flush({});
   });
 });

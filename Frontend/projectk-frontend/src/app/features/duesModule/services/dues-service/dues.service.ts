@@ -106,14 +106,6 @@ export class DuesService {
     return this.http.delete(`${this.boxUrl(box)}/concessions/${grantKey}`).pipe(this.invalidate());
   }
 
-  createPayee(kurinKey: string, name: string, isKrai: boolean): Observable<unknown> {
-    return this.http.post(`${this.kurinApiUrl}/${kurinKey}/dues/payees`, { name, isKrai, isArchived: false }).pipe(this.invalidate());
-  }
-
-  updatePayee(kurinKey: string, payeeKey: string, name: string, isKrai: boolean, isArchived: boolean): Observable<unknown> {
-    return this.http.put(`${this.kurinApiUrl}/${kurinKey}/dues/payees/${payeeKey}`, { name, isKrai, isArchived }).pipe(this.invalidate());
-  }
-
   createEntry(groupKey: string, request: UpsertDuesEntryRequest): Observable<unknown> {
     return this.http.post(`${this.apiUrl}/${groupKey}/dues/entries`, request).pipe(this.invalidate());
   }

@@ -7,25 +7,19 @@ import { SelectModule } from '@openng/optimus-ui/select';
 import { DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE, money, quarterKey } from '../../functions/dues-format.function';
 import { fromQuarterOptions } from '../../functions/from-quarter-options.function';
 import { DUES_RECIPIENT_LABELS, DuesRecipient, DuesUpstream, duesRecipients } from '../../models/dues.enums';
-import { DuesTagDto, KurinDuesPayeeDto, KurinDuesRateDto, PlastYearDto, QuarterDto, SetKurinDuesRateRequest } from '../../models/group-dues.dto';
+import { DuesTagDto, KurinDuesRateDto, PlastYearDto, QuarterDto, SetKurinDuesRateRequest } from '../../models/group-dues.dto';
 
 /** One row of the dialog: a стаття as it is being typed. */
 interface ArticleRow {
   id: number;
   name: string;
   recipient: DuesRecipient;
-  payeeKey: string | null;
   amount: number | null;
   reducedAmount: number | null;
 }
 
 export const MAX_DUES_ARTICLES = 20;
 export const MAX_DUES_ARTICLE_NAME = 60;
-
-/** A recipient as the «Кому» select holds it: the kind, or one of the kurin's payees by key. */
-const PAYEE_PREFIX = 'payee:';
-const targetOf = (row: Pick<ArticleRow, 'recipient' | 'payeeKey'>): string =>
-  row.recipient === DuesRecipient.Payee && row.payeeKey ? PAYEE_PREFIX + row.payeeKey : row.recipient;
 
 /**
  * The Звʼязковий's dialog for the kurin's статті of the quarterly вкладка, from a quarter on: what
@@ -53,8 +47,6 @@ export class KurinRateDialogComponent {
   readonly upstream = input(DuesUpstream.Stanytsia);
   /** The kurin's tags; a kurin without гуртки sets a rate per tag. Given none, the dialog sets one for everyone. */
   readonly tags = input<DuesTagDto[]>([]);
-  /** Whom the kurin hands вкладка on to besides the станиця and the край. */
-  readonly payees = input<KurinDuesPayeeDto[]>([]);
   readonly save = output<SetKurinDuesRateRequest>();
 
   readonly fromQuarter = signal('');
@@ -73,18 +65,10 @@ export class KurinRateDialogComponent {
   /** The край's choices, and a стаття's own recipient even when the край no longer takes it, so it shows. */
   readonly recipientOptions = computed(() => {
     const shown = new Set([...this.allowedRecipients(), ...this.articles().map(a => a.recipient)]);
-    const used = new Set(this.articles().map(a => a.payeeKey));
-    return [
-      ...[DuesRecipient.Stanytsia, DuesRecipient.Krai, DuesRecipient.Kurin]
-        .filter(value => shown.has(value))
-        .map(value => ({ value: value as string, label: DUES_RECIPIENT_LABELS[value] })),
-      ...this.payees()
-        .filter(payee => !payee.isArchived || used.has(payee.payeeKey))
-        .map(payee => ({ value: PAYEE_PREFIX + payee.payeeKey, label: payee.name }))
-    ];
+    return [DuesRecipient.Stanytsia, DuesRecipient.Krai, DuesRecipient.Kurin]
+      .filter(value => shown.has(value))
+      .map(value => ({ value, label: DUES_RECIPIENT_LABELS[value] }));
   });
-
-  readonly targetOf = targetOf;
 
   readonly fromQuarterOptions = computed(() => fromQuarterOptions(this.years(), this.currentQuarter()));
 
@@ -116,10 +100,7 @@ export class KurinRateDialogComponent {
       errors.push('Пільгова сума не може бути вищою за повну.');
     }
     const allowed = this.allowedRecipients();
-    if (rows.some(a => a.recipient === DuesRecipient.Payee && !a.payeeKey)) {
-      errors.push('Обери отримувача.');
-    }
-    const stray = rows.find(a => a.recipient !== DuesRecipient.Payee && !allowed.includes(a.recipient));
+    const stray = rows.find(a => !allowed.includes(a.recipient));
     if (stray) {
       errors.push(`Край не приймає вкладку ${stray.recipient === DuesRecipient.Krai ? 'напряму' : 'через станицю'}: зміни, кому йде «${stray.name.trim()}».`);
     }
@@ -156,12 +137,6 @@ export class KurinRateDialogComponent {
     this.articles.update(rows => rows.map(a => (a.id === id ? { ...a, ...change } : a)));
   }
 
-  setTarget(id: number, target: string): void {
-    this.setArticle(id, target.startsWith(PAYEE_PREFIX)
-      ? { recipient: DuesRecipient.Payee, payeeKey: target.slice(PAYEE_PREFIX.length) }
-      : { recipient: target as DuesRecipient, payeeKey: null });
-  }
-
   /** Another tag's rate: its статті in force now, or a blank start. */
   chooseTag(tagKey: string | null): void {
     this.tagKey.set(tagKey);
@@ -179,7 +154,6 @@ export class KurinRateDialogComponent {
       articles: this.articles().map(a => ({
         name: a.name.trim(),
         recipient: a.recipient,
-        payeeKey: a.recipient === DuesRecipient.Payee ? a.payeeKey : null,
         amount: Number(a.amount),
         reducedAmount: Number(a.reducedAmount ?? a.amount)
       }))
@@ -205,7 +179,7 @@ export class KurinRateDialogComponent {
       .filter(r => (r.tagKey ?? null) === tagKey && index(r.fromQuarter) <= index(current))
       .sort((a, b) => index(b.fromQuarter) - index(a.fromQuarter))[0] ?? null;
     this.articles.set(now
-      ? now.articles.map(a => this.row(a.name, a.recipient, a.amount, a.reducedAmount === a.amount ? null : a.reducedAmount, a.payeeKey ?? null))
+      ? now.articles.map(a => this.row(a.name, a.recipient, a.amount, a.reducedAmount === a.amount ? null : a.reducedAmount))
       : [
           this.upstream() === DuesUpstream.Krai
             ? this.row('Край', DuesRecipient.Krai, null, null)
@@ -214,8 +188,8 @@ export class KurinRateDialogComponent {
         ]);
   }
 
-  private row(name: string, recipient: DuesRecipient, amount: number | null, reducedAmount: number | null, payeeKey: string | null = null): ArticleRow {
-    return { id: this.nextId++, name, recipient, payeeKey, amount, reducedAmount };
+  private row(name: string, recipient: DuesRecipient, amount: number | null, reducedAmount: number | null): ArticleRow {
+    return { id: this.nextId++, name, recipient, amount, reducedAmount };
   }
 }
 

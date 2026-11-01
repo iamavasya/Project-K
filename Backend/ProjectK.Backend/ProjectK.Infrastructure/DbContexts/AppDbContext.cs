@@ -68,7 +68,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<DuesEntry> DuesEntries { get; set; }
     public DbSet<DuesEntryEvent> DuesEntryEvents { get; set; }
     public DbSet<KurinDuesSettings> KurinDuesSettings { get; set; }
-    public DbSet<KurinDuesPayee> KurinDuesPayees { get; set; }
 
     public DbSet<KurinScoreSettings> KurinScoreSettings { get; set; }
     public DbSet<ScoreRule> ScoreRules { get; set; }
@@ -319,14 +318,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             // One rate per tag per quarter, and one for everyone: the null tag is a value here, so the
             // index must not get EF's default IS NOT NULL filter.
             entity.HasIndex(e => new { e.KurinKey, e.TagKey, e.FromQuarter }).IsUnique().HasFilter(null);
-        });
-
-        builder.Entity<KurinDuesPayee>(entity =>
-        {
-            entity.HasKey(e => e.KurinDuesPayeeKey);
-            entity.Property(e => e.Name).HasMaxLength(KurinDuesPayee.MaxNameLength);
-            entity.Ignore(e => e.IsArchived);
-            entity.HasIndex(e => e.KurinKey);
         });
 
         builder.Entity<GroupDuesRate>(entity =>

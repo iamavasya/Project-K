@@ -1,4 +1,3 @@
-using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.Common.Entities.DuesModule;
@@ -54,16 +53,6 @@ public class KurinDuesRate : Entity
         KurinReduced = own.Sum(a => a.ReducedAmount);
     }
 
-    /// <summary>What the статті send to each of the kurin's payees, in the order they first appear.</summary>
-    public DuesPayeeShares PayeesFull() => Payees(a => a.Amount);
-
-    /// <summary>The same with a пільга.</summary>
-    public DuesPayeeShares PayeesReduced() => Payees(a => a.ReducedAmount);
-
     /// <summary>The quarter's full вкладка, every стаття together — how rates of different tags are compared.</summary>
-    public decimal TotalFull() => StanytsiaFull + KraiFull + KurinShare + PayeesFull().Total;
-
-    private DuesPayeeShares Payees(Func<KurinDuesArticle, decimal> amount) => new(Articles
-        .Where(a => a.Recipient == DuesRecipient.Payee && a.PayeeKey.HasValue)
-        .Select(a => (a.PayeeKey!.Value, amount(a))));
+    public decimal TotalFull() => StanytsiaFull + KraiFull + KurinShare;
 }

@@ -46,8 +46,6 @@ public class DuesDirectoryTests
         dues.SetupGet(d => d.DuesEntries).Returns(Mock.Of<IDuesEntryRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(entries)));
         IReadOnlyList<DuesConcessionGrant> grants = [];
         dues.SetupGet(d => d.DuesConcessionGrants).Returns(Mock.Of<IDuesConcessionGrantRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(grants)));
-        IReadOnlyList<KurinDuesPayee> payees = [];
-        dues.SetupGet(d => d.KurinDuesPayees).Returns(Mock.Of<IKurinDuesPayeeRepository>(r => r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult(payees)));
         return new DuesDirectory(new DuesLedgerReader(dues.Object, Mock.Of<IDuesAccrual>()), _time, Mock.Of<IKraiProfileProvider>());
     }
 

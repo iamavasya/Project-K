@@ -1569,8 +1569,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
         string? note,
         DateOnly today,
         Person verifier,
-        bool received = false,
-        Guid? payeeKey = null)
+        bool received = false)
     {
         var createdAt = ToUtc(occurredOn.ToDateTime(TimeOnly.MinValue), 19);
         var entry = new DuesEntry
@@ -1578,7 +1577,6 @@ public partial class DemoDataSeeder : IDemoDataSeeder
             KurinKey = kurinKey,
             GroupKey = groupKey,
             MembershipKey = membershipKey,
-            PayeeKey = payeeKey,
             Kind = kind,
             Method = method,
             Amount = amount,

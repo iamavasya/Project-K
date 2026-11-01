@@ -29,7 +29,7 @@ public static class DuesEntryRules
     public static readonly IReadOnlySet<DuesEntryKind> KurinKinds = new HashSet<DuesEntryKind>
     {
         DuesEntryKind.Expense, DuesEntryKind.OtherIncome, DuesEntryKind.Exchange, DuesEntryKind.TransferToStanytsia,
-        DuesEntryKind.TransferToKrai, DuesEntryKind.TransferToPayee,
+        DuesEntryKind.TransferToKrai,
         DuesEntryKind.Contribution, DuesEntryKind.Refund, DuesEntryKind.Correction
     };
 
@@ -54,12 +54,6 @@ public static class DuesEntryRules
         validator.RuleFor(r => r.MembershipKey).Null()
             .When(r => !PersonalKinds.Contains(r.Kind))
             .WithMessage("That kind of operation is not about one person.");
-        validator.RuleFor(r => r.PayeeKey).NotEmpty()
-            .When(r => r.Kind == DuesEntryKind.TransferToPayee)
-            .WithMessage("Say whom the money goes to.");
-        validator.RuleFor(r => r.PayeeKey).Null()
-            .When(r => r.Kind != DuesEntryKind.TransferToPayee)
-            .WithMessage("Only a transfer to a payee names one.");
         validator.RuleFor(r => r.CounterMethod).NotNull().NotEqual(r => r.Method)
             .When(r => r.Kind == DuesEntryKind.Exchange)
             .WithMessage("An exchange needs the other side: cash to card or card to cash.");

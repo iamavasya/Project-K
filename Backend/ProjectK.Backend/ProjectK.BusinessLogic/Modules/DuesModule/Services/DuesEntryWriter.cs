@@ -56,7 +56,7 @@ public sealed class DuesEntryWriter
 
     /// <summary>
     /// Why the request cannot stand against the kurin's own box, or null. Money goes up only the way
-    /// the край takes it, or to a payee the kurin keeps. A personal operation needs a kurin without
+    /// the край takes it. A personal operation needs a kurin without
     /// гуртки and someone with an account in its box: a member today, or one charged here who left.
     /// </summary>
     public async Task<ServiceResult<T>?> CheckForKurinAsync<T>(Guid kurinKey, UpsertDuesEntryRequest request, CancellationToken cancellationToken)
@@ -64,12 +64,6 @@ public sealed class DuesEntryWriter
         if (!(await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken)).Takes(request.Kind))
         {
             return ServiceResult<T>.Failure(ResultType.BadRequest, "DuesTransferOff", "The край does not take вкладка that way.");
-        }
-
-        if (request.PayeeKey is { } payeeKey
-            && !(await _dues.KurinDuesPayees.GetForKurinAsync(kurinKey, cancellationToken)).Any(p => p.KurinDuesPayeeKey == payeeKey && !p.IsArchived))
-        {
-            return ServiceResult<T>.Failure(ResultType.BadRequest, "PayeeNotFound", "The kurin has no such payee.");
         }
 
         if (request.MembershipKey is { } membershipKey)
@@ -113,7 +107,6 @@ public sealed class DuesEntryWriter
         entry.Amount = request.Amount;
         entry.OccurredOn = request.OccurredOn;
         entry.MembershipKey = DuesEntryRules.PersonalKinds.Contains(request.Kind) ? request.MembershipKey : null;
-        entry.PayeeKey = request.Kind == DuesEntryKind.TransferToPayee ? request.PayeeKey : null;
         entry.CollectedByMemberKey = request.CollectedByMemberKey;
         entry.Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim();
     }

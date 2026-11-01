@@ -16,8 +16,6 @@ export interface PlastYearDto {
 export interface DuesArticleDto {
   name: string;
   recipient: DuesRecipient;
-  /** One of the kurin's payees, for `DuesRecipient.Payee`. */
-  payeeKey?: string | null;
   amount: number;
   /** What a person with a пільга pays for it. */
   reducedAmount: number;
@@ -46,8 +44,6 @@ export interface GroupDuesRateDto {
 export interface DuesAmountDto {
   stanytsia: number;
   krai: number;
-  /** The kurin's own payees together. */
-  payees?: number;
   kurin: number;
   group: number;
   total: number;
@@ -94,7 +90,6 @@ export interface DuesEntryDto {
   occurredOn: string;
   membershipKey: string | null;
   memberName: string | null;
-  payeeKey?: string | null;
   collectedByMemberKey: string | null;
   collectedByName: string | null;
   note: string | null;
@@ -128,18 +123,6 @@ export interface DuesTagDto {
   tagKey: string;
   name: string;
   colorHex: string;
-}
-
-/** One of the kurin's payees and how its box stands with it. */
-export interface KurinDuesPayeeDto {
-  payeeKey: string;
-  name: string;
-  /** A structure of the край, such as a булава: the край's пільги lower its share. */
-  isKrai?: boolean;
-  isArchived: boolean;
-  collected: number;
-  sent: number;
-  toForward: number;
 }
 
 /** Which box an account is kept in: a гурток's, or a senior kurin's own. */
@@ -269,7 +252,6 @@ export interface KurinDuesDto {
   accounts?: DuesAccountDto[];
   tags?: DuesTagDto[];
   kraiConcessions?: KraiConcessionDto[];
-  payees?: KurinDuesPayeeDto[];
   quarters: KurinDuesQuarterDto[];
   transfers: DuesTransferDto[];
   entries: DuesEntryDto[];
@@ -318,8 +300,6 @@ export interface UpsertDuesEntryRequest {
   amount: number;
   occurredOn: string;
   membershipKey: string | null;
-  /** For a transfer to one of the kurin's payees. */
-  payeeKey?: string | null;
   collectedByMemberKey: string | null;
   note: string | null;
 }
@@ -338,7 +318,6 @@ export interface SetKurinDuesRateRequest {
 export interface DuesArticleRequest {
   name: string;
   recipient: DuesRecipient;
-  payeeKey?: string | null;
   amount: number;
   reducedAmount: number;
 }

@@ -9,7 +9,6 @@ using ProjectK.BusinessLogic.Modules.DuesModule.Features.Group.SetConcession;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Entry;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Groups;
-using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Payees;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Receive;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetRate;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetSettings;
@@ -21,9 +20,8 @@ namespace ProjectK.API.Controllers.DuesModule;
 
 /// <summary>
 /// The kurin's side of the вкладка: the rates every гурток charges by, the kurin's own box, and the
-/// transfers гуртки hand up — and in a kurin without гуртки, every person's own account in that box
-/// and the payees it hands вкладка on to. Every route is keyed by the kurin, and the access check
-/// reads the scope from it.
+/// transfers гуртки hand up — and in a kurin without гуртки, every person's own account in that box.
+/// Every route is keyed by the kurin, and the access check reads the scope from it.
 /// </summary>
 [ApiController]
 [Route("api/kurin/{kurinKey:guid}/dues")]
@@ -126,30 +124,6 @@ public class KurinDuesController : ControllerBase
     public async Task<IActionResult> SetEntryVerified(Guid kurinKey, Guid entryKey, [FromBody] SetDuesEntryVerifiedRequest request)
     {
         var result = await _mediator.Send(new SetKurinDuesEntryVerifiedCommand(kurinKey, entryKey, request.IsVerified));
-        return result.ToActionResult(this);
-    }
-
-    /// <summary>Names a payee the kurin's статті can send вкладка to.</summary>
-    [HttpPost("payees")]
-    [ResourceAuthorize(ResourceType.KurinDues, ResourceAction.Update, "route:kurinKey")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> CreatePayee(Guid kurinKey, [FromBody] UpsertKurinDuesPayeeRequest request)
-    {
-        var result = await _mediator.Send(new CreateKurinDuesPayeeCommand(kurinKey, request));
-        return result.ToActionResult(this);
-    }
-
-    /// <summary>Renames a payee, or archives it or brings it back.</summary>
-    [HttpPut("payees/{payeeKey:guid}")]
-    [ResourceAuthorize(ResourceType.KurinDues, ResourceAction.Update, "route:kurinKey")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> UpdatePayee(Guid kurinKey, Guid payeeKey, [FromBody] UpsertKurinDuesPayeeRequest request)
-    {
-        var result = await _mediator.Send(new UpdateKurinDuesPayeeCommand(kurinKey, payeeKey, request));
         return result.ToActionResult(this);
     }
 

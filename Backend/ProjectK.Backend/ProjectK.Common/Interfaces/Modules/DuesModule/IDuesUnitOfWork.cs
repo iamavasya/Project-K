@@ -14,7 +14,6 @@ public interface IDuesUnitOfWork
     IDuesChargeRepository DuesCharges { get; }
     IDuesEntryRepository DuesEntries { get; }
     IKurinDuesSettingsRepository KurinDuesSettings { get; }
-    IKurinDuesPayeeRepository KurinDuesPayees { get; }
 
     Task<int> SaveChangesAsync(CancellationToken token = default);
 }

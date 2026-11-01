@@ -49,8 +49,6 @@ public sealed class KurinDuesResponse
     /// <summary>The пільги of the край the kurin may give, for its own accounts.</summary>
     public IReadOnlyList<KraiConcessionDto> KraiConcessions { get; init; } = [];
 
-    /// <summary>Whom the kurin hands вкладка on to besides the станиця and the край, archived ones too.</summary>
-    public IReadOnlyList<KurinDuesPayeeDto> Payees { get; init; } = [];
     public IReadOnlyList<DuesTransferDto> Transfers { get; init; } = [];
 
     /// <summary>
@@ -153,17 +151,3 @@ public sealed class KurinDuesViewerDto
     public bool CanSetRates { get; init; }
 }
 
-/// <summary>One of the kurin's payees and how the box stands with it.</summary>
-public sealed class KurinDuesPayeeDto
-{
-    public Guid PayeeKey { get; init; }
-    public string Name { get; init; } = string.Empty;
-    /// <summary>A structure of the край, such as a булава: the край's пільги lower its share.</summary>
-    public bool IsKrai { get; init; }
-    public bool IsArchived { get; init; }
-    /// <summary>What people have paid towards its статті.</summary>
-    public decimal Collected { get; init; }
-    public decimal Sent { get; init; }
-    /// <summary>Collected and not handed on yet.</summary>
-    public decimal ToForward { get; init; }
-}

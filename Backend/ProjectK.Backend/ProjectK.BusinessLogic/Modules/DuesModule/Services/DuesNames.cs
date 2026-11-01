@@ -85,7 +85,6 @@ public sealed class DuesNames
         OccurredOn = e.OccurredOn,
         MembershipKey = e.MembershipKey,
         MemberName = e.MembershipKey is { } mk ? OfMembership(mk) : null,
-        PayeeKey = e.PayeeKey,
         CollectedByMemberKey = e.CollectedByMemberKey,
         CollectedByName = OfMember(e.CollectedByMemberKey),
         Note = e.Note,

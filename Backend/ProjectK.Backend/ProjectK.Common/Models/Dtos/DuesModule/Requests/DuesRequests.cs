@@ -39,8 +39,6 @@ public sealed class DuesArticleRequest
 {
     public string Name { get; set; } = string.Empty;
     public DuesRecipient Recipient { get; set; }
-    /// <summary>One of the kurin's payees, when <see cref="Recipient"/> is <see cref="DuesRecipient.Payee"/>.</summary>
-    public Guid? PayeeKey { get; set; }
     public decimal Amount { get; set; }
 
     /// <summary>With a пільга. Left out, it is the full amount.</summary>
@@ -79,8 +77,6 @@ public sealed class UpsertDuesEntryRequest
     public decimal Amount { get; set; }
     public DateOnly OccurredOn { get; set; }
     public Guid? MembershipKey { get; set; }
-    /// <summary>For a transfer to one of the kurin's payees: which one.</summary>
-    public Guid? PayeeKey { get; set; }
     public Guid? CollectedByMemberKey { get; set; }
     public string? Note { get; set; }
 }
@@ -101,12 +97,3 @@ public sealed class SetKurinDuesSettingsRequest
     public DuesChargeTiming ChargeTiming { get; set; }
 }
 
-/// <summary>Body of <c>POST</c> and <c>PUT api/kurin/{kurinKey}/dues/payees</c>.</summary>
-public sealed class UpsertKurinDuesPayeeRequest
-{
-    public string Name { get; set; } = string.Empty;
-    /// <summary>A structure of the край: the край's пільги lower its share as they do the край's.</summary>
-    public bool IsKrai { get; set; }
-    /// <summary>Put away or brought back; a new payee is never archived.</summary>
-    public bool IsArchived { get; set; }
-}

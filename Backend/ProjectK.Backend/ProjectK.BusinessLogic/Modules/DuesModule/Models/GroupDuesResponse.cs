@@ -87,7 +87,6 @@ public sealed class KurinDuesRateDto
             {
                 Name = a.Name,
                 Recipient = a.Recipient,
-                PayeeKey = a.PayeeKey,
                 Amount = a.Amount,
                 ReducedAmount = a.ReducedAmount
             })
@@ -105,7 +104,6 @@ public sealed class DuesArticleDto
 {
     public string Name { get; init; } = string.Empty;
     public DuesRecipient Recipient { get; init; }
-    public Guid? PayeeKey { get; init; }
     public decimal Amount { get; init; }
     public decimal ReducedAmount { get; init; }
 }
@@ -120,8 +118,6 @@ public sealed class DuesAmountDto
 {
     public decimal Stanytsia { get; init; }
     public decimal Krai { get; init; }
-    /// <summary>The kurin's own payees together.</summary>
-    public decimal Payees { get; init; }
     public decimal Kurin { get; init; }
     public decimal Group { get; init; }
     public decimal Total { get; init; }
@@ -264,8 +260,6 @@ public sealed class DuesEntryDto
     public Guid? MembershipKey { get; init; }
     public string? MemberName { get; init; }
 
-    /// <summary>For a transfer to one of the kurin's payees: which one.</summary>
-    public Guid? PayeeKey { get; init; }
     public Guid? CollectedByMemberKey { get; init; }
     public string? CollectedByName { get; init; }
     public string? Note { get; init; }

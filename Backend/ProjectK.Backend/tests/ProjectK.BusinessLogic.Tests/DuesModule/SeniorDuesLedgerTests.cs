@@ -8,15 +8,14 @@ using Xunit;
 namespace ProjectK.BusinessLogic.Tests.DuesModule;
 
 /// <summary>
-/// A senior kurin's вкладка: no гуртки, each person's account in the kurin's own box, rates by tag,
-/// and payees the kurin names itself. The УСП rate is 300 to «Булава УСП» (200 with a пільга) and 150
-/// to the kurin (100); the rate for everyone else is 400 to the kurin.
+/// A senior kurin's вкладка: no гуртки, each person's account in the kurin's own box, and rates by tag.
+/// The УСП rate is 300 to the край (200 with a пільга) and 150 to the kurin (100); the rate for
+/// everyone else is 400 to the kurin.
 /// </summary>
 public class SeniorDuesLedgerTests
 {
     private static readonly Guid Kurin = Guid.NewGuid();
     private static readonly Guid Usp = Guid.NewGuid();
-    private static readonly Guid Bulava = Guid.NewGuid();
     private static readonly Guid Person = Guid.NewGuid();
 
     private static readonly DuesQuarter Q1 = new(2026, 1);
@@ -34,7 +33,7 @@ public class SeniorDuesLedgerTests
         var usp = new KurinDuesRate { KurinKey = Kurin, TagKey = Usp, FromQuarter = Q1.Index };
         usp.SetArticles(
         [
-            new KurinDuesArticle { Name = "Вкладка УСП", Recipient = DuesRecipient.Payee, PayeeKey = Bulava, Amount = 300, ReducedAmount = 200 },
+            new KurinDuesArticle { Name = "Вкладка УСП", Recipient = DuesRecipient.Krai, Amount = 300, ReducedAmount = 200 },
             new KurinDuesArticle { Name = "Курінна", Recipient = DuesRecipient.Kurin, Amount = 150, ReducedAmount = 100 }
         ]);
         _rates.AddRange([everyone, usp]);
@@ -45,12 +44,11 @@ public class SeniorDuesLedgerTests
     private void Charge(Guid? tag, params DuesQuarter[] quarters) =>
         _charges.AddRange(quarters.Select(q => new DuesCharge { KurinKey = Kurin, MembershipKey = Person, Quarter = q.Index, RateTagKey = tag }));
 
-    private void Entry(DuesEntryKind kind, decimal amount, Guid? membership = null, Guid? payee = null) =>
+    private void Entry(DuesEntryKind kind, decimal amount, Guid? membership = null) =>
         _entries.Add(new DuesEntry
         {
             KurinKey = Kurin,
             MembershipKey = membership,
-            PayeeKey = payee,
             Kind = kind,
             Amount = amount,
             Method = DuesPaymentMethod.Card,
@@ -67,18 +65,18 @@ public class SeniorDuesLedgerTests
 
         account.GroupKey.Should().BeNull();
         account.Quarters.Select(q => q.Charged.Total).Should().Equal(450, 400);
-        account.Quarters[0].Charged.Payees.Of(Bulava).Should().Be(300);
+        account.Quarters[0].Charged.Krai.Should().Be(300);
     }
 
     [Fact]
-    public void APayment_GoesToThePayeeBeforeTheKurin()
+    public void APayment_GoesToTheKraiBeforeTheKurin()
     {
         Charge(Usp, Q1);
         Entry(DuesEntryKind.Contribution, 350, Person);
 
         var quarter = Ledger().Accounts().Single().Quarters.Single();
 
-        quarter.Paid.Payees.Of(Bulava).Should().Be(300);
+        quarter.Paid.Krai.Should().Be(300);
         quarter.Paid.Kurin.Should().Be(50);
         quarter.Balance.Should().Be(-100);
     }
@@ -91,7 +89,7 @@ public class SeniorDuesLedgerTests
 
         var charged = Ledger().Accounts().Single().Quarters.Single().Charged;
 
-        charged.Payees.Of(Bulava).Should().Be(200);
+        charged.Krai.Should().Be(200);
         charged.Kurin.Should().Be(100);
     }
 
@@ -111,16 +109,16 @@ public class SeniorDuesLedgerTests
     }
 
     [Fact]
-    public void TheKurinsBox_OwesThePayeeWhatWasPaidForIt_LessWhatWasSent()
+    public void TheKurinsBox_OwesTheKraiWhatWasPaidForIt_LessWhatWasSent()
     {
         Charge(Usp, Q1, Q2);
         Entry(DuesEntryKind.Contribution, 900, Person);
-        Entry(DuesEntryKind.TransferToPayee, 250, payee: Bulava);
+        Entry(DuesEntryKind.TransferToKrai, 250);
 
         var box = Ledger().KurinBox();
 
         box.Box.Total.Should().Be(650);
-        box.Payees.Should().ContainSingle().Which.Should().Be(new PayeeHandover(Bulava, 600, 250));
+        box.ToKrai.Should().Be(350);
         box.Box.ToForward.Should().Be(350);
         box.Box.Ahead.Should().Be(0);
         box.Box.Own.Should().Be(300);
@@ -156,7 +154,7 @@ public class SeniorDuesLedgerTests
     }
 
     [Fact]
-    public void APilhaOfTheKraiOnTheKraisPart_LowersTheShareOfAKraiPayee()
+    public void APilhaOfTheKraiOnTheKraisPart_LowersTheKraisStattiOfATagRate()
     {
         Charge(Usp, Q1);
         var grant = new DuesConcessionGrant
@@ -165,11 +163,9 @@ public class SeniorDuesLedgerTests
             Kind = ProjectK.Common.Models.KraiProfiles.KraiDues.Exempt, Parts = DuesParts.Krai, FromQuarter = Q1.Index
         };
 
-        var withBulavaOfTheKrai = new DuesLedger(_rates, [], _concessions, _charges, _entries, [grant], [Bulava]).Accounts().Single();
-        var withBulavaApart = new DuesLedger(_rates, [], _concessions, _charges, _entries, [grant]).Accounts().Single();
+        var quarter = new DuesLedger(_rates, [], _concessions, _charges, _entries, [grant]).Accounts().Single().Quarters.Single();
 
-        withBulavaOfTheKrai.Quarters.Single().Charged.Total.Should().Be(150);
-        withBulavaOfTheKrai.Quarters.Single().ConcessionName.Should().Be("Багатодітна родина");
-        withBulavaApart.Quarters.Single().Charged.Total.Should().Be(450);
+        quarter.Charged.Total.Should().Be(150);
+        quarter.ConcessionName.Should().Be("Багатодітна родина");
     }
 }

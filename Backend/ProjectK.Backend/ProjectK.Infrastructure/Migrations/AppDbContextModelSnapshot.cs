@@ -806,9 +806,6 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<DateOnly>("OccurredOn")
                         .HasColumnType("date");
 
-                    b.Property<Guid?>("PayeeKey")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime?>("ReceivedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -906,39 +903,6 @@ namespace ProjectK.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("GroupDuesRates");
-                });
-
-            modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.KurinDuesPayee", b =>
-                {
-                    b.Property<Guid>("KurinDuesPayeeKey")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ArchivedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsKrai")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("KurinKey")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
-
-                    b.Property<DateTime>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("KurinDuesPayeeKey");
-
-                    b.HasIndex("KurinKey");
-
-                    b.ToTable("KurinDuesPayees");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.DuesModule.KurinDuesRate", b =>

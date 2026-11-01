@@ -41,12 +41,6 @@ public sealed class SetKurinDuesRateCommandValidator : AbstractValidator<SetKuri
                 article.RuleFor(a => a.Name).NotEmpty().Must(n => n?.Trim().Length > 0)
                     .MaximumLength(KurinDuesArticles.MaxNameLength);
                 article.RuleFor(a => a.Recipient).IsInEnum();
-                article.RuleFor(a => a.PayeeKey).NotEmpty()
-                    .When(a => a.Recipient == DuesRecipient.Payee)
-                    .WithMessage("Say which payee the стаття goes to.");
-                article.RuleFor(a => a.PayeeKey).Null()
-                    .When(a => a.Recipient != DuesRecipient.Payee)
-                    .WithMessage("Only a стаття for a payee names one.");
                 article.RuleFor(a => a.Amount).GreaterThanOrEqualTo(0).PrecisionScale(18, 2, ignoreTrailingZeros: true);
                 article.RuleFor(a => a.ReducedAmount!.Value).GreaterThanOrEqualTo(0)
                     .PrecisionScale(18, 2, ignoreTrailingZeros: true)
@@ -121,7 +115,6 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
             {
                 Name = a.Name.Trim(),
                 Recipient = a.Recipient,
-                PayeeKey = a.Recipient == DuesRecipient.Payee ? a.PayeeKey : null,
                 Amount = a.Amount,
                 ReducedAmount = a.ReducedAmount ?? a.Amount
             }).ToList();
@@ -131,18 +124,6 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
             {
                 return ServiceResult<object>.Failure(ResultType.BadRequest, "DuesRecipientOff",
                     $"The край does not take вкладка that way: «{stray.Name}».");
-            }
-
-            var payees = articles.Any(a => a.PayeeKey.HasValue)
-                ? (await _dues.KurinDuesPayees.GetForKurinAsync(request.KurinKey, cancellationToken))
-                    .Where(p => !p.IsArchived)
-                    .Select(p => p.KurinDuesPayeeKey)
-                    .ToHashSet()
-                : [];
-            if (articles.FirstOrDefault(a => a.PayeeKey is { } key && !payees.Contains(key)) is { } lost)
-            {
-                return ServiceResult<object>.Failure(ResultType.BadRequest, "PayeeNotFound",
-                    $"The kurin has no such payee: «{lost.Name}».");
             }
         }
         else

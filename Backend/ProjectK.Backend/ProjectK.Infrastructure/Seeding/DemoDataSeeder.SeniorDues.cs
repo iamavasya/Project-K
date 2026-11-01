@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.DuesModule;
+using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Models.Dues;
@@ -9,9 +10,10 @@ namespace ProjectK.Infrastructure.Seeding;
 
 /// <summary>
 /// The Order's вкладка: no гуртки, so each person pays into the kurin's own box. Tags УСП and УПС
-/// set the rates, the kurin hands money on to «Булава УСП» and «Булава УПС», and its people show every
-/// state the register has — paid a year ahead, paid up, owing for past quarters, on a пільга.
-/// Богдан Лисяк keeps the box as скарбник.
+/// set the rates, their статті go to the край and the kurin, and its people show every state the
+/// register has — paid a year ahead, paid up, owing for past quarters, on a пільга. Богдан Лисяк
+/// keeps the box as скарбник. The demo край takes вкладка both through the станиця and straight,
+/// so the Order can hand the край its part.
 /// </summary>
 public partial class DemoDataSeeder
 {
@@ -19,6 +21,7 @@ public partial class DemoDataSeeder
 
     private async Task SeedSeniorDuesAsync(Kurin orden, Member leader, IReadOnlyList<Member> members, Leadership leadership, CancellationToken cancellationToken)
     {
+        await LetTheDemoKraiTakeDuesStraightAsync(cancellationToken);
         if (await _dbContext.KurinDuesRates.AnyAsync(r => r.KurinKey == orden.KurinKey, cancellationToken))
         {
             return;
@@ -39,10 +42,6 @@ public partial class DemoDataSeeder
             });
         }
 
-        var bulavaUsp = new KurinDuesPayee { KurinKey = orden.KurinKey, Name = "Булава УСП", IsKrai = true };
-        var bulavaUps = new KurinDuesPayee { KurinKey = orden.KurinKey, Name = "Булава УПС", IsKrai = true };
-        _dbContext.KurinDuesPayees.AddRange(bulavaUsp, bulavaUps);
-
         var today = DateOnly.FromDateTime(_now);
         var current = DuesQuarter.Of(today);
         var first = DuesQuarter.FromIndex(current.Index - 3);
@@ -56,10 +55,10 @@ public partial class DemoDataSeeder
         _dbContext.KurinDuesRates.AddRange(
             Rate(null, new KurinDuesArticle { Name = "Членська вкладка", Recipient = DuesRecipient.Kurin, Amount = 400, ReducedAmount = 300 }),
             Rate(usp.KurinTagKey,
-                new KurinDuesArticle { Name = "Вкладка УСП", Recipient = DuesRecipient.Payee, PayeeKey = bulavaUsp.KurinDuesPayeeKey, Amount = 300, ReducedAmount = 200 },
+                new KurinDuesArticle { Name = "Вкладка УСП", Recipient = DuesRecipient.Krai, Amount = 300, ReducedAmount = 200 },
                 new KurinDuesArticle { Name = "Курінна", Recipient = DuesRecipient.Kurin, Amount = 150, ReducedAmount = 100 }),
             Rate(ups.KurinTagKey,
-                new KurinDuesArticle { Name = "Вкладка УПС", Recipient = DuesRecipient.Payee, PayeeKey = bulavaUps.KurinDuesPayeeKey, Amount = 250, ReducedAmount = 125 },
+                new KurinDuesArticle { Name = "Вкладка УПС", Recipient = DuesRecipient.Krai, Amount = 250, ReducedAmount = 125 },
                 new KurinDuesArticle { Name = "Курінна", Recipient = DuesRecipient.Kurin, Amount = 100, ReducedAmount = 50 }));
 
         var memberKeys = members.Select(m => m.MemberKey).ToList();
@@ -100,13 +99,36 @@ public partial class DemoDataSeeder
         // Андрій: three quarters; the running one is still to pay.
         Pay(4, 1350, DuesQuarter.FromIndex(first.Index + 2), DuesPaymentMethod.Card);
 
-        void Hand(DuesEntryKind kind, Guid? payeeKey, decimal amount, DuesQuarter quarter, string note)
+        void Hand(DuesEntryKind kind, decimal amount, DuesQuarter quarter, string note) =>
+            AddDuesEntry(orden.KurinKey, null, null, kind, DuesPaymentMethod.Card, amount, PaymentDay(quarter, today), keeper, note, today, verifier);
+
+        Hand(DuesEntryKind.TransferToKrai, 1700, DuesQuarter.FromIndex(first.Index + 2), "За І–ІІ кв.");
+        Hand(DuesEntryKind.Expense, 300, DuesQuarter.FromIndex(first.Index + 1), "Оренда домівки");
+    }
+
+    /// <summary>
+    /// The demo край takes вкладка both ways, so a kurin can send its край статті straight. Saved as a
+    /// revision of the край's profile, the way the край's settings page would, and only while the
+    /// profile is still empty.
+    /// </summary>
+    private async Task LetTheDemoKraiTakeDuesStraightAsync(CancellationToken cancellationToken)
+    {
+        var latest = await _dbContext.KraiProfileRevisions
+            .Where(r => r.KraiCode == Krai.Ukraine)
+            .OrderByDescending(r => r.Revision)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (latest is not null && latest.Json.Trim() != "{}")
         {
-            AddDuesEntry(orden.KurinKey, null, null, kind, DuesPaymentMethod.Card, amount, PaymentDay(quarter, today), keeper, note, today, verifier, payeeKey: payeeKey);
+            return;
         }
 
-        Hand(DuesEntryKind.TransferToPayee, bulavaUsp.KurinDuesPayeeKey, 1200, DuesQuarter.FromIndex(first.Index + 2), "За І–ІІ кв.");
-        Hand(DuesEntryKind.TransferToPayee, bulavaUps.KurinDuesPayeeKey, 500, DuesQuarter.FromIndex(first.Index + 2), "За І–ІІ кв.");
-        Hand(DuesEntryKind.Expense, null, 300, DuesQuarter.FromIndex(first.Index + 1), "Оренда домівки");
+        _dbContext.KraiProfileRevisions.Add(new KraiProfileRevision
+        {
+            KraiCode = Krai.Ukraine,
+            Revision = (latest?.Revision ?? 0) + 1,
+            Json = """{"dues":{"upstream":"both"}}""",
+            Note = "Демо: курені передають і станиці, і краю"
+        });
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

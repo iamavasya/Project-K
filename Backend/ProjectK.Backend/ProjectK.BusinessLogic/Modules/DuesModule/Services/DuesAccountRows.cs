@@ -97,7 +97,7 @@ public sealed class DuesAccountRows
     }
 
     public static DuesAmountDto Amount(DuesAmount a) =>
-        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Payees = a.Payees.Total, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
+        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
 }
 
 /// <summary>The kurin's tags and the ones on each person, as far as the viewer may see them.</summary>

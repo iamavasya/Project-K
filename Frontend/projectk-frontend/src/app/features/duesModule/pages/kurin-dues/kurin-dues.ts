@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -41,7 +40,6 @@ import {
   DuesAccountDto,
   DuesEntryDto,
   DuesTransferDto,
-  KurinDuesPayeeDto,
   KurinDuesRateDto,
   KurinDuesDto,
   KurinDuesQuarterDto,
@@ -57,7 +55,7 @@ import { DuesEntryDialogComponent } from '../group-dues/components/dues-entry-di
  * The kurin's box: what each гурток has collected for the станиця and the kurin and handed over,
  * the transfers waiting for the скарбник's word that they arrived, and the kurin's own operations
  * with the Звʼязковий's mark. A senior kurin has no гуртки: the same page keeps each person's own
- * account in the register, the kurin's payees, and rates by tag. One read, reloaded after every write.
+ * account in the register, and rates by tag. One read, reloaded after every write.
  */
 @Component({
   selector: 'app-kurin-dues',
@@ -155,8 +153,6 @@ export class KurinDuesComponent implements OnInit {
   readonly accounts = computed(() => this.data()?.accounts ?? []);
   readonly members = computed(() => this.accounts().filter(a => a.standing === 'Current'));
   readonly debtors = computed(() => this.accounts().filter(a => a.balance < 0).length);
-  /** Payees money has reached or left for; one only just named has nothing to show yet. */
-  readonly activePayees = computed(() => (this.data()?.payees ?? []).filter(p => p.collected !== 0 || p.sent !== 0));
   readonly personFilter = signal<string | null>(null);
   readonly personFilterName = computed(() => {
     const key = this.personFilter();
@@ -213,13 +209,6 @@ export class KurinDuesComponent implements OnInit {
   readonly savingRate = signal(false);
   readonly savingTiming = signal(false);
 
-  readonly payeesDialogVisible = signal(false);
-  readonly newPayeeName = signal('');
-  readonly newPayeeKrai = signal(true);
-  readonly payeeEdits = signal<Record<string, string>>({});
-  readonly savingPayee = signal(false);
-  readonly payeeError = signal<string | null>(null);
-
   readonly concessionDialogVisible = signal(false);
   readonly concessionTarget = signal<DuesAccountDto | null>(null);
   readonly concessionFromQuarter = signal<string>('');
@@ -273,39 +262,11 @@ export class KurinDuesComponent implements OnInit {
   }
 
   kindLabel(entry: DuesEntryDto): string {
-    const payee = entry.payeeKey ? this.data()?.payees?.find(p => p.payeeKey === entry.payeeKey)?.name : null;
-    return payee ? `${DUES_ENTRY_KIND_LABELS[entry.kind]}: ${payee}` : DUES_ENTRY_KIND_LABELS[entry.kind];
+    return DUES_ENTRY_KIND_LABELS[entry.kind];
   }
 
   togglePerson(account: DuesAccountDto): void {
     this.personFilter.set(this.personFilter() === account.membershipKey ? null : account.membershipKey);
-  }
-
-  openPayees(): void {
-    this.newPayeeName.set('');
-    this.payeeEdits.set(Object.fromEntries((this.data()?.payees ?? []).map(p => [p.payeeKey, p.name])));
-    this.payeeError.set(null);
-    this.payeesDialogVisible.set(true);
-  }
-
-  setPayeeName(payeeKey: string, name: string): void {
-    this.payeeEdits.update(edits => ({ ...edits, [payeeKey]: name }));
-  }
-
-  addPayee(): void {
-    const name = this.newPayeeName().trim();
-    if (!name) {
-      return;
-    }
-    this.runPayee(this.dues.createPayee(this.kurinKey, name, this.newPayeeKrai()), () => this.newPayeeName.set(''));
-  }
-
-  savePayee(payee: KurinDuesPayeeDto, isArchived = payee.isArchived, isKrai = !!payee.isKrai): void {
-    const name = (this.payeeEdits()[payee.payeeKey] ?? payee.name).trim();
-    if (!name || (name === payee.name && isArchived === payee.isArchived && isKrai === !!payee.isKrai)) {
-      return;
-    }
-    this.runPayee(this.dues.updatePayee(this.kurinKey, payee.payeeKey, name, isKrai, isArchived));
   }
 
   openConcessionDialog(account: DuesAccountDto): void {
@@ -416,24 +377,6 @@ export class KurinDuesComponent implements OnInit {
     });
   }
 
-  private runPayee(call: ReturnType<DuesService['createPayee']>, done?: () => void): void {
-    this.savingPayee.set(true);
-    this.payeeError.set(null);
-    call.subscribe({
-      next: () => {
-        this.savingPayee.set(false);
-        done?.();
-        this.load();
-      },
-      error: (error: unknown) => {
-        this.savingPayee.set(false);
-        this.payeeError.set(errorCode(error) === 'PayeeNameTaken'
-          ? 'Такий отримувач уже є.'
-          : failureDetail(error, 'Не вдалося зберегти.'));
-      }
-    });
-  }
-
   /** The rate in force now for a tag, or for everyone with null. */
   private rateInForce(tagKey: string | null) {
     const data = this.data();
@@ -450,8 +393,4 @@ export class KurinDuesComponent implements OnInit {
     const [year, month] = date.split('-').map(Number);
     return { year, number: Math.floor((month - 1) / 3) + 1 };
   }
-}
-
-function errorCode(error: unknown): unknown {
-  return error instanceof HttpErrorResponse ? (error.error as { error?: unknown } | null)?.error : null;
 }

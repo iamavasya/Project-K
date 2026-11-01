@@ -55,8 +55,8 @@
             <p-select
               [inputId]="'rate-article-recipient-' + i"
               [options]="recipientOptions()"
-              [ngModel]="targetOf(article)"
-              (ngModelChange)="setTarget(article.id, $event)"
+              [ngModel]="article.recipient"
+              (ngModelChange)="setArticle(article.id, { recipient: $event })"
               optionLabel="label"
               optionValue="value"
               appendTo="body"

@@ -47,8 +47,6 @@ public class KraiConcessionReportTests
         dues.SetupGet(d => d.DuesCharges).Returns(Mock.Of<IDuesChargeRepository>(r => r.GetForKurinAsync(Kurin.KurinKey, It.IsAny<CancellationToken>()) == Task.FromResult(charges)));
         dues.SetupGet(d => d.DuesEntries).Returns(Mock.Of<IDuesEntryRepository>(r => r.GetForKurinAsync(Kurin.KurinKey, It.IsAny<CancellationToken>()) == Task.FromResult(entries)));
         dues.SetupGet(d => d.DuesConcessionGrants).Returns(Mock.Of<IDuesConcessionGrantRepository>(r => r.GetForKurinAsync(Kurin.KurinKey, It.IsAny<CancellationToken>()) == Task.FromResult(grants)));
-        IReadOnlyList<KurinDuesPayee> payees = [];
-        dues.SetupGet(d => d.KurinDuesPayees).Returns(Mock.Of<IKurinDuesPayeeRepository>(r => r.GetForKurinAsync(Kurin.KurinKey, It.IsAny<CancellationToken>()) == Task.FromResult(payees)));
 
         IReadOnlyList<Kurin> kurins = [Kurin];
         var unitOfWork = new Mock<IUnitOfWork>();

@@ -62,7 +62,7 @@ describe('KurinRateDialogComponent', () => {
     dialog.submit();
 
     expect(sent?.fromQuarter).toEqual(q(2026, 4));
-    expect(sent?.articles.at(-1)).toEqual({ name: 'Крайова вкладка', recipient: DuesRecipient.Stanytsia, payeeKey: null, amount: 60, reducedAmount: 60 });
+    expect(sent?.articles.at(-1)).toEqual({ name: 'Крайова вкладка', recipient: DuesRecipient.Stanytsia, amount: 60, reducedAmount: 60 });
     expect(sent?.articles.length).toBe(3);
   });
 
@@ -76,7 +76,7 @@ describe('KurinRateDialogComponent', () => {
     dialog.setArticle(fund.id, { amount: 70 });
     dialog.submit();
 
-    expect(sent?.articles[1]).toEqual({ name: 'Табірний фонд', recipient: DuesRecipient.Kurin, payeeKey: null, amount: 70, reducedAmount: 70 });
+    expect(sent?.articles[1]).toEqual({ name: 'Табірний фонд', recipient: DuesRecipient.Kurin, amount: 70, reducedAmount: 70 });
   });
 
   it('in a край paid straight, starts a new kurin with a край стаття and offers no станиця', () => {
@@ -114,19 +114,19 @@ describe('KurinRateDialogComponent', () => {
     expect(dialog.valid()).toBe(true);
   });
 
-  it('in a kurin with tags, sets a rate per tag and sends a payee стаття with its payee', () => {
+  it('in a kurin with tags, sets a rate per tag', () => {
     TestBed.configureTestingModule({ imports: [KurinRateDialogComponent], providers: [provideNoopAnimations()] });
     const fixture = TestBed.createComponent(KurinRateDialogComponent);
     const uspRate: KurinDuesRateDto = {
       ...rate,
       tagKey: 'usp',
-      articles: [{ name: 'Вкладка УСП', recipient: DuesRecipient.Payee, payeeKey: 'bulava', amount: 300, reducedAmount: 200 }]
+      articles: [{ name: 'Вкладка УСП', recipient: DuesRecipient.Krai, amount: 300, reducedAmount: 200 }]
     };
     fixture.componentRef.setInput('rates', [rate, uspRate]);
     fixture.componentRef.setInput('years', years);
     fixture.componentRef.setInput('currentQuarter', q(2026, 4));
     fixture.componentRef.setInput('tags', [{ tagKey: 'usp', name: 'УСП', colorHex: '#2F855A' }]);
-    fixture.componentRef.setInput('payees', [{ payeeKey: 'bulava', name: 'Булава УСП', isArchived: false, collected: 0, sent: 0, toForward: 0 }]);
+    fixture.componentRef.setInput('upstream', DuesUpstream.Both);
     fixture.componentRef.setInput('visible', true);
     fixture.detectChanges();
     const dialog = fixture.componentInstance;
@@ -136,11 +136,10 @@ describe('KurinRateDialogComponent', () => {
     expect(dialog.articles().map(a => a.name)).toEqual(['Станиця', 'Табірний фонд']);
     dialog.chooseTag('usp');
     fixture.detectChanges();
-    expect(dialog.articles().map(a => [a.name, dialog.targetOf(a)])).toEqual([['Вкладка УСП', 'payee:bulava']]);
-    expect(dialog.recipientOptions().map(o => o.label)).toContain('Булава УСП');
+    expect(dialog.articles().map(a => [a.name, a.recipient])).toEqual([['Вкладка УСП', DuesRecipient.Krai]]);
 
     dialog.submit();
     expect(sent?.tagKey).toBe('usp');
-    expect(sent?.articles).toEqual([{ name: 'Вкладка УСП', recipient: DuesRecipient.Payee, payeeKey: 'bulava', amount: 300, reducedAmount: 200 }]);
+    expect(sent?.articles).toEqual([{ name: 'Вкладка УСП', recipient: DuesRecipient.Krai, amount: 300, reducedAmount: 200 }]);
   });
 });

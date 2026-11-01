@@ -27,16 +27,6 @@ public sealed class DuesLedgerReader
             await _dues.DuesConcessions.GetForKurinAsync(kurinKey, cancellationToken),
             await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken),
             await _dues.DuesEntries.GetForKurinAsync(kurinKey, cancellationToken),
-            await _dues.DuesConcessionGrants.GetForKurinAsync(kurinKey, cancellationToken),
-            await KraiPayeesAsync(_dues, kurinKey, cancellationToken));
-    }
-
-    /// <summary>The kurin's payees that are structures of the край: the край's пільги reach them too.</summary>
-    public static async Task<IReadOnlyList<Guid>> KraiPayeesAsync(IDuesUnitOfWork dues, Guid kurinKey, CancellationToken cancellationToken)
-    {
-        return (await dues.KurinDuesPayees.GetForKurinAsync(kurinKey, cancellationToken))
-            .Where(p => p.IsKrai)
-            .Select(p => p.KurinDuesPayeeKey)
-            .ToList();
+            await _dues.DuesConcessionGrants.GetForKurinAsync(kurinKey, cancellationToken));
     }
 }

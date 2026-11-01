@@ -21,12 +21,6 @@ namespace ProjectK.Infrastructure.Migrations
                 type: "uniqueidentifier",
                 nullable: true);
 
-            migrationBuilder.AddColumn<Guid>(
-                name: "PayeeKey",
-                table: "DuesEntries",
-                type: "uniqueidentifier",
-                nullable: true);
-
             migrationBuilder.AlterColumn<Guid>(
                 name: "GroupKey",
                 table: "DuesCharges",
@@ -41,41 +35,16 @@ namespace ProjectK.Infrastructure.Migrations
                 type: "uniqueidentifier",
                 nullable: true);
 
-            migrationBuilder.CreateTable(
-                name: "KurinDuesPayees",
-                columns: table => new
-                {
-                    KurinDuesPayeeKey = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    KurinKey = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false),
-                    IsKrai = table.Column<bool>(type: "bit", nullable: false),
-                    ArchivedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_KurinDuesPayees", x => x.KurinDuesPayeeKey);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_KurinDuesRates_KurinKey_TagKey_FromQuarter",
                 table: "KurinDuesRates",
                 columns: new[] { "KurinKey", "TagKey", "FromQuarter" },
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_KurinDuesPayees_KurinKey",
-                table: "KurinDuesPayees",
-                column: "KurinKey");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "KurinDuesPayees");
-
             migrationBuilder.DropIndex(
                 name: "IX_KurinDuesRates_KurinKey_TagKey_FromQuarter",
                 table: "KurinDuesRates");
@@ -83,10 +52,6 @@ namespace ProjectK.Infrastructure.Migrations
             migrationBuilder.DropColumn(
                 name: "TagKey",
                 table: "KurinDuesRates");
-
-            migrationBuilder.DropColumn(
-                name: "PayeeKey",
-                table: "DuesEntries");
 
             migrationBuilder.DropColumn(
                 name: "RateTagKey",

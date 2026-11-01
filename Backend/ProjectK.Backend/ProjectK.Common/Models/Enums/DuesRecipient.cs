@@ -12,7 +12,5 @@ public enum DuesRecipient
 {
     Stanytsia = 0,
     Kurin = 1,
-    Krai = 2,
-    /// <summary>One of the kurin's own payees (<c>KurinDuesPayee</c>), forwarded with its own transfer.</summary>
-    Payee = 3
+    Krai = 2
 }

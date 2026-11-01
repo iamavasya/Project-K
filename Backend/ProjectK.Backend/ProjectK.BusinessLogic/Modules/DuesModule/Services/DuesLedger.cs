@@ -9,9 +9,9 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 /// Pure, so every money rule lives here and is testable.
 /// <list type="bullet">
 /// <item>a payment closes the oldest quarter first, and within a quarter the станиця, then the край,
-/// then the kurin's payees, then the kurin, then the гурток: money owed to others before the kurin's own;</item>
+/// then the kurin, then the гурток: money owed to others before the kurin's own;</item>
 /// <item>a leftover is a surplus that pays the quarters still to come;</item>
-/// <item>money a гурток hands up pays the станиця's part, then the край's and the payees', before the kurin's;</item>
+/// <item>money a гурток hands up pays the станиця's part, then the край's, before the kurin's;</item>
 /// <item>an account with no гурток is the person's own in the kurin's box: what it collects for others
 /// is owed on at once.</item>
 /// </list>
@@ -24,7 +24,6 @@ public sealed class DuesLedger
     private readonly ILookup<Guid, DuesConcessionGrant> _grants;
     private readonly IReadOnlyList<DuesCharge> _charges;
     private readonly IReadOnlyList<DuesEntry> _entries;
-    private readonly IReadOnlySet<Guid> _kraiPayees;
 
     public DuesLedger(
         IEnumerable<KurinDuesRate> kurinRates,
@@ -32,10 +31,8 @@ public sealed class DuesLedger
         IEnumerable<DuesConcession> concessions,
         IEnumerable<DuesCharge> charges,
         IEnumerable<DuesEntry> entries,
-        IEnumerable<DuesConcessionGrant>? grants = null,
-        IEnumerable<Guid>? kraiPayees = null)
+        IEnumerable<DuesConcessionGrant>? grants = null)
     {
-        _kraiPayees = (kraiPayees ?? []).ToHashSet();
         _grants = (grants ?? []).ToLookup(g => g.MembershipKey);
         _kurinRates = kurinRates.OrderBy(r => r.FromQuarter).ToList();
         _groupRates = groupRates.OrderBy(r => r.FromQuarter).ToLookup(r => r.GroupKey);
@@ -90,16 +87,16 @@ public sealed class DuesLedger
 
         var full = kurin is null
             ? new DuesAmount(0, 0, groupShare)
-            : new DuesAmount(kurin.StanytsiaFull, kurin.KurinShare, groupShare, kurin.KraiFull) { Payees = kurin.PayeesFull() };
+            : new DuesAmount(kurin.StanytsiaFull, kurin.KurinShare, groupShare, kurin.KraiFull);
         var price = kurin is not null && IsConcession(membershipKey, quarter)
-            ? new DuesAmount(kurin.StanytsiaReduced, kurin.KurinReduced ?? kurin.KurinShare, groupShare, kurin.KraiReduced) { Payees = kurin.PayeesReduced() }
+            ? new DuesAmount(kurin.StanytsiaReduced, kurin.KurinReduced ?? kurin.KurinShare, groupShare, kurin.KraiReduced)
             : full;
 
         var withoutGrants = price;
         DuesConcessionGrant? applied = null;
         foreach (var grant in GrantsIn(membershipKey, quarter))
         {
-            var granted = grant.Rule.Apply(full, _kraiPayees);
+            var granted = grant.Rule.Apply(full);
             if (granted.Total < price.Total)
             {
                 price = granted;
@@ -177,7 +174,6 @@ public sealed class DuesLedger
         // The kurin's own accounts are paid into its box: their share for others is owed on at once.
         var direct = accounts.Where(a => a.GroupKey is null).Select(a => a.Allocated).ToList();
         decimal receivedForStanytsia = direct.Sum(a => a.Stanytsia), receivedForKrai = direct.Sum(a => a.Krai);
-        var forPayees = direct.Select(a => a.Payees).ToList();
         foreach (var groupKey in groupKeys)
         {
             var transfers = _entries
@@ -192,12 +188,10 @@ public sealed class DuesLedger
                 transfers.Sum(t => t.Amount),
                 received));
 
-            // What a гурток hands up pays the станиця's part, then the край's and the payees', before the kurin's.
+            // What a гурток hands up pays the станиця's part, then the край's, before the kurin's.
             var left = received;
             receivedForStanytsia += Take(ref left, allocated.Sum(a => a.Stanytsia));
             receivedForKrai += Take(ref left, allocated.Sum(a => a.Krai));
-            var owedPayees = DuesPayeeShares.Sum(allocated.Select(a => a.Payees));
-            forPayees.Add(new DuesPayeeShares(owedPayees.Shares.Select(s => (s.PayeeKey, Take(ref left, s.Amount))).ToList()));
         }
 
         var moves = _entries
@@ -208,32 +202,13 @@ public sealed class DuesLedger
 
         var toStanytsia = receivedForStanytsia - Sent(DuesEntryKind.TransferToStanytsia);
         var toKrai = receivedForKrai - Sent(DuesEntryKind.TransferToKrai);
-        var collected = DuesPayeeShares.Sum(forPayees);
-        var payees = collected.Shares.Select(s => s.PayeeKey)
-            .Concat(_entries.Where(e => e.GroupKey is null && e.Kind == DuesEntryKind.TransferToPayee && e.PayeeKey.HasValue)
-                .Select(e => e.PayeeKey!.Value))
-            .Distinct()
-            .Select(key => new PayeeHandover(key, collected.Of(key), SentTo(key)))
-            .ToList();
-
         var ahead = accounts.Where(a => a.GroupKey is null).Sum(a => Math.Max(a.Balance, 0));
-        return new KurinDuesBox(
-            new DuesCashBox(cash, card, toStanytsia + toKrai + payees.Sum(p => p.ToForward)) { Ahead = ahead },
-            handovers,
-            toStanytsia,
-            toKrai)
-        {
-            Payees = payees
-        };
+        return new KurinDuesBox(new DuesCashBox(cash, card, toStanytsia + toKrai) { Ahead = ahead }, handovers, toStanytsia, toKrai);
     }
 
     /// <summary>What the kurin's own box has handed on with one kind of transfer.</summary>
     public decimal Sent(DuesEntryKind transfer) =>
         _entries.Where(e => e.GroupKey is null && e.Kind == transfer).Sum(e => e.Amount);
-
-    /// <summary>What the kurin's own box has handed to one of its payees.</summary>
-    public decimal SentTo(Guid payeeKey) =>
-        _entries.Where(e => e.GroupKey is null && e.Kind == DuesEntryKind.TransferToPayee && e.PayeeKey == payeeKey).Sum(e => e.Amount);
 
     private DuesAccount Account(Guid membershipKey, Guid? groupKey, decimal payments)
     {
@@ -248,13 +223,12 @@ public sealed class DuesLedger
             var due = priced.Amount;
             var stanytsia = Take(ref remaining, due.Stanytsia);
             var krai = Take(ref remaining, due.Krai);
-            var payees = due.Payees.Shares.Select(s => (s.PayeeKey, Take(ref remaining, s.Amount))).ToList();
             var kurin = Take(ref remaining, due.Kurin);
             var group = Take(ref remaining, due.Group);
             quarters.Add(new DuesAccountQuarter(
                 quarter,
                 due,
-                new DuesAmount(stanytsia, kurin, group, krai) { Payees = new DuesPayeeShares(payees) },
+                new DuesAmount(stanytsia, kurin, group, krai),
                 IsConcession(membershipKey, quarter))
             {
                 ConcessionName = priced.Grant?.Name,
@@ -294,7 +268,6 @@ public sealed class DuesLedger
             case DuesEntryKind.Expense:
             case DuesEntryKind.TransferToStanytsia:
             case DuesEntryKind.TransferToKrai:
-            case DuesEntryKind.TransferToPayee:
                 yield return (entry.Method, -entry.Amount);
                 break;
             case DuesEntryKind.TransferToKurin:
