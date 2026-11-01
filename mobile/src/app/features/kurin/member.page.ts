@@ -534,15 +534,6 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
                       @if (top.date) { <p>{{ shortDate(top.date) }}</p> }
                     </ion-label>
                   </ion-item>
-                  @for (row of earlierDegrees(); track row.key) {
-                    <ion-item data-testid="degree">
-                      @if (row.imageUrl) { <img class="thumb" slot="start" [src]="row.imageUrl" alt="" /> }
-                      @else { <ion-icon class="thumb" slot="start" name="flag" aria-hidden="true" /> }
-                      <ion-label class="ion-text-wrap">
-                        <p>{{ row.title }}{{ row.date ? ' · ' + shortDate(row.date) : '' }}</p>
-                      </ion-label>
-                    </ion-item>
-                  }
                 } @else {
                   <ion-item><ion-label>Ступенів ще немає.</ion-label></ion-item>
                 }
@@ -873,9 +864,8 @@ export class MemberPage implements OnInit {
       })),
     );
   });
-  /** The highest ступінь large, the ones before it small, newest first (web member-degrees-tile). */
+  /** Only the highest ступінь, large; the whole way is the пластовий життєпис's (web member-degrees-tile). */
   protected readonly highestDegree = computed(() => this.degrees().at(-1) ?? null);
-  protected readonly earlierDegrees = computed(() => this.degrees().slice(0, -1).reverse());
 
   protected openYouthBlock(key: string | null, all: boolean): Promise<void> {
     return this.openBlocks(this.youthBlocks(), key, all, (award) => this.openAward(award));

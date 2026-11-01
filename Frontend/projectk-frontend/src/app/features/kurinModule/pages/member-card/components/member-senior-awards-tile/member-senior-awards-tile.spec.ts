@@ -114,3 +114,26 @@ describe('MemberSeniorAwardsTileComponent', () => {
     expect(removed).toEqual(['c']);
   });
 });
+
+describe('MemberDegreesTileComponent', () => {
+  it('на картці лише найвищий ступінь, великим планом', async () => {
+    const { MemberDegreesTileComponent } = await import('../member-degrees-tile/member-degrees-tile');
+    TestBed.configureTestingModule({
+      imports: [MemberDegreesTileComponent],
+      providers: [{ provide: HonoursService, useValue: { all: () => of(honours) } }]
+    });
+    const fixture = TestBed.createComponent(MemberDegreesTileComponent);
+    fixture.componentRef.setInput('senior', true);
+    fixture.componentRef.setInput('histories', [
+      { plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2016-12-03', isPlastunka: true, catalogId: 'usp-starsha-plastunka' },
+      { plastLevel: PlastLevel.SeniorPratsi, dateAchieved: '2020-05-14', catalogId: 'ups-senior-pratsi' }
+    ]);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelectorAll('[data-testid="degree-highest"]').length).toBe(1);
+    // The catalogue fixture has no picture of сеніор праці, so the ступінь keeps its own short name.
+    expect(element.textContent).toContain('пл. сен. пр.');
+    expect(element.textContent).not.toContain('Старша пластунка');
+  });
+});

@@ -20,26 +20,6 @@
                 }
             </div>
         </div>
-
-        @if (earlier().length) {
-            <ul class="degree-rows">
-                @for (row of earlier(); track row.key) {
-                    <li class="degree-row">
-                        @if (row.imageUrl) {
-                            <img class="degree-image" [src]="row.imageUrl" [alt]="row.title" loading="lazy" />
-                        } @else {
-                            <span class="degree-image degree-image--empty pi pi-flag" aria-hidden="true"></span>
-                        }
-                        <span class="degree-text">
-                            <span class="degree-title">{{ row.title }}</span>
-                            @if (row.date) {
-                                <span class="degree-date">{{ row.date | date: 'dd.MM.yyyy' }}</span>
-                            }
-                        </span>
-                    </li>
-                }
-            </ul>
-        }
     } @else {
         <p class="degree-empty">Ступенів ще немає</p>
     }
