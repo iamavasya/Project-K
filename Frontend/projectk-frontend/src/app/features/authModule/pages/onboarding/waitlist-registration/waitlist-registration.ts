@@ -362,7 +362,7 @@ export class WaitlistRegistrationComponent {
 
   /** What the server takes: a senior kurin's numbers per улад, or the one УПЮ number. */
   private registration(): WaitlistRegistration {
-    const { ulady, uspNumber, upsNumber, ...rest } = this.form.value;
+    const { ulady: _ulady, uspNumber, upsNumber, ...rest } = this.form.value;
     if (!this.isSenior) {
       return rest;
     }

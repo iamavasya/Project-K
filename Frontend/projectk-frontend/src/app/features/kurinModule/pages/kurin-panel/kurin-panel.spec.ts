@@ -1,5 +1,5 @@
 import { MessageService } from '@openng/optimus-ui/api';
-﻿import type { MockedObject } from 'vitest';
+import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
