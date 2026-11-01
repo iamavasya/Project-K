@@ -445,8 +445,9 @@ export class MemberCardComponent implements OnInit {
     const now = Date.now();
     return [...(this.member?.warnings ?? [])]
       .map(warning => {
-        const revoked = !!warning.revokedAtUtc;
-        const active = !revoked && this.parseUtcDate(warning.expiresAtUtc) > now;
+        // Lifted by someone is «знято»; one the system closed when it ran out has no one behind it.
+        const revoked = !!warning.revokedAtUtc && !!warning.revokedByUserKey;
+        const active = !warning.revokedAtUtc && this.parseUtcDate(warning.expiresAtUtc) > now;
         const state = revoked ? 'знято' : active ? `ще ${this.getWarningDaysLeft(warning.expiresAtUtc)} дн.` : 'минула';
         return { key: warning.memberWarningKey, level: `${this.getWarningLevelLabel(warning.level)} пересторога`, issued: warning.issuedAtUtc, state, active };
       })

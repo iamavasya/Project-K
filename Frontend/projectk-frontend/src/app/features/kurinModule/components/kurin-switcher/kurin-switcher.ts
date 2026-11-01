@@ -7,7 +7,7 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { MessageService } from '@openng/optimus-ui/api';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinScopeOption } from '../../models/kurin-scope-option.model';
-import { MEMBERSHIP_KIND_LABELS } from '../../models/enums/membership-kind.enum';
+import { membershipKindLabel } from '../../models/enums/membership-kind.enum';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { kurinHeadline, kurinLabel, kurinName, kurinSubline } from '../../../../shared/functions/kurin-label.function';
 import { isSeniorBranch } from '../../models/enums/kurin-branch.enum';
@@ -50,7 +50,7 @@ export class KurinSwitcherComponent implements OnInit {
   private naming(option: KurinScopeOption) {
     return { number: option.kurinNumber, branch: option.branch, branches: option.branches, namedAfter: option.namedAfter };
   }
-  readonly kindLabels = MEMBERSHIP_KIND_LABELS;
+  readonly kindLabel = membershipKindLabel;
 
   ngOnInit(): void {
     this.authService.getKurinScopeOptions().subscribe({

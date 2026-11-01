@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit, computed, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { kindLabel } from '../account/account.labels';
 import {
   ActionSheetController,
   IonBackButton,
@@ -37,7 +38,6 @@ import {
   AwardGroup,
   BRANCH_LABELS,
   DUES_KIND_LABELS,
-  MEMBERSHIP_KIND_LABELS,
   ProbeRow,
   SkillView,
   activeWarning,
@@ -808,7 +808,7 @@ export class MemberPage implements OnInit {
   }
 
   protected membershipLine(m: MembershipDto): string {
-    return [this.branchLabel(m), MEMBERSHIP_KIND_LABELS[m.kind] ?? m.kind, m.groupName, membershipPeriod(m)].filter(Boolean).join(' · ');
+    return [this.branchLabel(m), kindLabel(m.kind, m.branch), m.groupName, membershipPeriod(m)].filter(Boolean).join(' · ');
   }
 
   /**

@@ -33,7 +33,7 @@
         }
         <span class="membership-facts">
           <p-tag [value]="branchLabels[membership.branch]" severity="secondary" />
-          <span>{{ kindLabels[membership.kind] }}</span>
+          <span>{{ kindLabel(membership.kind, membership.branch) }}</span>
           @if (membership.groupName) {
             @if (membership.groupKey && isScoped(membership)) {
               <a class="membership-link membership-link--group" [routerLink]="['/group', membership.groupKey]">

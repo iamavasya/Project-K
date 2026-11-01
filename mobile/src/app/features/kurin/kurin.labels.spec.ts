@@ -272,10 +272,14 @@ describe('senior warning rows', () => {
       [
         { memberWarningKey: 'old', level: 'Level1', issuedAtUtc: '2026-01-10T00:00:00Z', expiresAtUtc: '2026-04-10T00:00:00Z' },
         { memberWarningKey: 'now', level: 'Level2', issuedAtUtc: '2026-10-20T00:00:00Z', expiresAtUtc: '2026-11-11T00:00:00Z' },
+        { memberWarningKey: 'closed', level: 'Level1', issuedAtUtc: '2025-12-01T00:00:00Z', expiresAtUtc: '2026-03-01T00:00:00Z', revokedAtUtc: '2026-03-01T00:00:00Z' },
+        { memberWarningKey: 'lifted', level: 'Level1', issuedAtUtc: '2025-11-01T00:00:00Z', expiresAtUtc: '2026-02-01T00:00:00Z', revokedAtUtc: '2025-11-05T00:00:00Z', revokedByUserKey: 'u1' },
       ],
       now,
     );
-    expect(rows.map((r) => r.key)).toEqual(['now', 'old']);
+    expect(rows.map((r) => r.key)).toEqual(['now', 'old', 'closed', 'lifted']);
+    expect(rows[2].line).toContain('минула');
+    expect(rows[3].line).toContain('знято');
     expect(rows[0].title).toBe('Друга пересторога');
     expect(rows[0].line).toContain('ще 10 дн.');
     expect(rows[1].line).toContain('минула');

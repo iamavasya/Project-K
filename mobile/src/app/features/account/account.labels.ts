@@ -7,6 +7,11 @@ import { compareKurinNumbers, isSeniorBranch, kurinBranchesName, kurinLabel as k
 export const BRANCH_LABELS: Record<KurinBranch, string> = { UPYu: 'УПЮ', USP: 'УСП', UPS: 'УПС' };
 export const KIND_LABELS: Record<MembershipKind, string> = { Youth: 'Юнацтво', Staff: 'Виховний склад' };
 
+/** The same in the kurin's own words (web membershipKindLabel): a УСП or УПС kurin has members, not юнацтво. */
+export function kindLabel(kind: MembershipKind, branch?: KurinBranch | null): string {
+  return kind === 'Youth' && isSeniorBranch(branch) ? 'Член куреня' : KIND_LABELS[kind];
+}
+
 /** «к. ч. 7», «підг. курінь», «5-й курінь УСП» */
 export function kurinShortLabel(option: Pick<KurinScopeOption, 'kurinNumber'> & Partial<Pick<KurinScopeOption, 'branch'>>): string {
   return kurinNumberLabel(option.kurinNumber, option.branch);

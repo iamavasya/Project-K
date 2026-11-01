@@ -50,6 +50,8 @@ export interface MemberWarningDto {
   expiresAtUtc: string;
   /** Who gave it: only they lift it (web canClearWarning). */
   issuedByUserKey?: string | null;
+  /** Who lifted it; empty when the system closed it once it ran out. */
+  revokedByUserKey?: string | null;
   revokedAtUtc?: string | null;
 }
 

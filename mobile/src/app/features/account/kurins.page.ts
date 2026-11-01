@@ -25,7 +25,7 @@ import { AuthService } from '../../auth/auth.service';
 import { apiErrorText } from '../../core/api';
 import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
-import { KIND_LABELS, groupRole, kurinLabel, sortKurins } from './account.labels';
+import { kindLabel, groupRole, kurinLabel, sortKurins } from './account.labels';
 import { MyGroupDto } from './account.models';
 import { AccountService } from './account.service';
 import { GroupSilhouette } from '../kurin/group-silhouette';
@@ -123,7 +123,7 @@ import { compareKurinNumbers, kurinBranchTags, kurinLabel as kurinNumberLabel, k
                     <app-kurin-plaque slot="start" class="plaque" [number]="option.kurinNumber" />
                     <ion-label class="ion-text-wrap">
                       <h3>{{ label(option) }}</h3>
-                      <p>{{ branchTags(option.branches, option.branch) }} · {{ kind[option.kind] }}</p>
+                      <p>{{ branchTags(option.branches, option.branch) }} · {{ kind(option.kind, option.branch) }}</p>
                     </ion-label>
                     @if (switching() === option.kurinKey) {
                       <ion-spinner slot="end" name="crescent" />
@@ -177,7 +177,7 @@ export class KurinsPage implements OnInit {
   private readonly router = inject(Router);
   private readonly toasts = inject(Toasts);
   protected readonly failedText = FAILED_TEXT;
-  protected readonly kind = KIND_LABELS;
+  protected readonly kind = kindLabel;
   protected readonly label = kurinLabel;
   protected readonly numberLabel = kurinNumberLabel;
   protected readonly branchTags = kurinBranchTags;
