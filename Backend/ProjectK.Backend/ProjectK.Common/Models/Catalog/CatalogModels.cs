@@ -75,3 +75,26 @@ public sealed record ProbeSection(string Id, string Code, string Title, IReadOnl
 
 /// <summary>An image downloaded from the catalogue.</summary>
 public sealed record CatalogImage(byte[] Content, string ContentType);
+
+/// <summary>What a line of a senior's книжечка is: a ступінь, a відзначення, or a вишкіл passed.</summary>
+public enum SeniorRecordKind
+{
+    Degree,
+    Award,
+    Training
+}
+
+/// <summary>
+/// A ступінь, відзначення or вишкіл from the catalogue that a person may enter in their own книжечка.
+/// The УПЮ відзначення are not here: a kurin confirms those, and they live on the youth card.
+/// </summary>
+/// <param name="Group">The catalogue's group: a ступінь's улад, or an award's ladder (<c>lsh</c>, <c>orden-sv-yuriia</c>…).</param>
+/// <param name="ImageUrl">The colour picture on the catalogue service; empty when it has none.</param>
+public sealed record SeniorCatalogItem(
+    string Id,
+    SeniorRecordKind Kind,
+    string Title,
+    string Group,
+    string Ulad,
+    int Order,
+    string ImageUrl);

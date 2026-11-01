@@ -1,0 +1,109 @@
+<section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="senior-awards-tile">
+    <div class="book-head mb-4">
+        <h2 class="member-section-title">Книжечка</h2>
+        @if (editable()) {
+            <p-button label="Додати" icon="pi pi-plus" size="small" [text]="true" (click)="open(null)" data-testid="senior-book-add" />
+        }
+    </div>
+
+    @if (sections().length) {
+        <div class="book-sections">
+            @for (section of sections(); track section.kind) {
+                <div class="book-section">
+                    <h3 class="book-section-title">{{ section.title }}</h3>
+                    <ul class="book-rows">
+                        @for (row of section.rows; track row.record.memberSeniorRecordKey) {
+                            <li>
+                                <button type="button" class="book-row" [class.book-row-static]="!editable()" [disabled]="!editable()" (click)="open(row.record)">
+                                    @if (row.imageUrl) {
+                                        <img class="book-image" [src]="row.imageUrl" alt="" loading="lazy" />
+                                    } @else {
+                                        <span class="book-image book-image-empty pi pi-bookmark"></span>
+                                    }
+                                    <span class="book-text">
+                                        <span class="book-title">{{ row.title }}</span>
+                                        @if (line(row.record)) {
+                                            <span class="book-line">{{ line(row.record) }}</span>
+                                        }
+                                        @if (row.record.note) {
+                                            <span class="book-note">{{ row.record.note }}</span>
+                                        }
+                                    </span>
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    } @else {
+        <app-empty-state art="list" title="Ще порожньо" />
+    }
+</section>
+
+<p-dialog
+    [(visible)]="dialogVisible"
+    [header]="editing ? 'Змінити' : 'Додати до книжечки'"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: 'min(94vw, 30rem)' }"
+    [focusOnShow]="false"
+>
+    <div class="flex flex-col gap-4 mt-2">
+        <div class="flex flex-col gap-2">
+            <label for="senior-book-item">Що</label>
+            <p-select
+                inputId="senior-book-item"
+                [options]="options()"
+                [(ngModel)]="catalogId"
+                [group]="true"
+                optionGroupLabel="label"
+                optionGroupChildren="items"
+                optionLabel="title"
+                optionValue="id"
+                [filter]="true"
+                filterBy="title"
+                placeholder="Оберіть"
+                appendTo="body"
+                styleClass="w-full"
+            >
+                <ng-template #item let-option>
+                    <span class="book-option">
+                        @if (option.imageUrl) {
+                            <img class="book-option-image" [src]="option.imageUrl" alt="" loading="lazy" />
+                        }
+                        <span>{{ option.title }}</span>
+                    </span>
+                </ng-template>
+            </p-select>
+        </div>
+
+        @if (chosen?.kind === 'Training') {
+            <div class="flex flex-col gap-2">
+                <label for="senior-book-number">Номер</label>
+                <input id="senior-book-number" pInputText [(ngModel)]="number" maxlength="50" placeholder="ЛШ 41" />
+            </div>
+        }
+
+        <div class="flex flex-col gap-2">
+            <label for="senior-book-date">Дата</label>
+            <p-datepicker inputId="senior-book-date" [(ngModel)]="achievedOn" appendTo="body" dateFormat="dd.mm.yy" [showIcon]="true" [maxDate]="today" />
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label for="senior-book-note">Нотатка</label>
+            <textarea id="senior-book-note" pTextarea [(ngModel)]="note" rows="2" maxlength="500" class="w-full"></textarea>
+        </div>
+    </div>
+
+    <ng-template #footer>
+        <div class="book-dialog-footer">
+            @if (editing) {
+                <p-button icon="pi pi-trash" ariaLabel="Видалити" severity="danger" [outlined]="true" [disabled]="saving" (click)="remove()" />
+            }
+            <p-button label="Зберегти" icon="pi pi-save" [disabled]="!catalogId || saving" (click)="save()" data-testid="senior-book-save" />
+        </div>
+    </ng-template>
+</p-dialog>

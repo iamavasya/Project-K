@@ -64,6 +64,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                                         .ThenInclude(h => h.Leadership.Group)
                                      .Include(m => m.MemberWarnings)
                                      .Include(m => m.MemberAwards)
+                                     .Include(m => m.SeniorRecords)
                                      .FirstOrDefaultAsync(e => e.MemberKey == entityKey, cancellationToken);
     }
 

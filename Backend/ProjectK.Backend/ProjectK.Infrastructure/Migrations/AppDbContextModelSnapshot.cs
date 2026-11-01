@@ -2370,6 +2370,44 @@ namespace ProjectK.Infrastructure.Migrations
                     b.ToTable("MemberCardShares");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MemberSeniorRecord", b =>
+                {
+                    b.Property<Guid>("MemberSeniorRecordKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly?>("AchievedOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("CatalogId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MemberKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Number")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MemberSeniorRecordKey");
+
+                    b.HasIndex("MemberKey");
+
+                    b.ToTable("MemberSeniorRecords");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MemberWarning", b =>
                 {
                     b.Property<Guid>("MemberWarningKey")
@@ -4008,6 +4046,17 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("Member");
                 });
 
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MemberSeniorRecord", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Member", "Member")
+                        .WithMany("SeniorRecords")
+                        .HasForeignKey("MemberKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+                });
+
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MemberWarning", b =>
                 {
                     b.HasOne("ProjectK.Common.Entities.KurinModule.Member", "Member")
@@ -4199,6 +4248,8 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("MemberWarnings");
 
                     b.Navigation("PlastLevelHistory");
+
+                    b.Navigation("SeniorRecords");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.Planning.PlanningParticipant", b =>

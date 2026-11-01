@@ -1,0 +1,107 @@
+.book-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.book-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.book-section-title {
+  margin: 0 0 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--p-text-muted-color);
+}
+
+.book-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.book-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.book-row:hover:not(:disabled) {
+  background: var(--p-content-hover-background);
+}
+
+.book-row-static,
+.book-row:disabled {
+  cursor: default;
+}
+
+.book-image {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+}
+
+.book-image-empty {
+  display: grid;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--p-content-hover-background);
+  color: var(--p-text-muted-color);
+}
+
+.book-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.book-title {
+  font-weight: 600;
+}
+
+.book-line,
+.book-note {
+  font-size: 0.85rem;
+  color: var(--p-text-muted-color);
+}
+
+.book-note {
+  overflow-wrap: anywhere;
+}
+
+.book-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.book-option-image {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+}
+
+.book-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

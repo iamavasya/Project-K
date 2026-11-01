@@ -94,6 +94,9 @@ public class MemberResponse : IHasParentContacts, IMemberPersonalData, IHasCardE
     public ICollection<LeadershipHistoryDto> LeadershipHistories { get; set; } = [];
     public ICollection<MemberWarningDto> Warnings { get; set; } = [];
     public ICollection<MemberAwardDto> Awards { get; set; } = [];
+
+    /// <summary>The person's own книжечка, newest first; on the card of a senior kurin.</summary>
+    public ICollection<MemberSeniorRecordDto> SeniorRecords { get; set; } = [];
     public string? ProfilePhotoUrl { get; set; }
     public MemberProfileVerificationStatus ProfileVerificationStatus { get; set; }
     public DateTime? ProfileVerifiedAtUtc { get; set; }

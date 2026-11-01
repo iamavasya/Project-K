@@ -29,6 +29,17 @@ public interface IProbesCatalog
     Probe? GetById(string id);
 }
 
+/// <summary>The ступені, відзначення and вишколи a senior may enter in their книжечка, as last fetched.</summary>
+public interface ISeniorRecordsCatalog
+{
+    /// <summary>Whether a catalogue has been read at all; until then nothing can be checked against it.</summary>
+    bool IsLoaded { get; }
+
+    IReadOnlyList<SeniorCatalogItem> GetAll();
+
+    SeniorCatalogItem? GetById(string id);
+}
+
 /// <summary>Pictures of the УПЮ відзначення, by level.</summary>
 public interface IAwardImagesCatalog
 {

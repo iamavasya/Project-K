@@ -37,6 +37,22 @@ internal sealed class CatalogState
     public IReadOnlyDictionary<int, CatalogImages> AwardImages { get; }
     public IReadOnlyDictionary<string, Badge> BadgesById { get; }
     public IReadOnlyDictionary<string, Probe> ProbesById { get; }
+
+    /// <summary>What a senior may enter in their книжечка, in the catalogue's order.</summary>
+    public IReadOnlyList<SeniorCatalogItem> SeniorItems
+    {
+        get => _seniorItems;
+        init
+        {
+            _seniorItems = value;
+            SeniorItemsById = value.GroupBy(item => item.Id).ToDictionary(g => g.Key, g => g.First());
+        }
+    }
+
+    public IReadOnlyDictionary<string, SeniorCatalogItem> SeniorItemsById { get; private init; } =
+        new Dictionary<string, SeniorCatalogItem>();
+
+    private readonly IReadOnlyList<SeniorCatalogItem> _seniorItems = [];
 }
 
 /// <summary>
@@ -48,7 +64,7 @@ internal sealed class CatalogState
 /// fetch, and the fetch arrives without the table. Each of the two rebuilds what readers see.
 /// </para>
 /// </summary>
-internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKraiNames
+internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKraiNames, ISeniorRecordsCatalog
 {
     private readonly object _gate = new();
     private CatalogState _fetched = CatalogState.Empty;
@@ -113,7 +129,10 @@ internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKra
             .Select(badge => _kraiNames.TryGetValue(badge.KraiCode, out var name) && name != badge.Country ? badge with { Country = name } : badge)
             .ToList();
 
-        Volatile.Write(ref _state, new CatalogState(fetched.Revision, fetched.Metadata, badges, fetched.Probes, fetched.AwardImages));
+        Volatile.Write(ref _state, new CatalogState(fetched.Revision, fetched.Metadata, badges, fetched.Probes, fetched.AwardImages)
+        {
+            SeniorItems = fetched.SeniorItems
+        });
         Interlocked.Increment(ref _version);
     }
 
@@ -126,4 +145,8 @@ internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKra
     IReadOnlyList<Probe> IProbesCatalog.GetAll() => State.Probes;
 
     Probe? IProbesCatalog.GetById(string id) => State.ProbesById.GetValueOrDefault(id);
+
+    IReadOnlyList<SeniorCatalogItem> ISeniorRecordsCatalog.GetAll() => State.SeniorItems;
+
+    SeniorCatalogItem? ISeniorRecordsCatalog.GetById(string id) => State.SeniorItemsById.GetValueOrDefault(id);
 }

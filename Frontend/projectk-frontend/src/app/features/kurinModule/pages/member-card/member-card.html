@@ -333,14 +333,12 @@
             </section>
         </ng-template>
 
-        <ng-template [appTileDef]="{ key: 'senior-awards', span: 'half', label: 'Відзначення' }">
-            <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="senior-awards-tile">
-                <div class="mb-4">
-                    <h2 class="member-section-title">Відзначення</h2>
-                    <p class="member-section-subtitle text-sm">УСП · УПС</p>
-                </div>
-                <app-empty-state art="list" title="Відзначень ще немає" />
-            </section>
+        <ng-template [appTileDef]="{ key: 'senior-awards', span: 'half', label: 'Книжечка' }">
+            <app-member-senior-book-tile
+                [records]="member.seniorRecords ?? []"
+                [editable]="isOwnCard"
+                (recordsChange)="onSeniorRecordsChange($event)"
+            />
         </ng-template>
 
         <ng-template [appTileDef]="{ key: 'senior-warnings', span: 'half', label: 'Перестороги' }">

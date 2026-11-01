@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, computed, inject, input, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { kindLabel } from '../account/account.labels';
 import {
@@ -11,6 +11,7 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
+  IonItemDivider,
   IonItemGroup,
   IonLabel,
   IonList,
@@ -34,6 +35,7 @@ import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
 import { dateLabel, dayMonthLabel } from '../../me/labels';
 import { AwardSheet } from './award.sheet';
+import { SeniorRecordSheet } from './senior-record.sheet';
 import {
   AwardGroup,
   BRANCH_LABELS,
@@ -61,6 +63,8 @@ import {
   progressStatus,
   quarterLabel,
   officeTag,
+  bookSections,
+  recordLine,
   officesIn,
   membershipOf,
   roleTone,
@@ -78,6 +82,8 @@ import {
   CardFields,
   GroupDto,
   MemberAwardDto,
+  MemberSeniorRecordDto,
+  SeniorCatalogItem,
   MemberDataGroup,
   MemberDto,
   MemberDuesDto,
@@ -130,6 +136,7 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
     IonList,
     IonListHeader,
     IonItem,
+    IonItemDivider,
     IonItemGroup,
     IonLabel,
     IonNote,
@@ -457,10 +464,33 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
               </ion-list>
 
               <ion-list [inset]="true" data-testid="senior-awards">
-                <ion-list-header><ion-label>Відзначення</ion-label></ion-list-header>
-                <ion-item-group>
-                  <ion-item><ion-label class="ion-text-wrap">Відзначень ще немає.</ion-label></ion-item>
-                </ion-item-group>
+                <ion-list-header><ion-label>Книжечка</ion-label></ion-list-header>
+                @for (section of seniorBook(); track section.kind) {
+                  <ion-item-group>
+                    <ion-item-divider><ion-label>{{ section.title }}</ion-label></ion-item-divider>
+                    @for (row of section.rows; track row.record.memberSeniorRecordKey) {
+                      <ion-item [button]="isOwnCard()" [detail]="isOwnCard()" (click)="openSeniorRecord(row.record)" data-testid="senior-record">
+                        @if (row.imageUrl) { <img class="thumb" slot="start" [src]="row.imageUrl" alt="" /> }
+                        @else { <ion-icon class="thumb" slot="start" name="medal" aria-hidden="true" /> }
+                        <ion-label class="ion-text-wrap">
+                          <h3>{{ row.title }}</h3>
+                          @if (recordLine(row.record); as line) { <p>{{ line }}</p> }
+                          @if (row.record.note) { <p>{{ row.record.note }}</p> }
+                        </ion-label>
+                      </ion-item>
+                    }
+                  </ion-item-group>
+                } @empty {
+                  <ion-item-group><ion-item><ion-label>Ще порожньо.</ion-label></ion-item></ion-item-group>
+                }
+                @if (isOwnCard()) {
+                  <ion-item-group>
+                    <ion-item [button]="true" [detail]="false" (click)="openSeniorRecord(null)" data-testid="add-senior-record">
+                      <ion-icon slot="start" name="add" color="primary" aria-hidden="true" />
+                      <ion-label color="primary">Додати</ion-label>
+                    </ion-item>
+                  </ion-item-group>
+                }
               </ion-list>
 
               <ion-list [inset]="true" data-testid="senior-warnings">
@@ -708,6 +738,36 @@ export class MemberPage implements OnInit {
     officesIn(this.memberValue()?.leadershipHistories, this.memberValue()?.kurinKey).filter((h) => (h.leadershipType ?? '').toLowerCase() !== 'group'),
   );
   protected readonly seniorWarnings = computed(() => warningRows(this.memberValue()?.warnings));
+  /** The catalogue the книжечка is named from; read once a senior card is shown. */
+  private readonly seniorCatalog = signal<SeniorCatalogItem[]>([]);
+  protected readonly seniorBook = computed(() => bookSections(this.memberValue()?.seniorRecords, this.seniorCatalog()));
+  protected readonly recordLine = recordLine;
+  private readonly seniorCatalogLoad = effect(() => {
+    if (this.seniorHere() && !this.seniorCatalog().length) {
+      this.data.seniorCatalog().then(
+        (items) => this.seniorCatalog.set(items),
+        () => undefined,
+      );
+    }
+  });
+
+  protected async openSeniorRecord(record: MemberSeniorRecordDto | null): Promise<void> {
+    const key = this.key();
+    if (!key || !this.isOwnCard()) return;
+    const catalog = this.seniorCatalog().length ? this.seniorCatalog() : await this.data.seniorCatalog().catch(() => []);
+    if (!catalog.length) {
+      await this.toasts.show('Каталог зараз недоступний. Спробуй пізніше.', 'danger');
+      return;
+    }
+    const modal = await this.modals.create({
+      component: SeniorRecordSheet,
+      componentProps: { record, catalog },
+      presentingElement: this.presenting(),
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss<boolean>();
+    if (data) await settle(this.data.member(key), this.member);
+  }
 
   protected seniorName(m: MembershipDto): string {
     return m.kurinNamedAfter || kurinLabel(m.kurinNumber, m.branch);

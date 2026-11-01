@@ -20,6 +20,9 @@ import {
   ProgressStatus,
   QuarterDto,
   WarningLevel,
+  MemberSeniorRecordDto,
+  SeniorCatalogItem,
+  SeniorRecordKind,
 } from './kurin.models';
 
 /*
@@ -847,4 +850,48 @@ export function membershipOf(m: Pick<MembershipDto, 'branch' | 'kurinNumber' | '
   return isSeniorBranch(m.branch)
     ? `Членство (${m.kurinNamedAfter || kurinNumberLabel(m.kurinNumber, m.branch)})`
     : `Членство в ${inKurin(m.kurinNumber)}`;
+}
+
+export const BOOK_KINDS: readonly SeniorRecordKind[] = ['Degree', 'Award', 'Training'];
+
+export const BOOK_SECTION_TITLES: Record<SeniorRecordKind, string> = {
+  Degree: 'Ступені',
+  Award: 'Відзначення',
+  Training: 'Вишколи',
+};
+
+export interface BookRow {
+  record: MemberSeniorRecordDto;
+  title: string;
+  imageUrl: string;
+}
+
+export interface BookSection {
+  kind: SeniorRecordKind;
+  title: string;
+  rows: BookRow[];
+}
+
+/**
+ * The книжечка by section, newest first (web senior-book bookSections). A line the catalogue no
+ * longer knows stays under its id among відзначення: the person entered it, it does not vanish.
+ */
+export function bookSections(records: readonly MemberSeniorRecordDto[] | null | undefined, catalog: readonly SeniorCatalogItem[]): BookSection[] {
+  const byId = new Map(catalog.map((item) => [item.id, item]));
+  const rows = [...(records ?? [])]
+    .sort((a, b) => (b.achievedOn ?? '').localeCompare(a.achievedOn ?? ''))
+    .map((record) => {
+      const item = byId.get(record.catalogId);
+      const kind: SeniorRecordKind = item?.kind ?? 'Award';
+      return { kind, row: { record, title: item?.title ?? record.catalogId, imageUrl: item?.imageUrl ?? '' } };
+    });
+  return BOOK_KINDS.map((kind) => ({ kind, title: BOOK_SECTION_TITLES[kind], rows: rows.filter((r) => r.kind === kind).map((r) => r.row) })).filter(
+    (section) => section.rows.length > 0,
+  );
+}
+
+/** «ЛШ 41 · 20.08.1999»: the number and the date, whichever are there (web recordLine). */
+export function recordLine(record: MemberSeniorRecordDto): string {
+  const date = dateOnly(record.achievedOn);
+  return [record.number, date ? shortDate(date) : null].filter(Boolean).join(' · ');
 }

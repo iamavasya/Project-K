@@ -47,6 +47,8 @@ internal static class CatalogMapper
             .GroupBy(award => award.Level!.Value)
             .ToDictionary(group => group.Key, group => group.First().Images!);
 
+        var seniorItems = SeniorItems(document);
+
         var metadata = new BadgesMetadata(
             ParserVersion: $"schema {document.SchemaVersion}, revision {document.Revision}",
             ToolAuthor: string.Empty,
@@ -57,7 +59,43 @@ internal static class CatalogMapper
             FixerMode: string.Empty,
             TotalBadges: badges.Count);
 
-        return new CatalogState(document.Revision, metadata, badges, probes, awardImages);
+        return new CatalogState(document.Revision, metadata, badges, probes, awardImages) { SeniorItems = seniorItems };
+    }
+
+    // Вишколи are kept apart from відзначення: they carry a number, and the книжечка lists them on their own.
+    private static readonly HashSet<string> TrainingGroups = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "lsh", "shb", "kv-upn", "kv-upyu", "zb", "kvdch"
+    };
+
+    // The УПЮ відзначення stay out: a kurin confirms them, on the youth card.
+    private const string YouthAwardGroup = "upyu-vidznachennia";
+
+    private static List<SeniorCatalogItem> SeniorItems(CatalogDocument document)
+    {
+        var degrees = (document.Degrees ?? [])
+            .OrderBy(degree => degree.Order)
+            .Select(degree => new SeniorCatalogItem(
+                degree.Id,
+                SeniorRecordKind.Degree,
+                degree.Title,
+                degree.Ulad ?? string.Empty,
+                degree.Ulad ?? string.Empty,
+                degree.Order,
+                degree.Images?.Color ?? degree.Images?.Bw ?? string.Empty));
+
+        var awards = (document.Awards ?? [])
+            .Where(award => award.Group != YouthAwardGroup && !string.IsNullOrWhiteSpace(award.Title))
+            .Select((award, index) => new SeniorCatalogItem(
+                award.Id,
+                TrainingGroups.Contains(award.Group) ? SeniorRecordKind.Training : SeniorRecordKind.Award,
+                award.Title!,
+                award.Group,
+                award.Ulad ?? string.Empty,
+                index,
+                award.Images?.Color ?? award.Images?.Bw ?? string.Empty));
+
+        return [.. degrees, .. awards];
     }
 
     private static Badge ToBadge(CatalogBadge badge, IReadOnlyDictionary<string, string> categories)

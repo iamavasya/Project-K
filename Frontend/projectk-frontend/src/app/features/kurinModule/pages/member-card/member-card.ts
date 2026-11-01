@@ -42,7 +42,8 @@ import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum
 import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
 import { MembershipDto } from '../../models/membership.dto';
-import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { MemberSeniorBookTileComponent } from './components/member-senior-book-tile/member-senior-book-tile';
+import { MemberSeniorRecordDto } from '../../models/senior-record.dto';
 import { hasYouthProgram, isSeniorBranch, KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
@@ -99,7 +100,7 @@ import { MemberTagsEditorComponent } from '../../components/member-tags-editor/m
     MemberWarningsDialogComponent,
     TileBoardComponent,
     TileDefDirective,
-    EmptyStateComponent,
+    MemberSeniorBookTileComponent,
     MemberTagsEditorComponent,
     RouterLink
   ],
@@ -636,6 +637,13 @@ export class MemberCardComponent implements OnInit {
   }
 
   /** The card of whoever is looking: nobody verifies or warns themselves. */
+  /** The книжечка answered the save itself; the card keeps what it now holds. */
+  onSeniorRecordsChange(records: MemberSeniorRecordDto[]): void {
+    if (this.member) {
+      this.member = { ...this.member, seniorRecords: records };
+    }
+  }
+
   get isOwnCard(): boolean {
     const auth = this.authService.getAuthStateValue?.();
     return !!this.member

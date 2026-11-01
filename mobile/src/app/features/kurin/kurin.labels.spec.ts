@@ -11,6 +11,8 @@ import {
   memberRoleTags,
   officeTag,
   officesIn,
+  bookSections,
+  recordLine,
   membershipOf,
   roleTone,
   membershipPeriod,
@@ -306,5 +308,32 @@ describe('membership in a line of text', () => {
     expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto)).toBe('Членство (Орден Хрестоносців)');
     expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: null } as MembershipDto)).toBe('Членство (5-й курінь УСП)');
     expect(membershipOf({ branch: 'UPYu', kurinNumber: 47, kurinNamedAfter: 'Івана Богуна' } as MembershipDto)).toBe('Членство в курені ч. 47');
+  });
+});
+
+describe('senior book', () => {
+  const catalog = [
+    { id: 'usp-starshyi-plastun', kind: 'Degree', title: 'Старший пластун', group: 'usp', ulad: 'usp', order: 1, imageUrl: 'https://catalog.test/sp.svg' },
+    { id: 'usp-hramota-zasluhy', kind: 'Award', title: 'Грамота заслуги', group: 'usp-vidznachennia', ulad: 'usp', order: 0, imageUrl: '' },
+    { id: 'lsh-absolvent', kind: 'Training', title: 'Лісова Школа — абсольвент', group: 'lsh', ulad: 'usp', order: 1, imageUrl: '' },
+  ] as const;
+  const line = (key: string, catalogId: string, achievedOn: string | null, number: string | null = null) =>
+    ({ memberSeniorRecordKey: key, catalogId, achievedOn, number, note: null });
+
+  it('splits the книжечка into ступені, відзначення and вишколи, newest first, and keeps what the catalogue forgot', () => {
+    const sections = bookSections(
+      [line('a', 'lsh-absolvent', '1999-08-20', 'ЛШ 41'), line('b', 'usp-hramota-zasluhy', '2012-10-20'), line('c', 'usp-starshyi-plastun', '1997-11-15'), line('d', 'zabute', '2020-01-01')],
+      [...catalog],
+    );
+
+    expect(sections.map((s) => s.title)).toEqual(['Ступені', 'Відзначення', 'Вишколи']);
+    expect(sections[1].rows.map((r) => r.title)).toEqual(['zabute', 'Грамота заслуги']);
+    expect(sections[0].rows[0].imageUrl).toBe('https://catalog.test/sp.svg');
+    expect(bookSections(null, [...catalog])).toEqual([]);
+  });
+
+  it('writes the number and the date under the title, whichever are there', () => {
+    expect(recordLine(line('a', 'lsh-absolvent', '1999-08-20', 'ЛШ 41'))).toBe('ЛШ 41 · 20.08.1999');
+    expect(recordLine(line('b', 'usp-hramota-zasluhy', null))).toBe('');
   });
 });

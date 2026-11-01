@@ -29,7 +29,7 @@ public partial class DemoDataSeeder
             "Старший курінь у двох уладах: 5-й курінь УСП і 20-й курінь УПС. Один склад, одна домівка, "
             + "сходини щочетверга й мандрівки Карпатами.",
             cancellationToken);
-        await EnsureSeniorLeaderAsync(orden.KurinKey, OrdenEmail, "Остап", "Гнатюк", 1979, cancellationToken);
+        var ordenLeader = await EnsureSeniorLeaderAsync(orden.KurinKey, OrdenEmail, "Остап", "Гнатюк", 1979, cancellationToken);
         var ordenMembers = new List<Member>();
         foreach (var (first, last, login, year) in OrdenMembers)
         {
@@ -41,6 +41,7 @@ public partial class DemoDataSeeder
         var ordenLeadership = await EnsureLeadershipAsync(LeadershipType.Kurin, orden.KurinKey, null, new DateOnly(2025, 9, 1), cancellationToken);
         SeatOffice(ordenLeadership, ordenMembers[1].MemberKey, LeadershipRole.Pysar, new DateOnly(2025, 9, 1));
         await SeedOrdenCardsAsync(orden.KurinKey, ordenMembers, cancellationToken);
+        await SeedSeniorBooksAsync(ordenLeader, ordenMembers[1], cancellationToken);
 
         var chorty = await EnsureSeniorKurinAsync(
             [new KurinNumbering(KurinBranch.USP, 7)],
@@ -142,6 +143,34 @@ public partial class DemoDataSeeder
                 ExpiresAtUtc = _now.AddMonths(-6),
                 IssuedByUserKey = issuer
             });
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Книжечки the people keep themselves: the Order's зв'язковий with a few decades of them, and its
+    /// Скриптор with her first. Ids are the catalogue's.
+    /// </summary>
+    private async Task SeedSeniorBooksAsync(Member leader, Member scribe, CancellationToken cancellationToken)
+    {
+        if (await _dbContext.MemberSeniorRecords.AnyAsync(r => r.MemberKey == leader.MemberKey, cancellationToken))
+        {
+            return;
+        }
+
+        static MemberSeniorRecord Line(Member who, string catalogId, DateOnly? on, string? number = null, string? note = null)
+            => new() { MemberKey = who.MemberKey, CatalogId = catalogId, AchievedOn = on, Number = number, Note = note };
+
+        _dbContext.MemberSeniorRecords.AddRange(
+            Line(leader, "usp-starshyi-plastun", new DateOnly(1997, 11, 15)),
+            Line(leader, "ups-senior-prykhylnyk", new DateOnly(2014, 4, 26)),
+            Line(leader, "ups-senior-pratsi", new DateOnly(2016, 5, 14)),
+            Line(leader, "lsh-absolvent", new DateOnly(1999, 8, 20), "ЛШ 41"),
+            Line(leader, "kv-i-upyu", new DateOnly(2001, 7, 10), "КВ-І 118"),
+            Line(leader, "usp-hramota-zasluhy", new DateOnly(2012, 10, 20), note: "За табір «Вогні Карпат»"),
+            Line(leader, "orden-sv-yuriia-bronza", new DateOnly(2018, 4, 23)),
+            Line(scribe, "usp-starsha-plastunka", new DateOnly(2016, 12, 3)),
+            Line(scribe, "shb-i", new DateOnly(2018, 8, 1), "ШБ 22"),
+            Line(scribe, "usp-hramota-podiaky", new DateOnly(2024, 6, 9)));
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
