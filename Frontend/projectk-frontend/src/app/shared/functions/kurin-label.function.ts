@@ -91,3 +91,13 @@ export function kurinSubline(kurin: KurinNaming): string {
 function seniorNumbers(kurin: KurinNaming): string {
   return kurinBranchesName(kurin.branches?.length ? kurin.branches : [{ branch: kurin.branch!, number: kurin.number ?? null }]);
 }
+
+/**
+ * A kurin in the middle of a sentence: «к. ч. 47», «підг. курінь», or a senior kurin by its гілки,
+ * «5-й курінь УСП» — never by the УПЮ number it happens to share. The server's KurinBranchNames.InText.
+ */
+export function kurinInText(branches: readonly KurinNumbering[] | null | undefined, fallbackNumber?: number | null): string {
+  return (branches ?? []).some(b => isSeniorBranch(b.branch))
+    ? kurinBranchesName(branches)
+    : kurinLabel(branches?.[0]?.number ?? fallbackNumber);
+}

@@ -1,5 +1,5 @@
 import { KurinBranch } from '../../features/kurinModule/models/enums/kurin-branch.enum';
-import { compareKurinNumbers, kurinBranchesName, kurinBranchTags, kurinLabel } from './kurin-label.function';
+import { compareKurinNumbers, kurinBranchesName, kurinBranchTags, kurinInText, kurinLabel } from './kurin-label.function';
 
 describe('kurinLabel', () => {
   it('names a numbered kurin by its number', () => {
@@ -32,5 +32,14 @@ describe('kurinBranchesName', () => {
   it('keeps a УПЮ kurin as it always read', () => {
     expect(kurinBranchesName([{ branch: KurinBranch.UPYu, number: 47 }])).toBe('Курінь ч. 47');
     expect(kurinBranchesName(undefined, 12)).toBe('Курінь ч. 12');
+  });
+});
+
+describe('kurinInText', () => {
+  it('names a senior kurin by its гілки, not by the УПЮ number it shares', () => {
+    expect(kurinInText([{ branch: KurinBranch.USP, number: 5 }])).toBe('5-й курінь УСП');
+    expect(kurinInText([{ branch: KurinBranch.UPYu, number: 5 }])).toBe('к. ч. 5');
+    expect(kurinInText([], 7)).toBe('к. ч. 7');
+    expect(kurinInText([{ branch: KurinBranch.UPYu, number: null }])).toBe('підг. курінь');
   });
 });

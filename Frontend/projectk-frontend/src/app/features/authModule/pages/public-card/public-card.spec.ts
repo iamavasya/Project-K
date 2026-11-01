@@ -5,11 +5,12 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { of, throwError } from 'rxjs';
 import { CardService, PublicCardDto } from '../../services/card-service/card.service';
 import { PublicCardComponent } from './public-card';
+import { KurinBranch } from '../../../kurinModule/models/enums/kurin-branch.enum';
 
 describe('PublicCardComponent', () => {
   let cards: MockedObject<CardService>;
   const card: PublicCardDto = {
-    fullName: 'Назар Коваль', photoUrl: null, kurins: [{ number: 15, namedAfter: null, groupName: 'Соколи' }],
+    fullName: 'Назар Коваль', photoUrl: null, kurins: [{ number: 15, namedAfter: null, groupName: 'Соколи', branches: [{ branch: KurinBranch.UPYu, number: 15 }] }],
     level: 'пл. уч.', awards: [{ level: 4, dateAcquired: '2026-05-01T00:00:00Z' }], badges: null, probes: [],
     checkedAtUtc: '2026-10-31T12:32:00Z'
   };
@@ -41,6 +42,17 @@ describe('PublicCardComponent', () => {
     expect(text).toContain('Четверте відзначення');
     expect(text).toContain('Перевірено Лілейкою');
     expect(text).not.toContain('Вмілості');
+  });
+
+  it('names a senior kurin on the card by its гілка', () => {
+    cards.checked.mockReturnValue(of({
+      ...card,
+      kurins: [{ number: 5, namedAfter: null, groupName: null, branches: [{ branch: KurinBranch.USP, number: 5 }] }]
+    }));
+    const text = (create('check').nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('5-й курінь УСП');
+    expect(text).not.toContain('к. ч. 5');
   });
 
   it('reads a permanent link from its own address and says when it is gone', () => {

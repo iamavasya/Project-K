@@ -1,4 +1,4 @@
-import { compareKurinNumbers, inKurin, kurinBranchTags, kurinBranchesName, kurinLabel, kurinName, kurinTitle } from './kurin-label';
+import { compareKurinNumbers, inKurin, kurinBranchTags, kurinBranchesName, kurinInText, kurinLabel, kurinName, kurinTitle } from './kurin-label';
 
 describe('kurin labels', () => {
   it('names a numbered kurin by its number', () => {
@@ -26,5 +26,13 @@ describe('senior kurins', () => {
     expect(kurinBranchTags([{ branch: 'USP', number: 5 }, { branch: 'UPS', number: 20 }])).toBe('УСП · УПС');
     expect(kurinLabel(5, 'USP')).toBe('5-й курінь УСП');
     expect(kurinLabel(5, 'UPYu')).toBe('к. ч. 5');
+  });
+});
+
+describe('kurinInText', () => {
+  it('names a senior kurin by its гілки, not by the УПЮ number it shares', () => {
+    expect(kurinInText([{ branch: 'USP', number: 5 }])).toBe('5-й курінь УСП');
+    expect(kurinInText([{ branch: 'UPYu', number: 5 }])).toBe('к. ч. 5');
+    expect(kurinInText([], null)).toBe('підг. курінь');
   });
 });

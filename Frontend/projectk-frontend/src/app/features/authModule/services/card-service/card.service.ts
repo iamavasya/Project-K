@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
+import { KurinNumbering } from '../../../kurinModule/models/enums/kurin-branch.enum';
 
 /** What a shared card may show besides the name — flags, as the API sends them (`CardField`). */
 export const CARD_FIELD = {
@@ -37,7 +38,7 @@ export interface CardAllowance {
 export interface PublicCardDto {
   fullName: string;
   photoUrl: string | null;
-  kurins: { number: number | null; namedAfter: string | null; groupName: string | null }[] | null;
+  kurins: { number: number | null; namedAfter: string | null; groupName: string | null; branches: KurinNumbering[] }[] | null;
   level: string | null;
   awards: { level: 1 | 2 | 3 | 4; dateAcquired: string }[] | null;
   badges: { title: string; imagePath: string | null; confirmedAtUtc: string | null }[] | null;

@@ -398,7 +398,7 @@ public class KurinController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/branch-request")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(KurinBranchRequestResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetBranchRequest(Guid kurinKey, CancellationToken cancellationToken)

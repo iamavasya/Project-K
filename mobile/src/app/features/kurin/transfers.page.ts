@@ -25,6 +25,7 @@ import {
 } from '@ionic/angular';
 import { AuthService } from '../../auth/auth.service';
 import { apiErrorText } from '../../core/api';
+import { kurinInText } from '../../core/kurin-label';
 import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
 import { FormerMemberStandingDto, MembershipCandidateDto, MembershipRequestDto, MembershipRequestKind, MembershipRequestKurinDto, MembershipRequestStatus } from './kurin.models';
@@ -50,7 +51,7 @@ const ERRORS: Record<string, string> = {
   NoSuchCode: 'Такого коду немає. Перевір його з людиною.',
 };
 
-const kurinNo = (k: MembershipRequestKurinDto): string => (k.number != null ? `к. ч. ${k.number}` : 'підготовчий курінь');
+const kurinNo = (k: MembershipRequestKurinDto): string => kurinInText(k.branches, k.number);
 
 /**
  * «Склад куреня» on a phone (web pages/transfers): the Звʼязковий asks for a person by the code they

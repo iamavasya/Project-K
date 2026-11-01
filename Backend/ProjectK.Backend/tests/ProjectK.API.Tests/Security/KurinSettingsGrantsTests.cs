@@ -1,3 +1,5 @@
+using ProjectK.API.Controllers.KurinModule;
+using ProjectK.API.Helpers;
 using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 
@@ -28,6 +30,36 @@ public class KurinSettingsGrantsTests
     {
         Assert.Null(Widest(role, ResourceType.Kurin, ResourceAction.Update));
         Assert.Equal(AccessScope.KurinWide, Widest("KV.Zvyazkovyi", ResourceType.Kurin, ResourceAction.Update));
+    }
+
+    // Every read of the settings page: a read the КВ is refused leaves its tile empty or wrong.
+    [Theory]
+    [InlineData(typeof(KurinController), nameof(KurinController.GetCardFields))]
+    [InlineData(typeof(KurinController), nameof(KurinController.GetCardSharing))]
+    [InlineData(typeof(KurinController), nameof(KurinController.GetAccessPolicy))]
+    [InlineData(typeof(KurinController), nameof(KurinController.GetBranchRequest))]
+    [InlineData(typeof(KurinTagsController), nameof(KurinTagsController.GetTagSettings))]
+    public void TheSettingsReads_AskForKurinSettingsRead(Type controller, string action)
+    {
+        Assert.Equal((ResourceType.KurinSettings, ResourceAction.Read), Guard(controller, action));
+    }
+
+    [Theory]
+    [InlineData(typeof(KurinController), nameof(KurinController.SubmitBranchRequest))]
+    [InlineData(typeof(KurinTagsController), nameof(KurinTagsController.SetTagSettings))]
+    public void TheirWrites_StillAskForKurinUpdate(Type controller, string action)
+    {
+        Assert.Equal((ResourceType.Kurin, ResourceAction.Update), Guard(controller, action));
+    }
+
+    private static (ResourceType, ResourceAction) Guard(Type controller, string action)
+    {
+        var attribute = controller.GetMethods()
+            .Single(m => m.Name == action)
+            .GetCustomAttributes(typeof(ResourceAuthorizeAttribute), inherit: true)
+            .Cast<ResourceAuthorizeAttribute>()
+            .Single();
+        return ((ResourceType)attribute.Arguments![1]!, (ResourceAction)attribute.Arguments[3]!);
     }
 
     [Theory]

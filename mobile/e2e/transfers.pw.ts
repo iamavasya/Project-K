@@ -7,7 +7,7 @@ import { member, ok, shot, signIn, type ExtraApi } from './support/mock-api';
  */
 
 const ZVYAZKOVYI = ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'Leadership:Manage:KurinWide'];
-const k = (number: number) => ({ kurinKey: `k${number}`, number, namedAfter: null });
+const k = (number: number, branch = 'UPYu') => ({ kurinKey: `k${number}`, number, namedAfter: null, branches: [{ branch, number }] });
 const request = (over: Record<string, unknown>) => ({
   membershipRequestKey: 'r1', kind: 'Transfer', status: 'Pending', memberKey: 'm2', memberName: 'Назар Коваль',
   fromKurin: k(7), toKurin: k(15), membershipKind: 'Youth', createdAtUtc: '2026-10-30T10:00:00Z',
@@ -45,6 +45,14 @@ test('approves another kurin\'s request from a sheet', async ({ page }, info) =>
   await expect(page.locator('ion-toast').last()).toContainText('Підтверджено.');
   expect(log.writes.some((w) => w.method === 'POST' && w.path === 'kurin/k1/membership-requests/r1/approve')).toBe(true);
   await expect(page.getByTestId('request')).toContainText('підтверджено');
+});
+
+test('names a senior kurin by its гілка, not as the УПЮ kurin of the same number', async ({ page }) => {
+  const world = { incoming: [request({ fromKurin: k(5), toKurin: k(5, 'USP') })], outgoing: [] as Record<string, unknown>[] };
+  await signIn(page, member, transfersApi(world), ZVYAZKOVYI);
+  await page.goto('./tabs/kurin/transfers');
+  await expect(page.getByTestId('request')).toContainText('5-й курінь УСП просить перевести до себе');
+  await expect(page.getByTestId('request')).not.toContainText('к. ч. 5 просить');
 });
 
 test('does not offer «перевести» while the person owes', async ({ page }) => {

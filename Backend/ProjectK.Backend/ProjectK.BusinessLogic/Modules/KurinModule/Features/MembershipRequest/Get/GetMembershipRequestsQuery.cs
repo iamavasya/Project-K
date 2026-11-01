@@ -54,7 +54,7 @@ public sealed class GetMembershipRequestsQueryHandler
         foreach (var kurinKey in requests.SelectMany(r => new[] { r.FromKurinKey, r.ToKurinKey }).Distinct())
         {
             var kurin = await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken);
-            kurins[kurinKey] = new MembershipRequestKurin(kurinKey, kurin?.Number, kurin?.NamedAfter);
+            kurins[kurinKey] = MembershipRequestKurin.Of(kurinKey, kurin);
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
