@@ -5,7 +5,7 @@ import { MockedObject } from 'vitest';
 import { ConfirmationService } from '@openng/optimus-ui/api';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
 import { ThirdProbeDto } from '../../models/probes-and-badges/probe-project.dto';
-import { probeProject, thirdProbeTab } from '../../functions/third-probe.function.spec';
+import { probeProject, thirdProbeTab } from '../../functions/third-probe.fixtures';
 import { ProbeProjectsComponent } from './probe-projects';
 
 const IMAGE_KEY = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';

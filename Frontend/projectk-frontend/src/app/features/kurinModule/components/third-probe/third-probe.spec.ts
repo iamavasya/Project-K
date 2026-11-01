@@ -6,7 +6,7 @@ import { MemberDto } from '../../models/member.dto';
 import { ThirdProbeDto } from '../../models/probes-and-badges/probe-project.dto';
 import { BadgeImageBlobService } from '../../services/probes-and-badges/badge-image-blob.service';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
-import { thirdProbeTab } from '../../functions/third-probe.function.spec';
+import { thirdProbeTab } from '../../functions/third-probe.fixtures';
 import { ThirdProbeComponent } from './third-probe';
 
 describe('ThirdProbeComponent', () => {
