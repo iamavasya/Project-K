@@ -10,7 +10,10 @@ export interface MemberAwardDto {
     /** A senior відзначення's catalogue id; null for an УПЮ one. */
     catalogId?: string | null;
     dateAcquired: string;
+    /** What it was given for. */
     note?: string;
+    /** The person pinned it to the front of their card. */
+    isPinned?: boolean;
     status: BadgeProgressStatus;
     imageUrl?: string;
     submittedAtUtc?: string;

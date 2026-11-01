@@ -300,7 +300,8 @@
                 [ownCard]="isOwnCard"
                 (saveAward)="onSaveAward($event)"
                 (deleteAward)="onDeleteAward($event)"
-                (reviewAward)="onReviewAward($event)" />
+                (reviewAward)="onReviewAward($event)"
+                (pinAward)="onPinAward($event)" />
         </section>
         </ng-template>
         }
@@ -351,7 +352,8 @@
                 [ownCard]="isOwnCard"
                 [canRemove]="abilities.awards.remove"
                 (saveAward)="onSaveAward($event)"
-                (deleteAward)="onDeleteAward($event)" />
+                (deleteAward)="onDeleteAward($event)"
+                (pinAward)="onPinAward($event)" />
             </section>
         </ng-template>
 

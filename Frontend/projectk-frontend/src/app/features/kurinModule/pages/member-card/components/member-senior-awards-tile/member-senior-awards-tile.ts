@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
@@ -11,7 +10,9 @@ import { MemberAwardDto } from '../../../../models/member-award.dto';
 import { HonoursService } from '../../../../services/honours-service/honours.service';
 import { UpsertMemberAwardRequest } from '../../../../services/member-award-service/member-award.service';
 import { parseDateOnlyString, toDateOnlyString } from '../../../../functions/to-date-only-string.function';
-import { seniorAwardOptions, seniorAwardRows } from './senior-awards.function';
+import { seniorAwardBlocks, seniorAwardOptions } from './senior-awards.function';
+import { AwardBlocksComponent } from '../award-blocks/award-blocks';
+import { AwardBlock } from '../award-blocks/award-blocks.function';
 
 /**
  * Відзначення старшого пластуна: грамоти, ордени, хрести з каталогу. Вносить людина сама або провід
@@ -20,7 +21,7 @@ import { seniorAwardOptions, seniorAwardRows } from './senior-awards.function';
  */
 @Component({
   selector: 'app-member-senior-awards-tile',
-  imports: [FormsModule, DatePipe, ButtonModule, DatePickerModule, DialogModule, SelectModule, TextareaModule],
+  imports: [AwardBlocksComponent, FormsModule, ButtonModule, DatePickerModule, DialogModule, SelectModule, TextareaModule],
   templateUrl: './member-senior-awards-tile.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './member-senior-awards-tile.css'
@@ -37,8 +38,10 @@ export class MemberSeniorAwardsTileComponent {
   readonly canRemove = input(false);
   readonly saveAward = output<UpsertMemberAwardRequest>();
   readonly deleteAward = output<string>();
+  /** The person pins or unpins a відзначення on their own card. */
+  readonly pinAward = output<AwardBlock>();
 
-  readonly rows = computed(() => seniorAwardRows(this.awards(), this.honours()));
+  readonly blocks = computed(() => seniorAwardBlocks(this.awards(), this.honours(), this.canChange));
   readonly options = computed(() => seniorAwardOptions(this.honours()));
   readonly today = new Date();
 

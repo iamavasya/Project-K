@@ -6,30 +6,8 @@
         }
     </div>
 
-    @if (rows().length) {
-        <ul class="award-rows">
-            @for (row of rows(); track row.award.memberAwardKey) {
-                <li>
-                    <button type="button" class="award-row" [disabled]="!canChange" (click)="open(row.award)">
-                        @if (row.imageUrl) {
-                            <img class="award-image" [src]="row.imageUrl" [alt]="row.title" loading="lazy" />
-                        } @else {
-                            <span class="award-image award-image--empty pi pi-star" aria-hidden="true"></span>
-                        }
-                        <span class="award-text">
-                            <span class="award-title">{{ row.title }}</span>
-                            <span class="award-line">@if (row.section) {{{ row.section }} · }{{ row.award.dateAcquired | date: 'dd.MM.yyyy' }}</span>
-                            @if (row.award.note) {
-                                <span class="award-line award-note">{{ row.award.note }}</span>
-                            }
-                        </span>
-                    </button>
-                </li>
-            }
-        </ul>
-    } @else {
-        <p class="award-empty">Відзначень ще немає</p>
-    }
+    <app-award-blocks [blocks]="blocks()" [ownCard]="ownCard()"
+        (openGrant)="open($event)" (togglePin)="pinAward.emit($event)" />
 </div>
 
 <p-dialog
@@ -77,7 +55,7 @@
         </div>
 
         <div class="flex flex-col gap-2">
-            <label for="senior-award-note">Нотатка</label>
+            <label for="senior-award-note">За що</label>
             <textarea id="senior-award-note" pTextarea [(ngModel)]="note" rows="2" maxlength="2000" class="w-full"></textarea>
         </div>
     </div>

@@ -25,6 +25,13 @@ namespace ProjectK.Infrastructure.Migrations
                 oldClrType: typeof(int),
                 oldType: "int");
 
+            migrationBuilder.AddColumn<bool>(
+                name: "IsPinned",
+                table: "MemberAwards",
+                type: "bit",
+                nullable: false,
+                defaultValue: false);
+
             migrationBuilder.AddColumn<string>(
                 name: "CatalogId",
                 table: "MemberAwards",
@@ -39,6 +46,10 @@ namespace ProjectK.Infrastructure.Migrations
             migrationBuilder.DropColumn(
                 name: "IsPlastunka",
                 table: "PlastLevelHistories");
+
+            migrationBuilder.DropColumn(
+                name: "IsPinned",
+                table: "MemberAwards");
 
             migrationBuilder.DropColumn(
                 name: "CatalogId",

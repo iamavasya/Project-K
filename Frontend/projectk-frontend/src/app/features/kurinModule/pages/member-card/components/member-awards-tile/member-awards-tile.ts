@@ -3,24 +3,20 @@ import { Component, inject, ChangeDetectionStrategy, output, input } from '@angu
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { ConfirmationService } from '@openng/optimus-ui/api';
-import { YouthAwardDto } from '../../../../models/member-award.dto';
+import { MemberAwardDto, YouthAwardDto, isYouthAward } from '../../../../models/member-award.dto';
+import { AwardBlocksComponent } from '../award-blocks/award-blocks';
+import { AwardBlock, groupGrants } from '../award-blocks/award-blocks.function';
 import { MemberAwardLevel } from '../../../../models/enums/member-award-level.enum';
 import { BadgeProgressStatus } from '../../../../models/enums/badge-progress-status.enum';
 import { MemberAwardsDialogComponent } from '../member-awards-dialog/member-awards-dialog';
 import { UpsertMemberAwardRequest } from '../../../../services/member-award-service/member-award.service';
 import { BadgeImageBlobService } from '../../../../services/probes-and-badges/badge-image-blob.service';
 import { environment } from '../../../../../../../environments/environment';
-import { dateOnlyTime } from '../../../../functions/to-date-only-string.function';
-
-interface AwardGroup {
-  level: MemberAwardLevel;
-  count: number;
-  latest: YouthAwardDto;
-}
 
 @Component({
   selector: 'app-member-awards-tile',
   imports: [
+    AwardBlocksComponent,
     ButtonModule,
     ConfirmDialogModule,
     MemberAwardsDialogComponent
@@ -49,6 +45,8 @@ export class MemberAwardsTileComponent {
   readonly ownCard = input(false);
 
   readonly saveAward = output<UpsertMemberAwardRequest>();
+  /** The person pins or unpins a відзначення on their own card. */
+  readonly pinAward = output<AwardBlock>();
   readonly deleteAward = output<string>();
   readonly reviewAward = output<{
     awardKey: string;
@@ -75,24 +73,31 @@ export class MemberAwardsTileComponent {
     }
   }
 
-  get groupedAwards() {
-    const map = new Map<string, AwardGroup>();
-    for (const award of this.awards().filter(item => this.isVisibleAward(item))) {
-      const existing = map.get(award.level);
-      if (existing) {
-        existing.count++;
-        if (dateOnlyTime(award.dateAcquired) > dateOnlyTime(existing.latest.dateAcquired)) {
-          existing.latest = award;
-        }
-      } else {
-        map.set(award.level, { level: award.level, count: 1, latest: award });
-      }
-    }
-    return Array.from(map.values()).sort((a, b) => this.getAwardLevelWeight(a.level) - this.getAwardLevelWeight(b.level));
+  /** One block per level, every grant of it inside (award-blocks). */
+  get blocks(): AwardBlock[] {
+    const groups = groupGrants(this.awards().filter(item => this.isVisibleAward(item)), award => award.level);
+    return [...groups.values()].map(grants => ({
+      key: grants[0].level,
+      title: this.getAwardTitle(grants[0].level),
+      imageUrl: this.getAwardImageUrl(grants[0]),
+      section: '',
+      grants: grants.map(award => ({
+        award,
+        pending: this.isPendingConfirmation(award),
+        stamp: this.awardStamp(award),
+        canOpen: this.canOpen(award)
+      })),
+      pinned: grants.some(award => award.isPinned),
+      pending: grants.some(award => this.isPendingConfirmation(award)),
+      pin: { level: grants[0].level }
+    }));
   }
 
-  trackAwardGroup(_: number, group: AwardGroup): MemberAwardLevel {
-    return group.level;
+  /** The block hands back the grant as a plain award; this card only holds УПЮ ones. */
+  openGrant(award: MemberAwardDto): void {
+    if (isYouthAward(award)) {
+      this.openDialog(award);
+    }
   }
 
   getAwardImageUrl(award: YouthAwardDto): string | null {

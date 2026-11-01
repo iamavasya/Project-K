@@ -2303,6 +2303,9 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<DateTime>("DateAcquired")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("bit");
+
                     b.Property<Guid>("KurinKey")
                         .HasColumnType("uniqueidentifier");
 

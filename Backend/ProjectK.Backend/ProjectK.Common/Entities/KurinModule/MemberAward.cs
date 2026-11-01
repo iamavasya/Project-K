@@ -21,7 +21,14 @@ public class MemberAward : Entity
     /// </summary>
     public string? CatalogId { get; set; }
     public DateTime DateAcquired { get; set; }
+    /// <summary>What it was given for, in the words of whoever recorded it.</summary>
     public string? Note { get; set; }
+
+    /// <summary>
+    /// The person pinned this відзначення to the front of their card. Set on every grant of it at
+    /// once (PinMyAwardCommand), so the card reads a відзначення as pinned when any grant is.
+    /// </summary>
+    public bool IsPinned { get; set; }
     public BadgeProgressStatus Status { get; set; } = BadgeProgressStatus.Confirmed;
     public DateTime? SubmittedAtUtc { get; set; }
     public Guid? SubmittedByUserKey { get; set; }

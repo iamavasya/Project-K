@@ -15,6 +15,9 @@ public class MemberAwardDto
     public string? CatalogId { get; set; }
     public DateTime DateAcquired { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>The person pinned it to the front of their card.</summary>
+    public bool IsPinned { get; set; }
     public BadgeProgressStatus Status { get; set; }
     public string? ImageUrl { get; set; }
     public DateTime? SubmittedAtUtc { get; set; }

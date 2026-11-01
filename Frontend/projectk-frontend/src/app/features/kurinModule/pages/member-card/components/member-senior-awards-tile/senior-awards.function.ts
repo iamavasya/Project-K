@@ -1,5 +1,6 @@
 import { MemberAwardDto } from '../../../../models/member-award.dto';
 import { CatalogHonour } from '../../../../models/honour.dto';
+import { AwardBlock, groupGrants } from '../award-blocks/award-blocks.function';
 
 /** A senior відзначення as the card shows it. */
 export interface SeniorAwardRow {
@@ -38,4 +39,26 @@ export function seniorAwardRows(awards: readonly MemberAwardDto[] | null | undef
       const item = byId.get(award.catalogId!);
       return { award, title: item?.title ?? award.catalogId!, imageUrl: item?.imageUrl ?? '', section: honourSection(item) };
     });
+}
+
+/**
+ * The senior відзначення as card blocks: every grant of one under one block, with the catalogue's
+ * name and picture. One the catalogue no longer knows keeps its id for a name.
+ */
+export function seniorAwardBlocks(awards: readonly MemberAwardDto[] | null | undefined, honours: readonly CatalogHonour[], canOpen: boolean): AwardBlock[] {
+  const byId = new Map(honours.map(item => [item.id, item]));
+  const groups = groupGrants((awards ?? []).filter(award => !!award.catalogId), award => award.catalogId!);
+  return [...groups.entries()].map(([catalogId, grants]) => {
+    const item = byId.get(catalogId);
+    return {
+      key: catalogId,
+      title: item?.title ?? catalogId,
+      imageUrl: item?.imageUrl || null,
+      section: honourSection(item),
+      grants: grants.map(award => ({ award, pending: false, stamp: null, canOpen })),
+      pinned: grants.some(award => award.isPinned),
+      pending: false,
+      pin: { catalogId }
+    };
+  });
 }

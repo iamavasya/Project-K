@@ -192,9 +192,16 @@ public partial class DemoDataSeeder
             SubmittedByUserKey = who.UserKey
         };
 
+        static MemberAward Pinned(MemberAward award)
+        {
+            award.IsPinned = true;
+            return award;
+        }
+
         _dbContext.MemberAwards.AddRange(
             Award(leader, "usp-hramota-zasluhy", new DateTime(2012, 10, 20), "За табір «Вогні Карпат»"),
-            Award(leader, "orden-sv-yuriia-bronza", new DateTime(2018, 4, 23)),
+            Pinned(Award(leader, "orden-sv-yuriia-bronza", new DateTime(2018, 4, 23))),
+            Award(leader, "usp-hramota-zasluhy", new DateTime(2015, 3, 14), "За вишкіл новаків"),
             Award(members[1], "usp-hramota-podiaky", new DateTime(2024, 6, 9)));
         await _dbContext.SaveChangesAsync(cancellationToken);
     }

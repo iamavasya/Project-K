@@ -7,8 +7,8 @@ import { HonoursService } from '../../../../services/honours-service/honours.ser
 import { SENIOR_LADDER, YOUTH_LADDER, degreeRows } from './member-degrees.function';
 
 /**
- * Ступені людини на її драбині — УПЮ на юнацькій картці, УСП/УПС на старшій — з відзнакою кожного з
- * каталогу. Вносять їх у формі картки: сама людина або провід.
+ * Ступені людини на її драбині — УПЮ на юнацькій картці, УСП/УПС на старшій: найвищий великим планом,
+ * попередні дрібно під ним, з відзнакою кожного з каталогу. Вносять їх у формі картки: сама людина або провід.
  */
 @Component({
   selector: 'app-member-degrees-tile',
@@ -26,4 +26,7 @@ export class MemberDegreesTileComponent {
   readonly edit = output<void>();
 
   readonly rows = computed(() => degreeRows(this.histories(), this.senior() ? SENIOR_LADDER : YOUTH_LADDER, this.honours()));
+  /** The highest ступінь on the ladder, large; the ones before it small, newest first. */
+  readonly highest = computed(() => this.rows().at(-1) ?? null);
+  readonly earlier = computed(() => this.rows().slice(0, -1).reverse());
 }

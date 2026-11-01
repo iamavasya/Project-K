@@ -210,4 +210,26 @@ public class SeniorAwardHandlerTests
         dto.Level.Should().BeNull();
         dto.ImageUrl.Should().BeNull();
     }
+
+    [Fact]
+    public async Task ThePersonPinsAnAward_EveryGrantOfIt_AndOnlyTheirOwn()
+    {
+        var other = new MemberAward { MemberKey = _member.MemberKey, Level = MemberAwardLevel.First };
+        _stored.Add(new MemberAward { MemberKey = _member.MemberKey, CatalogId = "usp-hramota-podiaky" });
+        _stored.Add(new MemberAward { MemberKey = _member.MemberKey, CatalogId = "usp-hramota-podiaky" });
+        _stored.Add(other);
+        _members.Setup(m => m.GetSummaryByUserKeyAsync(_ownerUserKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(_member.MemberKey, _ownerUserKey, _kurinKey, null, "Ірина", "Федорів", "i@example.com", null));
+        _awards.Setup(a => a.GetByMemberKeyAsync(_member.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(() => _stored.ToList());
+        var pin = new ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Pin.PinMyAwardCommandHandler(_unitOfWork.Object, _currentUser.Object);
+
+        var result = await pin.Handle(new ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Pin.PinMyAwardCommand { CatalogId = "usp-hramota-podiaky", Pinned = true }, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _stored.Where(a => a.CatalogId == "usp-hramota-podiaky").Should().OnlyContain(a => a.IsPinned);
+        other.IsPinned.Should().BeFalse();
+
+        (await pin.Handle(new ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Pin.PinMyAwardCommand { CatalogId = "nema", Pinned = true }, CancellationToken.None))
+            .Type.Should().Be(ResultType.NotFound);
+    }
 }
