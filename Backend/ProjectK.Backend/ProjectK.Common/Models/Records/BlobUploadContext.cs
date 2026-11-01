@@ -5,7 +5,7 @@ public enum BlobUploadProcessingMode
     CompressToJpeg,
     EncodeAsPng,
 
-    /// <summary>Kept byte for byte, but only after the bytes are checked to be a PDF.</summary>
+    /// <summary>Kept byte for byte when it starts with the PDF signature, and stored as a download.</summary>
     KeepPdf
 }
 
