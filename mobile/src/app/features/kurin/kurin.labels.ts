@@ -20,6 +20,8 @@ import {
   ProgressStatus,
   QuarterDto,
   WarningLevel,
+  CatalogHonour,
+  PlastLevelHistoryDto,
 } from './kurin.models';
 
 /*
@@ -767,7 +769,8 @@ export function awardGroups(awards: MemberAwardDto[] | null | undefined): AwardG
   const groups = new Map<AwardLevel, AwardGroup>();
   for (const award of awards ?? []) {
     const status = progressStatus(award.status);
-    if (status !== 'Submitted' && status !== 'Confirmed') continue;
+    // A senior відзначення has no level; it is listed on its own (seniorAwardRows).
+    if ((status !== 'Submitted' && status !== 'Confirmed') || !award.level) continue;
     const existing = groups.get(award.level);
     if (!existing) groups.set(award.level, { level: award.level, count: 1, latest: award });
     else {
@@ -847,4 +850,59 @@ export function membershipOf(m: Pick<MembershipDto, 'branch' | 'kurinNumber' | '
   return isSeniorBranch(m.branch)
     ? `Членство (${m.kurinNamedAfter || kurinNumberLabel(m.kurinNumber, m.branch)})`
     : `Членство в ${inKurin(m.kurinNumber)}`;
+}
+
+// ── Ступені й старші відзначення з каталогу ──────────────────────────────────────────────────────
+
+/** The ступені of an УПЮ membership, and of a УСП or УПС one (web member-degrees YOUTH_LADDER, SENIOR_LADDER). */
+export const YOUTH_LADDER = ['Prykhylnyk', 'Uchasnyk', 'Rozviduvach', 'Skob', 'HetmanskiySkob'] as const;
+export const SENIOR_LADDER = ['Starshoplastun', 'Senior', 'SeniorPratsi', 'SeniorDovirja', 'SeniorKerivnytstva'] as const;
+
+export interface DegreeRow {
+  key: string;
+  title: string;
+  imageUrl: string;
+  date: Date | null;
+}
+
+/**
+ * The person's ступені on one ladder, named and drawn as the catalogue has them for a пластун or a
+ * пластунка (web degreeRows). Without the catalogue a ступінь keeps its own name and no picture.
+ */
+export function degreeRows(
+  histories: PlastLevelHistoryDto[] | null | undefined,
+  ladder: readonly string[],
+  honours: readonly CatalogHonour[],
+): DegreeRow[] {
+  const byId = new Map(honours.map((item) => [item.id, item]));
+  return ladder
+    .map((level) => (histories ?? []).find((history) => history.plastLevel === level))
+    .filter((history): history is PlastLevelHistoryDto => !!history)
+    .map((history) => {
+      const item = history.catalogId ? byId.get(history.catalogId) : undefined;
+      return {
+        key: history.plastLevelHistoryKey ?? history.plastLevel,
+        title: item?.title ?? (LEVEL_LABELS[history.plastLevel] || history.plastLevel),
+        imageUrl: item?.imageUrl ?? '',
+        date: dateOnly(history.dateAchieved),
+      };
+    });
+}
+
+export interface SeniorAwardRow {
+  award: MemberAwardDto;
+  title: string;
+  imageUrl: string;
+}
+
+/** The senior відзначення, newest first, named and drawn from the catalogue (web seniorAwardRows). */
+export function seniorAwardRows(awards: MemberAwardDto[] | null | undefined, honours: readonly CatalogHonour[]): SeniorAwardRow[] {
+  const byId = new Map(honours.map((item) => [item.id, item]));
+  return (awards ?? [])
+    .filter((award) => !!award.catalogId)
+    .sort((a, b) => b.dateAcquired.localeCompare(a.dateAcquired))
+    .map((award) => {
+      const item = byId.get(award.catalogId!);
+      return { award, title: item?.title ?? award.catalogId!, imageUrl: item?.imageUrl ?? '' };
+    });
 }

@@ -183,7 +183,7 @@ export class AwardSheet implements OnInit {
 
   ngOnInit(): void {
     if (this.award) {
-      this.level.set(this.award.level);
+      this.level.set(this.award.level ?? null);
       this.date.set(this.award.dateAcquired.slice(0, 10));
       this.note.set(this.award.note ?? '');
     }

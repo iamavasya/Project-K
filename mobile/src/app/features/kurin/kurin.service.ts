@@ -16,6 +16,7 @@ import {
   KurinDto,
   LeadershipDto,
   MemberAwardDto,
+  CatalogHonour,
   MemberDto,
   MemberDuesDto,
   MemberLookupDto,
@@ -262,6 +263,17 @@ export class KurinApi {
 
   deleteAward(memberKey: string, awardKey: string): Promise<void> {
     return this.api.delete(`member/${memberKey}/awards/${awardKey}`);
+  }
+
+  private honoursRead?: Promise<CatalogHonour[]>;
+
+  /** The catalogue's ступені and senior відзначення, read once; a failed read is tried again next time. */
+  honours(): Promise<CatalogHonour[]> {
+    this.honoursRead ??= this.api.get<CatalogHonour[]>('catalog/honours').catch((error) => {
+      this.honoursRead = undefined;
+      throw error;
+    });
+    return this.honoursRead;
   }
 
   reviewAward(memberKey: string, awardKey: string, isApproved: boolean): Promise<MemberAwardDto> {

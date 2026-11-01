@@ -11,6 +11,10 @@ import {
   memberRoleTags,
   officeTag,
   officesIn,
+  degreeRows,
+  seniorAwardRows,
+  SENIOR_LADDER,
+  YOUTH_LADDER,
   membershipOf,
   roleTone,
   membershipPeriod,
@@ -306,5 +310,35 @@ describe('membership in a line of text', () => {
     expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto)).toBe('Членство (Орден Хрестоносців)');
     expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: null } as MembershipDto)).toBe('Членство (5-й курінь УСП)');
     expect(membershipOf({ branch: 'UPYu', kurinNumber: 47, kurinNamedAfter: 'Івана Богуна' } as MembershipDto)).toBe('Членство в курені ч. 47');
+  });
+});
+
+describe('ступені й старші відзначення з каталогу', () => {
+  const honours = [
+    { id: 'usp-starsha-plastunka', kind: 'Degree', title: 'Старша пластунка', group: 'usp', ulad: 'usp', order: 2, imageUrl: 'https://catalog.test/spl.svg' },
+    { id: 'upyu-virlytsia', kind: 'Degree', title: 'Пластунка вірлиця', group: 'upyu', ulad: 'upyu', order: 7, imageUrl: '' },
+    { id: 'orden-sv-yuriia-bronza', kind: 'Award', title: 'Орден святого Юрія в бронзі', group: 'orden-sv-yuriia', ulad: 'usp', order: 0, imageUrl: 'https://catalog.test/o.png' },
+  ] as const;
+  const histories = [
+    { plastLevel: 'Skob', dateAchieved: '2014-06-10', isPlastunka: true, catalogId: 'upyu-virlytsia' },
+    { plastLevel: 'Starshoplastun', dateAchieved: '2016-12-03', isPlastunka: true, catalogId: 'usp-starsha-plastunka' },
+  ];
+
+  it('shows each membership its own ladder, named and drawn for a пластунка', () => {
+    expect(degreeRows(histories, YOUTH_LADDER, [...honours]).map((r) => r.title)).toEqual(['Пластунка вірлиця']);
+    expect(degreeRows(histories, SENIOR_LADDER, [...honours]).map((r) => [r.title, r.imageUrl])).toEqual([['Старша пластунка', 'https://catalog.test/spl.svg']]);
+    expect(degreeRows(histories, SENIOR_LADDER, []).map((r) => r.title)).toEqual(['ст. пл.']);
+  });
+
+  it('lists senior відзначення apart from the УПЮ levels', () => {
+    const base = { memberKey: 'm', kurinKey: 'k', status: 'Confirmed' as const };
+    const awards = [
+      { ...base, memberAwardKey: 'a', level: 'First' as const, catalogId: null, dateAcquired: '2015-01-01T00:00:00' },
+      { ...base, memberAwardKey: 'b', level: null, catalogId: 'orden-sv-yuriia-bronza', dateAcquired: '2018-04-23T00:00:00' },
+    ];
+    expect(seniorAwardRows(awards, [...honours]).map((r) => [r.award.memberAwardKey, r.title, r.imageUrl])).toEqual([
+      ['b', 'Орден святого Юрія в бронзі', 'https://catalog.test/o.png'],
+    ]);
+    expect(awardGroups(awards).map((g) => g.latest.memberAwardKey)).toEqual(['a']);
   });
 });

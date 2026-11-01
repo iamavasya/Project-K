@@ -26,7 +26,7 @@ import {
   NavController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, alertCircle, checkmarkCircle, gitNetwork, lockClosed, logOut, medal, ribbon } from 'ionicons/icons';
+import { add, alertCircle, checkmarkCircle, flag, gitNetwork, lockClosed, logOut, medal, ribbon } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
 import { formatPhone } from '../../core/phone';
 import { apiErrorText } from '../../core/api';
@@ -34,6 +34,7 @@ import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
 import { dateLabel, dayMonthLabel } from '../../me/labels';
 import { AwardSheet } from './award.sheet';
+import { SeniorAwardSheet } from './senior-award.sheet';
 import {
   AwardGroup,
   BRANCH_LABELS,
@@ -61,6 +62,10 @@ import {
   progressStatus,
   quarterLabel,
   officeTag,
+  degreeRows,
+  seniorAwardRows,
+  SENIOR_LADDER,
+  YOUTH_LADDER,
   officesIn,
   membershipOf,
   roleTone,
@@ -78,6 +83,7 @@ import {
   CardFields,
   GroupDto,
   MemberAwardDto,
+  CatalogHonour,
   MemberDataGroup,
   MemberDto,
   MemberDuesDto,
@@ -436,6 +442,24 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
               </ion-list>
             }
 
+            <ion-list [inset]="true" data-testid="degrees">
+              <ion-list-header><ion-label>Ступені</ion-label></ion-list-header>
+              <ion-item-group>
+                @for (row of degrees(); track row.key) {
+                  <ion-item data-testid="degree">
+                    @if (row.imageUrl) { <img class="thumb" slot="start" [src]="row.imageUrl" alt="" /> }
+                    @else { <ion-icon class="thumb" slot="start" name="flag" aria-hidden="true" /> }
+                    <ion-label class="ion-text-wrap">
+                      <h3>{{ row.title }}</h3>
+                      @if (row.date) { <p>{{ shortDate(row.date) }}</p> }
+                    </ion-label>
+                  </ion-item>
+                } @empty {
+                  <ion-item><ion-label>Ступенів ще немає.</ion-label></ion-item>
+                }
+              </ion-item-group>
+            </ion-list>
+
             @if (seniorHere(); as here) {
               <ion-list [inset]="true" data-testid="senior-kurin">
                 <ion-list-header><ion-label>У курені</ion-label></ion-list-header>
@@ -459,7 +483,25 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
               <ion-list [inset]="true" data-testid="senior-awards">
                 <ion-list-header><ion-label>Відзначення</ion-label></ion-list-header>
                 <ion-item-group>
-                  <ion-item><ion-label class="ion-text-wrap">Відзначень ще немає.</ion-label></ion-item>
+                  @for (row of seniorAwards(); track row.award.memberAwardKey) {
+                    <ion-item [button]="canChangeSeniorAward()" [detail]="canChangeSeniorAward()" (click)="openSeniorAward(row.award)" data-testid="senior-award">
+                      @if (row.imageUrl) { <img class="thumb" slot="start" [src]="row.imageUrl" alt="" /> }
+                      @else { <ion-icon class="thumb" slot="start" name="medal" aria-hidden="true" /> }
+                      <ion-label class="ion-text-wrap">
+                        <h3>{{ row.title }}</h3>
+                        <p>{{ shortDate(dateOnly(row.award.dateAcquired)) }}</p>
+                        @if (row.award.note) { <p>{{ row.award.note }}</p> }
+                      </ion-label>
+                    </ion-item>
+                  } @empty {
+                    <ion-item><ion-label class="ion-text-wrap">Відзначень ще немає.</ion-label></ion-item>
+                  }
+                  @if (canEdit()) {
+                    <ion-item [button]="true" [detail]="false" (click)="openSeniorAward(null)" data-testid="add-senior-award">
+                      <ion-icon slot="start" name="add" color="primary" aria-hidden="true" />
+                      <ion-label color="primary">Додати відзначення</ion-label>
+                    </ion-item>
+                  }
                 </ion-item-group>
               </ion-list>
 
@@ -708,6 +750,42 @@ export class MemberPage implements OnInit {
     officesIn(this.memberValue()?.leadershipHistories, this.memberValue()?.kurinKey).filter((h) => (h.leadershipType ?? '').toLowerCase() !== 'group'),
   );
   protected readonly seniorWarnings = computed(() => warningRows(this.memberValue()?.warnings));
+  /** The catalogue's ступені and senior відзначення: names and pictures for the card. */
+  private readonly honours = signal<CatalogHonour[]>([]);
+  protected readonly degrees = computed(() =>
+    degreeRows(this.memberValue()?.plastLevelHistories, this.seniorHere() ? SENIOR_LADDER : YOUTH_LADDER, this.honours()),
+  );
+  protected readonly seniorAwards = computed(() => seniorAwardRows(this.memberValue()?.awards, this.honours()));
+  /** A senior відзначення is changed by the person or by whoever may remove awards (web canChange). */
+  protected readonly canChangeSeniorAward = computed(() => this.isOwnCard() || this.abilities().awards.remove);
+
+  protected async openSeniorAward(award: MemberAwardDto | null): Promise<void> {
+    const key = this.key();
+    if (!key || (award ? !this.canChangeSeniorAward() : !this.canEdit())) return;
+    const honours = this.honours().length ? this.honours() : await this.loadHonours();
+    if (!honours.length) {
+      await this.toasts.show('Каталог зараз недоступний. Спробуй пізніше.', 'danger');
+      return;
+    }
+    const modal = await this.modals.create({
+      component: SeniorAwardSheet,
+      componentProps: { memberKey: key, award, honours },
+      presentingElement: this.presenting(),
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss<boolean>();
+    if (data) await settle(this.data.member(key), this.member);
+  }
+
+  private async loadHonours(): Promise<CatalogHonour[]> {
+    try {
+      const honours = await this.data.honours();
+      this.honours.set(honours);
+      return honours;
+    } catch {
+      return [];
+    }
+  }
 
   protected seniorName(m: MembershipDto): string {
     return m.kurinNamedAfter || kurinLabel(m.kurinNumber, m.branch);
@@ -734,10 +812,11 @@ export class MemberPage implements OnInit {
   protected readonly pastMemberships = computed(() => this.membershipList().filter((m) => !m.isCurrent));
 
   constructor() {
-    addIcons({ add, alertCircle, checkmarkCircle, gitNetwork, lockClosed, logOut, medal, ribbon });
+    addIcons({ add, alertCircle, checkmarkCircle, flag, gitNetwork, lockClosed, logOut, medal, ribbon });
   }
 
   ngOnInit(): void {
+    void this.loadHonours();
     const key = this.own() ? (this.auth.user()?.memberKey ?? null) : this.route.snapshot.paramMap.get('memberKey');
     this.key.set(key);
     if (!key) {
@@ -763,7 +842,7 @@ export class MemberPage implements OnInit {
   }
 
   protected awardImage(award: MemberAwardDto): string | null {
-    return this.images.award(award, awardWeight(award.level), progressStatus(award.status) === 'Confirmed');
+    return award.level ? this.images.award(award, awardWeight(award.level), progressStatus(award.status) === 'Confirmed') : null;
   }
 
   protected isPending(award: MemberAwardDto): boolean {
