@@ -1,3 +1,4 @@
+import { inKurin, isSeniorBranch, kurinLabel as kurinNumberLabel } from '../../core/kurin-label';
 import { AuthState } from '../../auth/auth.models';
 import { amountFormat, currencySymbol, DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../me/labels';
 import {
@@ -839,4 +840,11 @@ export function phoneHref(phone: string | null | undefined): string | null {
 export function emailHref(email: string | null | undefined): string | null {
   const address = (email ?? '').trim();
   return address.includes('@') ? `mailto:${address}` : null;
+}
+
+/** «Членство в курені ч. 47», or a senior kurin by its own name (web member-card membershipKurinLabel). */
+export function membershipOf(m: Pick<MembershipDto, 'branch' | 'kurinNumber' | 'kurinNamedAfter'>): string {
+  return isSeniorBranch(m.branch)
+    ? `Членство (${m.kurinNamedAfter || kurinNumberLabel(m.kurinNumber, m.branch)})`
+    : `Членство в ${inKurin(m.kurinNumber)}`;
 }

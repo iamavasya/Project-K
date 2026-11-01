@@ -997,6 +997,22 @@ describe('MemberCardComponent', () => {
       expect(confirm.mock.calls[0][0].header).toBe('Вивести з куреня');
     });
 
+    it('старший курінь у підтвердженні й на відзначеннях названо його іменем, юнацький — номером', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: 0 })));
+      const orden = { kurinKey: member.kurinKey, kurinNumber: 5, branch: KurinBranch.USP, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto;
+      const upyu = { kurinKey: 'kurin9', kurinNumber: 47, branch: KurinBranch.UPYu, kurinNamedAfter: 'Івана Богуна' } as MembershipDto;
+      memberServiceSpy.getMemberships.mockReturnValue(of([orden, upyu]));
+      createComponent();
+      fixture.detectChanges();
+      const confirm = vi.spyOn(component.confirmationService, 'confirm').mockReturnThis();
+
+      component.confirmLeaveKurin(orden);
+
+      expect(confirm.mock.calls[0][0].message).toContain('Членство (Орден Хрестоносців)');
+      expect(component.kurinStamps).toEqual({ [member.kurinKey]: 'Орден Хрестоносців', kurin9: 'к. ч. 47' });
+    });
+
     // Чужа вкладка юнакові не показується: сервер відмовляє, і плитки просто немає.
     it('без доступу або без рахунку плитки немає', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));

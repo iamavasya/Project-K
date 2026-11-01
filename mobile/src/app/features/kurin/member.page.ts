@@ -62,6 +62,7 @@ import {
   quarterLabel,
   officeTag,
   officesIn,
+  membershipOf,
   roleTone,
   type RoleTag,
   shortDate,
@@ -90,7 +91,7 @@ import { RoleTags } from './role-tags';
 import { ProfileEditResult, ProfileEditSheet } from './profile-edit.sheet';
 import { SkillsSheet } from './skills.sheet';
 import { KurinTags, KurinTagsDto } from './kurin-tags';
-import { inKurin, isSeniorBranch, kurinBranchesName, kurinLabel } from '../../core/kurin-label';
+import { isSeniorBranch, kurinBranchesName, kurinLabel } from '../../core/kurin-label';
 
 interface Skills {
   catalog: BadgeCatalogItemDto[];
@@ -877,7 +878,7 @@ export class MemberPage implements OnInit {
     const sheet = await this.sheets.create({
       header: 'Вивести з куреня',
       subHeader:
-        `Членство в ${inKurin(m.kurinNumber)} буде закрите. Людина, її проби, вмілості й відзначення ` +
+        `${membershipOf(m)} буде закрите. Людина, її проби, вмілості й відзначення ` +
         'лишаються — вони належать їй, а не куреню.',
       buttons: [
         { text: 'Вивести', role: 'destructive', data: 'leave' },
@@ -898,7 +899,7 @@ export class MemberPage implements OnInit {
       this.placing.set(false);
       return;
     }
-    await this.toasts.show(`Членство в ${inKurin(m.kurinNumber)} закрито.`);
+    await this.toasts.show(`${membershipOf(m)} закрито.`);
     try {
       // The card as it is now: the membership moves to «Раніше».
       const [member, memberships] = await Promise.all([this.data.member(key), this.data.memberships(key)]);

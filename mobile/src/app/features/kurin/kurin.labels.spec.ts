@@ -11,6 +11,7 @@ import {
   memberRoleTags,
   officeTag,
   officesIn,
+  membershipOf,
   roleTone,
   membershipPeriod,
   phoneHref,
@@ -297,5 +298,13 @@ describe('senior warning rows', () => {
     expect(rows[0].title).toBe('Друга пересторога');
     expect(rows[0].line).toContain('ще 10 дн.');
     expect(rows[1].line).toContain('минула');
+  });
+});
+
+describe('membership in a line of text', () => {
+  it('names a senior kurin by its own name and a УПЮ kurin by its number', () => {
+    expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto)).toBe('Членство (Орден Хрестоносців)');
+    expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: null } as MembershipDto)).toBe('Членство (5-й курінь УСП)');
+    expect(membershipOf({ branch: 'UPYu', kurinNumber: 47, kurinNamedAfter: 'Івана Богуна' } as MembershipDto)).toBe('Членство в курені ч. 47');
   });
 });

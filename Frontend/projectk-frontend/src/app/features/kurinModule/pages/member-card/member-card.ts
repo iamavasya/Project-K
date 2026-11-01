@@ -511,9 +511,14 @@ export class MemberCardComponent implements OnInit {
     }
 
     return this.memberships.reduce<Record<string, string>>((stamps, membership) => {
-      stamps[membership.kurinKey] = kurinLabel(membership.kurinNumber);
+      stamps[membership.kurinKey] = this.membershipKurinLabel(membership);
       return stamps;
     }, {});
+  }
+
+  /** A kurin in a line of text: a senior kurin by its own name, else by its number in its гілка. */
+  private membershipKurinLabel(membership: MembershipDto): string {
+    return (isSeniorBranch(membership.branch) && membership.kurinNamedAfter) || kurinLabel(membership.kurinNumber, membership.branch);
   }
 
   /** Курінь, у якому дивиться той, хто дивиться. Дії над членством можливі тільки в ньому. */
@@ -569,7 +574,7 @@ export class MemberCardComponent implements OnInit {
       header: 'Вивести з куреня',
       // Це не видалення людини, і про це варто сказати прямо: саме страх втратити історію
       // змушував провід тримати в курені тих, хто давно пішов.
-      message: `Членство (${kurinLabel(membership.kurinNumber)}) буде закрите. Людина, її проби, `
+      message: `Членство (${this.membershipKurinLabel(membership)}) буде закрите. Людина, її проби, `
         + 'вмілості й відзначення лишаються — вони належать їй, а не куреню.',
       icon: 'pi pi-sign-out',
       acceptLabel: 'Вивести',
