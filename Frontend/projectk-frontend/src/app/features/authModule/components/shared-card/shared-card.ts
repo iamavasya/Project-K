@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { environment } from '../../../../../environments/environment';
-import { kurinLabel } from '../../../../shared/functions/kurin-label.function';
+import { kurinInText } from '../../../../shared/functions/kurin-label.function';
 import { PublicCardDto } from '../../services/card-service/card.service';
 
 const AWARD_NAMES: Record<1 | 2 | 3 | 4, string> = {
@@ -30,7 +30,7 @@ export class SharedCardComponent {
 
   readonly kurinLine = computed(() =>
     (this.card().kurins ?? [])
-      .map(k => [kurinLabel(k.number), k.namedAfter ? `ім. ${k.namedAfter}` : null, k.groupName ? `гурток «${k.groupName}»` : null]
+      .map(k => [kurinInText(k.branches, k.number), k.namedAfter ? `ім. ${k.namedAfter}` : null, k.groupName ? `гурток «${k.groupName}»` : null]
         .filter(Boolean).join(' · '))
       .join('; '));
 

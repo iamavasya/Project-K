@@ -6,14 +6,16 @@ import { provideRouter } from '@angular/router';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { of, throwError } from 'rxjs';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
-import { FormerMemberStandingDto, MembershipCandidateDto, MembershipRequestDto, MembershipService } from '../../services/membership-service/membership.service';
+import { FormerMemberStandingDto, MembershipCandidateDto, MembershipRequestDto, MembershipRequestKurinDto, MembershipService } from '../../services/membership-service/membership.service';
+import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { TransfersComponent } from './transfers';
 
 describe('TransfersComponent', () => {
   let memberships: MockedObject<MembershipService>;
   let messages: MessageService;
 
-  const kurin = (number: number) => ({ kurinKey: `k${number}`, number, namedAfter: null });
+  const kurin = (number: number): MembershipRequestKurinDto => ({ kurinKey: `k${number}`, number, namedAfter: null, branches: [{ branch: KurinBranch.UPYu, number }] });
+  const seniorKurin = (number: number): MembershipRequestKurinDto => ({ kurinKey: `s${number}`, number, namedAfter: null, branches: [{ branch: KurinBranch.USP, number }] });
   const request = (over: Partial<MembershipRequestDto>): MembershipRequestDto => ({
     membershipRequestKey: 'r1',
     kind: 'Transfer',
@@ -81,6 +83,13 @@ describe('TransfersComponent', () => {
     expect(fixture.componentInstance.pendingIncoming()).toBe(1);
     expect(text(fixture)).toContain('к. ч. 15 просить перевести до себе');
     expect(text(fixture)).toContain('Перевести з к. ч. 7');
+  });
+
+  it('names a senior kurin by its гілка, not as the УПЮ kurin of the same number', () => {
+    const fixture = create([request({ fromKurin: kurin(5), toKurin: seniorKurin(5) })]);
+
+    expect(text(fixture)).toContain('5-й курінь УСП просить перевести до себе');
+    expect(text(fixture)).not.toContain('к. ч. 5 просить');
   });
 
   it('will not offer to approve a transfer while the person owes', () => {

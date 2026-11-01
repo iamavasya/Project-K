@@ -61,3 +61,10 @@ export function inKurin(kurinNumber: number | null | undefined): string {
 export function compareKurinNumbers(a: number | null | undefined, b: number | null | undefined): number {
   return (a ?? Number.MAX_SAFE_INTEGER) - (b ?? Number.MAX_SAFE_INTEGER);
 }
+
+/** A kurin in the middle of a sentence: «к. ч. 47», «підг. курінь», or a senior kurin by its гілки (web kurinInText). */
+export function kurinInText(branches: readonly KurinNumbering[] | null | undefined, fallbackNumber?: number | null): string {
+  return (branches ?? []).some((b) => isSeniorBranch(b.branch))
+    ? kurinBranchesName(branches)
+    : kurinLabel(branches?.[0]?.number ?? fallbackNumber);
+}

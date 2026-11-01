@@ -15,7 +15,7 @@ import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
-import { kurinLabel } from '../../../../shared/functions/kurin-label.function';
+import { kurinInText } from '../../../../shared/functions/kurin-label.function';
 import {
   CreateMembershipRequest,
   FormerMemberStandingDto,
@@ -72,7 +72,6 @@ export class TransfersComponent implements OnInit {
   private readonly messages = inject(MessageService);
   private readonly route = inject(ActivatedRoute);
 
-  readonly kurinLabel = kurinLabel;
   readonly kindOptions: { label: string; value: MembershipRequestKind }[] = [
     { label: 'Перевести до нас', value: 'Transfer' },
     { label: 'Прийняти ще й до нас', value: 'AlsoJoin' }
@@ -156,19 +155,20 @@ export class TransfersComponent implements OnInit {
   }
 
   kurinName(kurin: MembershipRequestKurinDto): string {
-    return kurin.namedAfter ? `${kurinLabel(kurin.number)} · ${kurin.namedAfter}` : kurinLabel(kurin.number);
+    const label = kurinInText(kurin.branches, kurin.number);
+    return kurin.namedAfter ? `${label} · ${kurin.namedAfter}` : label;
   }
 
   kindLine(request: MembershipRequestDto, incoming: boolean): string {
     if (incoming) {
       return request.kind === 'Transfer'
-        ? `${kurinLabel(request.toKurin.number)} просить перевести до себе`
-        : `${kurinLabel(request.toKurin.number)} просить прийняти ще й до себе`;
+        ? `${kurinInText(request.toKurin.branches, request.toKurin.number)} просить перевести до себе`
+        : `${kurinInText(request.toKurin.branches, request.toKurin.number)} просить прийняти ще й до себе`;
     }
 
     return request.kind === 'Transfer'
-      ? `Перевести з ${kurinLabel(request.fromKurin.number)}`
-      : `Прийняти ще й до нас (лишається в ${kurinLabel(request.fromKurin.number)})`;
+      ? `Перевести з ${kurinInText(request.fromKurin.branches, request.fromKurin.number)}`
+      : `Прийняти ще й до нас (лишається в ${kurinInText(request.fromKurin.branches, request.fromKurin.number)})`;
   }
 
   find(): void {
@@ -222,7 +222,7 @@ export class TransfersComponent implements OnInit {
 
   standsInLine(person: FormerMemberStandingDto): string {
     return person.standsIn.length
-      ? person.standsIn.map(k => kurinLabel(k.number)).join(', ')
+      ? person.standsIn.map(k => kurinInText(k.branches, k.number)).join(', ')
       : 'Ніде';
   }
 
@@ -259,7 +259,7 @@ export class TransfersComponent implements OnInit {
         this.sending.set(false);
         this.messages.add(sent.joined
           ? { severity: 'success', summary: joinedSummary, detail: `${name} тепер у вашому курені.` }
-          : { severity: 'success', summary: 'Запит надіслано', detail: `Відповідь дасть Звʼязковий ${kurinLabel(asked?.number ?? null)}. Запит діє 14 днів.` });
+          : { severity: 'success', summary: 'Запит надіслано', detail: `Відповідь дасть Звʼязковий ${kurinInText(asked?.branches, asked?.number)}. Запит діє 14 днів.` });
         done();
         this.load();
       },
@@ -275,8 +275,8 @@ export class TransfersComponent implements OnInit {
     this.confirmation.confirm({
       header: transfer ? 'Перевести людину?' : 'Прийняти ще й туди?',
       message: transfer
-        ? `${request.memberName}: з вашого куреня до ${kurinLabel(request.toKurin.number)}.`
-        : `${request.memberName}: ще й до ${kurinLabel(request.toKurin.number)}.`,
+        ? `${request.memberName}: з вашого куреня до ${kurinInText(request.toKurin.branches, request.toKurin.number)}.`
+        : `${request.memberName}: ще й до ${kurinInText(request.toKurin.branches, request.toKurin.number)}.`,
       icon: transfer ? 'pi pi-sign-out' : 'pi pi-user-plus',
       acceptButtonProps: transfer ? { label: 'Перевести', severity: 'danger' } : { label: 'Підтвердити' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
@@ -296,7 +296,7 @@ export class TransfersComponent implements OnInit {
   confirmDecline(request: MembershipRequestDto): void {
     this.confirmation.confirm({
       header: 'Відхилити запит?',
-      message: `${request.memberName}: запит від ${kurinLabel(request.toKurin.number)}.`,
+      message: `${request.memberName}: запит від ${kurinInText(request.toKurin.branches, request.toKurin.number)}.`,
       icon: 'pi pi-times-circle',
       acceptButtonProps: { label: 'Відхилити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
@@ -307,7 +307,7 @@ export class TransfersComponent implements OnInit {
   confirmCancel(request: MembershipRequestDto): void {
     this.confirmation.confirm({
       header: 'Скасувати запит?',
-      message: `${request.memberName}: запит до ${kurinLabel(request.fromKurin.number)}.`,
+      message: `${request.memberName}: запит до ${kurinInText(request.fromKurin.branches, request.fromKurin.number)}.`,
       icon: 'pi pi-times-circle',
       acceptButtonProps: { label: 'Скасувати запит', severity: 'danger' },
       rejectButtonProps: { label: 'Лишити', severity: 'secondary', outlined: true },

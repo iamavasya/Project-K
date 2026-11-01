@@ -44,7 +44,7 @@ public sealed class GetFormerStandingQueryHandler
                 if (!kurins.TryGetValue(membership.KurinKey, out var kurin))
                 {
                     var found = await _unitOfWork.Kurins.GetByKeyAsync(membership.KurinKey, cancellationToken);
-                    kurin = new MembershipRequestKurin(membership.KurinKey, found?.Number, found?.NamedAfter);
+                    kurin = MembershipRequestKurin.Of(membership.KurinKey, found);
                     kurins[membership.KurinKey] = kurin;
                 }
 

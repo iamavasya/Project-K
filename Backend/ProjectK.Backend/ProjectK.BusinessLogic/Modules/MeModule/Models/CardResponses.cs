@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using ProjectK.Common.Models.Enums;
+using ProjectK.Common.Models.Records;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Models;
 
@@ -9,7 +10,7 @@ namespace ProjectK.BusinessLogic.Modules.MeModule.Models;
 /// </summary>
 public sealed record CardAllowance(bool MayShare, bool IsAdult, [property: JsonConverter(typeof(JsonNumberEnumConverter<CardField>))] CardField MaxFields, bool MayLink);
 
-public sealed record PublicCardKurin(int? Number, string? NamedAfter, string? GroupName);
+public sealed record PublicCardKurin(int? Number, string? NamedAfter, string? GroupName, IReadOnlyList<KurinNumbering> Branches);
 
 /// <summary>One confirmed відзначення; <see cref="Level"/> is 1 to 4.</summary>
 public sealed record PublicCardAward(int Level, DateTime DateAcquired);

@@ -5,6 +5,7 @@ import { requestFeedback } from '../../../../shared/functions/request-feedback.f
 import { environment } from '../../../../../environments/environment';
 import { ClientCacheService } from '../client-cache/client-cache.service';
 import { MEMBER_CACHE_PREFIX, GROUP_CACHE_PREFIX, KURIN_CACHE_PREFIX } from '../client-cache/cache-policy';
+import { KurinNumbering } from '../../models/enums/kurin-branch.enum';
 
 /**
  * Той, хто був у курені й пішов. Курінь пам'ятає рівно свій відтинок: хто, в якому гуртку, з коли
@@ -30,6 +31,7 @@ export interface MembershipRequestKurinDto {
   kurinKey: string;
   number: number | null;
   namedAfter: string | null;
+  branches: KurinNumbering[];
 }
 
 /**

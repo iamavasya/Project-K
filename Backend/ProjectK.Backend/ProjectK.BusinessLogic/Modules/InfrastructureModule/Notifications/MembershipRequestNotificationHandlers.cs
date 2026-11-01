@@ -30,7 +30,7 @@ internal static class MembershipRequestNotices
     public static async Task<string> KurinAsync(IUnitOfWork unitOfWork, Guid kurinKey, CancellationToken cancellationToken)
     {
         var kurin = await unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken);
-        return kurin?.Number is { } number ? $"к. ч. {number}" : "інший курінь";
+        return kurin is null ? "інший курінь" : KurinBranchNames.InText(kurin);
     }
 }
 

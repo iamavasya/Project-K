@@ -471,6 +471,7 @@ export interface MembershipRequestKurinDto {
   kurinKey: string;
   number: number | null;
   namedAfter: string | null;
+  branches: KurinNumbering[];
 }
 
 /** `owedToLeave`: for the answering kurin on a pending «перевести» — above zero, it cannot be approved. */

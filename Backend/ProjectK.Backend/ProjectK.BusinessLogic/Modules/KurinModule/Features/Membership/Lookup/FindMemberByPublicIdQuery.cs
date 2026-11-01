@@ -58,7 +58,7 @@ public sealed class FindMemberByPublicIdQueryHandler
         foreach (var membership in standing.Where(m => m.KurinKey != request.KurinKey))
         {
             var kurin = await _kurinData.Kurins.GetByKeyAsync(membership.KurinKey, cancellationToken);
-            elsewhere.Add(new MembershipRequestKurin(membership.KurinKey, kurin?.Number, kurin?.NamedAfter));
+            elsewhere.Add(MembershipRequestKurin.Of(membership.KurinKey, kurin));
         }
 
         return new ServiceResult<MembershipCandidate>(

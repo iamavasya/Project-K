@@ -140,7 +140,7 @@ public sealed class MemberCards
             kurins = (await _unitOfWork.Memberships.GetRecordsForMemberAsync(memberKey, cancellationToken))
                 .Where(m => m.IsCurrent)
                 .OrderBy(m => m.KurinNumber)
-                .Select(m => new PublicCardKurin(m.KurinNumber, m.KurinNamedAfter, m.GroupName))
+                .Select(m => new PublicCardKurin(m.KurinNumber, m.KurinNamedAfter, m.GroupName, m.Numbering))
                 .ToList();
         }
 
