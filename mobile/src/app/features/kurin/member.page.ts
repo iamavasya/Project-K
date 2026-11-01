@@ -489,7 +489,7 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
                       @else { <ion-icon class="thumb" slot="start" name="medal" aria-hidden="true" /> }
                       <ion-label class="ion-text-wrap">
                         <h3>{{ row.title }}</h3>
-                        <p>{{ shortDate(dateOnly(row.award.dateAcquired)) }}</p>
+                        <p>{{ row.section ? row.section + ' · ' : '' }}{{ shortDate(dateOnly(row.award.dateAcquired)) }}</p>
                         @if (row.award.note) { <p>{{ row.award.note }}</p> }
                       </ion-label>
                     </ion-item>

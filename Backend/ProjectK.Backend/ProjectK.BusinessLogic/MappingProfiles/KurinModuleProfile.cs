@@ -147,7 +147,7 @@ public class KurinModuleProfile : Profile
         // Member Award Mapping
         CreateMap<MemberAward, MemberAwardDto>()
             .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src =>
-                $"/api/awards/images/{(int)src.Level}?colored={src.Status == ProjectK.Common.Models.Enums.BadgeProgressStatus.Confirmed}"));
+                src.Level == null ? null : $"/api/awards/images/{(int)src.Level}?colored={src.Status == ProjectK.Common.Models.Enums.BadgeProgressStatus.Confirmed}"));
 
         // Leadership History Mapping
         CreateMap<LeadershipHistory, LeadershipHistoryDto>()

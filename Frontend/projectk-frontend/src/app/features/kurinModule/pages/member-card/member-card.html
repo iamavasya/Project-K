@@ -306,11 +306,13 @@
         }
 
         <ng-template [appTileDef]="{ key: 'degrees', span: 'half', label: 'Ступені' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
             <app-member-degrees-tile
                 [histories]="member.plastLevelHistories"
                 [senior]="isSeniorKurinCard"
                 [canEdit]="canEditMember"
                 (edit)="onEditMember()" />
+            </section>
         </ng-template>
 
         @if (isSeniorKurinCard) {
@@ -342,6 +344,7 @@
         </ng-template>
 
         <ng-template [appTileDef]="{ key: 'senior-awards', span: 'half', label: 'Відзначення' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
             <app-member-senior-awards-tile
                 [awards]="member.awards ?? []"
                 [canAdd]="canEditMember"
@@ -349,6 +352,7 @@
                 [canRemove]="abilities.awards.remove"
                 (saveAward)="onSaveAward($event)"
                 (deleteAward)="onDeleteAward($event)" />
+            </section>
         </ng-template>
 
         <ng-template [appTileDef]="{ key: 'senior-warnings', span: 'half', label: 'Перестороги' }">

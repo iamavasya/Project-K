@@ -194,4 +194,20 @@ public class SeniorAwardHandlerTests
         validator.Validate(Command(MemberAwardLevel.First, "orden-sv-yuriia-bronza")).IsValid.Should().BeFalse();
         validator.Validate(Command(null, null)).IsValid.Should().BeFalse();
     }
+
+    [Fact]
+    public void ASeniorAward_IsReadWithItsCatalogueId_AndNoLevelPicture()
+    {
+        var mapper = new MapperConfiguration(cfg =>
+        {
+            cfg.ConstructServicesUsing(FakeBlobReadLinks.Resolvers);
+            cfg.AddProfile(new ProjectK.BusinessLogic.MappingProfiles.KurinModuleProfile());
+        }, Microsoft.Extensions.Logging.LoggerFactory.Create(_ => { })).CreateMapper();
+
+        var dto = mapper.Map<MemberAwardDto>(new MemberAward { CatalogId = "orden-sv-yuriia-bronza", Status = BadgeProgressStatus.Confirmed });
+
+        dto.CatalogId.Should().Be("orden-sv-yuriia-bronza");
+        dto.Level.Should().BeNull();
+        dto.ImageUrl.Should().BeNull();
+    }
 }

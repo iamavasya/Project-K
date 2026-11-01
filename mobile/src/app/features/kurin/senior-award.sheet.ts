@@ -19,7 +19,7 @@ import {
 } from '@ionic/angular';
 import { apiErrorText } from '../../core/api';
 import { Toasts } from '../../core/toast';
-import { toDateOnly } from './kurin.labels';
+import { honourSection, toDateOnly } from './kurin.labels';
 import { CatalogHonour, MemberAwardDto } from './kurin.models';
 import { KurinApi } from './kurin.service';
 
@@ -88,7 +88,7 @@ import { KurinApi } from './kurin.service';
               data-testid="senior-award-item"
             >
               @for (item of options(); track item.id) {
-                <ion-select-option [value]="item.id">{{ item.title }}</ion-select-option>
+                <ion-select-option [value]="item.id">{{ item.title }}{{ section(item) ? ' · ' + section(item) : '' }}</ion-select-option>
               }
             </ion-select>
           </ion-item>
@@ -133,6 +133,7 @@ export class SeniorAwardSheet implements OnInit {
   honours: CatalogHonour[] = [];
 
   protected readonly today = toDateOnly(new Date());
+  protected readonly section = honourSection;
   protected readonly catalogId = signal<string | null>(null);
   protected readonly date = signal('');
   protected readonly note = signal('');

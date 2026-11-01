@@ -78,7 +78,7 @@ describe('MemberSeniorAwardsTileComponent', () => {
 
   it('у вибір — лише відзначення з каталогу, без ступенів', () => {
     render({ canAdd: true, ownCard: true, canRemove: false });
-    expect(component.options().map(o => o.id)).toEqual(['orden-sv-yuriia-bronza', 'usp-hramota-podiaky']);
+    expect(component.options()).toEqual([{ label: 'УСП', items: [honours[2], honours[3]] }]);
   });
 
   it('людина вносить своє з каталогу: рівня немає, лише id', () => {

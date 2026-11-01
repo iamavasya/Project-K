@@ -11,7 +11,7 @@ import { MemberAwardDto } from '../../../../models/member-award.dto';
 import { HonoursService } from '../../../../services/honours-service/honours.service';
 import { UpsertMemberAwardRequest } from '../../../../services/member-award-service/member-award.service';
 import { parseDateOnlyString, toDateOnlyString } from '../../../../functions/to-date-only-string.function';
-import { seniorAwardRows } from './senior-awards.function';
+import { seniorAwardOptions, seniorAwardRows } from './senior-awards.function';
 
 /**
  * Відзначення старшого пластуна: грамоти, ордени, хрести з каталогу. Вносить людина сама або провід
@@ -39,7 +39,7 @@ export class MemberSeniorAwardsTileComponent {
   readonly deleteAward = output<string>();
 
   readonly rows = computed(() => seniorAwardRows(this.awards(), this.honours()));
-  readonly options = computed(() => this.honours().filter(item => item.kind === 'Award'));
+  readonly options = computed(() => seniorAwardOptions(this.honours()));
   readonly today = new Date();
 
   dialogVisible = false;
@@ -60,7 +60,8 @@ export class MemberSeniorAwardsTileComponent {
 
     this.editing = award;
     this.catalogId = award?.catalogId ?? null;
-    this.dateAcquired = parseDateOnlyString(award?.dateAcquired ?? null) ?? (award ? null : new Date());
+    // Today at midnight: «now» would be past the picker's maxDate and show nothing.
+    this.dateAcquired = parseDateOnlyString(award?.dateAcquired ?? null) ?? (award ? null : new Date(new Date().setHours(0, 0, 0, 0)));
     this.note = award?.note ?? '';
     this.dialogVisible = true;
   }

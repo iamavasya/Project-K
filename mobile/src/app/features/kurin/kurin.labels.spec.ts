@@ -336,8 +336,8 @@ describe('ступені й старші відзначення з катало�
       { ...base, memberAwardKey: 'a', level: 'First' as const, catalogId: null, dateAcquired: '2015-01-01T00:00:00' },
       { ...base, memberAwardKey: 'b', level: null, catalogId: 'orden-sv-yuriia-bronza', dateAcquired: '2018-04-23T00:00:00' },
     ];
-    expect(seniorAwardRows(awards, [...honours]).map((r) => [r.award.memberAwardKey, r.title, r.imageUrl])).toEqual([
-      ['b', 'Орден святого Юрія в бронзі', 'https://catalog.test/o.png'],
+    expect(seniorAwardRows(awards, [...honours]).map((r) => [r.award.memberAwardKey, r.title, r.imageUrl, r.section])).toEqual([
+      ['b', 'Орден святого Юрія в бронзі', 'https://catalog.test/o.png', 'УСП'],
     ]);
     expect(awardGroups(awards).map((g) => g.latest.memberAwardKey)).toEqual(['a']);
   });

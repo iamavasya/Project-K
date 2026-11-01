@@ -893,6 +893,15 @@ export interface SeniorAwardRow {
   award: MemberAwardDto;
   title: string;
   imageUrl: string;
+  /** «УСП», «УПС» or «Хрести»: the same грамота is in both улади (web honourSection). */
+  section: string;
+}
+
+/** Where a senior відзначення belongs: its улад, or the хрести, which are for everyone. */
+export function honourSection(item: CatalogHonour | undefined): string {
+  if (!item) return '';
+  if (item.group === 'khresty') return 'Хрести';
+  return item.ulad === 'ups' ? 'УПС' : item.ulad === 'usp' ? 'УСП' : '';
 }
 
 /** The senior відзначення, newest first, named and drawn from the catalogue (web seniorAwardRows). */
@@ -903,6 +912,6 @@ export function seniorAwardRows(awards: MemberAwardDto[] | null | undefined, hon
     .sort((a, b) => b.dateAcquired.localeCompare(a.dateAcquired))
     .map((award) => {
       const item = byId.get(award.catalogId!);
-      return { award, title: item?.title ?? award.catalogId!, imageUrl: item?.imageUrl ?? '' };
+      return { award, title: item?.title ?? award.catalogId!, imageUrl: item?.imageUrl ?? '', section: honourSection(item) };
     });
 }
