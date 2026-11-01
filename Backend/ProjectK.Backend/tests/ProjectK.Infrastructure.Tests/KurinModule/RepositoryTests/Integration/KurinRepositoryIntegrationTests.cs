@@ -164,6 +164,23 @@ public class KurinRepositoryIntegrationTests
     }
 
     [Fact]
+    public async Task TheSeederReset_ShouldTakeOnlyTheYouthKurin1_NeverASeniorOne()
+    {
+        using var context = CreateInMemoryDbContext();
+        var senior = new Kurin(1, KurinBranch.USP);
+        context.Kurins.Add(senior);
+        await context.SaveChangesAsync();
+
+        Assert.Null(await ProjectK.Infrastructure.Seeding.DataSeeder.FindSeederKurinAsync(context));
+
+        var youth = new Kurin(1);
+        context.Kurins.Add(youth);
+        await context.SaveChangesAsync();
+
+        Assert.Equal(youth.KurinKey, (await ProjectK.Infrastructure.Seeding.DataSeeder.FindSeederKurinAsync(context))!.KurinKey);
+    }
+
+    [Fact]
     public async Task GetAllAsync_ShouldReturnCorrectEntities()
     {
         // Arrange

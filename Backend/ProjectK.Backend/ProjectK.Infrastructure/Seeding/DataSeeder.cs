@@ -137,15 +137,21 @@ public static class DataSeeder
             .LogWarning("No administrator account exists yet; the first visitor is sent to the setup wizard to create one.");
     }
 
-    private static async Task ResetKurin1DataAsync(AppDbContext dbContext, UserManager<AppUser> userManager)
-    {
-        // The seeder's kurin is number 1 of Україна. One moved to another край by hand on a dev
-        // database still holds the seeded accounts, and left alone it made the next run reuse them
-        // on top of the old rows; with no Ukrainian kurin 1, that one is the seeder's.
-        var kurin1 = await dbContext.Kurins
-            .Where(k => k.Number == 1)
+    /// <summary>
+    /// The kurin the reset wipes: УПЮ kurin 1 of Україна. One moved to another край by hand on a dev
+    /// database still holds the seeded accounts, and left alone it made the next run reuse them on
+    /// top of the old rows; with no Ukrainian kurin 1, that one is the seeder's. A УСП or УПС kurin 1
+    /// is someone else's and never matches: numbers are counted apart in each гілка.
+    /// </summary>
+    internal static Task<Kurin?> FindSeederKurinAsync(AppDbContext dbContext)
+        => dbContext.Kurins
+            .Where(k => k.Branch == KurinBranch.UPYu && k.Number == 1)
             .OrderBy(k => k.KraiCode == Krai.Ukraine ? 0 : 1)
             .FirstOrDefaultAsync();
+
+    private static async Task ResetKurin1DataAsync(AppDbContext dbContext, UserManager<AppUser> userManager)
+    {
+        var kurin1 = await FindSeederKurinAsync(dbContext);
         if (kurin1 == null)
         {
             return;

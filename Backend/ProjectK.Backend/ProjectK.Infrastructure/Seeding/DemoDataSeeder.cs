@@ -244,7 +244,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
 
     private async Task<Kurin> EnsureKurinAsync(CancellationToken cancellationToken)
     {
-        var kurin = await _dbContext.Kurins.FirstOrDefaultAsync(k => k.KraiCode == Krai.Ukraine && k.Number == KurinNumber, cancellationToken);
+        var kurin = await _dbContext.Kurins.FirstOrDefaultAsync(k => k.KraiCode == Krai.Ukraine && k.Branch == KurinBranch.UPYu && k.Number == KurinNumber, cancellationToken);
         if (kurin == null)
         {
             kurin = new Kurin(KurinNumber);

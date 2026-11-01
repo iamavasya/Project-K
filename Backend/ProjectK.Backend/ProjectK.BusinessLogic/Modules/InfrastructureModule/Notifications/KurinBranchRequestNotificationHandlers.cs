@@ -70,21 +70,37 @@ public sealed class KurinBranchRequestSubmittedEventHandler
     }
 }
 
-/// <summary>The one who sent the request hears how it was settled.</summary>
+/// <summary>
+/// The one who sent the request hears how it was settled. Runs after the decision is saved, so a
+/// failed notification must not turn an applied decision into an error for the administrator.
+/// </summary>
 public sealed class KurinBranchRequestReviewedEventHandler
     : INotificationHandler<DomainEventNotification<KurinBranchRequestReviewed>>
 {
     private readonly INotificationService _notifications;
+    private readonly ILogger<KurinBranchRequestReviewedEventHandler> _logger;
 
-    public KurinBranchRequestReviewedEventHandler(INotificationService notifications)
+    public KurinBranchRequestReviewedEventHandler(INotificationService notifications, ILogger<KurinBranchRequestReviewedEventHandler> logger)
     {
         _notifications = notifications;
+        _logger = logger;
     }
 
     public async Task Handle(DomainEventNotification<KurinBranchRequestReviewed> notification, CancellationToken cancellationToken)
     {
         var raised = notification.Event;
-        await _notifications.NotifyAsync(
+        try
+        {
+            await Notify(raised, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Kurin branch request {RequestKey} settled, but the requester could not be told", raised.KurinBranchRequestKey);
+        }
+    }
+
+    private Task Notify(KurinBranchRequestReviewed raised, CancellationToken cancellationToken)
+        => _notifications.NotifyAsync(
             new NotificationRequest
             {
                 RecipientUserKey = raised.RequesterUserKey,
@@ -99,5 +115,4 @@ public sealed class KurinBranchRequestReviewedEventHandler
                 DeduplicationKey = $"kurin-branch-request-reviewed:{raised.KurinBranchRequestKey}"
             },
             cancellationToken);
-    }
 }
