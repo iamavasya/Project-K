@@ -323,7 +323,7 @@
                         <dt>Роль</dt>
                         <dd>
                             @for (office of currentOffices; track office.leadershipHistoryKey) {
-                            <p-tag [value]="officeLabel(office.role)" [severity]="officeSeverity(office.role)" />
+                            <p-tag [value]="officeLabel(office)" [severity]="officeSeverity(office.role)" />
                             } @empty {
                             <span class="member-section-subtitle">—</span>
                             }
@@ -375,7 +375,7 @@
                 <ul class="space-y-2.5">
                     @for (office of staffOffices; track office.leadershipHistoryKey) {
                     <li class="flex flex-wrap items-center gap-2">
-                        <p-tag [value]="officeLabel(office.role)" [severity]="officeSeverity(office.role)" />
+                        <p-tag [value]="officeLabel(office)" [severity]="officeSeverity(office.role)" />
                         <span class="member-section-subtitle text-sm">з {{ office.startDate | date: 'yyyy' }}</span>
                     </li>
                     }

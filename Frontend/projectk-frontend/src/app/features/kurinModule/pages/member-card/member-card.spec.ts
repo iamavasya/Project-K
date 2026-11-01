@@ -30,6 +30,7 @@ import { MemberProfileVerificationStatus } from '../../models/enums/member-profi
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
+import { actInKurin, rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
 
 describe('MemberCardComponent', () => {
   let fixture: ComponentFixture<MemberCardComponent>;
@@ -842,6 +843,25 @@ describe('MemberCardComponent', () => {
       expect(element.querySelector('[data-testid="senior-kurin-tile"]')).not.toBeNull();
       expect(element.querySelector('[data-testid="senior-awards-tile"]')).not.toBeNull();
       expect(element.querySelector('[data-testid="senior-warnings-tile"]')).not.toBeNull();
+    });
+
+    it('ролі з іншого куреня на картці немає, а свою курінь називає своїм словом', () => {
+      rememberKurinRoleNames('kurin1', { Pysar: 'Скриптор' });
+      memberServiceSpy.getByKey.mockReturnValue(of({
+        ...member,
+        leadershipHistories: [
+          { leadershipHistoryKey: 'h1', leadershipKey: 'l1', role: 'Pysar', leadershipType: 'Kurin', kurinKey: 'kurin1', startDate: '2025-09-01', endDate: null, member: null as never },
+          { leadershipHistoryKey: 'h2', leadershipKey: 'l2', role: 'Kurinnuy', leadershipType: 'Kurin', kurinKey: 'kurin2', startDate: '2025-09-01', endDate: null, member: null as never }
+        ]
+      }));
+      memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.USP)]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.currentOffices.map(o => o.role)).toEqual(['Pysar']);
+      expect(component.officeLabel(component.currentOffices[0])).toBe('Скриптор');
+      actInKurin(null);
     });
 
     it('у юнацькому курені все на місці', () => {

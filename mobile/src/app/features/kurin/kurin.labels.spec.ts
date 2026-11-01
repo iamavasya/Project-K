@@ -10,6 +10,7 @@ import {
   memberBranch,
   memberRoleTags,
   officeTag,
+  officesIn,
   roleTone,
   membershipPeriod,
   phoneHref,
@@ -262,6 +263,19 @@ describe('kurin role names', () => {
     expect(roleName('Pysar', 'chorty')).toBe('Літописець');
     actInKurin(null);
     expect(roleName('Pysar')).toBe('Писар');
+  });
+
+  it('names an office by its own kurin and keeps offices of other kurins off this card', () => {
+    rememberKurinRoleNames('orden', { Pysar: 'Скриптор' });
+    actInKurin('orden');
+    const office = (role: string, kurinKey: string) =>
+      ({ leadershipHistoryKey: role + kurinKey, leadershipKey: 'l', role, kurinKey, startDate: '2026-01-01', endDate: null }) as never;
+    const held = [office('Pysar', 'orden'), office('Kurinnyi', 'plain')];
+
+    expect(officeTag(held[0])).toEqual({ label: 'Скриптор', tone: roleTone('Pysar') });
+    expect(officeTag(office('Pysar', 'plain')).label).toBe('Писар');
+    expect(officesIn(held, 'orden').map((h) => h.role)).toEqual(['Pysar']);
+    expect(memberRoleTags({ leadershipHistories: [office('Pysar', 'plain')] } as never)).toEqual([{ label: 'Писар', tone: roleTone('Pysar') }]);
   });
 });
 

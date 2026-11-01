@@ -234,8 +234,18 @@ export function roleTone(role: string): TagTone {
 }
 
 /** An office as a tag; an ended one is grey whatever it was (web leadershipRoleSeverity). */
-export function officeTag(history: Pick<LeadershipHistoryDto, 'role' | 'endDate'>): RoleTag {
-  return { label: roleName(history.role), tone: history.endDate ? 'secondary' : roleTone(history.role) };
+export function officeTag(history: Pick<LeadershipHistoryDto, 'role' | 'endDate' | 'kurinKey'>): RoleTag {
+  return { label: officeName(history), tone: history.endDate ? 'secondary' : roleTone(history.role) };
+}
+
+/** Named by the kurin the office is in, not by the one being read (web officeLabel). */
+export function officeName(history: Pick<LeadershipHistoryDto, 'role' | 'kurinKey'>): string {
+  return history.kurinKey ? roleName(history.role, history.kurinKey) : roleName(history.role);
+}
+
+/** The current offices held in one kurin; an office with no kurin known counts (web inThisKurin). */
+export function officesIn(histories: LeadershipHistoryDto[] | null | undefined, kurinKey: string | null | undefined): LeadershipHistoryDto[] {
+  return currentOffices(histories).filter((h) => !h.kurinKey || !kurinKey || h.kurinKey === kurinKey);
 }
 
 /**
@@ -245,7 +255,7 @@ export function officeTag(history: Pick<LeadershipHistoryDto, 'role' | 'endDate'
 export function memberRoleTags(member: MemberLookupDto): RoleTag[] {
   const active = currentOffices(member.leadershipHistories);
   const tags = active.map((h) => ({
-    label: (h.leadershipType ?? '').toLowerCase() === 'group' && h.groupName ? `${roleName(h.role)}: ${h.groupName}` : roleName(h.role),
+    label: (h.leadershipType ?? '').toLowerCase() === 'group' && h.groupName ? `${officeName(h)}: ${h.groupName}` : officeName(h),
     tone: roleTone(h.role),
   }));
   const mentored = member.mentoredGroupNames ?? [];

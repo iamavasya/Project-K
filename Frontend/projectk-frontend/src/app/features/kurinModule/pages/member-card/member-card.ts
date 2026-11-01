@@ -437,7 +437,7 @@ export class MemberCardComponent implements OnInit {
   /** Чинні ролі людини — у проводі куреня й у КВ, назвами, які дав їм курінь. */
   get currentOffices(): LeadershipHistoryDto[] {
     return (this.member?.leadershipHistories ?? [])
-      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() !== 'group');
+      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() !== 'group' && this.inThisKurin(office));
   }
 
   /** Перестороги на плитці: чинні першими, далі останні з минулих. */
@@ -466,7 +466,7 @@ export class MemberCardComponent implements OnInit {
    */
   get staffOffices(): LeadershipHistoryDto[] {
     return (this.member?.leadershipHistories ?? [])
-      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() === 'kv');
+      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() === 'kv' && this.inThisKurin(office));
   }
 
   /** Гуртки, за якими людина закріплена виховником у курені, де її дивимось. */
@@ -487,8 +487,14 @@ export class MemberCardComponent implements OnInit {
     return this.mentoredGroupNames.map(name => ({ groupKey: null, name }));
   }
 
-  officeLabel(role: string): string {
-    return leadershipRoleDisplayName(role);
+  /** Named by the kurin the office is in: a Писар of one kurin is not another kurin's «Скриптор». */
+  officeLabel(office: LeadershipHistoryDto): string {
+    return leadershipRoleDisplayName(office.role, office.kurinKey ?? undefined);
+  }
+
+  /** Whether the office is in the kurin the card is read in; one with no kurin known counts. */
+  private inThisKurin(office: LeadershipHistoryDto): boolean {
+    return !office.kurinKey || !this.member?.kurinKey || office.kurinKey === this.member.kurinKey;
   }
 
   officeSeverity(role: string): RoleSeverity {

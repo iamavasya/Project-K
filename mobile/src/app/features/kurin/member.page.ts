@@ -45,7 +45,6 @@ import {
   awardTitle,
   awardWeight,
   bornOn,
-  currentOffices,
   dateOnly,
   duesAmountLabel,
   duesMoney,
@@ -62,6 +61,7 @@ import {
   progressStatus,
   quarterLabel,
   officeTag,
+  officesIn,
   roleTone,
   type RoleTag,
   shortDate,
@@ -704,7 +704,7 @@ export class MemberPage implements OnInit {
   });
   /** Every current role but a гурток's, by the names the kurin gave them. */
   protected readonly seniorOffices = computed(() =>
-    currentOffices(this.memberValue()?.leadershipHistories).filter((h) => (h.leadershipType ?? '').toLowerCase() !== 'group'),
+    officesIn(this.memberValue()?.leadershipHistories, this.memberValue()?.kurinKey).filter((h) => (h.leadershipType ?? '').toLowerCase() !== 'group'),
   );
   protected readonly seniorWarnings = computed(() => warningRows(this.memberValue()?.warnings));
 
@@ -718,7 +718,7 @@ export class MemberPage implements OnInit {
   }
 
   protected readonly staffOffices = computed(() =>
-    currentOffices(this.memberValue()?.leadershipHistories).filter((h) => (h.leadershipType ?? '').toLowerCase() === 'kv'),
+    officesIn(this.memberValue()?.leadershipHistories, this.memberValue()?.kurinKey).filter((h) => (h.leadershipType ?? '').toLowerCase() === 'kv'),
   );
   /** A гурток opens only from the kurin the viewer is in (another kurin's page would refuse them). */
   protected readonly mentoredGroups = computed(() => {
