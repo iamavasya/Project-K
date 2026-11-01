@@ -391,6 +391,22 @@ public sealed class KurinReportDataServiceTests
         report!.Staff.Single().LeadershipHistory.Single().RoleLabel.Should().Be("Впорядник");
     }
 
+    /// <summary>A senior kurin's own names for its roles, as on its screens: its Писар is «Скриптор» in the звіт too.</summary>
+    [Fact]
+    public async Task ShouldNameOfficesByTheKurinsOwnRoleNames()
+    {
+        var scribe = Person("Федорів", withAccount: true);
+        GiveOffice(scribe, LeadershipType.KV, LeadershipRole.Pysar);
+        var mentor = Person("Виховна", withAccount: true);
+        GiveOffice(mentor, LeadershipType.KV, LeadershipRole.Vykhovnyk);
+        _kurin.RoleNames = """{"Pysar":"Скриптор"}""";
+
+        var report = await Build(KurinBranch.USP);
+
+        report!.Staff.SelectMany(member => member.LeadershipHistory).Select(history => history.RoleLabel)
+            .Should().BeEquivalentTo("Скриптор", "Впорядник");
+    }
+
     /// <summary>
     /// A гуртковий's office is scoped to a гурток and says which. A курінний's and a виховник's are
     /// scoped to the kurin the звіт is already about, so they say nothing — they used to print the

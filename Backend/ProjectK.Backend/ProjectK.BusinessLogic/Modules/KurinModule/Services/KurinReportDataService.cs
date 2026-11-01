@@ -93,6 +93,8 @@ public sealed class KurinReportDataService
         var tagsShown = members.Any(member => showsTagsOf(member.UserKey, GroupOf(source, member.MemberKey)));
         var tagNamesByMember = tagsShown ? await TagNamesByMemberAsync(kurinKey, cancellationToken) : new Dictionary<Guid, IReadOnlyList<string>>();
 
+        // A senior kurin's own names for its roles, as its screens show them: its Писар is its «Скриптор» here too.
+        var roleNames = KurinRoleNames.Read(kurin.RoleNames);
         var reportMembers = new List<KurinReportMember>(members.Count);
         foreach (var member in members)
         {
@@ -104,6 +106,7 @@ public sealed class KurinReportDataService
                 groupNamesByKey,
                 mentoredGroupsByUserKey,
                 showsTagsOf(member.UserKey, GroupOf(source, member.MemberKey)) ? tagNamesByMember.GetValueOrDefault(member.MemberKey) ?? [] : [],
+                roleNames,
                 cancellationToken));
         }
 
@@ -249,6 +252,7 @@ public sealed class KurinReportDataService
         IReadOnlyDictionary<Guid, string> groupNamesByKey,
         IReadOnlyDictionary<Guid, IReadOnlyList<string>> mentoredGroupsByUserKey,
         IReadOnlyList<string> tagNames,
+        IReadOnlyDictionary<LeadershipRole, string> roleNames,
         CancellationToken cancellationToken)
     {
         return new KurinReportMember(
@@ -350,7 +354,7 @@ public sealed class KurinReportDataService
                     item.Leadership.Type,
                     KurinReportTerminology.LeadershipType(item.Leadership.Type),
                     item.Role,
-                    KurinReportTerminology.LeadershipRole(item.Role),
+                    roleNames.GetValueOrDefault(item.Role) ?? KurinReportTerminology.LeadershipRole(item.Role),
                     ResolveLeadershipScopeName(item.Leadership, groupNamesByKey),
                     item.StartDate,
                     item.EndDate))
