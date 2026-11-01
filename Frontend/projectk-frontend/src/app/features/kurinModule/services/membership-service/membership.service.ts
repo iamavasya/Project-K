@@ -137,6 +137,11 @@ export class MembershipService {
     return this.http.get<MembershipRequestsDto>(`${this.apiUrl}/${kurinKey}/membership-requests`);
   }
 
+  /** Скільки запитів чекає відповіді куреня: лише число, для крапки в меню. */
+  waitingRequests(kurinKey: string): Observable<number> {
+    return this.http.get<number>(`${this.apiUrl}/${kurinKey}/membership-requests/waiting`);
+  }
+
   /** Колишні члени для Звʼязкового — з куренями, де вони стоять зараз. */
   formerStanding(kurinKey: string): Observable<FormerMemberStandingDto[]> {
     return this.http.get<FormerMemberStandingDto[]>(`${this.apiUrl}/${kurinKey}/membership-requests/former`);

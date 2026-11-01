@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Canc
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Create;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Decide;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Former;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Waiting;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
@@ -321,6 +322,30 @@ public class MembershipRequestTests
 
         result.Type.Should().Be(ResultType.Conflict);
         result.ErrorCode.Should().Be("RequestClosed");
+    }
+
+    [Fact]
+    public async Task TheMenusDot_CountsWaitingRequests_WithoutReadingDebt()
+    {
+        ActingIn(_kurinA);
+        _requests.Setup(r => r.CountOpenToAnswerAsync(_kurinA, Now.UtcDateTime, It.IsAny<CancellationToken>())).ReturnsAsync(2);
+
+        var result = await new CountWaitingMembershipRequestsQueryHandler(_unitOfWork.Object, _user.Object, _time)
+            .Handle(new CountWaitingMembershipRequestsQuery(_kurinA), default);
+
+        result.Data.Should().Be(2);
+        _dues.Verify(d => d.GetOwedAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task TheMenusDot_OfAnotherKurin_IsForbidden()
+    {
+        ActingIn(_kurinB);
+
+        var result = await new CountWaitingMembershipRequestsQueryHandler(_unitOfWork.Object, _user.Object, _time)
+            .Handle(new CountWaitingMembershipRequestsQuery(_kurinA), default);
+
+        result.Type.Should().Be(ResultType.Forbidden);
     }
 
     [Fact]

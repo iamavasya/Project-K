@@ -136,6 +136,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid, Guid, KurinController.MoveToGroupRequest>>(nameof(KurinController.MoveToGroup), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.MembershipRequests), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.FormerStanding), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.WaitingMembershipRequests), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<KurinController, Guid, KurinController.CreateMembershipRequestRequest>>(nameof(KurinController.CreateMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.ApproveMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.DeclineMembershipRequest), AuthorizationPolicies.RequireKurinManagement);

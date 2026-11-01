@@ -168,10 +168,7 @@ export class SidebarMenuComponent implements OnChanges {
       return of(0);
     }
 
-    return this.memberships.requests(kurinKey).pipe(
-      map(requests => requests.incoming.filter(r => r.status === 'Pending').length),
-      catchError(() => of(0))
-    );
+    return this.memberships.waitingRequests(kurinKey).pipe(catchError(() => of(0)));
   }
 
   private buildItems(state: AuthState | null, isYouthKurin = true, pendingWaitlist = 0, duesGroups: DuesGroupLinkDto[] = [], requestsWaiting = 0): MenuItem[] {

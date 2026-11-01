@@ -25,6 +25,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Cancel;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Create;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Former;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Waiting;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Decide;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
@@ -563,6 +564,17 @@ public class KurinController : ControllerBase
     public async Task<IActionResult> MembershipRequests(Guid kurinKey)
     {
         var response = await _mediator.Send(new GetMembershipRequestsQuery(kurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>How many requests from other kurins wait for this kurin's answer: the menu's dot.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpGet("{kurinKey:guid}/membership-requests/waiting")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+    public async Task<IActionResult> WaitingMembershipRequests(Guid kurinKey)
+    {
+        var response = await _mediator.Send(new CountWaitingMembershipRequestsQuery(kurinKey));
         return response.ToActionResult(this);
     }
 

@@ -27,6 +27,11 @@ public class MembershipRequestRepository : BaseEntityRepository<MembershipReques
             .Where(r => r.MemberKey == memberKey && r.ToKurinKey == toKurinKey && r.Status == MembershipRequestStatus.Pending)
             .ToListAsync(cancellationToken);
 
+    public Task<int> CountOpenToAnswerAsync(Guid fromKurinKey, DateTime nowUtc, CancellationToken cancellationToken = default)
+        => Set.CountAsync(
+            r => r.FromKurinKey == fromKurinKey && r.Status == MembershipRequestStatus.Pending && r.ExpiresAtUtc > nowUtc,
+            cancellationToken);
+
     public async Task<IReadOnlyList<MembershipRequest>> GetPendingFromAsync(Guid memberKey, Guid fromKurinKey, CancellationToken cancellationToken = default)
         => await Set
             .Where(r => r.MemberKey == memberKey && r.FromKurinKey == fromKurinKey && r.Status == MembershipRequestStatus.Pending)
