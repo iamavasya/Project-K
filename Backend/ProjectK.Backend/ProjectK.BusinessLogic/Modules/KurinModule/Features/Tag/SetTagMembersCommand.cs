@@ -1,3 +1,4 @@
+using ProjectK.Common.Exceptions;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
@@ -53,6 +54,7 @@ public sealed class SetTagMembersCommandHandler : IRequestHandler<SetTagMembersC
             return ServiceResult<KurinTagDto>.Failure(ResultType.BadRequest, KurinTagErrors.NotInKurin, "Everyone given a tag must be in the kurin now.");
         }
 
+        await using var transaction = await _assignments.HoldAsync(gaining, cancellationToken);
         if ((await _assignments.OverLimitAsync(request.KurinKey, gaining, cancellationToken)).Count > 0)
         {
             return ServiceResult<KurinTagDto>.Failure(ResultType.BadRequest, KurinTagErrors.TooManyTags, "A person would carry more tags than the limit.");
@@ -68,7 +70,16 @@ public sealed class SetTagMembersCommandHandler : IRequestHandler<SetTagMembersC
             await _assignments.TakeOffAsync(tag, assignment, cancellationToken);
         }
 
-        await _uow.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _uow.SaveChangesAsync(cancellationToken);
+        }
+        catch (DuplicateRowException)
+        {
+            return KurinTagErrors.ChangedMeanwhile<KurinTagDto>();
+        }
+
+        await transaction.CommitAsync(cancellationToken);
 
         return new ServiceResult<KurinTagDto>(ResultType.Success,
             new KurinTagDto(tag.KurinTagKey, tag.Name, tag.ColorHex, wanted.Count));

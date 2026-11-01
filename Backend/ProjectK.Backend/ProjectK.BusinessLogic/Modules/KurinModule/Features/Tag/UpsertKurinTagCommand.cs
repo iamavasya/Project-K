@@ -1,3 +1,4 @@
+using ProjectK.Common.Exceptions;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Tags;
@@ -84,7 +85,15 @@ public sealed class UpsertKurinTagCommandHandler : IRequestHandler<UpsertKurinTa
             }
         }
 
-        await _uow.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _uow.SaveChangesAsync(cancellationToken);
+        }
+        catch (DuplicateRowException)
+        {
+            // Someone saved a tag of that name between the check above and this save.
+            return ServiceResult<KurinTagDto>.Failure(ResultType.Conflict, KurinTagErrors.TagNameTaken, "The kurin already has a tag with this name.");
+        }
 
         return new ServiceResult<KurinTagDto>(
             isNew ? ResultType.Created : ResultType.Success,

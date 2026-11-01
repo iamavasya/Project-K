@@ -75,6 +75,24 @@ public class KurinTagRepository : BaseEntityRepository<KurinTag>, IKurinTagRepos
             .Select(a => a.MemberKey)
             .ToListAsync(cancellationToken);
 
+    public async Task HoldMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default)
+    {
+        // An application lock per person, owned by the transaction; taken in key order so two holders
+        // of overlapping sets cannot wait on each other. Other providers (tests) have no such lock.
+        if (!Context.Database.IsSqlServer())
+        {
+            return;
+        }
+
+        foreach (var memberKey in memberKeys.Distinct().Order())
+        {
+            var resource = $"member-tags:{memberKey}";
+            await Context.Database.ExecuteSqlInterpolatedAsync(
+                $"EXEC sp_getapplock @Resource = {resource}, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 10000",
+                cancellationToken);
+        }
+    }
+
     public void AddAssignment(MemberTag assignment) => Context.MemberTags.Add(assignment);
 
     public void RemoveAssignment(MemberTag assignment) => Context.MemberTags.Remove(assignment);

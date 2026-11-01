@@ -46,5 +46,6 @@ export const KURIN_TAG_ERROR_TEXT: Record<string, string> = {
   TooManyTags: 'У людини не може бути більше 10 тегів.',
   NotInKurin: 'Тег можна поставити лише тому, хто зараз у курені.',
   TagNotFound: 'Цього тегу вже немає. Онови сторінку.',
-  TagColorNotInPalette: 'Обери колір із палітри.'
+  TagColorNotInPalette: 'Обери колір із палітри.',
+  TagsChangedMeanwhile: 'Теги щойно змінив хтось інший. Онови сторінку й спробуй ще раз.'
 };

@@ -34,6 +34,12 @@ public interface IKurinTagRepository : IBaseEntityRepository<KurinTag>
     /// <summary>Everyone carrying the tag who is in the kurin now.</summary>
     Task<IReadOnlyList<Guid>> GetMemberKeysAsync(Guid kurinTagKey, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Holds these people's tags for the rest of the current transaction: a second change to the tags of
+    /// any of them waits until this one commits, so a count read after it is the count that stands.
+    /// </summary>
+    Task HoldMembersAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken = default);
+
     void AddAssignment(MemberTag assignment);
     void RemoveAssignment(MemberTag assignment);
 

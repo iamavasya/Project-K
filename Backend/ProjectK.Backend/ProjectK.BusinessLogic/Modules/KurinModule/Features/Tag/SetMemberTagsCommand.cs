@@ -1,3 +1,4 @@
+using ProjectK.Common.Exceptions;
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
@@ -65,6 +66,7 @@ public sealed class SetMemberTagsCommandHandler : IRequestHandler<SetMemberTagsC
             return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.BadRequest, KurinTagErrors.TagNotFound, "A tag was not found in this kurin.");
         }
 
+        await using var transaction = await _assignments.HoldAsync([request.MemberKey], cancellationToken);
         var carrying = await _uow.KurinTags.GetTrackedForMemberAsync(kurinKey, request.MemberKey, cancellationToken);
         var carried = carrying.Select(a => a.KurinTagKey).ToHashSet();
 
@@ -78,7 +80,16 @@ public sealed class SetMemberTagsCommandHandler : IRequestHandler<SetMemberTagsC
             await _assignments.TakeOffAsync(tags[assignment.KurinTagKey], assignment, cancellationToken);
         }
 
-        await _uow.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _uow.SaveChangesAsync(cancellationToken);
+        }
+        catch (DuplicateRowException)
+        {
+            return KurinTagErrors.ChangedMeanwhile<IReadOnlyList<Guid>>();
+        }
+
+        await transaction.CommitAsync(cancellationToken);
 
         return new ServiceResult<IReadOnlyList<Guid>>(ResultType.Success, [.. wanted]);
     }

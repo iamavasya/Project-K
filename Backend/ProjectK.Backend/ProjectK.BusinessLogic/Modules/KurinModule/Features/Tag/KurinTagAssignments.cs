@@ -22,6 +22,17 @@ internal sealed class KurinTagAssignments
         _audit = audit;
     }
 
+    /// <summary>
+    /// Opens the transaction a change to these people's tags runs in and holds their tags in it, so the
+    /// limit is counted against what stands and two changes cannot each add the tenth tag.
+    /// </summary>
+    public async Task<IUnitOfWorkTransaction> HoldAsync(IReadOnlyCollection<Guid> memberKeys, CancellationToken cancellationToken)
+    {
+        var transaction = await _uow.BeginTransactionAsync(cancellationToken);
+        await _uow.KurinTags.HoldMembersAsync(memberKeys, cancellationToken);
+        return transaction;
+    }
+
     /// <summary>The people of <paramref name="memberKeys"/> that are not in the kurin now.</summary>
     public async Task<IReadOnlyCollection<Guid>> OutsideKurinAsync(
         Guid kurinKey,

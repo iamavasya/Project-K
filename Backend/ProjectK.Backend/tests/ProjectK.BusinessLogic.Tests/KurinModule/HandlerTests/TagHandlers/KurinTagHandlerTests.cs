@@ -1,3 +1,4 @@
+using ProjectK.Common.Exceptions;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
@@ -25,6 +26,8 @@ public class KurinTagHandlerTests
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly List<AuditRecord> _journal = [];
     private readonly Mock<IKurinAudit> _audit = new();
+    private readonly Mock<IUnitOfWorkTransaction> _transaction = new();
+    private readonly List<string> _order = [];
 
     public KurinTagHandlerTests()
     {
@@ -34,8 +37,64 @@ public class KurinTagHandlerTests
         _audit.Setup(a => a.RecordAsync(It.IsAny<AuditRecord>(), It.IsAny<CancellationToken>()))
             .Callback<AuditRecord, CancellationToken>((record, _) => _journal.Add(record))
             .Returns(Task.CompletedTask);
+        _uow.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => _order.Add("begin"))
+            .ReturnsAsync(_transaction.Object);
+        _tags.Setup(t => t.HoldMembersAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .Callback(() => _order.Add("hold"))
+            .Returns(Task.CompletedTask);
+        _transaction.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Callback(() => _order.Add("commit")).Returns(Task.CompletedTask);
         TagsAre(enabled: true);
         InKurin(MemberKey);
+    }
+
+    /// <summary>
+    /// The limit is a count read before a write, so two changes at once could each add the tenth tag.
+    /// The person's tags are held in a transaction before they are read, and released by the commit.
+    /// </summary>
+    [Fact]
+    public async Task SetMemberTags_HoldsThePersonsTags_BeforeReadingThem_UntilTheCommit()
+    {
+        var tag = Tag("Новики");
+        _tags.Setup(t => t.GetForKurinAsync(KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([tag]);
+        _tags.Setup(t => t.GetTrackedForMemberAsync(KurinKey, MemberKey, It.IsAny<CancellationToken>()))
+            .Callback(() => _order.Add("read"))
+            .ReturnsAsync([]);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).Callback(() => _order.Add("save")).ReturnsAsync(1);
+
+        await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, [tag.KurinTagKey]), default);
+
+        _order.Should().Equal("begin", "hold", "read", "save", "commit");
+        _tags.Verify(t => t.HoldMembersAsync(It.Is<IReadOnlyCollection<Guid>>(keys => keys.Single() == MemberKey), It.IsAny<CancellationToken>()));
+    }
+
+    [Fact]
+    public async Task SetMemberTags_AnswersConflict_WhenAParallelChangeWonTheRace()
+    {
+        var tag = Tag("Новики");
+        _tags.Setup(t => t.GetForKurinAsync(KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([tag]);
+        _tags.Setup(t => t.GetTrackedForMemberAsync(KurinKey, MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new DuplicateRowException(new InvalidOperationException()));
+
+        var result = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, [tag.KurinTagKey]), default);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be(KurinTagErrors.TagsChangedMeanwhile);
+        _transaction.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Two tags of one name saved at once: the unique index refuses the second, and it is a 409, not a 500.</summary>
+    [Fact]
+    public async Task CreatingATag_WhoseNameWasJustTaken_AnswersNameTaken()
+    {
+        _tags.Setup(t => t.NameTakenAsync(KurinKey, "Новики", null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new DuplicateRowException(new InvalidOperationException()));
+
+        var result = await new UpsertKurinTagCommandHandler(_uow.Object, _visibility.Object, _audit.Object)
+            .Handle(new UpsertKurinTagCommand(KurinKey, null, "Новики", KurinTagRules.Palette[0]), default);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be(KurinTagErrors.TagNameTaken);
     }
 
     [Fact]
