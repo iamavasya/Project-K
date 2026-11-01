@@ -87,6 +87,19 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
 - Check «Пластовий життєпис» (`life-story.spec.ts`):
   - a youth's story has only the УПЮ stage (both projects);
   - for the senior from the demo seed: the button on the card, the УПЮ and УСП stages with every ступінь, and the Order's Звʼязковий may correct them while its Скриптор may not (chromium only: it signs in as shared seeded accounts).
+- Check the third-probe notebook (PROBE-02, `third-probe.spec.ts`, helpers in `support/third-probe.ts`).
+  Each test opens a kurin of its own with a гурток, its впорядник and a youth born sixteen years ago, so
+  no seeded probe or project is touched:
+  - the youth sees «До закриття третьої проби» counting down and «Що вже є» at «0 з 5»; writes the
+    mentors, the reflection and the camp in «Ментори, рефлексія й табір»; attaches the посвідка as a
+    picture; adds a project after the template with a picture in «Опис і моя роль» (one project, though
+    the picture saves it quietly first), and renames it with the picture kept;
+  - the впорядник of the гурток gives «Дати дозвіл», confirms the reflection and has «Змінити етапи»;
+    the youth rewrites the project and «Дозвіл є» stays;
+  - nobody signs their own notebook: the youth gets 403 on approval and stages, and a впорядник on
+    their own third probe writes it but has no «Дати дозвіл» or «Змінити етапи» and gets 403;
+  - a впорядник of another гурток only reads: no «Додати проєкт», «Редагувати» or upload, and 403 on
+    writing a project or approving it.
 
 ## Seeded Users
 
