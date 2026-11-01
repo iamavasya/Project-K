@@ -49,11 +49,15 @@ public sealed record DuesConcessionRule(string Key, string Name, string Kind, de
             given += cuts[i];
         }
 
+        // The kurin's own payees are not one of the край's parts: their shares stay as they are.
         return new DuesAmount(
             full.Stanytsia - cuts[0],
             full.Kurin - cuts[2],
             full.Group - cuts[3],
-            full.Krai - cuts[1]);
+            full.Krai - cuts[1])
+        {
+            Payees = full.Payees
+        };
     }
 
     private bool Covers(DuesParts part) => (Parts & part) == part;

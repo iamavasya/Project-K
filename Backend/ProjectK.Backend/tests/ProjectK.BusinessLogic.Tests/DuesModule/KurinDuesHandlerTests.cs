@@ -26,6 +26,7 @@ public class KurinDuesHandlerTests
     private readonly FixedTimeProvider _time = new(new DateTimeOffset(2026, 10, 6, 12, 0, 0, TimeSpan.Zero));
     private readonly List<DuesEntry> _entries = [];
     private readonly Mock<IDuesUnitOfWork> _dues = new();
+    private readonly Mock<IDuesKurinShape> _shape = new();
     private readonly Mock<ICurrentUserContext> _user = new();
     private string _upstream = KraiDues.Stanytsia;
 
@@ -47,7 +48,7 @@ public class KurinDuesHandlerTests
     {
         var members = new Mock<IMemberDirectory>();
         members.Setup(m => m.FindKurinKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(Kurin);
-        return new DuesEntryWriter(_dues.Object, new Mock<IMembershipDirectory>().Object, members.Object, KraiProfiles.Paying(Kurin, _upstream));
+        return new DuesEntryWriter(_dues.Object, new Mock<IMembershipDirectory>().Object, members.Object, KraiProfiles.Paying(Kurin, _upstream), _shape.Object);
     }
 
     private DuesEntry Transfer(decimal amount)

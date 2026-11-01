@@ -33,5 +33,7 @@ public enum DuesEntryKind
     Correction = 7,
 
     /// <summary>The kurin box hands the край its статті straight, not through the станиця.</summary>
-    TransferToKrai = 8
+    TransferToKrai = 8,
+    /// <summary>The kurin box hands one of its own payees the статті sent to it.</summary>
+    TransferToPayee = 9
 }

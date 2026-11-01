@@ -1,3 +1,4 @@
+using ProjectK.Common.Models.Dues;
 using ProjectK.Common.Models.Enums;
 
 namespace ProjectK.Common.Entities.DuesModule;
@@ -17,6 +18,11 @@ public class KurinDuesRate : Entity
 
     /// <summary>The first quarter it applies to, as <c>DuesQuarter.Index</c>.</summary>
     public int FromQuarter { get; set; }
+    /// <summary>
+    /// The tag this rate is for, in a kurin without гуртки; null for everyone else. A person with
+    /// several tags that have rates pays the highest.
+    /// </summary>
+    public Guid? TagKey { get; set; }
 
     public List<KurinDuesArticle> Articles { get; set; } = [];
 
@@ -47,4 +53,17 @@ public class KurinDuesRate : Entity
         KurinShare = own.Sum(a => a.Amount);
         KurinReduced = own.Sum(a => a.ReducedAmount);
     }
+
+    /// <summary>What the статті send to each of the kurin's payees, in the order they first appear.</summary>
+    public DuesPayeeShares PayeesFull() => Payees(a => a.Amount);
+
+    /// <summary>The same with a пільга.</summary>
+    public DuesPayeeShares PayeesReduced() => Payees(a => a.ReducedAmount);
+
+    /// <summary>The quarter's full вкладка, every стаття together — how rates of different tags are compared.</summary>
+    public decimal TotalFull() => StanytsiaFull + KraiFull + KurinShare + PayeesFull().Total;
+
+    private DuesPayeeShares Payees(Func<KurinDuesArticle, decimal> amount) => new(Articles
+        .Where(a => a.Recipient == DuesRecipient.Payee && a.PayeeKey.HasValue)
+        .Select(a => (a.PayeeKey!.Value, amount(a))));
 }

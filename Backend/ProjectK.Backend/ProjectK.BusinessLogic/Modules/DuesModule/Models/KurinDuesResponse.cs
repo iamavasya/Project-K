@@ -36,6 +36,21 @@ public sealed class KurinDuesResponse
     public decimal SentToKrai { get; init; }
 
     public IReadOnlyList<KurinGroupHandoverDto> Groups { get; init; } = [];
+
+    /// <summary>A senior kurin has no гуртки: each person's account is in the kurin's own box.</summary>
+    public bool IsSenior { get; init; }
+
+    /// <summary>The personal accounts in the kurin's own box — the treasurer's register of a senior kurin.</summary>
+    public IReadOnlyList<DuesAccountDto> Accounts { get; init; } = [];
+
+    /// <summary>The kurin's tags, for its rates and for naming and filtering the register.</summary>
+    public IReadOnlyList<DuesTagDto> Tags { get; init; } = [];
+
+    /// <summary>The пільги of the край the kurin may give, for its own accounts.</summary>
+    public IReadOnlyList<KraiConcessionDto> KraiConcessions { get; init; } = [];
+
+    /// <summary>Whom the kurin hands вкладка on to besides the станиця and the край, archived ones too.</summary>
+    public IReadOnlyList<KurinDuesPayeeDto> Payees { get; init; } = [];
     public IReadOnlyList<DuesTransferDto> Transfers { get; init; } = [];
 
     /// <summary>
@@ -136,4 +151,17 @@ public sealed class KurinDuesViewerDto
     public bool CanVerify { get; init; }
 
     public bool CanSetRates { get; init; }
+}
+
+/// <summary>One of the kurin's payees and how the box stands with it.</summary>
+public sealed class KurinDuesPayeeDto
+{
+    public Guid PayeeKey { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public bool IsArchived { get; init; }
+    /// <summary>What people have paid towards its статті.</summary>
+    public decimal Collected { get; init; }
+    public decimal Sent { get; init; }
+    /// <summary>Collected and not handed on yet.</summary>
+    public decimal ToForward { get; init; }
 }

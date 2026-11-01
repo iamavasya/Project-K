@@ -27,7 +27,7 @@ public partial class DemoDataSeeder
             "Старший курінь у двох уладах: 5-й курінь УСП і 20-й курінь УПС. Один склад, одна домівка, "
             + "сходини щочетверга й мандрівки Карпатами.",
             cancellationToken);
-        await EnsureSeniorLeaderAsync(orden.KurinKey, OrdenEmail, "Остап", "Гнатюк", 1979, cancellationToken);
+        var ordenLeader = await EnsureSeniorLeaderAsync(orden.KurinKey, OrdenEmail, "Остап", "Гнатюк", 1979, cancellationToken);
         var ordenMembers = new List<Member>();
         foreach (var (first, last, login, year) in OrdenMembers)
         {
@@ -38,6 +38,8 @@ public partial class DemoDataSeeder
         orden.RoleNames = KurinRoleNames.Normalize(new Dictionary<string, string?> { [nameof(LeadershipRole.Pysar)] = "Скриптор" }, out _);
         var ordenLeadership = await EnsureLeadershipAsync(LeadershipType.Kurin, orden.KurinKey, null, new DateOnly(2025, 9, 1), cancellationToken);
         SeatOffice(ordenLeadership, ordenMembers[1].MemberKey, LeadershipRole.Pysar, new DateOnly(2025, 9, 1));
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await SeedSeniorDuesAsync(orden, ordenLeader, ordenMembers, ordenLeadership, cancellationToken);
 
         var chorty = await EnsureSeniorKurinAsync(
             [new KurinNumbering(KurinBranch.USP, 7)],

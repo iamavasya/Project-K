@@ -88,8 +88,11 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
 
         var standing = memberships.FirstOrDefault(m => m.IsCurrent);
         var currentGroup = standing?.GroupKey;
-        var rate = standing is not null && currentGroup is { } g
-            ? ledger.AmountFor(standing.MembershipKey, g, current)
+        // In a kurin without гуртки the person's account is in the kurin's own box.
+        var inKurinBox = standing is not null && currentGroup is null
+            && accounts.Any(a => a.MembershipKey == standing.MembershipKey && a.GroupKey is null);
+        var rate = standing is not null && (currentGroup.HasValue || inKurinBox)
+            ? ledger.AmountFor(standing.MembershipKey, currentGroup, current, ledger.RateTagOf(standing.MembershipKey, current))
             : null;
 
         var names = await DuesNames.LoadAsync(_memberships, _members, kurinKey, cancellationToken);
@@ -115,7 +118,7 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
                 .Select(a => new MemberDuesAccountDto
                 {
                     GroupKey = a.GroupKey,
-                    GroupName = groupNames.GetValueOrDefault(a.GroupKey, "—"),
+                    GroupName = a.GroupKey is { } ak ? groupNames.GetValueOrDefault(ak, "—") : DuesNames.KurinBox,
                     Standing = DuesAccountStandings.Of(hasLeft: standing is null, standsInThisGroup: a.GroupKey == currentGroup),
                     Quarters = a.Quarters.Select(q => new DuesAccountQuarterDto
                     {
@@ -144,5 +147,5 @@ public sealed class GetMemberDuesQueryHandler : IRequestHandler<GetMemberDuesQue
     private static QuarterDto Quarter(DuesQuarter q) => new() { Year = q.Year, Number = q.Number };
 
     private static DuesAmountDto Amount(DuesAmount a) =>
-        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
+        new() { Stanytsia = a.Stanytsia, Krai = a.Krai, Payees = a.Payees.Total, Kurin = a.Kurin, Group = a.Group, Total = a.Total };
 }

@@ -163,6 +163,12 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinDuesController, Guid, Guid, UpsertDuesEntryRequest>>(nameof(KurinDuesController.UpdateEntry), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid, Guid>>(nameof(KurinDuesController.DeleteEntry), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid, Guid, SetDuesEntryVerifiedRequest>>(nameof(KurinDuesController.SetEntryVerified), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, UpsertKurinDuesPayeeRequest>>(nameof(KurinDuesController.CreatePayee), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, UpsertKurinDuesPayeeRequest>>(nameof(KurinDuesController.UpdatePayee), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, SetDuesConcessionRequest>>(nameof(KurinDuesController.SetConcession), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, GrantDuesConcessionRequest>>(nameof(KurinDuesController.GrantConcession), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid, UpdateDuesConcessionGrantRequest>>(nameof(KurinDuesController.UpdateConcessionGrant), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, Guid>>(nameof(KurinDuesController.DeleteConcessionGrant), "RequireUser");
 
         // Score: the table is every member's; who scores which гурток is asked per person in the handler.
         yield return Row<Action<KurinScoreController, Guid, ScorePeriodQuery>>(nameof(KurinScoreController.Get), "RequireUser");

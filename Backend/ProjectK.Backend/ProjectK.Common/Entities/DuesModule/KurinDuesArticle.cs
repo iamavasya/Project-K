@@ -10,6 +10,8 @@ public class KurinDuesArticle
 {
     public string Name { get; set; } = string.Empty;
     public DuesRecipient Recipient { get; set; }
+    /// <summary>The kurin's payee, for <see cref="DuesRecipient.Payee"/> only.</summary>
+    public Guid? PayeeKey { get; set; }
     public decimal Amount { get; set; }
 
     /// <summary>What a person with a пільга pays for it. Never above <see cref="Amount"/>.</summary>

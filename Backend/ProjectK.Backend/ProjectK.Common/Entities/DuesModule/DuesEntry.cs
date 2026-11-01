@@ -22,6 +22,8 @@ public class DuesEntry : Entity
     public DuesEntryKind Kind { get; set; }
     public DuesPaymentMethod Method { get; set; }
 
+    /// <summary>Whom the kurin handed money to, for <see cref="DuesEntryKind.TransferToPayee"/> only.</summary>
+    public Guid? PayeeKey { get; set; }
     /// <summary>Where the money went, for <see cref="DuesEntryKind.Exchange"/> only.</summary>
     public DuesPaymentMethod? CounterMethod { get; set; }
 

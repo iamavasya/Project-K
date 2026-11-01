@@ -26,6 +26,8 @@ public sealed class SetGroupDuesRateRequest
 public sealed class SetKurinDuesRateRequest
 {
     public QuarterRequest FromQuarter { get; set; } = new();
+    /// <summary>The tag the rate is for, in a kurin without гуртки; null for everyone else.</summary>
+    public Guid? TagKey { get; set; }
     public List<DuesArticleRequest>? Articles { get; set; }
     public decimal StanytsiaFull { get; set; }
     public decimal StanytsiaReduced { get; set; }
@@ -37,6 +39,8 @@ public sealed class DuesArticleRequest
 {
     public string Name { get; set; } = string.Empty;
     public DuesRecipient Recipient { get; set; }
+    /// <summary>One of the kurin's payees, when <see cref="Recipient"/> is <see cref="DuesRecipient.Payee"/>.</summary>
+    public Guid? PayeeKey { get; set; }
     public decimal Amount { get; set; }
 
     /// <summary>With a пільга. Left out, it is the full amount.</summary>
@@ -75,6 +79,8 @@ public sealed class UpsertDuesEntryRequest
     public decimal Amount { get; set; }
     public DateOnly OccurredOn { get; set; }
     public Guid? MembershipKey { get; set; }
+    /// <summary>For a transfer to one of the kurin's payees: which one.</summary>
+    public Guid? PayeeKey { get; set; }
     public Guid? CollectedByMemberKey { get; set; }
     public string? Note { get; set; }
 }
@@ -93,4 +99,12 @@ public sealed class SetDuesTransferReceivedRequest
 public sealed class SetKurinDuesSettingsRequest
 {
     public DuesChargeTiming ChargeTiming { get; set; }
+}
+
+/// <summary>Body of <c>POST</c> and <c>PUT api/kurin/{kurinKey}/dues/payees</c>.</summary>
+public sealed class UpsertKurinDuesPayeeRequest
+{
+    public string Name { get; set; } = string.Empty;
+    /// <summary>Put away or brought back; a new payee is never archived.</summary>
+    public bool IsArchived { get; set; }
 }

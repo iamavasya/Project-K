@@ -46,7 +46,8 @@ public sealed class MemberDuesResponse
 
 public sealed class MemberDuesAccountDto
 {
-    public Guid GroupKey { get; init; }
+    /// <summary>Null for the person's account in the kurin's own box, in a kurin without гуртки.</summary>
+    public Guid? GroupKey { get; init; }
     public string GroupName { get; init; } = string.Empty;
     public DuesAccountStanding Standing { get; init; }
     public IReadOnlyList<DuesAccountQuarterDto> Quarters { get; init; } = [];
