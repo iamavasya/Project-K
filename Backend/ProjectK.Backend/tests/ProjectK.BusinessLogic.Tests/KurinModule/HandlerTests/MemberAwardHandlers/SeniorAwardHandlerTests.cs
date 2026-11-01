@@ -44,6 +44,7 @@ public class SeniorAwardHandlerTests
     private readonly Guid _ownerUserKey = Guid.NewGuid();
     private readonly Member _member;
     private readonly List<MemberAward> _stored = [];
+    private JournalRecorder _journal = null!;
 
     public SeniorAwardHandlerTests()
     {
@@ -83,11 +84,11 @@ public class SeniorAwardHandlerTests
 
     private UpsertMemberAwardCommandHandler Upsert() => new(
         _unitOfWork.Object, _currentUser.Object, _events.Object, _mapper.Object, _kurinData.Object, _access.Object,
-        new JournalRecorder(_currentUser.Object).Audit, _honours.Object);
+        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object);
 
     private DeleteMemberAwardCommandHandler Delete() => new(
         _unitOfWork.Object, _currentUser.Object, _directory.Object, _access.Object,
-        new JournalRecorder(_currentUser.Object).Audit, _honours.Object);
+        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object, _kurinData.Object);
 
     private Task<Common.Models.Records.ServiceResult<MemberAwardDto>> Record(string? catalogId, MemberAwardLevel? level = null) =>
         Upsert().Handle(new UpsertMemberAwardCommand
@@ -145,6 +146,41 @@ public class SeniorAwardHandlerTests
         (await Delete().Handle(new DeleteMemberAwardCommand { MemberKey = _member.MemberKey, MemberAwardKey = award.MemberAwardKey }, CancellationToken.None))
             .Type.Should().Be(ResultType.Success);
         _awards.Verify(a => a.Delete(award, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ASeniorAward_IsRemovedOnlyFromASeniorKurin()
+    {
+        await Record("orden-sv-yuriia-bronza");
+        var award = _stored.Single();
+        InKurin(KurinBranch.UPYu);
+
+        var refused = await Delete().Handle(new DeleteMemberAwardCommand { MemberKey = _member.MemberKey, MemberAwardKey = award.MemberAwardKey }, CancellationToken.None);
+
+        refused.Type.Should().Be(ResultType.BadRequest);
+        refused.ErrorCode.Should().Be("SeniorAwardOutsideSeniorKurin");
+        _awards.Verify(a => a.Delete(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task TheJournal_NamesTheSeniorAwardByItsCatalogueTitle()
+    {
+        _honours.Setup(h => h.GetById("orden-sv-yuriia-sribla"))
+            .Returns(new CatalogHonour("orden-sv-yuriia-sribla", HonourKind.Award, "Орден святого Юрія в сріблі", "orden-sv-yuriia", "usp", 1, ""));
+        await Record("orden-sv-yuriia-bronza");
+        _journal.Entries.Single().Changes.Should().Contain(new Common.Models.Audit.AuditChange("award", null, "Орден святого Юрія в бронзі"));
+
+        await Upsert().Handle(new UpsertMemberAwardCommand
+        {
+            MemberKey = _member.MemberKey,
+            MemberAwardKey = _stored.Single().MemberAwardKey,
+            CatalogId = "orden-sv-yuriia-sribla",
+            DateAcquired = new DateTime(2018, 4, 23)
+        }, CancellationToken.None);
+
+        _journal.Entries.Single().Changes.Should().Equal(
+            new Common.Models.Audit.AuditChange("award", "Орден святого Юрія в бронзі", "Орден святого Юрія в сріблі"));
+        _journal.Entries.SelectMany(e => e.Changes).Should().NotContain(c => c.Field == "catalogId");
     }
 
     [Fact]

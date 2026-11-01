@@ -122,6 +122,7 @@ const FIELD_LABELS: Record<string, string> = {
   status: 'Стан',
   taskStatus: 'Стан задачі',
   level: 'Ступінь',
+  award: 'Відзначення',
   note: 'Примітка',
   dateAcquired: 'Дата здобуття',
   point: 'Точка',

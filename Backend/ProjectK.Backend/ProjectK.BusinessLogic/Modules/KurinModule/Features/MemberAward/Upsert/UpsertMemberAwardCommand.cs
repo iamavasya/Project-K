@@ -232,7 +232,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
             _unitOfWork.MemberAwards.Update(existingAward, cancellationToken);
 
             var changes = AuditChanges.Of(
-                ("catalogId", before.CatalogId, existingAward.CatalogId),
+                ("award", HonourTitle(before.CatalogId), HonourTitle(existingAward.CatalogId)),
                 ("dateAcquired", before.DateAcquired, existingAward.DateAcquired),
                 ("note", before.Note, existingAward.Note));
             if (changes.Count > 0)
@@ -260,7 +260,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
                 AuditActions.Award.Added,
                 existingAward,
                 AuditChanges.Added(
-                    ("catalogId", existingAward.CatalogId),
+                    ("award", HonourTitle(existingAward.CatalogId)),
                     ("dateAcquired", existingAward.DateAcquired),
                     ("note", existingAward.Note)),
                 cancellationToken);
@@ -269,6 +269,10 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return new ServiceResult<MemberAwardDto>(ResultType.Success, _mapper.Map<MemberAwardDto>(existingAward));
     }
+
+    /// <summary>The journal keeps the catalogue's name, not its id.</summary>
+    private string? HonourTitle(string? catalogId) =>
+        catalogId is null ? null : _honours.GetById(catalogId)?.Title ?? catalogId;
 
     private Task RecordAsync(
         string action,
