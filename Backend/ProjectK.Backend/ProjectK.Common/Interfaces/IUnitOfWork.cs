@@ -29,6 +29,7 @@ public interface IUnitOfWork
     IBadgeProgressRepository BadgeProgresses { get; }
     IProbeProgressRepository ProbeProgresses { get; }
     IProbePointProgressRepository ProbePointProgresses { get; }
+    IProbeProjectRepository ProbeProjects { get; }
     IMentorAssignmentRepository MentorAssignments { get; }
     IWaitlistRepository WaitlistEntries { get; }
     IInvitationRepository Invitations { get; }

@@ -47,6 +47,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IBadgeProgressRepository _badgeProgresses;
     private IProbeProgressRepository _probeProgresses;
     private IProbePointProgressRepository _probePointProgresses;
+    private IProbeProjectRepository _probeProjects;
     private IMentorAssignmentRepository _mentorAssignments;
     private IMemberWarningRepository _memberWarnings;
     private IMemberAwardRepository _memberAwards;
@@ -96,6 +97,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IBadgeProgressRepository BadgeProgresses => _badgeProgresses ??= new BadgeProgressRepository(_context);
     public IProbeProgressRepository ProbeProgresses => _probeProgresses ??= new ProbeProgressRepository(_context);
     public IProbePointProgressRepository ProbePointProgresses => _probePointProgresses ??= new ProbePointProgressRepository(_context);
+    public IProbeProjectRepository ProbeProjects => _probeProjects ??= new ProbeProjectRepository(_context);
     public IMentorAssignmentRepository MentorAssignments => _mentorAssignments ??= new MentorAssignmentRepository(_context);
     public IMemberWarningRepository MemberWarnings => _memberWarnings ??= new MemberWarningRepository(_context);
     public IMemberAwardRepository MemberAwards => _memberAwards ??= new MemberAwardRepository(_context);

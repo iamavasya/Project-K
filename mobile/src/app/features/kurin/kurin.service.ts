@@ -23,6 +23,11 @@ import {
   MembershipDto,
   MentorAssignmentDto,
   ProbeProgressDto,
+  ProbeProjectImageDto,
+  ProbeProjectRequest,
+  ThirdProbeDto,
+  ThirdProbeFileRequest,
+  ThirdProbeStagesRequest,
   ProbeSummaryDto,
   UpsertAwardRequest,
   UpsertLeadershipRequest,
@@ -175,6 +180,68 @@ export class KurinApi {
 
   probeProgress(memberKey: string, probeId: string): Promise<ProbeProgressDto> {
     return this.api.get(`member/${memberKey}/probes/${probeId}/progress`);
+  }
+
+  /** The «Третя проба» tab (web member-progress getThirdProbe). Every write below answers with it too. */
+  thirdProbe(memberKey: string, probeId: string): Promise<ThirdProbeDto> {
+    return this.api.get(this.thirdProbeUrl(memberKey, probeId));
+  }
+
+  saveThirdProbeFile(memberKey: string, probeId: string, body: ThirdProbeFileRequest): Promise<ThirdProbeDto> {
+    return this.api.put(this.thirdProbeUrl(memberKey, probeId), body);
+  }
+
+  setThirdProbeStages(memberKey: string, probeId: string, body: ThirdProbeStagesRequest): Promise<ThirdProbeDto> {
+    return this.api.put(`${this.thirdProbeUrl(memberKey, probeId)}/stages`, body);
+  }
+
+  confirmReflection(memberKey: string, probeId: string, sign: boolean): Promise<ThirdProbeDto> {
+    const url = `${this.thirdProbeUrl(memberKey, probeId)}/reflection/confirmation`;
+    return sign ? this.api.put(url) : this.api.delete(url);
+  }
+
+  uploadCampCertificate(memberKey: string, probeId: string, file: File): Promise<ThirdProbeDto> {
+    const body = new FormData();
+    body.append('file', file, file.name || 'posvidka');
+    return this.api.post(`${this.thirdProbeUrl(memberKey, probeId)}/camp/certificate`, body);
+  }
+
+  deleteCampCertificate(memberKey: string, probeId: string): Promise<ThirdProbeDto> {
+    return this.api.delete(`${this.thirdProbeUrl(memberKey, probeId)}/camp/certificate`);
+  }
+
+  saveProbeProject(memberKey: string, probeId: string, projectKey: string | null, body: ProbeProjectRequest): Promise<{ projectKey: string; tab: ThirdProbeDto }> {
+    const url = this.projectsUrl(memberKey, probeId);
+    return projectKey ? this.api.put(`${url}/${projectKey}`, body) : this.api.post(url, body);
+  }
+
+  deleteProbeProject(memberKey: string, probeId: string, projectKey: string): Promise<ThirdProbeDto> {
+    return this.api.delete(`${this.projectsUrl(memberKey, probeId)}/${projectKey}`);
+  }
+
+  swapSpareProject(memberKey: string, probeId: string, spareKey: string, mainKey: string): Promise<ThirdProbeDto> {
+    return this.api.post(`${this.projectsUrl(memberKey, probeId)}/${spareKey}/swap/${mainKey}`);
+  }
+
+  /** «Дозвіл» (`approval`) or «Успішно виконав» (`completion`), given or taken back. */
+  signProbeProject(memberKey: string, probeId: string, projectKey: string, part: 'approval' | 'completion', sign: boolean, comment: string | null = null): Promise<ThirdProbeDto> {
+    const url = `${this.projectsUrl(memberKey, probeId)}/${projectKey}/${part}`;
+    if (!sign) return this.api.delete(url);
+    return this.api.put(url, part === 'completion' ? { coordinatorComment: comment } : {});
+  }
+
+  uploadProbeProjectImage(memberKey: string, probeId: string, projectKey: string, file: File): Promise<ProbeProjectImageDto> {
+    const body = new FormData();
+    body.append('file', file, file.name || 'image.jpg');
+    return this.api.post(`${this.projectsUrl(memberKey, probeId)}/${projectKey}/images`, body);
+  }
+
+  private thirdProbeUrl(memberKey: string, probeId: string): string {
+    return `member/${memberKey}/probes/${encodeURIComponent(probeId)}/third-probe`;
+  }
+
+  private projectsUrl(memberKey: string, probeId: string): string {
+    return `member/${memberKey}/probes/${encodeURIComponent(probeId)}/projects`;
   }
 
   signPoint(memberKey: string, probeId: string, pointId: string, sign: boolean): Promise<ProbeProgressDto> {

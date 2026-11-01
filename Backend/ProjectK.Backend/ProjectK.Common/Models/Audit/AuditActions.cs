@@ -19,6 +19,40 @@ public static class AuditActions
         public const string Completed = "Probe.Completed";
         public const string Verified = "Probe.Verified";
         public const string Unverified = "Probe.Unverified";
+
+        /// <summary>A project of the third probe was described, rewritten or removed.</summary>
+        public const string ProjectAdded = "Probe.ProjectAdded";
+        public const string ProjectEdited = "Probe.ProjectEdited";
+        public const string ProjectRemoved = "Probe.ProjectRemoved";
+        public const string ProjectApproved = "Probe.ProjectApproved";
+        public const string ProjectApprovalRemoved = "Probe.ProjectApprovalRemoved";
+        public const string ProjectCompleted = "Probe.ProjectCompleted";
+        public const string ProjectCompletionRemoved = "Probe.ProjectCompletionRemoved";
+
+        /// <summary>The spare project took a main one's place.</summary>
+        public const string ProjectsSwapped = "Probe.ProjectsSwapped";
+
+        /// <summary>The third-probe file: mentors, reflection, camp, résumé.</summary>
+        public const string FileEdited = "Probe.FileEdited";
+        public const string ReflectionConfirmed = "Probe.ReflectionConfirmed";
+        public const string ReflectionUnconfirmed = "Probe.ReflectionUnconfirmed";
+
+        /// <summary>The referent's stages: motivation letter, self-reflection, application, opened, done, named, archived.</summary>
+        public const string StagesChanged = "Probe.StagesChanged";
+        public const string CertificateAttached = "Probe.CertificateAttached";
+        public const string CertificateRemoved = "Probe.CertificateRemoved";
+
+        /// <summary>The action of confirming (or taking back) a part of the third probe, by the part's name.</summary>
+        public static string ThirdProbe(string part, bool confirmed) => (part, confirmed) switch
+        {
+            ("Reflection", true) => ReflectionConfirmed,
+            ("Reflection", false) => ReflectionUnconfirmed,
+            ("ProjectApproval", true) => ProjectApproved,
+            ("ProjectApproval", false) => ProjectApprovalRemoved,
+            ("ProjectCompletion", true) => ProjectCompleted,
+            ("ProjectCompletion", false) => ProjectCompletionRemoved,
+            _ => throw new ArgumentOutOfRangeException(nameof(part), part, "Unknown part of the third probe.")
+        };
     }
 
     /// <summary>Вмілості.</summary>

@@ -186,13 +186,15 @@ public static class Program
         builder.Services.AddScoped<MemberPhotoReferenceProvider>();
         builder.Services.AddScoped<GroupSilhouetteReferenceProvider>();
         builder.Services.AddScoped<KurinEmblemReferenceProvider>();
+        builder.Services.AddScoped<ProbeProjectImageReferenceProvider>();
         builder.Services.AddScoped<IPhotoReferenceProvider>(sp =>
         {
             var providers = new IPhotoReferenceProvider[]
             {
                 sp.GetRequiredService<MemberPhotoReferenceProvider>(),
                 sp.GetRequiredService<GroupSilhouetteReferenceProvider>(),
-                sp.GetRequiredService<KurinEmblemReferenceProvider>()
+                sp.GetRequiredService<KurinEmblemReferenceProvider>(),
+                sp.GetRequiredService<ProbeProjectImageReferenceProvider>()
             };
 
             return new CompositePhotoReferenceProvider(providers);

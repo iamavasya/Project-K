@@ -692,11 +692,11 @@ export class MemberCardComponent implements OnInit {
   }
 
   get completedProbesCount(): number {
-    return this.probeRows.filter(row => !row.isDisabled && row.isCompleted).length;
+    return this.probeRows.filter(row => !row.isDisabled && !row.hasNoPoints && row.isCompleted).length;
   }
 
   get activeProbesCount(): number {
-    return this.probeRows.filter(row => !row.isDisabled).length;
+    return this.probeRows.filter(row => !row.isDisabled && !row.hasNoPoints).length;
   }
 
   get filteredAddSkillCandidates(): BadgeCatalogItemDto[] {
@@ -902,7 +902,7 @@ export class MemberCardComponent implements OnInit {
     }
 
     if (row.hasNoPoints) {
-      return 'Поточкове відстеження цієї проби буде окремим етапом';
+      return 'Складається з проєктів: опис і фото на сторінці проби';
     }
 
     if (row.completedAtUtc) {

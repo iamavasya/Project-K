@@ -9,6 +9,7 @@ using ProjectK.BusinessLogic.Modules.KraiModule.Services;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Member.ProfileVerification;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Modules.MeModule.Services;
+using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Private;
 using ProjectK.BusinessLogic.Modules.ScoreModule.Features.Settings;
@@ -84,6 +85,8 @@ public static class DependencyInjection
         services.AddScoped<IMemberProgressDirectory, MemberProgressDirectory>();
         services.AddScoped<MemberProbeLine>();
         services.AddScoped<IMemberProbeLine>(sp => sp.GetRequiredService<MemberProbeLine>());
+        services.AddScoped<IProbeProjectAccess, ProbeProjectAccess>();
+        services.AddScoped<IThirdProbeReader, ThirdProbeReader>();
         services.AddScoped<IProbeEditionHolds>(sp => sp.GetRequiredService<MemberProbeLine>());
         services.AddScoped<IGroupProbeEditions, GroupProbeEditions>();
 
