@@ -62,15 +62,12 @@ public sealed class ProbeProjectAccess : IProbeProjectAccess
         await IsSelfAsync(memberKey, cancellationToken)
         || (await _access.CheckCapabilityAsync(KurinCapability.SignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
 
-    // A group-scoped grant always lets a leader at their own record, so a впорядник or Звʼязковий
-    // still on the third probe would otherwise confirm it themself.
+    // Nobody signs their own probe: the access service refuses SignProbe and UnsignProbe on one's own record.
     public async Task<bool> CanSignAsync(Guid memberKey, CancellationToken cancellationToken = default) =>
-        !await IsSelfAsync(memberKey, cancellationToken)
-        && (await _access.CheckCapabilityAsync(KurinCapability.SignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
+        (await _access.CheckCapabilityAsync(KurinCapability.SignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
 
     public async Task<bool> CanUnsignAsync(Guid memberKey, CancellationToken cancellationToken = default) =>
-        !await IsSelfAsync(memberKey, cancellationToken)
-        && (await _access.CheckCapabilityAsync(KurinCapability.UnsignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
+        (await _access.CheckCapabilityAsync(KurinCapability.UnsignProbe, ResourceType.Member, memberKey, cancellationToken)).IsAllowed;
 
     private async Task<bool> IsSelfAsync(Guid memberKey, CancellationToken cancellationToken) =>
         _currentUser.UserId is { } userKey

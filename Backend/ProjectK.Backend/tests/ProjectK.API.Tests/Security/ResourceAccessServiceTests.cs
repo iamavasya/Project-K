@@ -12,6 +12,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -318,6 +319,68 @@ public class ResourceAccessServiceTests
         var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
 
         Assert.False(decision.IsAllowed);
+    }
+
+    [Theory]
+    [InlineData(ResourceType.ProbeProgress, ResourceAction.Update)]
+    [InlineData(ResourceType.ProbeProgress, ResourceAction.Delete)]
+    [InlineData(ResourceType.BadgeProgress, ResourceAction.Update)]
+    public async Task Leader_ShouldNotSignOffTheirOwnProgress(ResourceType resourceType, ResourceAction action)
+    {
+        var kurinKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+
+        foreach (var role in new[] { MentorRole, ManagerRole })
+        {
+            var fixture = CreateFixture(true, kurinKey, groupKey, new[] { role }, userId);
+            fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, groupKey, userId));
+            fixture.Owner(ResourceType.Member, memberKey, userId);
+
+            var decision = await fixture.Service.CheckAccessAsync(resourceType, action, ResourceType.Member, memberKey);
+
+            Assert.False(decision.IsAllowed, role);
+            Assert.Contains("their own", decision.Reason, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public async Task Leader_ShouldStillSignOffSomeoneElseInTheirGroup()
+    {
+        var kurinKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var memberUserId = Guid.NewGuid();
+        var fixture = CreateFixture(true, kurinKey, groupKey, new[] { MentorRole }, userId);
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, groupKey, memberUserId));
+        fixture.Owner(ResourceType.Member, memberKey, memberUserId);
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.ProbeProgress, ResourceAction.Update, ResourceType.Member, memberKey);
+
+        Assert.True(decision.IsAllowed);
+    }
+
+    [Fact]
+    public async Task Leader_ShouldNotReachSignOffCapabilitiesOnTheirOwnRecord()
+    {
+        var kurinKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var fixture = CreateFixture(true, kurinKey, groupKey, new[] { ManagerRole }, userId);
+        fixture.Scope(ResourceType.Member, memberKey, new ResourceScope(kurinKey, groupKey, userId));
+        fixture.Owner(ResourceType.Member, memberKey, userId);
+
+        var reachable = await fixture.Service.ReachableCapabilitiesAsync(ResourceType.Member, memberKey);
+        var sign = await fixture.Service.CheckCapabilityAsync(KurinCapability.SignProbe, ResourceType.Member, memberKey);
+
+        Assert.DoesNotContain(KurinCapability.SignProbe, reachable);
+        Assert.DoesNotContain(KurinCapability.UnsignProbe, reachable);
+        Assert.DoesNotContain(KurinCapability.ReviewBadge, reachable);
+        Assert.Contains(KurinCapability.SeeContacts, reachable);
+        Assert.False(sign.IsAllowed);
     }
 
     [Fact]

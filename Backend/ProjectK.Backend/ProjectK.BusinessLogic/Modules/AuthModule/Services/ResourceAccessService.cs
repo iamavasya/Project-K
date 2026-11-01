@@ -60,6 +60,11 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny($"No permission for {action} on {resourceType}.");
         }
 
+        if (SignsOff(resourceType, action) && await IsCallersOwnAsync(scopeResourceType, scopeResourceKey, cancellationToken))
+        {
+            return ResourceAccessDecision.Deny(OwnSignOff);
+        }
+
         var decision = await CheckScopeAsync(grantedScope.Value, scopeResourceType, scopeResourceKey, cancellationToken);
         if (decision.IsAllowed || action != ResourceAction.Read)
         {
@@ -84,6 +89,25 @@ public class ResourceAccessService : IResourceAccessService
         return await _scopeReader.GetPersonAccountKeyAsync(resourceType, resourceKey, cancellationToken) == userKey;
     }
 
+    private const string OwnSignOff = "Nobody signs off their own probe or badge.";
+
+    /// <summary>
+    /// Signing a probe and confirming a badge vouch for someone else's work. A leader is a member
+    /// too, and a group-scoped grant always reaches one's own record, so without this a впорядник
+    /// or a Звʼязковий would sign their own probe.
+    /// </summary>
+    private static readonly IReadOnlySet<KurinCapability> SignOffCapabilities = new HashSet<KurinCapability>
+    {
+        KurinCapability.SignProbe,
+        KurinCapability.UnsignProbe,
+        KurinCapability.ReviewBadge
+    };
+
+    private static bool SignsOff(ResourceType resourceType, ResourceAction action) =>
+        KurinCapabilities.All.Any(descriptor => SignOffCapabilities.Contains(descriptor.Key)
+                                                && descriptor.Resource == resourceType
+                                                && descriptor.Action == action);
+
     public async Task<ResourceAccessDecision> CheckCapabilityAsync(
         KurinCapability capability,
         ResourceType scopeResourceType,
@@ -99,6 +123,11 @@ public class ResourceAccessService : IResourceAccessService
         if (grantedScope is null)
         {
             return ResourceAccessDecision.Deny($"The kurin's policy does not give {capability}.");
+        }
+
+        if (SignOffCapabilities.Contains(capability) && await IsCallersOwnAsync(scopeResourceType, scopeResourceKey, cancellationToken))
+        {
+            return ResourceAccessDecision.Deny(OwnSignOff);
         }
 
         return await CheckScopeAsync(grantedScope.Value, scopeResourceType, scopeResourceKey, cancellationToken);
@@ -131,8 +160,14 @@ public class ResourceAccessService : IResourceAccessService
             return reachable;
         }
 
+        var isOwn = _currentUserContext.UserId is { } userKey && scope.MemberUserKey == userKey;
         foreach (var descriptor in KurinCapabilities.All)
         {
+            if (isOwn && SignOffCapabilities.Contains(descriptor.Key))
+            {
+                continue;
+            }
+
             var grantedScope = (await _permissions.ReachAsync(descriptor.Key, cancellationToken)).ToScope();
             if (grantedScope is not null
                 && (await EvaluateScopeAsync(grantedScope.Value, scope, currentKurinKey, cancellationToken)).IsAllowed)

@@ -66,15 +66,11 @@ public class ProbeProjectAccessTests
     }
 
     [Fact]
-    public async Task ALeaderOnTheirOwnThirdProbe_WritesButNeverSignsOrUnsigns()
+    public async Task ALeaderOnTheirOwnThirdProbe_WritesIt()
     {
         _members.Setup(m => m.FindAccountKeyAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(_userKey);
-        _rights.Setup(r => r.CheckCapabilityAsync(It.IsAny<KurinCapability>(), ResourceType.Member, _memberKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ResourceAccessDecision.Allow());
 
         (await _access.CanEditAsync(_memberKey)).Should().BeTrue();
-        (await _access.CanSignAsync(_memberKey)).Should().BeFalse();
-        (await _access.CanUnsignAsync(_memberKey)).Should().BeFalse();
     }
 
     [Fact]
