@@ -32,6 +32,16 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
   - kurin-level profile, group, KV, leadership and member controls by role;
   - group action menu contents by role and assigned mentor scope;
   - planning create/delete controls by role.
+- Check the senior kurin card (`senior-kurin-card.spec.ts`, chromium only: it signs in as the seeded `orden@projectk.com`):
+  - the kurin tile with both branches, and the role by the kurin's own name («Скриптор» in «Орден Хрестоносців»);
+  - перестороги, a running one before one that has run out;
+  - «Ступені» shows only the highest ступінь, drawn as a пластунка's;
+  - own senior відзначення: pinned first, repeats in one block with «×2» and what each was for;
+  - the провід adds a senior відзначення to someone's card and removes it, and gets no pin on someone else's card.
+- Check senior відзначення on one's own card (`senior-awards.spec.ts`, helpers in `support/senior-honours.ts`):
+  - a person records their own from the catalogue, it counts at once (no «Очікує»), a repeat joins the block as «×2», and the person pins it;
+  - more blocks than the tile holds open under «Переглянути всі»;
+  - an УПЮ kurin refuses a senior відзначення through the API and its card offers none.
 
 ## Seeded Users
 
