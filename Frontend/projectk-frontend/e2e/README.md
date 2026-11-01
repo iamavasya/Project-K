@@ -43,6 +43,20 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
   - more blocks than the tile holds open under «Переглянути всі»;
   - an УПЮ kurin refuses a senior відзначення through the API and its card offers none.
 
+- Check senior kurin dues (DUES-06), each test in a УСП kurin of its own opened from a join request
+  (`e2e/support/senior-dues.ts`):
+  - «Ставки куреня» for everyone and for a tag from the running quarter; a person with the tag pays its rate;
+  - a tag put on after the quarter was charged reprices the unpaid quarter;
+  - the провід (a staff membership) is charged like everyone;
+  - «Записати операцію» with «Рік» and «Борг», and the register's «Сплачено до» and «Сплачено наперед»;
+  - the register's filter by tag;
+  - «Передача в край» and «Передача в станицю» empty what the box owes up;
+  - «Моя вкладка» on a senior's home page names the quarter's rate by their tag;
+  - a senior without the treasurer's rights gets `/forbidden` on the kurin's dues and 403 from its API.
+- Check that a debt for past quarters keeps a person in the kurin: «Вивести» on a debtor's card in the
+  seeded Орден Хрестоносців names the debt and the release is refused (chromium only — it signs in as
+  the Order's seeded Зв'язковий and changes nothing).
+
 ## Seeded Users
 
 Default credentials come from the backend development `DataSeeder`:
