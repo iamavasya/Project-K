@@ -246,3 +246,51 @@
   color: var(--p-text-muted-color);
   font-size: var(--lil-text-caption);
 }
+
+.dues-payees {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--lil-radius-lg, 12px);
+}
+
+.dues-payee {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.dues-payee:last-child {
+  border-bottom: 0;
+}
+
+.dues-payee--archived input {
+  color: var(--p-text-muted-color);
+}
+
+.dues-payee__sum {
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  white-space: nowrap;
+}
+
+.dues-payee-new {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .dues-payee {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .dues-payee__sum {
+    grid-column: 1;
+  }
+}

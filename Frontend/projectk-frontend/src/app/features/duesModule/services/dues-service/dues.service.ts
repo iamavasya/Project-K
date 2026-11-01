@@ -7,6 +7,7 @@ import { DUES_CACHE_PREFIX, ENTITY_CACHE_TTL_MS } from '../../../kurinModule/ser
 import {
   GroupDuesDto,
   DuesGroupLinkDto,
+  DuesBoxRef,
   KurinDuesDto,
   MemberDuesDto,
   SetDuesConcessionRequest,
@@ -89,20 +90,28 @@ export class DuesService {
     return this.http.put(`${this.kurinApiUrl}/${kurinKey}/dues/settings`, { chargeTiming }).pipe(this.invalidate());
   }
 
-  setConcession(groupKey: string, membershipKey: string, request: SetDuesConcessionRequest): Observable<unknown> {
-    return this.http.put(`${this.apiUrl}/${groupKey}/dues/members/${membershipKey}/concession`, request).pipe(this.invalidate());
+  setConcession(box: DuesBoxRef, membershipKey: string, request: SetDuesConcessionRequest): Observable<unknown> {
+    return this.http.put(`${this.boxUrl(box)}/members/${membershipKey}/concession`, request).pipe(this.invalidate());
   }
 
-  grantConcession(groupKey: string, membershipKey: string, request: GrantDuesConcessionRequest): Observable<unknown> {
-    return this.http.post(`${this.apiUrl}/${groupKey}/dues/members/${membershipKey}/concessions`, request).pipe(this.invalidate());
+  grantConcession(box: DuesBoxRef, membershipKey: string, request: GrantDuesConcessionRequest): Observable<unknown> {
+    return this.http.post(`${this.boxUrl(box)}/members/${membershipKey}/concessions`, request).pipe(this.invalidate());
   }
 
-  updateConcessionGrant(groupKey: string, grantKey: string, request: UpdateDuesConcessionGrantRequest): Observable<unknown> {
-    return this.http.put(`${this.apiUrl}/${groupKey}/dues/concessions/${grantKey}`, request).pipe(this.invalidate());
+  updateConcessionGrant(box: DuesBoxRef, grantKey: string, request: UpdateDuesConcessionGrantRequest): Observable<unknown> {
+    return this.http.put(`${this.boxUrl(box)}/concessions/${grantKey}`, request).pipe(this.invalidate());
   }
 
-  deleteConcessionGrant(groupKey: string, grantKey: string): Observable<unknown> {
-    return this.http.delete(`${this.apiUrl}/${groupKey}/dues/concessions/${grantKey}`).pipe(this.invalidate());
+  deleteConcessionGrant(box: DuesBoxRef, grantKey: string): Observable<unknown> {
+    return this.http.delete(`${this.boxUrl(box)}/concessions/${grantKey}`).pipe(this.invalidate());
+  }
+
+  createPayee(kurinKey: string, name: string): Observable<unknown> {
+    return this.http.post(`${this.kurinApiUrl}/${kurinKey}/dues/payees`, { name, isArchived: false }).pipe(this.invalidate());
+  }
+
+  updatePayee(kurinKey: string, payeeKey: string, name: string, isArchived: boolean): Observable<unknown> {
+    return this.http.put(`${this.kurinApiUrl}/${kurinKey}/dues/payees/${payeeKey}`, { name, isArchived }).pipe(this.invalidate());
   }
 
   createEntry(groupKey: string, request: UpsertDuesEntryRequest): Observable<unknown> {
@@ -119,6 +128,11 @@ export class DuesService {
 
   setEntryVerified(groupKey: string, entryKey: string, isVerified: boolean): Observable<unknown> {
     return this.http.put(`${this.apiUrl}/${groupKey}/dues/entries/${entryKey}/verified`, { isVerified }).pipe(this.invalidate());
+  }
+
+  /** A гурток's box, or a senior kurin's own: the same routes under either. */
+  private boxUrl(box: DuesBoxRef): string {
+    return 'groupKey' in box ? `${this.apiUrl}/${box.groupKey}/dues` : `${this.kurinApiUrl}/${box.kurinKey}/dues`;
   }
 
   /** Every write changes balances and boxes, so every cached read of dues goes. */

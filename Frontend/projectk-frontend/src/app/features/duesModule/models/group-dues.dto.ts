@@ -16,6 +16,8 @@ export interface PlastYearDto {
 export interface DuesArticleDto {
   name: string;
   recipient: DuesRecipient;
+  /** One of the kurin's payees, for `DuesRecipient.Payee`. */
+  payeeKey?: string | null;
   amount: number;
   /** What a person with a пільга pays for it. */
   reducedAmount: number;
@@ -23,6 +25,8 @@ export interface DuesArticleDto {
 
 export interface KurinDuesRateDto {
   fromQuarter: QuarterDto;
+  /** The tag the rate is for, in a kurin without гуртки; null for everyone else. */
+  tagKey?: string | null;
   /** The kurin's статті, in its order; the amounts below are their totals. */
   articles: DuesArticleDto[];
   stanytsiaFull: number;
@@ -42,6 +46,8 @@ export interface GroupDuesRateDto {
 export interface DuesAmountDto {
   stanytsia: number;
   krai: number;
+  /** The kurin's own payees together. */
+  payees?: number;
   kurin: number;
   group: number;
   total: number;
@@ -65,6 +71,12 @@ export interface DuesAccountDto {
   fullName: string;
   standing: DuesAccountStanding;
   isConcessionNow: boolean;
+  /** The kurin's tags on the person that the viewer may see. */
+  tagKeys?: string[];
+  /** What the running quarter costs them where they stand now; null once they left. */
+  rateNow?: number | null;
+  /** The tag whose rate they pay now, in a kurin without гуртки. */
+  rateTagKey?: string | null;
   /** The пільги of the край given to the person, newest first. */
   grants: DuesConcessionGrantDto[];
   quarters: DuesAccountQuarterDto[];
@@ -82,6 +94,7 @@ export interface DuesEntryDto {
   occurredOn: string;
   membershipKey: string | null;
   memberName: string | null;
+  payeeKey?: string | null;
   collectedByMemberKey: string | null;
   collectedByName: string | null;
   note: string | null;
@@ -97,6 +110,8 @@ export interface DuesBoxDto {
   card: number;
   total: number;
   toForward: number;
+  /** Paid for quarters not charged yet, in a senior kurin's box; kept out of `own`. */
+  ahead?: number;
   own: number;
   inTransit: number;
 }
@@ -107,6 +122,26 @@ export interface DuesHandoverDto {
   received: number;
   outstanding: number;
 }
+
+/** A tag of the kurin, as the dues screens name and colour it. */
+export interface DuesTagDto {
+  tagKey: string;
+  name: string;
+  colorHex: string;
+}
+
+/** One of the kurin's payees and how its box stands with it. */
+export interface KurinDuesPayeeDto {
+  payeeKey: string;
+  name: string;
+  isArchived: boolean;
+  collected: number;
+  sent: number;
+  toForward: number;
+}
+
+/** Which box an account is kept in: a гурток's, or a senior kurin's own. */
+export type DuesBoxRef = { groupKey: string } | { kurinKey: string };
 
 export interface DuesPersonDto {
   memberKey: string;
@@ -141,6 +176,8 @@ export interface GroupDuesDto {
   box: DuesBoxDto;
   handover: DuesHandoverDto;
   people: DuesPersonDto[];
+  /** The kurin's tags, for naming and filtering the register by them. */
+  tags?: DuesTagDto[];
   viewer: DuesViewerDto;
 }
 
@@ -224,6 +261,13 @@ export interface KurinDuesDto {
   sentToStanytsia: number;
   sentToKrai: number;
   groups: KurinGroupHandoverDto[];
+  /** A senior kurin has no гуртки: each person's account is in the kurin's own box. */
+  isSenior?: boolean;
+  /** The personal accounts in the kurin's own box. */
+  accounts?: DuesAccountDto[];
+  tags?: DuesTagDto[];
+  kraiConcessions?: KraiConcessionDto[];
+  payees?: KurinDuesPayeeDto[];
   quarters: KurinDuesQuarterDto[];
   transfers: DuesTransferDto[];
   entries: DuesEntryDto[];
@@ -232,7 +276,8 @@ export interface KurinDuesDto {
 }
 
 export interface MemberDuesAccountDto {
-  groupKey: string;
+  /** Null for an account in the kurin's own box. */
+  groupKey: string | null;
   groupName: string;
   standing: DuesAccountStanding;
   quarters: DuesAccountQuarterDto[];
@@ -271,6 +316,8 @@ export interface UpsertDuesEntryRequest {
   amount: number;
   occurredOn: string;
   membershipKey: string | null;
+  /** For a transfer to one of the kurin's payees. */
+  payeeKey?: string | null;
   collectedByMemberKey: string | null;
   note: string | null;
 }
@@ -282,12 +329,14 @@ export interface SetGroupDuesRateRequest {
 
 export interface SetKurinDuesRateRequest {
   fromQuarter: QuarterDto;
+  tagKey?: string | null;
   articles: DuesArticleRequest[];
 }
 
 export interface DuesArticleRequest {
   name: string;
   recipient: DuesRecipient;
+  payeeKey?: string | null;
   amount: number;
   reducedAmount: number;
 }
