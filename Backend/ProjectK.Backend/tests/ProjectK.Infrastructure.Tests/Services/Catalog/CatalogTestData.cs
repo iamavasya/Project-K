@@ -64,6 +64,9 @@ internal static class CatalogTestData
           ],
           "degrees": [
             {
+              "id": "upyu-prykhylnyk", "family": "upyu-prykhylnyk", "title": "Пластун прихильник", "ulad": "upyu", "order": 1
+            },
+            {
               "id": "ups-senior-pratsi", "family": "ups-senior-pratsi", "title": "Пластун сеніор праці", "ulad": "ups", "order": 2,
               "images": { "color": "https://catalog.test/v1/images/sp.svg?v=1" }
             },

@@ -74,7 +74,8 @@ internal static class CatalogMapper
     private static List<SeniorCatalogItem> SeniorItems(CatalogDocument document)
     {
         var degrees = (document.Degrees ?? [])
-            .OrderBy(degree => degree.Order)
+            .OrderBy(degree => UladRank(degree.Ulad))
+            .ThenBy(degree => degree.Order)
             .Select(degree => new SeniorCatalogItem(
                 degree.Id,
                 SeniorRecordKind.Degree,
@@ -97,6 +98,15 @@ internal static class CatalogMapper
 
         return [.. degrees, .. awards];
     }
+
+    // A senior's own ступені first, УСП before УПС; the youth ones after, for whoever records the whole way.
+    private static int UladRank(string? ulad) => ulad?.ToLowerInvariant() switch
+    {
+        "usp" => 0,
+        "ups" => 1,
+        "upyu" => 2,
+        _ => 3
+    };
 
     private static Badge ToBadge(CatalogBadge badge, IReadOnlyDictionary<string, string> categories)
     {

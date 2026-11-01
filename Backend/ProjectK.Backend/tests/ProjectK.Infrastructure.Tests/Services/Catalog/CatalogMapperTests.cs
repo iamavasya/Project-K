@@ -91,13 +91,13 @@ public class CatalogMapperTests
     }
 
     [Fact]
-    public void SeniorItems_AreTheDegreesInOrder_ThenAwardsAndTrainings_WithoutTheYouthAwards()
+    public void SeniorItems_AreTheDegreesByUladThenOrder_ThenAwardsAndTrainings_WithoutTheYouthAwards()
     {
         var items = Map().SeniorItems;
 
-        Assert.Equal(["usp-starshyi-plastun", "ups-senior-pratsi", "usp-hramota-zasluhy", "lsh-absolvent"], items.Select(i => i.Id));
+        Assert.Equal(["usp-starshyi-plastun", "ups-senior-pratsi", "upyu-prykhylnyk", "usp-hramota-zasluhy", "lsh-absolvent"], items.Select(i => i.Id));
         Assert.Equal(
-            [SeniorRecordKind.Degree, SeniorRecordKind.Degree, SeniorRecordKind.Award, SeniorRecordKind.Training],
+            [SeniorRecordKind.Degree, SeniorRecordKind.Degree, SeniorRecordKind.Degree, SeniorRecordKind.Award, SeniorRecordKind.Training],
             items.Select(i => i.Kind));
         Assert.Equal(new SeniorCatalogItem("ups-senior-pratsi", SeniorRecordKind.Degree, "Пластун сеніор праці", "ups", "ups", 2,
             "https://catalog.test/v1/images/sp.svg?v=1"), Map().SeniorItemsById["ups-senior-pratsi"]);
