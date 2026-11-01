@@ -15,7 +15,8 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetRate;
 
 /// <summary>
 /// Sets the kurin's статті of the вкладка from a quarter on, for every гурток of the kurin. A rate
-/// already set from that quarter is replaced.
+/// already set from that quarter is replaced. In a senior kurin every quarter from it that is not
+/// paid in full is priced again: the rate may change whose tag counts.
 /// </summary>
 public sealed record SetKurinDuesRateCommand(Guid KurinKey, SetKurinDuesRateRequest Request) : IRequest<ServiceResult<object>>;
 
@@ -69,9 +70,17 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
     private readonly IKraiProfileProvider _profiles;
     private readonly IDuesKurinShape _shape;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IDuesAccrual _accrual;
 
-    public SetKurinDuesRateCommandHandler(IDuesUnitOfWork dues, ICurrentUserContext currentUser, IKraiProfileProvider profiles, IDuesKurinShape shape, IUnitOfWork unitOfWork)
+    public SetKurinDuesRateCommandHandler(
+        IDuesUnitOfWork dues,
+        ICurrentUserContext currentUser,
+        IKraiProfileProvider profiles,
+        IDuesKurinShape shape,
+        IUnitOfWork unitOfWork,
+        IDuesAccrual accrual)
     {
+        _accrual = accrual;
         _dues = dues;
         _currentUser = currentUser;
         _profiles = profiles;
@@ -93,6 +102,11 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
             if (!await _shape.IsSeniorAsync(request.KurinKey, cancellationToken))
             {
                 return ServiceResult<object>.Failure(ResultType.BadRequest, "TagRatesOff", "Rates by tag are for kurins without гуртки.");
+            }
+
+            if (!await _shape.TagsOnAsync(request.KurinKey, cancellationToken))
+            {
+                return ServiceResult<object>.Failure(ResultType.BadRequest, "TagsOff", "The kurin has its tags off.");
             }
 
             if (!(await _unitOfWork.KurinTags.GetForKurinAsync(request.KurinKey, cancellationToken)).Any(t => t.KurinTagKey == tag))
@@ -161,6 +175,7 @@ public sealed class SetKurinDuesRateCommandHandler : IRequestHandler<SetKurinDue
         }
 
         await _dues.SaveChangesAsync(cancellationToken);
+        await _accrual.RepriceKurinAsync(request.KurinKey, DuesQuarter.FromIndex(from), cancellationToken);
         return new ServiceResult<object>(ResultType.Success);
     }
 }

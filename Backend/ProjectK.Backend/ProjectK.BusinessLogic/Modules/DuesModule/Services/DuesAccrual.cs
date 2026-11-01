@@ -12,13 +12,19 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 /// <inheritdoc />
 /// <remarks>
 /// Who is charged: a youth membership standing in a гурток — or, in a senior kurin, which has no
-/// гуртки, every member in the kurin's own box — from the quarter it joined, but not before the
-/// kurin's first rate, up to the last quarter that has fallen due. Paying наперед, that is the running
-/// quarter; paying за пройдений квартал, the one before it. The quarter a person left in is not charged
-/// here: released at the start of a quarter, they do not take it (a charge made for it while they still
-/// stood, and paid, is kept — see DuesLeavingQuarterEventHandler). Впорядники stand in the kurin and in
-/// no гурток, so a УПЮ kurin never charges them. In a senior kurin each quarter is priced at the highest
-/// rate among the person's tags as they are when it is charged. Quarters are read on the край's clock.
+/// гуртки, every membership of any kind in the kurin's own box, провід too — from the quarter it
+/// joined, but not before the kurin's first rate, up to the last quarter that has fallen due. Paying
+/// наперед, that is the running quarter; paying за пройдений квартал, the one before it. The quarter a
+/// person left in is not charged here: released at the start of a quarter, they do not take it (a
+/// charge made for it while they still stood, and paid, is kept — see DuesLeavingQuarterEventHandler),
+/// and the kurin they move to starts from the next quarter instead. Впорядники stand in the kurin and
+/// in no гурток, so a УПЮ kurin never charges them. Quarters are read on the край's clock.
+/// <para>
+/// In a senior kurin each quarter is priced at the highest rate among the person's tags. A quarter not
+/// paid in full follows the tags and rates as they are now: the last quarter fallen due is repriced on
+/// every read, so a tag put on or taken off moves the running charge, and a rate set from a quarter
+/// reprices every unpaid quarter from it. A quarter paid in full keeps the tag it was paid at.
+/// </para>
 /// </remarks>
 public sealed class DuesAccrual : IDuesAccrual
 {
@@ -51,13 +57,21 @@ public sealed class DuesAccrual : IDuesAccrual
         var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
         var last = await LastDueQuarterAsync(kurinKey, krai, cancellationToken);
 
+        var chargeable = memberships.Where(m => IsCharged(m, m.GroupKey, pricing)).ToList();
+        var keptElsewhere = await ArrivalsKeptElsewhereAsync(kurinKey, chargeable, pricing, last, charged, krai, cancellationToken);
+
         var added = false;
-        foreach (var membership in memberships.Where(m => m.Kind == MembershipKind.Youth && (m.GroupKey.HasValue || pricing.IsSenior)))
+        foreach (var membership in chargeable)
         {
-            added |= Charge(kurinKey, membership, membership.GroupKey, pricing, last, charged, krai);
+            added |= Charge(kurinKey, membership, membership.GroupKey, pricing, last, charged, krai, keptElsewhere);
         }
 
         if (added)
+        {
+            await SaveAsync(cancellationToken);
+        }
+
+        if (pricing.IsSenior && await RepriceAsync(kurinKey, pricing, memberships, last, cancellationToken))
         {
             await SaveAsync(cancellationToken);
         }
@@ -71,18 +85,40 @@ public sealed class DuesAccrual : IDuesAccrual
             return;
         }
 
+        var pricing = await PricingAsync(kurinKey, rates, cancellationToken);
         var membership = (await _memberships.GetInKurinAsync(kurinKey, cancellationToken))
-            .FirstOrDefault(m => m.MembershipKey == membershipKey && m.Kind == MembershipKind.Youth);
+            .FirstOrDefault(m => m.MembershipKey == membershipKey && IsCharged(m, groupKey, pricing));
         if (membership is null)
         {
             return;
         }
 
-        var pricing = await PricingAsync(kurinKey, rates, cancellationToken);
         var charged = await ChargedAsync(kurinKey, cancellationToken);
         var krai = await _profiles.DuesKraiForKurinAsync(kurinKey, cancellationToken);
         var last = await LastDueQuarterAsync(kurinKey, krai, cancellationToken);
-        if (Charge(kurinKey, membership, groupKey, pricing, last, charged, krai))
+        var keptElsewhere = await ArrivalsKeptElsewhereAsync(kurinKey, [membership], pricing, last, charged, krai, cancellationToken);
+        if (Charge(kurinKey, membership, groupKey, pricing, last, charged, krai, keptElsewhere))
+        {
+            await SaveAsync(cancellationToken);
+        }
+    }
+
+    public async Task RepriceKurinAsync(Guid kurinKey, DuesQuarter from, CancellationToken cancellationToken = default)
+    {
+        var rates = await _dues.KurinDuesRates.GetForKurinAsync(kurinKey, cancellationToken);
+        if (rates.Count == 0)
+        {
+            return;
+        }
+
+        var pricing = await PricingAsync(kurinKey, rates, cancellationToken);
+        if (!pricing.IsSenior)
+        {
+            return;
+        }
+
+        var memberships = await _memberships.GetInKurinAsync(kurinKey, cancellationToken);
+        if (await RepriceAsync(kurinKey, pricing, memberships, from, cancellationToken))
         {
             await SaveAsync(cancellationToken);
         }
@@ -105,6 +141,10 @@ public sealed class DuesAccrual : IDuesAccrual
         }
     }
 
+    /// <summary>A УПЮ kurin charges its youth in гуртки; a senior kurin charges everyone in it.</summary>
+    private static bool IsCharged(KurinMembershipRecord membership, Guid? groupKey, Pricing pricing) =>
+        pricing.IsSenior || (membership.Kind == MembershipKind.Youth && groupKey.HasValue);
+
     private bool Charge(
         Guid kurinKey,
         KurinMembershipRecord membership,
@@ -112,9 +152,15 @@ public sealed class DuesAccrual : IDuesAccrual
         Pricing pricing,
         DuesQuarter last,
         HashSet<(Guid Membership, int Quarter)> charged,
-        DuesKrai krai)
+        DuesKrai krai,
+        IReadOnlySet<Guid> keptElsewhere)
     {
         var from = krai.QuarterOf(membership.JoinedAtUtc);
+        if (keptElsewhere.Contains(membership.MembershipKey))
+        {
+            from = from.Next();
+        }
+
         if (from < pricing.FirstQuarter)
         {
             from = pricing.FirstQuarter;
@@ -145,6 +191,101 @@ public sealed class DuesAccrual : IDuesAccrual
         }
 
         return added;
+    }
+
+    /// <summary>
+    /// The memberships whose first quarter here the kurin they came from keeps: they left it in the
+    /// quarter they joined this one, and its charge for that quarter stands — paid in full, since an
+    /// unpaid one goes on release. Charging it here too would make them pay the quarter twice.
+    /// </summary>
+    private async Task<IReadOnlySet<Guid>> ArrivalsKeptElsewhereAsync(
+        Guid kurinKey,
+        IEnumerable<KurinMembershipRecord> memberships,
+        Pricing pricing,
+        DuesQuarter last,
+        HashSet<(Guid Membership, int Quarter)> charged,
+        DuesKrai krai,
+        CancellationToken cancellationToken)
+    {
+        var arriving = memberships
+            .Select(m => (Membership: m, Quarter: krai.QuarterOf(m.JoinedAtUtc)))
+            .Where(a => a.Quarter >= pricing.FirstQuarter && a.Quarter <= last
+                && !charged.Contains((a.Membership.MembershipKey, a.Quarter.Index)))
+            .ToList();
+        if (arriving.Count == 0)
+        {
+            return new HashSet<Guid>();
+        }
+
+        var came = new List<(Guid Arriving, Guid Left, int Quarter)>();
+        foreach (var (membership, quarter) in arriving)
+        {
+            foreach (var before in await _memberships.GetForMemberAsync(membership.MemberKey, cancellationToken))
+            {
+                if (before.KurinKey != kurinKey && before.LeftAtUtc is { } leftAt && krai.QuarterOf(leftAt) == quarter)
+                {
+                    came.Add((membership.MembershipKey, before.MembershipKey, quarter.Index));
+                }
+            }
+        }
+
+        if (came.Count == 0)
+        {
+            return new HashSet<Guid>();
+        }
+
+        var kept = (await _dues.DuesCharges.GetForMembershipsAsync(came.Select(c => c.Left).Distinct().ToList(), cancellationToken))
+            .Select(c => (c.MembershipKey, c.Quarter))
+            .ToHashSet();
+        return came.Where(c => kept.Contains((c.Left, c.Quarter))).Select(c => c.Arriving).ToHashSet();
+    }
+
+    /// <summary>
+    /// Sets the tag of every charge from <paramref name="from"/> on that is not paid in full to the one
+    /// the person's tags and the kurin's rates give now. Whether a quarter is paid is read before any
+    /// of them changes. True when a charge changed.
+    /// </summary>
+    private async Task<bool> RepriceAsync(
+        Guid kurinKey,
+        Pricing pricing,
+        IReadOnlyCollection<KurinMembershipRecord> memberships,
+        DuesQuarter from,
+        CancellationToken cancellationToken)
+    {
+        var charges = await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken);
+        if (!charges.Any(c => c.Quarter >= from.Index))
+        {
+            return false;
+        }
+
+        var ledger = new DuesLedger(
+            pricing.Rates,
+            await _dues.GroupDuesRates.GetForKurinAsync(kurinKey, cancellationToken),
+            await _dues.DuesConcessions.GetForKurinAsync(kurinKey, cancellationToken),
+            charges,
+            await _dues.DuesEntries.GetForKurinAsync(kurinKey, cancellationToken),
+            await _dues.DuesConcessionGrants.GetForKurinAsync(kurinKey, cancellationToken));
+        var unpaid = ledger.Accounts()
+            .SelectMany(a => a.Quarters.Where(q => q.Balance < 0).Select(q => (a.MembershipKey, q.Quarter.Index)))
+            .ToHashSet();
+        var members = memberships.ToDictionary(m => m.MembershipKey, m => m.MemberKey);
+
+        var changed = false;
+        var tracked = await _dues.DuesCharges.GetTrackedFromQuarterAsync(kurinKey, from.Index, cancellationToken);
+        foreach (var charge in tracked.Where(c => unpaid.Contains((c.MembershipKey, c.Quarter))))
+        {
+            var tags = members.TryGetValue(charge.MembershipKey, out var memberKey)
+                ? pricing.Tags.GetValueOrDefault(memberKey) ?? []
+                : [];
+            var tag = DuesLedger.RateTagFor(pricing.Rates, tags, DuesQuarter.FromIndex(charge.Quarter));
+            if (tag != charge.RateTagKey)
+            {
+                charge.RateTagKey = tag;
+                changed = true;
+            }
+        }
+
+        return changed;
     }
 
     /// <summary>The kurin's rates and, in a senior kurin, its people's tags: what a new charge is priced by.</summary>

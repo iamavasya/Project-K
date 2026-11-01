@@ -20,7 +20,8 @@ public class DuesCharge : Entity
     public int Quarter { get; set; }
     /// <summary>
     /// The tag whose rate the quarter is priced at; null for the kurin's rate for everyone. Kept here
-    /// because a person's tags have no history: a tag taken off later does not reprice the past.
+    /// because a person's tags have no history: a quarter paid in full keeps it for good, while one not
+    /// paid in full is set again when the kurin's rates or the person's tags change (DuesAccrual).
     /// </summary>
     public Guid? RateTagKey { get; set; }
 }
