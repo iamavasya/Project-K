@@ -11,7 +11,7 @@ describe('PublicCardComponent', () => {
   let cards: MockedObject<CardService>;
   const card: PublicCardDto = {
     fullName: 'Назар Коваль', photoUrl: null, kurins: [{ number: 15, namedAfter: null, groupName: 'Соколи', branches: [{ branch: KurinBranch.UPYu, number: 15 }] }],
-    level: 'пл. уч.', awards: [{ level: 4, dateAcquired: '2026-05-01T00:00:00Z' }], badges: null, probes: [],
+    level: 'пл. уч.', awards: [{ level: 4, title: '4-е відзначення', imageUrl: null, dateAcquired: '2026-05-01T00:00:00Z' }], badges: null, probes: [],
     checkedAtUtc: '2026-10-31T12:32:00Z'
   };
 
@@ -53,6 +53,17 @@ describe('PublicCardComponent', () => {
 
     expect(text).toContain('5-й курінь УСП');
     expect(text).not.toContain('к. ч. 5');
+  });
+
+  it('shows a senior відзначення with the catalogue title and picture', () => {
+    cards.checked.mockReturnValue(of({
+      ...card,
+      awards: [{ level: null, title: 'Грамота заслуги', imageUrl: 'https://catalog.test/gramota.png', dateAcquired: '2026-05-01T00:00:00Z' }]
+    }));
+    const element = create('check').nativeElement as HTMLElement;
+
+    expect(element.textContent).toContain('Грамота заслуги');
+    expect(element.querySelector('.shared-card__awards img')?.getAttribute('src')).toBe('https://catalog.test/gramota.png');
   });
 
   it('reads a permanent link from its own address and says when it is gone', () => {

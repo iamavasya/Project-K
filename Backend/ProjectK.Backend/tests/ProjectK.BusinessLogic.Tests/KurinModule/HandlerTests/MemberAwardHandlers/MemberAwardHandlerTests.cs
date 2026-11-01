@@ -99,7 +99,7 @@ public class MemberAwardHandlerTests
             _access.Object,
             _journal.Audit);
         _deleteHandler = new DeleteMemberAwardCommandHandler(
-            _unitOfWorkMock.Object, _currentUserContextMock.Object, _memberDirectory.Object, _access.Object, _journal.Audit, _honours.Object);
+            _unitOfWorkMock.Object, _currentUserContextMock.Object, _memberDirectory.Object, _access.Object, _journal.Audit, _honours.Object, _kurinDataMock.Object);
     }
 
     private void Refuse(KurinCapability capability)

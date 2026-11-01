@@ -40,7 +40,8 @@ export interface PublicCardDto {
   photoUrl: string | null;
   kurins: { number: number | null; namedAfter: string | null; groupName: string | null; branches: KurinNumbering[] }[] | null;
   level: string | null;
-  awards: { level: 1 | 2 | 3 | 4; dateAcquired: string }[] | null;
+  /** An УПЮ відзначення by level; a senior one (no level) with the catalogue's title and picture. */
+  awards: { level: 1 | 2 | 3 | 4 | null; title: string; imageUrl: string | null; dateAcquired: string }[] | null;
   badges: { title: string; imagePath: string | null; confirmedAtUtc: string | null }[] | null;
   probes: { title: string; verifiedAtUtc: string | null }[] | null;
   checkedAtUtc: string | null;

@@ -12,8 +12,11 @@ public sealed record CardAllowance(bool MayShare, bool IsAdult, [property: JsonC
 
 public sealed record PublicCardKurin(int? Number, string? NamedAfter, string? GroupName, IReadOnlyList<KurinNumbering> Branches);
 
-/// <summary>One confirmed відзначення; <see cref="Level"/> is 1 to 4.</summary>
-public sealed record PublicCardAward(int Level, DateTime DateAcquired);
+/// <summary>
+/// One confirmed відзначення: an УПЮ one has <see cref="Level"/> 1 to 4 and its picture by level, a
+/// senior one the catalogue's title and picture.
+/// </summary>
+public sealed record PublicCardAward(int? Level, string Title, string? ImageUrl, DateTime DateAcquired);
 
 public sealed record PublicCardBadge(string Title, string? ImagePath, DateTime? ConfirmedAtUtc);
 

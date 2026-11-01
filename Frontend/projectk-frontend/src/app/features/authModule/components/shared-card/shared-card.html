@@ -23,8 +23,10 @@
         <ul class="shared-card__awards">
           @for (award of awards; track $index) {
             <li>
-              <img [src]="awardImage(award.level)" alt="" />
-              <span>{{ awardName(award.level) }}</span>
+              @if (awardImage(award); as src) {
+                <img [src]="src" alt="" />
+              }
+              <span>{{ awardName(award) }}</span>
               <small>{{ award.dateAcquired | date:'dd.MM.yyyy' }}</small>
             </li>
           }
