@@ -10,7 +10,9 @@ import { MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
 
 export interface UpsertMemberAwardRequest {
     memberAwardKey?: string;
-    level: MemberAwardLevel;
+    level?: MemberAwardLevel | null;
+    /** A senior відзначення from the catalogue, instead of a level. */
+    catalogId?: string | null;
     dateAcquired: string;
     note?: string;
 }

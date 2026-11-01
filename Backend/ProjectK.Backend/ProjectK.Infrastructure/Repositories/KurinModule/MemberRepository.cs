@@ -64,7 +64,6 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                                         .ThenInclude(h => h.Leadership.Group)
                                      .Include(m => m.MemberWarnings)
                                      .Include(m => m.MemberAwards)
-                                     .Include(m => m.SeniorRecords)
                                      .FirstOrDefaultAsync(e => e.MemberKey == entityKey, cancellationToken);
     }
 
@@ -183,7 +182,8 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                         MemberKey = h.MemberKey,
                         PlastLevelHistoryKey = h.PlastLevelHistoryKey,
                         PlastLevel = h.PlastLevel,
-                        DateAchieved = h.DateAchieved
+                        DateAchieved = h.DateAchieved,
+                        IsPlastunka = h.IsPlastunka
                     }).ToList(),
                     // Offices of this kurin only, like Office above: a role held in another kurin is
                     // not this kurin's to show, and would be named by this kurin's own role names.

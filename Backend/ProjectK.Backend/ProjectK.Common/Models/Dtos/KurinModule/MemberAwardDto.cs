@@ -8,7 +8,11 @@ public class MemberAwardDto
     public Guid MemberAwardKey { get; set; }
     public Guid MemberKey { get; set; }
     public Guid KurinKey { get; set; }
-    public MemberAwardLevel Level { get; set; }
+    /// <summary>An УПЮ відзначення's level; null for a senior one.</summary>
+    public MemberAwardLevel? Level { get; set; }
+
+    /// <summary>A senior відзначення's catalogue id; null for an УПЮ one.</summary>
+    public string? CatalogId { get; set; }
     public DateTime DateAcquired { get; set; }
     public string? Note { get; set; }
     public BadgeProgressStatus Status { get; set; }

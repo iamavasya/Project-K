@@ -7,6 +7,8 @@ using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Catalog;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Authorization.KurinPolicy;
 using ProjectK.Common.Models.Dtos;
@@ -24,7 +26,11 @@ public sealed class UpsertMemberAwardCommand : IRequest<ServiceResult<MemberAwar
 {
     public Guid? MemberAwardKey { get; set; }
     public Guid MemberKey { get; set; }
-    public MemberAwardLevel Level { get; set; }
+    /// <summary>An УПЮ відзначення's level, in an УПЮ kurin. Leave empty for a senior one.</summary>
+    public MemberAwardLevel? Level { get; set; }
+
+    /// <summary>A senior відзначення from the catalogue, in a УСП or УПС kurin. Leave empty for an УПЮ one.</summary>
+    public string? CatalogId { get; set; }
     public DateTime DateAcquired { get; set; }
     public string? Note { get; set; }
 }
@@ -36,6 +42,8 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
     private readonly IDomainEventPublisher _events;
     private readonly IMapper _mapper;
     private readonly IMembershipRepository _memberships;
+    private readonly IKurinRepository _kurins;
+    private readonly IHonoursCatalog _honours;
     private readonly IResourceAccessService _access;
     private readonly IKurinAudit _audit;
 
@@ -46,8 +54,11 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         IMapper mapper,
         IUnitOfWork kurinData,
         IResourceAccessService access,
-        IKurinAudit audit)
+        IKurinAudit audit,
+        IHonoursCatalog honours)
     {
+        _kurins = kurinData.Kurins;
+        _honours = honours;
         _unitOfWork = unitOfWork;
         _currentUserContext = currentUserContext;
         _events = events;
@@ -75,6 +86,23 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         if (request.MemberAwardKey.HasValue)
         {
             existingAward = await _unitOfWork.MemberAwards.GetByKeyAsync(request.MemberAwardKey.Value, cancellationToken);
+        }
+
+        // Each улад its own відзначення: levels 1–4 in an УПЮ kurin, the catalogue's in a senior one.
+        var kurin = await _kurins.GetByKeyAsync(actingKurinKey, cancellationToken);
+        var inSeniorKurin = kurin is not null && KurinBranchSet.IsSenior(kurin.Branch);
+        if (request.CatalogId is not null)
+        {
+            return inSeniorKurin
+                ? await UpsertSeniorAsync(request, member, actingKurinKey, existingAward, cancellationToken)
+                : ServiceResult<MemberAwardDto>.Failure(
+                    ResultType.BadRequest, "SeniorAwardOutsideSeniorKurin", "A senior відзначення is recorded in a УСП or УПС kurin.");
+        }
+
+        if (inSeniorKurin || existingAward?.CatalogId is not null)
+        {
+            return ServiceResult<MemberAwardDto>.Failure(
+                ResultType.BadRequest, "YouthAwardInSeniorKurin", "An УПЮ відзначення is recorded in an УПЮ kurin.");
         }
 
         if (existingAward != null && existingAward.MemberKey == request.MemberKey)
@@ -152,6 +180,90 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         return new ServiceResult<MemberAwardDto>(ResultType.Success, response);
     }
 
+    /// <summary>
+    /// A senior відзначення: the person records their own, or the senior kurin's провід does, and it
+    /// stands at once — there is nobody to confirm it. Changing one takes being its owner or the
+    /// kurin's right to remove awards, as removing it does.
+    /// </summary>
+    private async Task<ServiceResult<MemberAwardDto>> UpsertSeniorAsync(
+        UpsertMemberAwardCommand request,
+        MemberEntity member,
+        Guid actingKurinKey,
+        ProjectK.Common.Entities.KurinModule.MemberAward? existingAward,
+        CancellationToken cancellationToken)
+    {
+        var item = _honours.GetById(request.CatalogId!.Trim());
+        if (item is not { Kind: HonourKind.Award })
+        {
+            return ServiceResult<MemberAwardDto>.Failure(
+                ResultType.BadRequest, "UnknownSeniorAward", "The catalogue has no such senior відзначення.");
+        }
+
+        var now = DateTime.UtcNow;
+        var userKey = _currentUserContext.UserId;
+        if (existingAward is not null && existingAward.MemberKey == request.MemberKey)
+        {
+            if (existingAward.CatalogId is null)
+            {
+                return ServiceResult<MemberAwardDto>.Failure(
+                    ResultType.BadRequest, "SeniorAwardOutsideSeniorKurin", "An УПЮ відзначення stays one.");
+            }
+
+            var owner = member.UserKey is { } account && account == userKey;
+            if (!owner && !(await _access.CheckCapabilityAsync(KurinCapability.RemoveAward, ResourceType.Member, request.MemberKey, cancellationToken)).IsAllowed)
+            {
+                return ServiceResult<MemberAwardDto>.Failure(
+                    ResultType.Forbidden,
+                    "ConfirmedAwardEditNotAllowed",
+                    "Only the person or those the kurin lets remove awards may change a senior відзначення.");
+            }
+
+            var before = (existingAward.CatalogId, existingAward.DateAcquired, existingAward.Note);
+            existingAward.CatalogId = item.Id;
+            existingAward.DateAcquired = request.DateAcquired;
+            existingAward.Note = request.Note;
+            existingAward.UpdatedDate = now;
+            _unitOfWork.MemberAwards.Update(existingAward, cancellationToken);
+
+            var changes = AuditChanges.Of(
+                ("catalogId", before.CatalogId, existingAward.CatalogId),
+                ("dateAcquired", before.DateAcquired, existingAward.DateAcquired),
+                ("note", before.Note, existingAward.Note));
+            if (changes.Count > 0)
+            {
+                await RecordAsync(AuditActions.Award.Changed, existingAward, changes, cancellationToken);
+            }
+        }
+        else
+        {
+            existingAward = new ProjectK.Common.Entities.KurinModule.MemberAward
+            {
+                MemberKey = request.MemberKey,
+                KurinKey = actingKurinKey,
+                CatalogId = item.Id,
+                DateAcquired = request.DateAcquired,
+                Note = request.Note,
+                Status = BadgeProgressStatus.Confirmed,
+                SubmittedAtUtc = now,
+                SubmittedByUserKey = userKey,
+                UpdatedDate = now
+            };
+            _unitOfWork.MemberAwards.Create(existingAward, cancellationToken);
+
+            await RecordAsync(
+                AuditActions.Award.Added,
+                existingAward,
+                AuditChanges.Added(
+                    ("catalogId", existingAward.CatalogId),
+                    ("dateAcquired", existingAward.DateAcquired),
+                    ("note", existingAward.Note)),
+                cancellationToken);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return new ServiceResult<MemberAwardDto>(ResultType.Success, _mapper.Map<MemberAwardDto>(existingAward));
+    }
+
     private Task RecordAsync(
         string action,
         ProjectK.Common.Entities.KurinModule.MemberAward award,
@@ -162,7 +274,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
                 AuditArea.Award,
                 action,
                 award.MemberAwardKey,
-                KurinReportTerminology.AwardLevel(award.Level),
+                KurinReportTerminology.Award(award.Level, award.CatalogId, id => _honours.GetById(id)?.Title),
                 award.MemberKey,
                 changes),
             cancellationToken);

@@ -59,9 +59,6 @@ public class Member : Entity, IHasParentContacts
     public ICollection<PlastLevelHistory> PlastLevelHistory { get; set; } = new List<PlastLevelHistory>();
     public ICollection<LeadershipHistory> LeadershipHistories { get; set; } = new List<LeadershipHistory>();
     public ICollection<MemberWarning> MemberWarnings { get; set; } = new List<MemberWarning>();
-
-    /// <summary>The person's own книжечка: ступені, відзначення and вишколи they entered themself.</summary>
-    public ICollection<MemberSeniorRecord> SeniorRecords { get; set; } = new List<MemberSeniorRecord>();
     public ICollection<MemberAward> MemberAwards { get; set; } = new List<MemberAward>();
     public AppUser? User { get; set; }
 }

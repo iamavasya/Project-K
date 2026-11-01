@@ -91,17 +91,17 @@ public class CatalogMapperTests
     }
 
     [Fact]
-    public void SeniorItems_AreTheDegreesByUladThenOrder_ThenAwardsAndTrainings_WithoutTheYouthAwards()
+    public void Honours_AreTheDegreesByUladThenOrder_ThenSeniorAwards_WithoutYouthAwardsOrTrainings()
     {
-        var items = Map().SeniorItems;
+        var items = Map().Honours;
 
-        Assert.Equal(["usp-starshyi-plastun", "ups-senior-pratsi", "upyu-prykhylnyk", "usp-hramota-zasluhy", "lsh-absolvent"], items.Select(i => i.Id));
+        Assert.Equal(["usp-starshyi-plastun", "ups-senior-pratsi", "upyu-prykhylnyk", "usp-hramota-zasluhy"], items.Select(i => i.Id));
         Assert.Equal(
-            [SeniorRecordKind.Degree, SeniorRecordKind.Degree, SeniorRecordKind.Degree, SeniorRecordKind.Award, SeniorRecordKind.Training],
+            [HonourKind.Degree, HonourKind.Degree, HonourKind.Degree, HonourKind.Award],
             items.Select(i => i.Kind));
-        Assert.Equal(new SeniorCatalogItem("ups-senior-pratsi", SeniorRecordKind.Degree, "Пластун сеніор праці", "ups", "ups", 2,
-            "https://catalog.test/v1/images/sp.svg?v=1"), Map().SeniorItemsById["ups-senior-pratsi"]);
-        Assert.Equal("https://catalog.test/v1/images/lsh-bw.svg?v=1", Map().SeniorItemsById["lsh-absolvent"].ImageUrl);
+        Assert.Equal(new CatalogHonour("ups-senior-pratsi", HonourKind.Degree, "Пластун сеніор праці", "ups", "ups", 2,
+            "https://catalog.test/v1/images/sp.svg?v=1"), Map().HonoursById["ups-senior-pratsi"]);
+        Assert.False(Map().HonoursById.ContainsKey("lsh-absolvent"));
     }
 
     [Fact]

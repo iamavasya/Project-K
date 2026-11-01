@@ -6,20 +6,20 @@ using ProjectK.Common.Models.Catalog;
 
 namespace ProjectK.API.Controllers.ProbesAndBadgesModule;
 
-/// <summary>The ступені, відзначення and вишколи a senior may enter in their книжечка. Read-only, from the catalogue.</summary>
-[Route("api/catalog/senior")]
+/// <summary>The ступені and senior відзначення with their pictures. Read-only, from the catalogue.</summary>
+[Route("api/catalog/honours")]
 [Authorize(Policy = AuthorizationPolicies.RequireUser)]
 [ApiController]
-public class SeniorCatalogController : ControllerBase
+public class HonoursCatalogController : ControllerBase
 {
-    private readonly ISeniorRecordsCatalog _catalog;
+    private readonly IHonoursCatalog _catalog;
 
-    public SeniorCatalogController(ISeniorRecordsCatalog catalog)
+    public HonoursCatalogController(IHonoursCatalog catalog)
     {
         _catalog = catalog;
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<SeniorCatalogItem>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<CatalogHonour>), StatusCodes.Status200OK)]
     public IActionResult GetAll() => Ok(_catalog.GetAll());
 }

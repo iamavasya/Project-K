@@ -127,7 +127,7 @@ public sealed record KurinReportWarning(
     bool IsRevoked);
 
 public sealed record KurinReportAward(
-    MemberAwardLevel Level,
+    MemberAwardLevel? Level,
     string LevelLabel,
     DateTime DateAcquired,
     string? Note,

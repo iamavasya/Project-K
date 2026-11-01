@@ -38,21 +38,21 @@ internal sealed class CatalogState
     public IReadOnlyDictionary<string, Badge> BadgesById { get; }
     public IReadOnlyDictionary<string, Probe> ProbesById { get; }
 
-    /// <summary>What a senior may enter in their книжечка, in the catalogue's order.</summary>
-    public IReadOnlyList<SeniorCatalogItem> SeniorItems
+    /// <summary>The ступені and senior відзначення, ступені first.</summary>
+    public IReadOnlyList<CatalogHonour> Honours
     {
-        get => _seniorItems;
+        get => _honours;
         init
         {
-            _seniorItems = value;
-            SeniorItemsById = value.GroupBy(item => item.Id).ToDictionary(g => g.Key, g => g.First());
+            _honours = value;
+            HonoursById = value.GroupBy(item => item.Id).ToDictionary(g => g.Key, g => g.First());
         }
     }
 
-    public IReadOnlyDictionary<string, SeniorCatalogItem> SeniorItemsById { get; private init; } =
-        new Dictionary<string, SeniorCatalogItem>();
+    public IReadOnlyDictionary<string, CatalogHonour> HonoursById { get; private init; } =
+        new Dictionary<string, CatalogHonour>();
 
-    private readonly IReadOnlyList<SeniorCatalogItem> _seniorItems = [];
+    private readonly IReadOnlyList<CatalogHonour> _honours = [];
 }
 
 /// <summary>
@@ -64,7 +64,7 @@ internal sealed class CatalogState
 /// fetch, and the fetch arrives without the table. Each of the two rebuilds what readers see.
 /// </para>
 /// </summary>
-internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKraiNames, ISeniorRecordsCatalog
+internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKraiNames, IHonoursCatalog
 {
     private readonly object _gate = new();
     private CatalogState _fetched = CatalogState.Empty;
@@ -131,7 +131,7 @@ internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKra
 
         Volatile.Write(ref _state, new CatalogState(fetched.Revision, fetched.Metadata, badges, fetched.Probes, fetched.AwardImages)
         {
-            SeniorItems = fetched.SeniorItems
+            Honours = fetched.Honours
         });
         Interlocked.Increment(ref _version);
     }
@@ -146,7 +146,7 @@ internal sealed class CatalogStore : IBadgesCatalog, IProbesCatalog, ICatalogKra
 
     Probe? IProbesCatalog.GetById(string id) => State.ProbesById.GetValueOrDefault(id);
 
-    IReadOnlyList<SeniorCatalogItem> ISeniorRecordsCatalog.GetAll() => State.SeniorItems;
+    IReadOnlyList<CatalogHonour> IHonoursCatalog.GetAll() => State.Honours;
 
-    SeniorCatalogItem? ISeniorRecordsCatalog.GetById(string id) => State.SeniorItemsById.GetValueOrDefault(id);
+    CatalogHonour? IHonoursCatalog.GetById(string id) => State.HonoursById.GetValueOrDefault(id);
 }

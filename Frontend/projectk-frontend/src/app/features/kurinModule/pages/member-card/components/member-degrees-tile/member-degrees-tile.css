@@ -1,0 +1,50 @@
+.degree-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.75rem;
+}
+
+.degree-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.degree-image {
+  flex: none;
+  width: 3rem;
+  height: 3.5rem;
+  object-fit: contain;
+}
+
+.degree-image--empty {
+  display: grid;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--p-content-hover-background);
+  color: var(--p-text-muted-color);
+}
+
+.degree-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.degree-title {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.degree-date,
+.degree-empty {
+  font-size: 0.85rem;
+  color: var(--p-text-muted-color);
+}
+
+.degree-empty {
+  margin: 0;
+}

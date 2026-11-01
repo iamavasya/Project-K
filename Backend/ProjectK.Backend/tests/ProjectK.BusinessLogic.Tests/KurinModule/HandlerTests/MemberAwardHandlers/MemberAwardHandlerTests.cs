@@ -1,3 +1,5 @@
+using ProjectK.Common.Models.Catalog;
+using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,6 +43,8 @@ public class MemberAwardHandlerTests
     private readonly Mock<IUnitOfWork> _kurinDataMock = new();
     private readonly Mock<IMembershipRepository> _membershipsMock = new();
     private readonly Mock<IResourceAccessService> _access = new();
+    private readonly Mock<IKurinRepository> _kurins = new();
+    private readonly Mock<IHonoursCatalog> _honours = new();
 
     private readonly UpsertMemberAwardCommandHandler _upsertHandler;
     private readonly ReviewMemberAwardCommandHandler _reviewHandler;
@@ -65,6 +69,11 @@ public class MemberAwardHandlerTests
         _currentUserContextMock.SetupGet(x => x.KurinKey).Returns(_kurinKey);
         _journal = new JournalRecorder(_currentUserContextMock.Object);
         _kurinDataMock.SetupGet(x => x.Memberships).Returns(_membershipsMock.Object);
+        _kurinDataMock.SetupGet(x => x.Kurins).Returns(_kurins.Object);
+        _honours.Setup(x => x.GetById("orden-sv-yuriia-bronza"))
+            .Returns(new CatalogHonour("orden-sv-yuriia-bronza", HonourKind.Award, "Орден святого Юрія в бронзі", "orden-sv-yuriia", "usp", 0, ""));
+        _honours.Setup(x => x.GetById("usp-starshyi-plastun"))
+            .Returns(new CatalogHonour("usp-starshyi-plastun", HonourKind.Degree, "Старший пластун", "usp", "usp", 1, ""));
         _membershipsMock
             .Setup(x => x.GetActiveForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
@@ -80,7 +89,8 @@ public class MemberAwardHandlerTests
             _mapperMock.Object,
             _kurinDataMock.Object,
             _access.Object,
-            _journal.Audit);
+            _journal.Audit,
+            _honours.Object);
         _reviewHandler = new ReviewMemberAwardCommandHandler(
             _unitOfWorkMock.Object, _memberDirectory.Object,
             _currentUserContextMock.Object,
@@ -89,7 +99,7 @@ public class MemberAwardHandlerTests
             _access.Object,
             _journal.Audit);
         _deleteHandler = new DeleteMemberAwardCommandHandler(
-            _unitOfWorkMock.Object, _currentUserContextMock.Object, _memberDirectory.Object, _access.Object, _journal.Audit);
+            _unitOfWorkMock.Object, _currentUserContextMock.Object, _memberDirectory.Object, _access.Object, _journal.Audit, _honours.Object);
     }
 
     private void Refuse(KurinCapability capability)

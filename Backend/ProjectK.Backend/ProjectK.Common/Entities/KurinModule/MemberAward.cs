@@ -10,7 +10,16 @@ public class MemberAward : Entity
     public Guid MemberKey { get; set; }
     public Guid KurinKey { get; set; }
     public Member Member { get; set; } = null!;
-    public MemberAwardLevel Level { get; set; }
+    public const int CatalogIdMaxLength = 100;
+
+    /// <summary>An УПЮ відзначення's level; null for a senior one, which goes by <see cref="CatalogId"/>.</summary>
+    public MemberAwardLevel? Level { get; set; }
+
+    /// <summary>
+    /// A senior відзначення (грамота, орден, хрест) by its catalogue id; null for an УПЮ one. The person
+    /// records it themself or the senior kurin's провід does, and it stands without confirmation.
+    /// </summary>
+    public string? CatalogId { get; set; }
     public DateTime DateAcquired { get; set; }
     public string? Note { get; set; }
     public BadgeProgressStatus Status { get; set; } = BadgeProgressStatus.Confirmed;

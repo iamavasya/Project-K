@@ -1,0 +1,30 @@
+<section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="degrees-tile">
+    <div class="lil-tile-head">
+        <h2>Ступені</h2>
+        @if (canEdit()) {
+            <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary" ariaLabel="Змінити ступені" (onClick)="edit.emit()" data-testid="degrees-edit" />
+        }
+    </div>
+
+    @if (rows().length) {
+        <ul class="degree-rows">
+            @for (row of rows(); track row.key) {
+                <li class="degree-row">
+                    @if (row.imageUrl) {
+                        <img class="degree-image" [src]="row.imageUrl" [alt]="row.title" loading="lazy" />
+                    } @else {
+                        <span class="degree-image degree-image--empty pi pi-flag" aria-hidden="true"></span>
+                    }
+                    <span class="degree-text">
+                        <span class="degree-title">{{ row.title }}</span>
+                        @if (row.date) {
+                            <span class="degree-date">{{ row.date | date: 'dd.MM.yyyy' }}</span>
+                        }
+                    </span>
+                </li>
+            }
+        </ul>
+    } @else {
+        <p class="degree-empty">Ступенів ще немає</p>
+    }
+</section>

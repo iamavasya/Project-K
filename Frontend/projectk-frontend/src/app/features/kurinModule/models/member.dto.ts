@@ -4,7 +4,6 @@ import { MemberWarningDto } from "./member-warning.dto";
 import { MemberAwardDto } from "./member-award.dto";
 import { MemberProfileVerificationStatus } from "./enums/member-profile-verification-status.enum";
 import { AccountStatus } from "./enums/account-status.enum";
-import { MemberSeniorRecordDto } from "./senior-record.dto";
 
 /** Група даних людини, яку курінь показує або приховує цілком. Назви — як у `hiddenData` з сервера. */
 export type MemberDataGroup = 'contacts' | 'birthDate' | 'birthday' | 'address' | 'parents' | 'extras';
@@ -66,8 +65,6 @@ export interface MemberDto {
     leadershipHistories: LeadershipHistoryDto[];
     warnings?: MemberWarningDto[];
     awards?: MemberAwardDto[];
-    /** The person's own книжечка, newest first; on a senior kurin's card. */
-    seniorRecords?: MemberSeniorRecordDto[];
     profilePhotoUrl: string | null;
     profileVerificationStatus?: MemberProfileVerificationStatus;
     profileVerifiedAtUtc?: string | Date | null;

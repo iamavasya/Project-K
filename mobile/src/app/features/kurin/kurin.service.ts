@@ -16,9 +16,6 @@ import {
   KurinDto,
   LeadershipDto,
   MemberAwardDto,
-  MemberSeniorRecordDto,
-  SeniorCatalogItem,
-  UpsertSeniorRecordRequest,
   MemberDto,
   MemberDuesDto,
   MemberLookupDto,
@@ -265,26 +262,6 @@ export class KurinApi {
 
   deleteAward(memberKey: string, awardKey: string): Promise<void> {
     return this.api.delete(`member/${memberKey}/awards/${awardKey}`);
-  }
-
-  private seniorCatalogRead?: Promise<SeniorCatalogItem[]>;
-
-  /** What a senior may enter in their книжечка; read once, a failed read is tried again next time. */
-  seniorCatalog(): Promise<SeniorCatalogItem[]> {
-    this.seniorCatalogRead ??= this.api.get<SeniorCatalogItem[]>('catalog/senior').catch((error) => {
-      this.seniorCatalogRead = undefined;
-      throw error;
-    });
-    return this.seniorCatalogRead;
-  }
-
-  /** A line of the caller's own книжечка: added, or changed when `key` is given. */
-  saveSeniorRecord(request: UpsertSeniorRecordRequest, key?: string): Promise<MemberSeniorRecordDto> {
-    return key ? this.api.put(`me/senior-records/${key}`, request) : this.api.post('me/senior-records', request);
-  }
-
-  deleteSeniorRecord(key: string): Promise<void> {
-    return this.api.delete(`me/senior-records/${key}`);
   }
 
   reviewAward(memberKey: string, awardKey: string, isApproved: boolean): Promise<MemberAwardDto> {

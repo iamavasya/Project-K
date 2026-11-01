@@ -291,7 +291,7 @@
 
         <ng-template [appTileDef]="{ key: 'awards', span: 'full', label: 'Нагороди' }">
         <section class="member-tile rounded-2xl p-4 md:p-5">
-            <app-member-awards-tile [awards]="member.awards || []"
+            <app-member-awards-tile [awards]="youthAwards"
                 [kurinStamps]="kurinStamps"
                 [canEdit]="canEditMember"
                 [confirmLevels]="abilities.awards.confirm"
@@ -304,6 +304,14 @@
         </section>
         </ng-template>
         }
+
+        <ng-template [appTileDef]="{ key: 'degrees', span: 'half', label: 'Ступені' }">
+            <app-member-degrees-tile
+                [histories]="member.plastLevelHistories"
+                [senior]="isSeniorKurinCard"
+                [canEdit]="canEditMember"
+                (edit)="onEditMember()" />
+        </ng-template>
 
         @if (isSeniorKurinCard) {
         <ng-template [appTileDef]="{ key: 'senior-kurin', span: 'half', label: 'У курені' }">
@@ -333,12 +341,14 @@
             </section>
         </ng-template>
 
-        <ng-template [appTileDef]="{ key: 'senior-awards', span: 'half', label: 'Книжечка' }">
-            <app-member-senior-book-tile
-                [records]="member.seniorRecords ?? []"
-                [editable]="isOwnCard"
-                (recordsChange)="onSeniorRecordsChange($event)"
-            />
+        <ng-template [appTileDef]="{ key: 'senior-awards', span: 'half', label: 'Відзначення' }">
+            <app-member-senior-awards-tile
+                [awards]="member.awards ?? []"
+                [canAdd]="canEditMember"
+                [ownCard]="isOwnCard"
+                [canRemove]="abilities.awards.remove"
+                (saveAward)="onSaveAward($event)"
+                (deleteAward)="onDeleteAward($event)" />
         </ng-template>
 
         <ng-template [appTileDef]="{ key: 'senior-warnings', span: 'half', label: 'Перестороги' }">

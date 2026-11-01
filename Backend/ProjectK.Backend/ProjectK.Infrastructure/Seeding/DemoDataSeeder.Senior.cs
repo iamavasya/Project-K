@@ -41,7 +41,7 @@ public partial class DemoDataSeeder
         var ordenLeadership = await EnsureLeadershipAsync(LeadershipType.Kurin, orden.KurinKey, null, new DateOnly(2025, 9, 1), cancellationToken);
         SeatOffice(ordenLeadership, ordenMembers[1].MemberKey, LeadershipRole.Pysar, new DateOnly(2025, 9, 1));
         await SeedOrdenCardsAsync(orden.KurinKey, ordenMembers, cancellationToken);
-        await SeedSeniorBooksAsync(ordenLeader, ordenMembers[1], cancellationToken);
+        await SeedOrdenHonoursAsync(orden.KurinKey, ordenLeader, ordenMembers, cancellationToken);
 
         var chorty = await EnsureSeniorKurinAsync(
             [new KurinNumbering(KurinBranch.USP, 7)],
@@ -147,30 +147,55 @@ public partial class DemoDataSeeder
     }
 
     /// <summary>
-    /// Книжечки the people keep themselves: the Order's зв'язковий with a few decades of them, and its
-    /// Скриптор with her first. Ids are the catalogue's.
+    /// The Order's ступені and відзначення as its people would record them: the зв'язковий's whole
+    /// senior way, and the пластунки's ступені drawn as theirs. Runs on its own guard, so a stand seeded
+    /// before senior відзначення existed gets them too.
     /// </summary>
-    private async Task SeedSeniorBooksAsync(Member leader, Member scribe, CancellationToken cancellationToken)
+    private async Task SeedOrdenHonoursAsync(Guid kurinKey, Member leader, IReadOnlyList<Member> members, CancellationToken cancellationToken)
     {
-        if (await _dbContext.MemberSeniorRecords.AnyAsync(r => r.MemberKey == leader.MemberKey, cancellationToken))
+        if (await _dbContext.MemberAwards.AnyAsync(a => a.MemberKey == leader.MemberKey && a.CatalogId != null, cancellationToken))
         {
             return;
         }
 
-        static MemberSeniorRecord Line(Member who, string catalogId, DateOnly? on, string? number = null, string? note = null)
-            => new() { MemberKey = who.MemberKey, CatalogId = catalogId, AchievedOn = on, Number = number, Note = note };
+        var plastunky = new[] { members[1].MemberKey, members[3].MemberKey };
+        foreach (var level in await _dbContext.PlastLevelHistories.Where(h => plastunky.Contains(h.MemberKey)).ToListAsync(cancellationToken))
+        {
+            level.IsPlastunka = true;
+        }
 
-        _dbContext.MemberSeniorRecords.AddRange(
-            Line(leader, "usp-starshyi-plastun", new DateOnly(1997, 11, 15)),
-            Line(leader, "ups-senior-prykhylnyk", new DateOnly(2014, 4, 26)),
-            Line(leader, "ups-senior-pratsi", new DateOnly(2016, 5, 14)),
-            Line(leader, "lsh-absolvent", new DateOnly(1999, 8, 20), "ЛШ 41"),
-            Line(leader, "kv-i-upyu", new DateOnly(2001, 7, 10), "КВ-І 118"),
-            Line(leader, "usp-hramota-zasluhy", new DateOnly(2012, 10, 20), note: "За табір «Вогні Карпат»"),
-            Line(leader, "orden-sv-yuriia-bronza", new DateOnly(2018, 4, 23)),
-            Line(scribe, "usp-starsha-plastunka", new DateOnly(2016, 12, 3)),
-            Line(scribe, "shb-i", new DateOnly(2018, 8, 1), "ШБ 22"),
-            Line(scribe, "usp-hramota-podiaky", new DateOnly(2024, 6, 9)));
+        if (!await _dbContext.PlastLevelHistories.AnyAsync(h => h.MemberKey == leader.MemberKey, cancellationToken))
+        {
+            foreach (var (level, on) in new[]
+            {
+                (PlastLevel.Skob, new DateOnly(1995, 6, 10)),
+                (PlastLevel.Starshoplastun, new DateOnly(1997, 11, 15)),
+                (PlastLevel.Senior, new DateOnly(2014, 4, 26)),
+                (PlastLevel.SeniorPratsi, new DateOnly(2016, 5, 14))
+            })
+            {
+                _dbContext.PlastLevelHistories.Add(new PlastLevelHistory { MemberKey = leader.MemberKey, KurinKey = kurinKey, PlastLevel = level, DateAchieved = on });
+            }
+
+            leader.LatestPlastLevel = PlastLevel.SeniorPratsi;
+        }
+
+        MemberAward Award(Member who, string catalogId, DateTime on, string? note = null) => new()
+        {
+            MemberKey = who.MemberKey,
+            KurinKey = kurinKey,
+            CatalogId = catalogId,
+            DateAcquired = on,
+            Note = note,
+            Status = BadgeProgressStatus.Confirmed,
+            SubmittedAtUtc = on,
+            SubmittedByUserKey = who.UserKey
+        };
+
+        _dbContext.MemberAwards.AddRange(
+            Award(leader, "usp-hramota-zasluhy", new DateTime(2012, 10, 20), "За табір «Вогні Карпат»"),
+            Award(leader, "orden-sv-yuriia-bronza", new DateTime(2018, 4, 23)),
+            Award(members[1], "usp-hramota-podiaky", new DateTime(2024, 6, 9)));
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 

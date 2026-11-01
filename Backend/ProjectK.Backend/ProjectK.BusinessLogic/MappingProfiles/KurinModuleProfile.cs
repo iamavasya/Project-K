@@ -72,9 +72,6 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.CardExtras, opt => opt.MapFrom(src => MemberCardExtras.Read(src.CardExtras)))
             .ForMember(dest => dest.Warnings, opt => opt.MapFrom(src => src.MemberWarnings))
             .ForMember(dest => dest.Awards, opt => opt.MapFrom(src => src.MemberAwards))
-            .ForMember(dest => dest.SeniorRecords, opt => opt.MapFrom(src => src.SeniorRecords
-                .OrderByDescending(record => record.AchievedOn)
-                .ThenByDescending(record => record.CreatedDate)))
             .ForMember(d => d.ProfilePhotoUrl, opt => opt.MapFrom<ProfilePhotoUrlResolver>())
             // Offices live in LeadershipHistories, not on Member, so the entity cannot answer
             // this. The repository projections fill it; mapping from the entity leaves it null.
@@ -115,7 +112,6 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.FatherLastName, opt => opt.Ignore())
             .ForMember(dest => dest.FatherPhone, opt => opt.Ignore())
             .ForMember(dest => dest.Awards, opt => opt.Ignore())
-            .ForMember(dest => dest.SeniorRecords, opt => opt.Ignore())
             .ForMember(dest => dest.MentoredGroups, opt => opt.Ignore())
             .ForMember(dest => dest.AccountStatus, opt => opt.Ignore())
             .ForMember(dest => dest.TagKeys, opt => opt.Ignore())
@@ -139,11 +135,11 @@ public class KurinModuleProfile : Profile
             .ForMember(dest => dest.ProfilePhotoUrl, opt => opt.MapFrom<MemberSummaryLookupPhotoUrlResolver>());
 
         // Plast Level History Mapping
-        CreateMap<PlastLevelHistory, PlastLevelHistoryDto>();
+        CreateMap<PlastLevelHistory, PlastLevelHistoryDto>()
+            .ForMember(dest => dest.CatalogId, opt => opt.MapFrom(src => PlastLevelDegrees.CatalogId(src.PlastLevel, src.IsPlastunka)));
 
         // Member Warning Mapping
         CreateMap<MemberWarning, MemberWarningDto>();
-        CreateMap<MemberSeniorRecord, MemberSeniorRecordDto>();
 
         // Notifications Mapping
         CreateMap<AppNotification, AppNotificationDto>();

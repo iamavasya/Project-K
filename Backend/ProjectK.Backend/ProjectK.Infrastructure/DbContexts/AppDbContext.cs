@@ -58,7 +58,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<ThirdProbeFile> ThirdProbeFiles { get; set; }
     public DbSet<MentorAssignment> MentorAssignments { get; set; }
     public DbSet<MemberWarning> MemberWarnings { get; set; }
-    public DbSet<MemberSeniorRecord> MemberSeniorRecords { get; set; }
     public DbSet<MemberAward> MemberAwards { get; set; }
 
     public DbSet<KurinDuesRate> KurinDuesRates { get; set; }
@@ -279,19 +278,6 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.HasIndex(e => new { e.MemberKey, e.KurinKey })
                   .IsUnique()
                   .HasFilter("[LeftAtUtc] IS NULL");
-        });
-
-        builder.Entity<MemberSeniorRecord>(entity =>
-        {
-            entity.HasKey(e => e.MemberSeniorRecordKey);
-            entity.Property(e => e.CatalogId).HasMaxLength(100).IsRequired();
-            entity.Property(e => e.Number).HasMaxLength(MemberSeniorRecord.NumberMaxLength);
-            entity.Property(e => e.Note).HasMaxLength(MemberSeniorRecord.NoteMaxLength);
-            entity.HasIndex(e => e.MemberKey);
-            entity.HasOne(e => e.Member)
-                  .WithMany(m => m.SeniorRecords)
-                  .HasForeignKey(e => e.MemberKey)
-                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<MemberWarning>(entity =>
@@ -561,7 +547,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         {
             entity.HasKey(e => e.MemberAwardKey);
             entity.Property(e => e.Level)
-                .HasConversion<int>();
+                .HasConversion<int?>();
+            entity.Property(e => e.CatalogId).HasMaxLength(MemberAward.CatalogIdMaxLength);
             entity.Property(e => e.Status)
                 .HasConversion<int>();
             entity.HasIndex(e => new { e.MemberKey, e.Level });

@@ -29,15 +29,15 @@ public interface IProbesCatalog
     Probe? GetById(string id);
 }
 
-/// <summary>The ступені, відзначення and вишколи a senior may enter in their книжечка, as last fetched.</summary>
-public interface ISeniorRecordsCatalog
+/// <summary>The ступені and senior відзначення with their pictures, as last fetched.</summary>
+public interface IHonoursCatalog
 {
     /// <summary>Whether a catalogue has been read at all; until then nothing can be checked against it.</summary>
     bool IsLoaded { get; }
 
-    IReadOnlyList<SeniorCatalogItem> GetAll();
+    IReadOnlyList<CatalogHonour> GetAll();
 
-    SeniorCatalogItem? GetById(string id);
+    CatalogHonour? GetById(string id);
 }
 
 /// <summary>Pictures of the УПЮ відзначення, by level.</summary>
