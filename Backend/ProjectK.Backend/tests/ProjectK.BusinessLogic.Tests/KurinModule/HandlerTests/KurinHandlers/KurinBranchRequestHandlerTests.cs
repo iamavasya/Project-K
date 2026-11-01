@@ -26,6 +26,7 @@ public class KurinBranchRequestHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ICurrentUserContext> _currentUser = new();
     private readonly Mock<IDomainEventPublisher> _events = new();
+    private readonly Mock<IUnitOfWorkTransaction> _transaction = new();
     private readonly Mock<UserManager<AppUser>> _users;
 
     public KurinBranchRequestHandlerTests()
@@ -33,6 +34,9 @@ public class KurinBranchRequestHandlerTests
         _unitOfWork.Setup(u => u.Kurins).Returns(_kurins.Object);
         _unitOfWork.Setup(u => u.KurinBranchRequests).Returns(_requests.Object);
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_transaction.Object);
+        _requests.Setup(r => r.TrySettleAsync(It.IsAny<Guid>(), It.IsAny<KurinBranchRequestStatus>(), It.IsAny<Guid?>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _currentUser.Setup(c => c.UserId).Returns(_userKey);
         _users = new Mock<UserManager<AppUser>>(Mock.Of<IUserStore<AppUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
     }
@@ -156,6 +160,47 @@ public class KurinBranchRequestHandlerTests
         _events.Verify(e => e.PublishAsync(
             It.Is<KurinBranchRequestReviewed>(raised => raised.Approved && raised.RequesterUserKey == pending.RequestedByUserKey),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Review_ShouldNotApplyAnything_WhenSomeoneSettledTheRequestFirst()
+    {
+        var kurin = Given(new Kurin(5, KurinBranch.USP));
+        var pending = new KurinBranchRequest { KurinKey = kurin.KurinKey, UspNumber = 5, UpsNumber = 20 };
+        _requests.Setup(r => r.GetByKeyAsync(pending.KurinBranchRequestKey, It.IsAny<CancellationToken>())).ReturnsAsync(pending);
+        _requests.Setup(r => r.TrySettleAsync(pending.KurinBranchRequestKey, KurinBranchRequestStatus.Approved, It.IsAny<Guid?>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await Reviewer().Handle(new ReviewKurinBranchRequestCommand(pending.KurinBranchRequestKey, Approve: true), default);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be("KurinBranchRequestAlreadySettled");
+        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _transaction.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _events.Verify(e => e.PublishAsync(It.IsAny<KurinBranchRequestReviewed>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Submit_ShouldRefuseANoteLongerThanTheColumn()
+    {
+        var kurin = Given(new Kurin(5, KurinBranch.USP));
+
+        var result = await Submitter().Handle(
+            new SubmitKurinBranchRequestCommand(kurin.KurinKey, 5, 20, new string('я', KurinBranchRequest.NoteMaxLength + 1)), default);
+
+        result.Type.Should().Be(ResultType.BadRequest);
+        result.ErrorCode.Should().Be("NoteTooLong");
+    }
+
+    [Fact]
+    public void KraiCode_ShouldTravelToEveryBranchRow()
+    {
+        var kurin = Kurin.InBranches([new KurinNumbering(KurinBranch.USP, 5), new KurinNumbering(KurinBranch.UPS, 20)]);
+
+        kurin.KraiCode = "cz";
+        kurin.SetBranches([new KurinNumbering(KurinBranch.USP, 5), new KurinNumbering(KurinBranch.UPS, 21)]);
+
+        kurin.Branches.Should().OnlyContain(row => row.KraiCode == "cz");
     }
 
     [Fact]

@@ -175,15 +175,24 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.ToTable("KurinBranches");
             entity.HasKey(e => new { e.KurinKey, e.Branch });
             entity.Property(e => e.Branch).HasConversion<int>();
+            entity.Property(e => e.KraiCode).HasMaxLength(8);
+            // Every number of every гілка is the kurin's alone in its край, the second гілка too:
+            // two approvals at once cannot both take УПС 12.
+            entity.HasIndex(e => new { e.KraiCode, e.Branch, e.Number }).IsUnique();
         });
 
         builder.Entity<KurinBranchRequest>(entity =>
         {
             entity.HasKey(e => e.KurinBranchRequestKey);
             entity.Property(e => e.Status).HasConversion<int>();
-            entity.Property(e => e.Note).HasMaxLength(1000);
+            entity.Property(e => e.Note).HasMaxLength(KurinBranchRequest.NoteMaxLength);
             entity.Ignore(e => e.WantedBranches);
             entity.HasIndex(e => new { e.KurinKey, e.Status });
+            // A kurin keeps one request open: the submit replaces it, and this stops two at once.
+            entity.HasIndex(e => e.KurinKey)
+                  .IsUnique()
+                  .HasFilter($"[Status] = {(int)KurinBranchRequestStatus.Pending}")
+                  .HasDatabaseName("IX_KurinBranchRequests_KurinKey_Pending");
             entity.HasOne<Kurin>()
                   .WithMany()
                   .HasForeignKey(e => e.KurinKey)

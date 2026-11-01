@@ -14,4 +14,10 @@ public class KurinBranchNumber
 
     /// <summary>Null for a підготовчий курінь, which has not been given a number yet.</summary>
     public int? Number { get; set; }
+
+    /// <summary>
+    /// The kurin's край, copied here so the database can hold a number unique per край and гілка.
+    /// Written by the kurin itself (<c>Kurin.KraiCode</c>, <c>Kurin.SetBranches</c>), never on its own.
+    /// </summary>
+    public string KraiCode { get; set; } = string.Empty;
 }

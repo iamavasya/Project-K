@@ -113,6 +113,11 @@ public sealed class SubmitKurinBranchRequestCommandHandler
 
     private ServiceResult<KurinBranchRequestResponse>? Refusal(Common.Entities.KurinModule.Kurin kurin, KurinBranchRequest wanted)
     {
+        if (wanted.Note?.Length > KurinBranchRequest.NoteMaxLength)
+        {
+            return ServiceResult<KurinBranchRequestResponse>.Failure(ResultType.BadRequest, "NoteTooLong", $"A note is up to {KurinBranchRequest.NoteMaxLength} characters.");
+        }
+
         var branches = wanted.WantedBranches;
         if (branches.Count == 0)
         {

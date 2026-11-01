@@ -1985,10 +1985,19 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<int>("Branch")
                         .HasColumnType("int");
 
+                    b.Property<string>("KraiCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
                     b.Property<int?>("Number")
                         .HasColumnType("int");
 
                     b.HasKey("KurinKey", "Branch");
+
+                    b.HasIndex("KraiCode", "Branch", "Number")
+                        .IsUnique()
+                        .HasFilter("[Number] IS NOT NULL");
 
                     b.ToTable("KurinBranches", (string)null);
                 });
@@ -2034,6 +2043,11 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("KurinBranchRequestKey");
+
+                    b.HasIndex("KurinKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_KurinBranchRequests_KurinKey_Pending")
+                        .HasFilter("[Status] = 0");
 
                     b.HasIndex("KurinKey", "Status");
 

@@ -56,6 +56,11 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
             return ServiceResult<bool>.Failure(ResultType.NotFound, "KurinNotFound", "Kurin not found.");
         }
 
+        // The settlement and the change it makes commit together; disposing the transaction without a
+        // commit takes both back.
+        await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        var status = request.Approve ? KurinBranchRequestStatus.Approved : KurinBranchRequestStatus.Rejected;
+
         if (request.Approve)
         {
             foreach (var numbering in pending.WantedBranches)
@@ -80,11 +85,14 @@ public sealed class ReviewKurinBranchRequestCommandHandler : IRequestHandler<Rev
                 cancellationToken);
         }
 
-        pending.Status = request.Approve ? KurinBranchRequestStatus.Approved : KurinBranchRequestStatus.Rejected;
-        pending.ReviewedAtUtc = DateTime.UtcNow;
-        pending.ReviewedByUserKey = _currentUser.UserId;
-        _unitOfWork.KurinBranchRequests.Update(pending, cancellationToken);
+        if (!await _unitOfWork.KurinBranchRequests.TrySettleAsync(pending.KurinBranchRequestKey, status, _currentUser.UserId, DateTime.UtcNow, cancellationToken))
+        {
+            return ServiceResult<bool>.Failure(ResultType.Conflict, "KurinBranchRequestAlreadySettled", "Someone settled this request a moment ago.");
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        pending.Status = status;
 
         if (request.Approve)
         {

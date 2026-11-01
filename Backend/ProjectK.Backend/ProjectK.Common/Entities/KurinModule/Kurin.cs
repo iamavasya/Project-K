@@ -82,7 +82,7 @@ public class Kurin : Entity
             var row = Branches.FirstOrDefault(r => r.Branch == numbering.Branch);
             if (row is null)
             {
-                Branches.Add(new KurinBranchNumber { Branch = numbering.Branch, Number = numbering.Number });
+                Branches.Add(new KurinBranchNumber { Branch = numbering.Branch, Number = numbering.Number, KraiCode = _kraiCode });
             }
             else
             {
@@ -98,8 +98,24 @@ public class Kurin : Entity
     public void SetNumber(int? number)
         => SetBranches([.. Numbering.Select(n => n.Branch == Branch ? n with { Number = number } : n)]);
 
-    /// <summary>The край this kurin belongs to; its numbers are unique within that край only.</summary>
-    public string KraiCode { get; set; } = Krai.Ukraine;
+    private string _kraiCode = Krai.Ukraine;
+
+    /// <summary>
+    /// The край this kurin belongs to; its numbers are unique within that край only. Every гілка row
+    /// carries it too, for the database's uniqueness, so setting it rewrites them.
+    /// </summary>
+    public string KraiCode
+    {
+        get => _kraiCode;
+        set
+        {
+            _kraiCode = value;
+            foreach (var row in Branches)
+            {
+                row.KraiCode = value;
+            }
+        }
+    }
     public string? Stanytsia { get; set; }
     public string? RegionOrCountry { get; set; }
     public string? NamedAfter { get; set; }

@@ -149,6 +149,21 @@ public class KurinRepositoryIntegrationTests
     }
 
     [Fact]
+    public void TheDatabase_ShouldHoldEachNumberOncePerKraiAndBranch_AndOneOpenRequestPerKurin()
+    {
+        using var context = CreateInMemoryDbContext();
+
+        var numbers = context.Model.FindEntityType(typeof(KurinBranchNumber))!.GetIndexes()
+            .Single(index => index.Properties.Select(p => p.Name).SequenceEqual(["KraiCode", "Branch", "Number"]));
+        var open = context.Model.FindEntityType(typeof(KurinBranchRequest))!.GetIndexes()
+            .Single(index => index.GetDatabaseName() == "IX_KurinBranchRequests_KurinKey_Pending");
+
+        Assert.True(numbers.IsUnique);
+        Assert.True(open.IsUnique);
+        Assert.Equal("[Status] = 0", open.GetFilter());
+    }
+
+    [Fact]
     public async Task GetAllAsync_ShouldReturnCorrectEntities()
     {
         // Arrange

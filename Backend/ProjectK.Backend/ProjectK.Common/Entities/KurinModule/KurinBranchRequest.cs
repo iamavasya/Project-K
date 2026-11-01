@@ -25,7 +25,9 @@ public class KurinBranchRequest : Entity
     /// <summary>The wanted number in УПС; null leaves the kurin out of УПС.</summary>
     public int? UpsNumber { get; set; }
 
-    /// <summary>What the kurin wrote to the admin, if anything.</summary>
+    public const int NoteMaxLength = 1000;
+
+    /// <summary>What the kurin wrote to the admin, if anything; up to <see cref="NoteMaxLength"/> characters.</summary>
     public string? Note { get; set; }
 
     public KurinBranchRequestStatus Status { get; set; } = KurinBranchRequestStatus.Pending;

@@ -53,7 +53,8 @@ namespace ProjectK.Infrastructure.Migrations
                 {
                     KurinKey = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Branch = table.Column<int>(type: "int", nullable: false),
-                    Number = table.Column<int>(type: "int", nullable: true)
+                    Number = table.Column<int>(type: "int", nullable: true),
+                    KraiCode = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -66,11 +67,11 @@ namespace ProjectK.Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            // Every kurin so far has one гілка and one number; they become its first row here, and
-            // Kurins.Branch/Number stay as the mirror of that row.
+            // Every kurin so far has one гілка and one number; they become its first row here, with the
+            // kurin's край, and Kurins.Branch/Number stay as the mirror of that row.
             migrationBuilder.Sql("""
-                INSERT INTO [KurinBranches] ([KurinKey], [Branch], [Number])
-                SELECT k.[KurinKey], k.[Branch], k.[Number]
+                INSERT INTO [KurinBranches] ([KurinKey], [Branch], [Number], [KraiCode])
+                SELECT k.[KurinKey], k.[Branch], k.[Number], k.[KraiCode]
                 FROM [Kurins] k
                 WHERE NOT EXISTS (SELECT 1 FROM [KurinBranches] b WHERE b.[KurinKey] = k.[KurinKey]);
                 """);
@@ -109,6 +110,20 @@ namespace ProjectK.Infrastructure.Migrations
                 columns: new[] { "KraiCode", "Branch", "Number" },
                 unique: true,
                 filter: "[Number] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KurinBranches_KraiCode_Branch_Number",
+                table: "KurinBranches",
+                columns: new[] { "KraiCode", "Branch", "Number" },
+                unique: true,
+                filter: "[Number] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KurinBranchRequests_KurinKey_Pending",
+                table: "KurinBranchRequests",
+                column: "KurinKey",
+                unique: true,
+                filter: "[Status] = 0");
 
             migrationBuilder.CreateIndex(
                 name: "IX_KurinBranchRequests_KurinKey_Status",

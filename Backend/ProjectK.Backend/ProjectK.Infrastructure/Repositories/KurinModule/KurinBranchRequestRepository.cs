@@ -15,6 +15,16 @@ public class KurinBranchRequestRepository : BaseEntityRepository<KurinBranchRequ
         => Context.KurinBranchRequests
             .FirstOrDefaultAsync(r => r.KurinKey == kurinKey && r.Status == KurinBranchRequestStatus.Pending, cancellationToken);
 
+    public async Task<bool> TrySettleAsync(Guid requestKey, KurinBranchRequestStatus status, Guid? reviewedByUserKey, DateTime reviewedAtUtc, CancellationToken cancellationToken = default)
+        => await Context.KurinBranchRequests
+            .Where(r => r.KurinBranchRequestKey == requestKey && r.Status == KurinBranchRequestStatus.Pending)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(r => r.Status, status)
+                    .SetProperty(r => r.ReviewedByUserKey, reviewedByUserKey)
+                    .SetProperty(r => r.ReviewedAtUtc, reviewedAtUtc),
+                cancellationToken) == 1;
+
     public async Task<IReadOnlyList<KurinBranchRequest>> GetPendingAsync(CancellationToken cancellationToken = default)
         => await Context.KurinBranchRequests
             .AsNoTracking()
