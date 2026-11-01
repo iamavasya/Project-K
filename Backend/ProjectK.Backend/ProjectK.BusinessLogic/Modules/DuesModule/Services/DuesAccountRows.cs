@@ -24,9 +24,14 @@ public sealed class DuesAccountRows
         _shape = shape;
     }
 
-    /// <summary>The kurin's tags and who carries them, cut to what the viewer may see.</summary>
+    /// <summary>The kurin's tags and who carries them, cut to what the viewer may see; none with tags off.</summary>
     public async Task<DuesTagLens> TagsAsync(Guid kurinKey, CancellationToken cancellationToken)
     {
+        if (!await _shape.TagsOnAsync(kurinKey, cancellationToken))
+        {
+            return new DuesTagLens([], new Dictionary<Guid, IReadOnlyCollection<Guid>>(), (_, _) => false);
+        }
+
         var shows = await _tagVisibility.ShowsTagsOfAsync(kurinKey, cancellationToken);
         var tags = (await _unitOfWork.KurinTags.GetForKurinAsync(kurinKey, cancellationToken))
             .Select(t => new DuesTagDto { TagKey = t.KurinTagKey, Name = t.Name, ColorHex = t.ColorHex })
@@ -60,6 +65,7 @@ public sealed class DuesAccountRows
                     hasLeft: membership.LeftAtUtc.HasValue,
                     standsInThisGroup: membership.GroupKey == groupKey);
                 var rateTag = ledger.RateTagOf(a.MembershipKey, current);
+                var accountKey = names.AccountOf(membership.MemberKey);
                 return new DuesAccountDto
                 {
                     MembershipKey = a.MembershipKey,
@@ -67,11 +73,12 @@ public sealed class DuesAccountRows
                     FullName = names.OfMembership(a.MembershipKey),
                     Standing = standing,
                     IsConcessionNow = ledger.IsConcession(a.MembershipKey, current),
-                    TagKeys = tags.Of(membership.MemberKey, names.AccountOf(membership.MemberKey), membership.GroupKey),
+                    TagKeys = tags.Of(membership.MemberKey, accountKey, membership.GroupKey),
                     RateNow = standing == DuesAccountStanding.Current
                         ? ledger.AmountFor(a.MembershipKey, groupKey, current, rateTag).Total
                         : null,
-                    RateTagKey = groupKey is null ? rateTag : null,
+                    // The tag a quarter is priced by names a tag on the person: hidden where their tags are.
+                    RateTagKey = groupKey is null && tags.Shows(accountKey, membership.GroupKey) ? rateTag : null,
                     Grants = grants
                         .Where(g => g.MembershipKey == a.MembershipKey)
                         .OrderByDescending(g => g.FromQuarter)
@@ -115,6 +122,9 @@ public sealed class DuesTagLens
 
     /// <summary>The kurin's tags, for naming and filtering by them.</summary>
     public IReadOnlyList<DuesTagDto> All { get; }
+
+    /// <summary>Whether the viewer may see the tags on a person.</summary>
+    public bool Shows(Guid? accountKey, Guid? groupKey) => _shows(accountKey, groupKey);
 
     public IReadOnlyList<Guid> Of(Guid memberKey, Guid? accountKey, Guid? groupKey) =>
         _shows(accountKey, groupKey) && _byMember.TryGetValue(memberKey, out var keys) ? [.. keys] : [];

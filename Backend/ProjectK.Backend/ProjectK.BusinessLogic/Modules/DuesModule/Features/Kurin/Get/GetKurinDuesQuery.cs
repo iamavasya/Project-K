@@ -137,7 +137,8 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             CurrentQuarter = Quarter(current),
             ChargeTiming = (await _dues.KurinDuesSettings.GetForKurinAsync(kurinKey, cancellationToken))?.ChargeTiming ?? DuesChargeTiming.InAdvance,
             Years = Years(DuesQuarter.FromIndex(first), current),
-            Rates = rates.Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
+            // With tags off, everyone pays the rate for everyone: the tags' rates stand idle and are not shown.
+            Rates = rates.Where(r => r.TagKey is null || tags.All.Count > 0).Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
             Box = new DuesBoxDto
             {
                 Cash = kurinBox.Box.Cash,

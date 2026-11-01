@@ -18,6 +18,19 @@ public class DuesChargeRepository : BaseEntityRepository<DuesCharge>, IDuesCharg
             .OrderBy(e => e.Quarter)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<DuesCharge>> GetForMembershipsAsync(IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default)
+        => membershipKeys.Count == 0
+            ? []
+            : await Set
+                .AsNoTracking()
+                .Where(c => membershipKeys.Contains(c.MembershipKey))
+                .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<DuesCharge>> GetTrackedFromQuarterAsync(Guid kurinKey, int fromQuarter, CancellationToken cancellationToken = default)
+        => await Set
+            .Where(c => c.KurinKey == kurinKey && c.Quarter >= fromQuarter)
+            .ToListAsync(cancellationToken);
+
     public async Task DeleteForMembershipsAsync(IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default)
     {
         if (membershipKeys.Count == 0)
