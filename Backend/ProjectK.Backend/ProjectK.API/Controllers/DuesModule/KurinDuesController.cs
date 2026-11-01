@@ -9,6 +9,7 @@ using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Get;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Groups;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.Receive;
 using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetRate;
+using ProjectK.BusinessLogic.Modules.DuesModule.Features.Kurin.SetSettings;
 using ProjectK.BusinessLogic.Modules.DuesModule.Models;
 using ProjectK.Common.Models.Dtos.DuesModule.Requests;
 using ProjectK.Common.Models.Enums;
@@ -58,6 +59,17 @@ public class KurinDuesController : ControllerBase
     public async Task<IActionResult> SetRate(Guid kurinKey, [FromBody] SetKurinDuesRateRequest request)
     {
         var result = await _mediator.Send(new SetKurinDuesRateCommand(kurinKey, request));
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>When the kurin's вкладка falls due: наперед or за пройдений квартал. Whoever sets the rates sets this.</summary>
+    [HttpPut("settings")]
+    [ResourceAuthorize(ResourceType.KurinDues, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SetSettings(Guid kurinKey, [FromBody] SetKurinDuesSettingsRequest request)
+    {
+        var result = await _mediator.Send(new SetKurinDuesSettingsCommand(kurinKey, request.ChargeTiming));
         return result.ToActionResult(this);
     }
 

@@ -197,13 +197,7 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
         Guid? groupKey,
         CancellationToken cancellationToken = default)
     {
-        var current = await CurrentOfAsync(memberKey, cancellationToken);
-        var here = current.FirstOrDefault(m => m.KurinKey == kurinKey);
-
-        foreach (var elsewhere in current.Where(m => m != here))
-        {
-            elsewhere.LeftAtUtc = DateTime.UtcNow;
-        }
+        var here = (await CurrentOfAsync(memberKey, cancellationToken)).FirstOrDefault(m => m.KurinKey == kurinKey);
 
         if (here is null)
         {

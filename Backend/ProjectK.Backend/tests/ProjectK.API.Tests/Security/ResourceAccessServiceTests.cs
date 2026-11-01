@@ -282,6 +282,45 @@ public class ResourceAccessServiceTests
     }
 
     [Fact]
+    public async Task PersonStandingNowhere_ShouldReadTheirOwnRecord()
+    {
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var fixture = CreateFixture(true, null, null, new[] { MemberRole }, userId);
+        fixture.Owner(ResourceType.Member, memberKey, userId);
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey);
+
+        Assert.True(decision.IsAllowed);
+    }
+
+    [Fact]
+    public async Task PersonStandingNowhere_ShouldNotReadSomeoneElse()
+    {
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var fixture = CreateFixture(true, null, null, new[] { MemberRole }, userId);
+        fixture.Owner(ResourceType.Member, memberKey, Guid.NewGuid());
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Read, memberKey);
+
+        Assert.False(decision.IsAllowed);
+    }
+
+    [Fact]
+    public async Task PersonStandingNowhere_ShouldNotChangeTheirOwnRecord()
+    {
+        var userId = Guid.NewGuid();
+        var memberKey = Guid.NewGuid();
+        var fixture = CreateFixture(true, null, null, new[] { MemberRole }, userId);
+        fixture.Owner(ResourceType.Member, memberKey, userId);
+
+        var decision = await fixture.Service.CheckAccessAsync(ResourceType.Member, ResourceAction.Update, memberKey);
+
+        Assert.False(decision.IsAllowed);
+    }
+
+    [Fact]
     public async Task ResourceNotFound_ShouldBeDenied()
     {
         var memberKey = Guid.NewGuid();
@@ -459,6 +498,13 @@ public class ResourceAccessServiceTests
             ScopeReader
                 .Setup(x => x.GetScopeAsync(resourceType, resourceKey, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(scope);
+        }
+
+        public void Owner(ResourceType resourceType, Guid resourceKey, Guid accountKey)
+        {
+            ScopeReader
+                .Setup(x => x.GetPersonAccountKeyAsync(resourceType, resourceKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(accountKey);
         }
 
         public void MentorGroups(params Guid[] groupKeys)

@@ -127,6 +127,7 @@ public sealed class GetKurinDuesQueryHandler : IRequestHandler<GetKurinDuesQuery
             NumberLocale = krai.NumberLocale,
             Upstream = krai.Dues.Upstream,
             CurrentQuarter = Quarter(current),
+            ChargeTiming = (await _dues.KurinDuesSettings.GetForKurinAsync(kurinKey, cancellationToken))?.ChargeTiming ?? DuesChargeTiming.InAdvance,
             Years = Years(DuesQuarter.FromIndex(first), current),
             Rates = rates.Select(r => KurinDuesRateDto.From(r, Quarter(DuesQuarter.FromIndex(r.FromQuarter)))).ToList(),
             Box = new DuesBoxDto

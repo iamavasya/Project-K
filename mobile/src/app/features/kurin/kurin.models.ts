@@ -281,6 +281,8 @@ export interface MemberDuesDto {
   numberLocale: string;
   currentQuarter: QuarterDto;
   balance: number;
+  /** Unpaid quarters already behind them — what keeps them in the kurin (web MemberDuesDto). */
+  owedToLeave: number;
   quarterRate: { total: number } | null;
   isConcessionNow: boolean;
   currentGroupKey: string | null;
@@ -458,4 +460,51 @@ export interface ThirdProbeDto {
     requiredBadges: number;
     youthEndsAtAge: number;
   };
+}
+
+// ── Requests between kurins (web membership.service) ────────────────────────────────────────────
+
+export type MembershipRequestKind = 'Transfer' | 'AlsoJoin';
+export type MembershipRequestStatus = 'Pending' | 'Approved' | 'Declined' | 'Cancelled' | 'Expired';
+
+export interface MembershipRequestKurinDto {
+  kurinKey: string;
+  number: number | null;
+  namedAfter: string | null;
+}
+
+/** `owedToLeave`: for the answering kurin on a pending «перевести» — above zero, it cannot be approved. */
+export interface MembershipRequestDto {
+  membershipRequestKey: string;
+  kind: MembershipRequestKind;
+  status: MembershipRequestStatus;
+  memberKey: string;
+  memberName: string;
+  fromKurin: MembershipRequestKurinDto;
+  toKurin: MembershipRequestKurinDto;
+  membershipKind: 'Youth' | 'Staff';
+  createdAtUtc: string;
+  expiresAtUtc: string;
+  decidedAtUtc: string | null;
+  owedToLeave: number;
+}
+
+export interface MembershipCandidateDto {
+  member: { memberKey: string; publicId: string; fullName: string };
+  alreadyInThisKurin: boolean;
+  currentKurins: MembershipRequestKurinDto[];
+}
+
+/** A former member and the kurins they stand in now (web FormerMemberStandingDto); empty — nowhere, taken back at once. */
+export interface FormerMemberStandingDto {
+  former: {
+    memberKey: string;
+    firstName: string;
+    middleName?: string | null;
+    lastName: string;
+    groupName?: string | null;
+    joinedAtUtc: string;
+    leftAtUtc: string;
+  };
+  standsIn: MembershipRequestKurinDto[];
 }

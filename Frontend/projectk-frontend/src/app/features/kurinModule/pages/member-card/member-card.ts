@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
@@ -500,6 +501,13 @@ export class MemberCardComponent implements OnInit {
   }
 
   confirmLeaveKurin(membership: MembershipDto): void {
+    // Борг з людиною не йде: спершу сплатити повністю. Сервер однаково відмовить, але краще
+    // сказати це до натискання, а не тостом після.
+    if (this.dues && this.dues.kurinKey === membership.kurinKey && this.dues.owedToLeave > 0) {
+      this.showDebtBlocksRelease(this.money(this.dues.owedToLeave));
+      return;
+    }
+
     this.confirmationService.confirm({
       header: 'Вивести з куреня',
       // Це не видалення людини, і про це варто сказати прямо: саме страх втратити історію
@@ -521,12 +529,39 @@ export class MemberCardComponent implements OnInit {
     }
 
     this.membershipService.leave(membership.kurinKey, this.memberKey).subscribe({
-      next: () => this.refreshData(),
-      error: (error: unknown) => this.messageService.add({
-        severity: 'error',
-        summary: 'Не вдалося вивести',
-        detail: failureDetail(error)
-      })
+      // Картки виведеної людини курінь більше не відкриває — вона тепер серед колишніх у реєстрі.
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Людину виведено',
+          detail: 'Вона тепер серед колишніх у реєстрі. Акаунт і вся історія лишаються в неї.'
+        });
+        this.router.navigate(['/kurin/registry'], { queryParams: { former: 1 }, replaceUrl: true });
+      },
+      error: (error: unknown) => {
+        if (error instanceof HttpErrorResponse && error.error?.error === 'MemberOwesDues') {
+          this.showDebtBlocksRelease(null);
+          return;
+        }
+
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Не вдалося вивести',
+          detail: failureDetail(error)
+        });
+      }
+    });
+  }
+
+  private showDebtBlocksRelease(owed: string | null): void {
+    this.confirmationService.confirm({
+      header: 'Спершу — вкладка',
+      message: (owed ? `Людина винна куреню ${owed} за квартали, що минули. ` : 'Людина винна куреню вкладку за квартали, що минули. ')
+        + 'Борг не переходить разом із нею: вивести можна, коли вкладку сплачено повністю.',
+      icon: 'pi pi-wallet',
+      acceptLabel: 'Зрозуміло',
+      acceptButtonProps: { label: 'Зрозуміло', severity: 'secondary' },
+      rejectVisible: false
     });
   }
 
@@ -588,8 +623,8 @@ export class MemberCardComponent implements OnInit {
       message: verified
         ? 'Профіль знову чекатиме перевірки.'
         : 'Підтвердити, що дані в профілі правильні?',
-      icon: verified ? 'pi pi-exclamation-triangle' : 'pi pi-verified',
-      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', variant: 'text' },
+      icon: verified ? 'pi pi-times-circle' : 'pi pi-verified',
+      rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       acceptButtonProps: verified
         ? { label: 'Зняти', severity: 'danger' }
         : { label: 'Верифікувати' },
@@ -669,11 +704,11 @@ export class MemberCardComponent implements OnInit {
 
   private loadProfileVerificationToggle(member: MemberDto): void {
     this.profileVerificationEnabled = false;
-    if (!member.kurinKey) {
+    if (!isUsableKey(member.kurinKey)) {
       return;
     }
 
-    this.kurinService.getByKey(member.kurinKey).subscribe({
+    this.kurinService.getByKey(member.kurinKey!).subscribe({
       next: (kurin) => {
         this.profileVerificationEnabled = kurin.profileVerificationEnabled ?? false;
       },
@@ -987,9 +1022,9 @@ export class MemberCardComponent implements OnInit {
     }
 
     this.confirmationService.confirm({
-      header: 'Видалення підтвердженої вмілості',
+      header: 'Видалити підтверджену вмілість?',
       message: `Видалити підтверджену вмілість "${skill.title}"?`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       rejectLabel: 'Скасувати',
       rejectButtonProps: {
         label: 'Скасувати',

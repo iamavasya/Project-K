@@ -15,6 +15,7 @@ import {
   UpsertDuesEntryRequest
 } from '../../models/group-dues.dto';
 import { GrantDuesConcessionRequest, UpdateDuesConcessionGrantRequest } from '../../models/concession.dto';
+import { DuesChargeTiming } from '../../models/dues.enums';
 
 @Injectable({ providedIn: 'root' })
 export class DuesService {
@@ -82,6 +83,10 @@ export class DuesService {
 
   setKurinRate(kurinKey: string, request: SetKurinDuesRateRequest): Observable<unknown> {
     return this.http.put(`${this.kurinApiUrl}/${kurinKey}/dues/rate`, request).pipe(this.invalidate());
+  }
+
+  setKurinChargeTiming(kurinKey: string, chargeTiming: DuesChargeTiming): Observable<unknown> {
+    return this.http.put(`${this.kurinApiUrl}/${kurinKey}/dues/settings`, { chargeTiming }).pipe(this.invalidate());
   }
 
   setConcession(groupKey: string, membershipKey: string, request: SetDuesConcessionRequest): Observable<unknown> {

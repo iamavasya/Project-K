@@ -134,6 +134,13 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid>>(nameof(KurinController.FormerMembers), "RequireUser");
         yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.Leave), AuthorizationPolicies.RequireKurinManagement);
         yield return Row<Action<KurinController, Guid, Guid, KurinController.MoveToGroupRequest>>(nameof(KurinController.MoveToGroup), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.MembershipRequests), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.FormerStanding), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid>>(nameof(KurinController.WaitingMembershipRequests), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid, KurinController.CreateMembershipRequestRequest>>(nameof(KurinController.CreateMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.ApproveMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.DeclineMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
+        yield return Row<Action<KurinController, Guid, Guid>>(nameof(KurinController.CancelMembershipRequest), AuthorizationPolicies.RequireKurinManagement);
 
         // Dues: every action is resource-checked against the гурток; the policy is only "signed in".
         yield return Row<Action<GroupDuesController, Guid>>(nameof(GroupDuesController.Get), "RequireUser");
@@ -147,6 +154,7 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<GroupDuesController, Guid, Guid>>(nameof(GroupDuesController.DeleteEntry), "RequireUser");
         yield return Row<Action<GroupDuesController, Guid, Guid, SetDuesEntryVerifiedRequest>>(nameof(GroupDuesController.SetEntryVerified), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid, SetKurinDuesRateRequest>>(nameof(KurinDuesController.SetRate), "RequireUser");
+        yield return Row<Action<KurinDuesController, Guid, SetKurinDuesSettingsRequest>>(nameof(KurinDuesController.SetSettings), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid>>(nameof(KurinDuesController.Get), "RequireUser");
         yield return Row<Action<MemberDuesController, Guid>>(nameof(MemberDuesController.Get), "RequireUser");
         yield return Row<Action<KurinDuesController, Guid>>(nameof(KurinDuesController.GetReadableGroups), "RequireUser");
@@ -197,6 +205,12 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<MeController>>(nameof(MeController.GetGroups), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.GetCalendarFeed), "RequireUser");
         yield return Row<Action<MeController, CalendarFeedOptionsRequest>>(nameof(MeController.IssueCalendarFeed), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.GetCard), "RequireUser");
+        yield return Row<Action<MeController, CardFieldsRequest>>(nameof(MeController.SetCardFields), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.IssueCardLink), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.DisableCardLink), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.GetCardCheckCode), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.GetTransferCode), "RequireUser");
         yield return Row<Action<MeController, CalendarFeedOptionsRequest>>(nameof(MeController.UpdateCalendarFeed), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.DisableCalendarFeed), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
@@ -235,6 +249,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<KurinController, Guid, KurinController.SetKurinCardFieldsRequest>>(nameof(KurinController.SetCardFields), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.GetProbeEditions), "RequireUser");
         yield return Endpoint<KurinController>(nameof(KurinController.GetAccessPolicy), "RequireUser");
+        yield return Endpoint<KurinController>(nameof(KurinController.GetCardSharing), "RequireUser");
+        yield return Endpoint<KurinController>(nameof(KurinController.SetCardSharing), AuthorizationPolicies.RequireKurinManagement);
         yield return Endpoint<KurinController>(nameof(KurinController.SetAccessPolicy), "RequireUser");
         yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.GetTags), "RequireUser");
         yield return Endpoint<KurinTagsController>(nameof(KurinTagsController.CreateTag), "RequireUser");
@@ -387,6 +403,8 @@ public class AuthorizationBaselineMatrixTests
         yield return AnonymousEndpoint<E2ETestController>(nameof(E2ETestController.Reset));
         yield return AnonymousEndpoint<MemberAwardsController>(nameof(MemberAwardsController.GetAwardImage));
         yield return AnonymousEndpoint<CalendarFeedController>(nameof(CalendarFeedController.GetFeed));
+        yield return AnonymousEndpoint<PublicCardController>(nameof(PublicCardController.Checked));
+        yield return AnonymousEndpoint<PublicCardController>(nameof(PublicCardController.Linked));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ActivateAccount));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.RequestPasswordReset));
         yield return AnonymousEndpoint<OnboardingController>(nameof(OnboardingController.ResendInvitationByEmail));

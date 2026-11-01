@@ -30,7 +30,7 @@ import {
 } from '@ionic/angular';
 import { HeaderActions } from '../../nav/header-actions';
 import { addIcons } from 'ionicons';
-import { add, alertCircle, checkmarkCircle, flagOutline, people, personAdd, ribbon, settingsOutline, swapVertical, trophy } from 'ionicons/icons';
+import { add, alertCircle, checkmarkCircle, flagOutline, people, personAdd, ribbon, settingsOutline, swapHorizontal, swapVertical, trophy } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
 import { apiErrorText } from '../../core/api';
 import { canShareFile, saveFile, shareFile } from '../../core/file-share';
@@ -299,13 +299,19 @@ const DESCRIPTION_LIMIT = 360;
             </ion-card-content>
           </ion-card>
 
-          @if ((kurinValue()?.scoreEnabled ?? true) || canReviewSkills()) {
+          @if ((kurinValue()?.scoreEnabled ?? true) || canManageGroups() || canReviewSkills()) {
           <ion-list [inset]="true">
             <ion-item-group>
               @if (kurinValue()?.scoreEnabled ?? true) {
                 <ion-item [button]="true" [detail]="true" routerLink="/tabs/kurin/score">
                   <ion-icon class="lk-tile" slot="start" name="trophy" aria-hidden="true" style="--lk-tile: #f2a900" />
                   <ion-label>Точкування</ion-label>
+                </ion-item>
+              }
+              @if (canManageGroups()) {
+                <ion-item [button]="true" [detail]="true" routerLink="/tabs/kurin/transfers" data-testid="transfers">
+                  <ion-icon class="lk-tile" slot="start" name="swap-horizontal" aria-hidden="true" style="--lk-tile: #0e6e4e" />
+                  <ion-label>Склад куреня</ion-label>
                 </ion-item>
               }
               @if (canReviewSkills()) {
@@ -517,7 +523,7 @@ export class KurinPage implements OnInit, OnDestroy {
   });
 
   constructor() {
-    addIcons({ add, personAdd, trophy, ribbon, people, swapVertical, checkmarkCircle, alertCircle, settingsOutline, flagOutline });
+    addIcons({ add, personAdd, trophy, ribbon, people, swapHorizontal, swapVertical, checkmarkCircle, alertCircle, settingsOutline, flagOutline });
     afterRenderEffect(() => {
       this.section();
       this.glass.sync();

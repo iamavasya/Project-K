@@ -640,6 +640,18 @@ public static class Program
                         Window = calendarFeedWindow
                     }));
 
+            // A card is opened by a person who scanned it, a few times at most; anything faster is guessing.
+            options.AddPolicy<string>("PublicCardLimit", httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "public-card",
+                    factory: partition => new FixedWindowRateLimiterOptions
+                    {
+                        AutoReplenishment = true,
+                        PermitLimit = 30,
+                        QueueLimit = 0,
+                        Window = TimeSpan.FromMinutes(1)
+                    }));
+
             options.OnRejected = async (context, token) =>
             {
                 var endpoint = context.HttpContext.GetEndpoint();

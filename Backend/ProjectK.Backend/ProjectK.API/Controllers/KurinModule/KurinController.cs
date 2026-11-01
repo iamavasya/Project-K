@@ -18,6 +18,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Delete;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Emblem;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.ExportReportPdf;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Get;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.CardSharing;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.SetKrai;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Kurin.Upsert;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Former;
@@ -25,6 +26,12 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Leave;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Lookup;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.MoveToGroup;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Cancel;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Create;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Former;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Waiting;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Decide;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Registry.Export;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Badge.Get;
@@ -255,7 +262,7 @@ public class KurinController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey}/card-fields")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(IReadOnlyList<KurinCardFieldResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCardFields(Guid kurinKey)
@@ -287,12 +294,43 @@ public class KurinController : ControllerBase
     /// </remarks>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/probe-editions")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(KurinProbeEditionsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProbeEditions(Guid kurinKey, CancellationToken cancellationToken)
     {
         var response = await _mediator.Send(new GetKurinProbeEditionsQuery(kurinKey), cancellationToken);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>What the kurin lets its people under 18 show on a shared card.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireUser)]
+    [HttpGet("{kurinKey:guid}/card-sharing")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
+    [ProducesResponseType(typeof(KurinCardSharingDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCardSharing(Guid kurinKey, CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(new GetKurinCardSharingQuery(kurinKey), cancellationToken);
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Body of <c>PUT {kurinKey}/card-sharing</c>.</summary>
+    public sealed class SetCardSharingRequest
+    {
+        public bool MinorsMayShare { get; set; }
+        public CardField MinorFields { get; set; }
+        public bool MinorsMayLink { get; set; }
+    }
+
+    /// <summary>Sets what the kurin lets its people under 18 show; those 18 or older decide alone.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpPut("{kurinKey:guid}/card-sharing")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(KurinCardSharingDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SetCardSharing(Guid kurinKey, [FromBody] SetCardSharingRequest body, CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(
+            new SetKurinCardSharingCommand(kurinKey, body.MinorsMayShare, body.MinorFields, body.MinorsMayLink), cancellationToken);
         return response.ToActionResult(this);
     }
 
@@ -302,7 +340,7 @@ public class KurinController : ControllerBase
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("{kurinKey:guid}/access-policy")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(KurinAccessPolicyDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAccessPolicy(Guid kurinKey, CancellationToken cancellationToken)
@@ -563,7 +601,7 @@ public class KurinController : ControllerBase
     public async Task<IActionResult> Join(Guid kurinKey, [FromBody] JoinKurinRequest request)
     {
         var response = await _mediator.Send(
-            new JoinKurinCommand(request.MemberKey, kurinKey, request.GroupKey, request.Kind, request.PublicId));
+            new JoinKurinCommand(request.MemberKey, kurinKey, request.GroupKey, request.Kind, request.PublicId, OnlyIfStandingNowhere: true));
         return response.ToActionResult(this);
     }
 
@@ -623,6 +661,116 @@ public class KurinController : ControllerBase
     public async Task<IActionResult> Leave(Guid kurinKey, Guid memberKey)
     {
         var response = await _mediator.Send(new LeaveKurinCommand(memberKey, kurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>Body of <c>POST {kurinKey}/membership-requests</c>.</summary>
+    public sealed class CreateMembershipRequestRequest
+    {
+        /// <summary>The code the person handed over.</summary>
+        public string? PublicId { get; set; }
+
+        /// <summary>Instead of a code: someone who once stood in this kurin.</summary>
+        public Guid? MemberKey { get; set; }
+
+        public MembershipRequestKind Kind { get; set; } = MembershipRequestKind.Transfer;
+        public MembershipKind MembershipKind { get; set; } = MembershipKind.Youth;
+
+        /// <summary>The kurin to ask, when the person stands in several.</summary>
+        public Guid? FromKurinKey { get; set; }
+    }
+
+    /// <summary>
+    /// This kurin's requests both ways: those its Звʼязковий answers and those it sent.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpGet("{kurinKey:guid}/membership-requests")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(MembershipRequestsResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> MembershipRequests(Guid kurinKey)
+    {
+        var response = await _mediator.Send(new GetMembershipRequestsQuery(kurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>How many requests from other kurins wait for this kurin's answer: the menu's dot.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpGet("{kurinKey:guid}/membership-requests/waiting")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+    public async Task<IActionResult> WaitingMembershipRequests(Guid kurinKey)
+    {
+        var response = await _mediator.Send(new CountWaitingMembershipRequestsQuery(kurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Former members with the kurins they stand in now, for the Звʼязковий deciding how to take someone back.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpGet("{kurinKey:guid}/membership-requests/former")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(IReadOnlyList<FormerMemberStanding>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> FormerStanding(Guid kurinKey)
+    {
+        var response = await _mediator.Send(new GetFormerStandingQuery(kurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>
+    /// Asks the kurin a person stands in to let them go («перевести») or to let them stand here too
+    /// («прийняти ще й до нас»). Someone who stands in no kurin is taken in at once.
+    /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpPost("{kurinKey:guid}/membership-requests")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(typeof(MembershipRequestSent), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CreateMembershipRequest(Guid kurinKey, [FromBody] CreateMembershipRequestRequest request)
+    {
+        var response = await _mediator.Send(new CreateMembershipRequestCommand(
+            kurinKey, request.PublicId, request.MemberKey, request.Kind, request.MembershipKind, request.FromKurinKey));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>The person's kurin approves a request. «Перевести» waits until the person owes it no dues.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpPost("{kurinKey:guid}/membership-requests/{requestKey:guid}/approve")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ApproveMembershipRequest(Guid kurinKey, Guid requestKey)
+    {
+        var response = await _mediator.Send(new DecideMembershipRequestCommand(kurinKey, requestKey, Approve: true));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>The person's kurin declines a request.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpPost("{kurinKey:guid}/membership-requests/{requestKey:guid}/decline")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeclineMembershipRequest(Guid kurinKey, Guid requestKey)
+    {
+        var response = await _mediator.Send(new DecideMembershipRequestCommand(kurinKey, requestKey, Approve: false));
+        return response.ToActionResult(this);
+    }
+
+    /// <summary>The asking kurin withdraws a request nobody has answered.</summary>
+    [Authorize(Policy = AuthorizationPolicies.RequireKurinManagement)]
+    [HttpDelete("{kurinKey:guid}/membership-requests/{requestKey:guid}")]
+    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CancelMembershipRequest(Guid kurinKey, Guid requestKey)
+    {
+        var response = await _mediator.Send(new CancelMembershipRequestCommand(kurinKey, requestKey));
         return response.ToActionResult(this);
     }
 

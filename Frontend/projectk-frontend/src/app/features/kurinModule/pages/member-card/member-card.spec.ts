@@ -8,6 +8,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { MessageService } from '@openng/optimus-ui/api';
 import { MemberService } from '../../services/member-service/member.service';
 import { MemberDto } from '../../models/member.dto';
+import { MembershipDto } from '../../models/membership.dto';
 import { KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { MembershipKind } from '../../models/enums/membership-kind.enum';
 import { PlastLevel } from '../../models/enums/plast-level.enum';
@@ -883,6 +884,7 @@ describe('MemberCardComponent', () => {
       numberLocale: 'uk-UA',
       currentQuarter: { year: 2026, number: 4 },
       balance: -300,
+      owedToLeave: 0,
       quarterRate: { stanytsia: 240, krai: 0, kurin: 15, group: 45, total: 300 },
       isConcessionNow: false,
       concessionNamesNow: [],
@@ -916,6 +918,35 @@ describe('MemberCardComponent', () => {
 
       expect(renderedText()).toContain('Сплачено');
       expect(renderedText()).toContain('Каса гуртка');
+    });
+
+    // Борг з людиною не йде: «Вивести» пояснює, що спершу треба сплатити, і не пропонує вивести.
+    it('із боргом «Вивести» каже про вкладку замість підтвердження', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: -600, owedToLeave: 300 })));
+      createComponent();
+      fixture.detectChanges();
+      const confirm = vi.spyOn(component.confirmationService, 'confirm').mockReturnThis();
+
+      component.confirmLeaveKurin({ kurinKey: member.kurinKey, kurinNumber: 1 } as MembershipDto);
+
+      const options = confirm.mock.calls[0][0];
+      expect(options.header).toBe('Спершу — вкладка');
+      expect(options.message).toContain('300 ₴');
+      expect(options.rejectVisible).toBe(false);
+      expect(options.accept).toBeUndefined();
+    });
+
+    it('без боргу «Вивести» питає підтвердження', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: 0 })));
+      createComponent();
+      fixture.detectChanges();
+      const confirm = vi.spyOn(component.confirmationService, 'confirm').mockReturnThis();
+
+      component.confirmLeaveKurin({ kurinKey: member.kurinKey, kurinNumber: 1 } as MembershipDto);
+
+      expect(confirm.mock.calls[0][0].header).toBe('Вивести з куреня');
     });
 
     // Чужа вкладка юнакові не показується: сервер відмовляє, і плитки просто немає.

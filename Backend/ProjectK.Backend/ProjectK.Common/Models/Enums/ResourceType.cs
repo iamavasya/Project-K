@@ -56,5 +56,8 @@ public enum ResourceType
     /// The kurin's tags and who carries them. Read is seeing the tags on people; Update is defining
     /// tags and putting them on. Keyed by the kurin or by the person; who gets it is the kurin's policy.
     /// </summary>
-    MemberTag
+    MemberTag,
+
+    /// <summary>The kurin's settings page, read whole by its КВ. Keyed by the kurin; changing them stays <c>Kurin:Update</c>.</summary>
+    KurinSettings
 }

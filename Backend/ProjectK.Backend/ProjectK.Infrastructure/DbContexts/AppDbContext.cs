@@ -33,6 +33,9 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<Group> Groups { get; set; }
     public DbSet<Member> Members { get; set; }
     public DbSet<Membership> Memberships { get; set; }
+    public DbSet<MembershipRequest> MembershipRequests { get; set; }
+    public DbSet<MemberCardShare> MemberCardShares { get; set; }
+    public DbSet<KurinCardSharing> KurinCardSharing { get; set; }
     public DbSet<PlastLevelHistory> PlastLevelHistories { get; set; }
     public DbSet<Leadership> Leaderships { get; set; }
     public DbSet<LeadershipHistory> LeadershipHistories { get; set; }
@@ -64,6 +67,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<DuesCharge> DuesCharges { get; set; }
     public DbSet<DuesEntry> DuesEntries { get; set; }
     public DbSet<DuesEntryEvent> DuesEntryEvents { get; set; }
+    public DbSet<KurinDuesSettings> KurinDuesSettings { get; set; }
 
     public DbSet<KurinScoreSettings> KurinScoreSettings { get; set; }
     public DbSet<ScoreRule> ScoreRules { get; set; }
@@ -105,7 +109,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         {
             if (entry.State == EntityState.Added && string.IsNullOrEmpty(entry.Entity.PublicId))
             {
-                entry.Entity.PublicId = MemberPublicId.For(entry.Entity.MemberKey);
+                entry.Entity.PublicId = MemberPublicId.New();
             }
         }
 
@@ -236,6 +240,20 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                   .OnDelete(DeleteBehavior.SetNull);
         });
 
+        // Requests between kurins hold the person and both kurins by key: the record of who asked whom
+        // outlives either side changing.
+        builder.Entity<MembershipRequest>(entity =>
+        {
+            entity.HasKey(e => e.MembershipRequestKey);
+            entity.Property(e => e.Kind).HasConversion<int>();
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.MembershipKind).HasConversion<int>();
+            entity.Property(e => e.ConcurrencyStamp).IsConcurrencyToken();
+            entity.HasIndex(e => e.FromKurinKey);
+            entity.HasIndex(e => e.ToKurinKey);
+            entity.HasIndex(e => e.MemberKey);
+        });
+
         builder.Entity<Membership>(entity =>
         {
             entity.HasKey(e => e.MembershipKey);
@@ -326,6 +344,29 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.Value).HasPrecision(18, 2);
             entity.Property(e => e.Parts).HasConversion<int>();
             entity.Property(e => e.Reason).HasMaxLength(500);
+        });
+
+        builder.Entity<MemberCardShare>(entity =>
+        {
+            entity.HasKey(e => e.MemberCardShareKey);
+            entity.Property(e => e.Fields).HasConversion<int>();
+            entity.Property(e => e.LinkToken).HasMaxLength(64);
+            entity.HasIndex(e => e.MemberKey).IsUnique();
+            entity.HasIndex(e => e.LinkToken).IsUnique().HasFilter("[LinkToken] IS NOT NULL");
+        });
+
+        builder.Entity<KurinCardSharing>(entity =>
+        {
+            entity.HasKey(e => e.KurinCardSharingKey);
+            entity.Property(e => e.MinorFields).HasConversion<int>();
+            entity.HasIndex(e => e.KurinKey).IsUnique();
+        });
+
+        builder.Entity<KurinDuesSettings>(entity =>
+        {
+            entity.HasKey(e => e.KurinDuesSettingsKey);
+            entity.Property(e => e.ChargeTiming).HasConversion<int>();
+            entity.HasIndex(e => e.KurinKey).IsUnique();
         });
 
         builder.Entity<DuesCharge>(entity =>

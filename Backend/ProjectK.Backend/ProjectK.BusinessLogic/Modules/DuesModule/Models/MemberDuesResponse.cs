@@ -19,6 +19,12 @@ public sealed class MemberDuesResponse
     /// <summary>Across every гурток of this kurin: negative is debt, positive a surplus.</summary>
     public decimal Balance { get; init; }
 
+    /// <summary>
+    /// What keeps the person in the kurin: unpaid quarters already behind them. The running quarter is
+    /// not in it — the quarter someone is released in is not charged. Zero when they may be released.
+    /// </summary>
+    public decimal OwedToLeave { get; init; }
+
     /// <summary>What the current quarter costs them in the гурток they stand in now; null when they stand in none.</summary>
     public DuesAmountDto? QuarterRate { get; init; }
     public bool IsConcessionNow { get; init; }

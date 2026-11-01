@@ -8,6 +8,8 @@ import { MessageModule } from '@openng/optimus-ui/message';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { CheckboxModule } from '@openng/optimus-ui/checkbox';
 import { InputNumberModule } from '@openng/optimus-ui/inputnumber';
+import { TagModule } from '@openng/optimus-ui/tag';
+import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { KurinNumberRange, OnboardingService } from '../../../authModule/services/onboarding-service/onboarding.service';
 import { KurinDto } from '../../models/kurin.dto';
@@ -16,6 +18,7 @@ import { AgendaCategoryManagerComponent } from '../../components/agenda-category
 import { AgendaArchivePolicyComponent } from '../../components/agenda-archive-policy/agenda-archive-policy';
 import { KurinCardFieldsComponent } from '../../components/kurin-card-fields/kurin-card-fields';
 import { KurinAccessPolicyComponent } from '../../components/kurin-access-policy/kurin-access-policy';
+import { KurinCardSharingComponent } from '../../components/kurin-card-sharing/kurin-card-sharing';
 import { KurinProbeEditionsComponent } from '../../components/kurin-probe-editions/kurin-probe-editions';
 import { KurinTagSettingsComponent } from '../../components/kurin-tag-settings/kurin-tag-settings';
 import { hasYouthProgram, isSeniorBranch } from '../../models/enums/kurin-branch.enum';
@@ -43,13 +46,15 @@ const RENAMABLE_ROLES: LeadershipRole[] = [
     CheckboxModule,
     InputNumberModule,
     InputTextModule,
+    TagModule,
     AgendaCategoryManagerComponent,
     AgendaArchivePolicyComponent,
     KurinCardFieldsComponent,
     KurinAccessPolicyComponent,
     KurinProbeEditionsComponent,
     KurinTagSettingsComponent,
-    KurinBranchRequestComponent
+    KurinBranchRequestComponent,
+    KurinCardSharingComponent
   ],
   templateUrl: './kurin-settings.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -67,6 +72,7 @@ export class KurinSettingsComponent implements OnInit {
   private readonly accessPolicy = viewChild<KurinAccessPolicyComponent>('accessPolicy');
   private readonly probeEditions = viewChild<KurinProbeEditionsComponent>('probeEditions');
   private readonly tagSettings = viewChild<KurinTagSettingsComponent>('tagSettings');
+  private readonly cardSharing = viewChild<KurinCardSharingComponent>('cardSharing');
 
   /** Проби є лише в юнацькому курені; в УСП чи УПС розділу проби гуртків немає. */
   protected readonly hasYouthProgram = hasYouthProgram;
@@ -89,6 +95,9 @@ export class KurinSettingsComponent implements OnInit {
     if (this.isSenior) return this.kurin.namedAfter || kurinBranchesName(this.kurin.branches);
     return `${this.kurin.number ?? 'Підготовчий'} курінь`;
   }
+
+  /** The КВ reads the page whole; only who may change the kurin edits it. */
+  readonly readOnly = !inject(PermissionService).canManageKurinSettings();
 
   kurinKey = '';
   kurin: KurinDto | null = null;
@@ -181,13 +190,15 @@ export class KurinSettingsComponent implements OnInit {
     const accessPolicy = this.accessPolicy();
     const probeEditions = this.probeEditions();
     const tagSettings = this.tagSettings();
+    const cardSharing = this.cardSharing();
     forkJoin([
       this.kurinService.updateKurin(request),
       archive ? archive.save() : of(undefined),
       cardFields ? cardFields.save() : of(undefined),
       accessPolicy ? accessPolicy.save() : of(undefined),
       probeEditions ? probeEditions.save() : of(undefined),
-      tagSettings ? tagSettings.save() : of(undefined)
+      tagSettings ? tagSettings.save() : of(undefined),
+      cardSharing ? cardSharing.save() : of(undefined)
     ]).subscribe({
       next: ([updated]) => {
         this.kurin = updated;

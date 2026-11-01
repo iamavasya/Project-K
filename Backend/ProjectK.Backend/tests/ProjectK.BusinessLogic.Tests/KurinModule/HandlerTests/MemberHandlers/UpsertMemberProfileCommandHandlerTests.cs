@@ -688,12 +688,50 @@ public class UpsertMemberProfileCommandHandlerTests
         var result = await _handler.Handle(cmd, CancellationToken.None);
 
         result.Type.Should().Be(ResultType.Success);
+        result.Data!.GroupKey.Should().Be(here.GroupKey);
         _eventsMock.Verify(
-            e => e.PublishAsync(
-                It.Is<MemberPlaced>(placed =>
-                    placed.KurinKey == here.KurinKey && placed.GroupKey == here.GroupKey),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+            e => e.PublishAsync(It.IsAny<MemberPlaced>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Handle_Update_OfSomeoneInTwoKurins_ShouldKeepBothMemberships(bool editedFromSecondKurin)
+    {
+        var first = MakeGroup();
+        var second = MakeGroup();
+        var existing = MakeExistingMember(first.GroupKey, first.KurinKey);
+        existing.UserKey = Guid.NewGuid();
+        var cmd = ProfileCommandFor(existing, second, firstName: "Changed");
+
+        ExistingMemberIs(existing, existing.MemberKey);
+        _membershipsMock
+            .Setup(m => m.GetActiveForMemberAsync(existing.MemberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([
+                new Membership { MemberKey = existing.MemberKey, KurinKey = first.KurinKey, GroupKey = first.GroupKey },
+                new Membership { MemberKey = existing.MemberKey, KurinKey = second.KurinKey, GroupKey = second.GroupKey }
+            ]);
+        GroupIs(first);
+        GroupIs(second);
+        if (editedFromSecondKurin)
+        {
+            _currentUserContextMock.SetupGet(c => c.KurinKey).Returns(second.KurinKey);
+            _currentUserContextMock.Setup(c => c.Roles).Returns(new[] { "KV.Zvyazkovyi" });
+        }
+        else
+        {
+            // The person edits their own profile.
+            _currentUserContextMock.SetupGet(c => c.UserId).Returns(existing.UserKey);
+        }
+
+        var result = await _handler.Handle(cmd, CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        result.Data!.GroupKey.Should().Be(editedFromSecondKurin ? second.GroupKey : first.GroupKey);
+        _eventsMock.Verify(
+            e => e.PublishAsync(It.IsAny<MemberPlaced>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     private static UpsertMemberProfileCommand ProfileCommandFor(

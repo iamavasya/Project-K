@@ -17,5 +17,7 @@ public enum AppNotificationType
     WaitlistEntrySubmitted = 12,
     CalendarFeedRevoked = 13,
     KurinBranchRequestSubmitted = 14,
-    KurinBranchRequestReviewed = 15
+    KurinBranchRequestReviewed = 15,
+    MembershipRequested = 16,
+    MembershipRequestDecided = 17
 }

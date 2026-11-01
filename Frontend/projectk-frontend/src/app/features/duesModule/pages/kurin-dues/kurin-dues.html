@@ -111,6 +111,26 @@
           Ставки ще не задано — гуртки нічого не нараховують, доки їх немає.
         }
       </p>
+
+      <div class="dues-timing">
+        <span class="lil-dialog-label" id="dues-timing-label">Як платимо</span>
+        @if (d.viewer.canSetRates) {
+          <p-selectbutton
+            [options]="timingOptions"
+            [ngModel]="d.chargeTiming"
+            (ngModelChange)="saveChargeTiming($event)"
+            [allowEmpty]="false"
+            [disabled]="savingTiming()"
+            optionLabel="label"
+            optionValue="value"
+            ariaLabelledBy="dues-timing-label" />
+        } @else {
+          <span>{{ timingLabels[d.chargeTiming] }}</span>
+        }
+        <span class="dues-timing__hint">
+          {{ timingHints[d.chargeTiming] }} Неоплачений квартал, у якому людину виведено, знімається; оплачений лишається за нею.
+        </span>
+      </div>
     </section>
 
     <section class="kurin-tile">

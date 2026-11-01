@@ -17,6 +17,9 @@ public sealed class KurinDuesResponse
     /// <summary>Where the край's kurins hand the вкладка up: stanytsia, krai or both.</summary>
     public string Upstream { get; init; } = KraiDues.Stanytsia;
     public QuarterDto CurrentQuarter { get; init; } = new();
+
+    /// <summary>When the вкладка falls due: наперед (the running quarter is owed) or за пройдений квартал.</summary>
+    public DuesChargeTiming ChargeTiming { get; init; } = DuesChargeTiming.InAdvance;
     public IReadOnlyList<PlastYearDto> Years { get; init; } = [];
     public IReadOnlyList<KurinDuesRateDto> Rates { get; init; } = [];
 

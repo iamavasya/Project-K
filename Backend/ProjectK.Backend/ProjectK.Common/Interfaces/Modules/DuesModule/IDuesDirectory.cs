@@ -13,4 +13,12 @@ public interface IDuesDirectory
     /// full by the end of it, surplus or not. The running quarter is never among them.
     /// </summary>
     Task<IReadOnlyCollection<PaidQuarterRecord>> GetPaidQuartersAsync(Guid kurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// What the given memberships of the kurin still owe it for quarters already behind them, all
+    /// their accounts together. The running quarter is left out whichever way the kurin pays: unpaid,
+    /// its charge is dropped when they leave (see <c>DuesLeavingQuarterEventHandler</c>), so it is not a debt that
+    /// keeps them. Zero when they are square.
+    /// </summary>
+    Task<decimal> GetOwedAsync(Guid kurinKey, IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default);
 }

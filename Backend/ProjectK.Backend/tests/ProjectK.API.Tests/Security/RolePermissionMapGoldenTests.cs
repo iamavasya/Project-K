@@ -86,7 +86,14 @@ public class RolePermissionMapGoldenTests
             [.. GroupOffices]),
         new(ChangeKind.Added, "MemberTag:Update:KurinWide",
             "New right ManageTags (TAG-01): by default the Звʼязковий defines tags and puts them on people.",
-            [Zvyazkovyi, SystemRole.Admin])
+            [Zvyazkovyi, SystemRole.Admin]),
+        new(ChangeKind.Added, "KurinSettings:Read:KurinWide",
+            "ACCESS-04 (owner, 2026-10-30): the whole КВ reads the kurin's settings; only the Звʼязковий changes them.",
+            [Zvyazkovyi, Vykhovnyk, Instruktor, SystemRole.Admin]),
+        .. new[] { "Create", "Update", "Delete", "Manage" }.Select(action => new IntendedChange(
+            ChangeKind.Added, $"KurinSettings:{action}:KurinWide",
+            "The administrator holds every action on every resource.",
+            [SystemRole.Admin]))
     ];
 
     private const string Zvyazkovyi = "KV.Zvyazkovyi";

@@ -60,6 +60,7 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
         services.AddScoped<ICalendarFeedStore, CalendarFeedStore>();
         services.AddSingleton<IQrCodeService, QrCodeService>();
+        services.AddSingleton<ICardTokenSigner, CardTokenSigner>();
 
         services.AddHostedService<AuditCleanupBackgroundService>();
         services.AddHostedService<MemberWarningExpiryBackgroundService>();

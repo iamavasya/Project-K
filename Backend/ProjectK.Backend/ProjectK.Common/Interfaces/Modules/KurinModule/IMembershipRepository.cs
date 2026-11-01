@@ -87,17 +87,15 @@ public interface IMembershipRepository : IBaseEntityRepository<Membership>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Opens a membership without touching any other — unlike <see cref="PlaceAsync"/>, which closes
-    /// the rest.
+    /// Opens a membership as it is given: kind and join date included.
     /// </summary>
     void Open(Membership membership);
 
     /// <summary>
     /// Puts a person in a kurin and гурток, opening the membership if it is not open yet.
     /// <para>
-    /// One kurin at a time, deliberately: a member record still names a single kurin, so a
-    /// placement that names a different one is a move, and every other current membership is
-    /// closed.
+    /// It never closes a membership in another kurin: a person may stand in several, and leaving
+    /// one goes through its own route, with the debt check, the audit entry and the notices.
     /// The write is left on the unit of work, so it commits with whatever caused it.
     /// </summary>
     Task PlaceAsync(

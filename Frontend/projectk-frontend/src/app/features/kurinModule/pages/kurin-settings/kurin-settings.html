@@ -3,6 +3,9 @@
     <div>
       <p class="lil-page-head__eyebrow">Налаштування куреня</p>
       <h1>{{ title }}</h1>
+      @if (readOnly) {
+        <p-tag value="Лише перегляд" severity="secondary" />
+      }
     </div>
     <div class="lil-page-head__actions">
       <p-button
@@ -17,6 +20,8 @@
   @if (errorMessage) {
     <p-message severity="error" icon="pi pi-exclamation-triangle">{{ errorMessage }}</p-message>
   }
+
+  <fieldset class="settings-fieldset" [disabled]="readOnly">
 
   @if (kurin && isSenior && kurinKey) {
     <section class="kurin-tile" aria-labelledby="kurin-branches-title">
@@ -194,10 +199,21 @@
           або який веде; «Увесь курінь» — усі.
         </p>
       </div>
-      <app-kurin-access-policy #accessPolicy [kurinKey]="kurinKey" />
+      <app-kurin-access-policy #accessPolicy [kurinKey]="kurinKey" [readOnly]="readOnly" />
+    </section>
+
+    <section class="kurin-tile" aria-labelledby="card-sharing-title">
+      <div class="setting-copy">
+        <h2 id="card-sharing-title">Картки до 18 років</h2>
+        <p>Що юнаки до 18 років можуть показувати на своїй картці.</p>
+      </div>
+      <app-kurin-card-sharing #cardSharing [kurinKey]="kurinKey" />
     </section>
   }
 
+  </fieldset>
+
+  @if (!readOnly) {
   <footer class="settings-actions">
     <p-button
       label="Скасувати"
@@ -212,4 +228,5 @@
       [disabled]="loading || saving || !kurin || !!numberProblem"
       (onClick)="save()" />
   </footer>
+  }
 </section>

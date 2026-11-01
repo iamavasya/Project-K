@@ -119,7 +119,7 @@ export class KraiConcessionGrantsComponent {
     this.confirmation.confirm({
       header: 'Видалити пільгу?',
       message: `«${grant.name}» зникне з усіх кварталів, які вона знижувала. Щоб пільга просто перестала діяти, задай їй останній квартал.`,
-      icon: 'pi pi-exclamation-triangle',
+      icon: 'pi pi-trash',
       acceptButtonProps: { label: 'Видалити', severity: 'danger' },
       rejectButtonProps: { label: 'Скасувати', severity: 'secondary', outlined: true },
       accept: () => this.run(this.dues.deleteConcessionGrant(this.groupKey(), grant.grantKey), () => this.editingKey.set(null))

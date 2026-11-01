@@ -60,7 +60,28 @@ public class ResourceAccessService : IResourceAccessService
             return ResourceAccessDecision.Deny($"No permission for {action} on {resourceType}.");
         }
 
-        return await CheckScopeAsync(grantedScope.Value, scopeResourceType, scopeResourceKey, cancellationToken);
+        var decision = await CheckScopeAsync(grantedScope.Value, scopeResourceType, scopeResourceKey, cancellationToken);
+        if (decision.IsAllowed || action != ResourceAction.Read)
+        {
+            return decision;
+        }
+
+        // A person released from their kurin, or not yet taken into the next one, stands nowhere —
+        // and every scope above is a kurin's. Their own record they still read: the history is
+        // theirs, not the kurin's. Reading only; changing it is the kurin's again once they stand in one.
+        return await IsCallersOwnAsync(scopeResourceType, scopeResourceKey, cancellationToken)
+            ? ResourceAccessDecision.Allow("Own record, read outside any kurin scope.")
+            : decision;
+    }
+
+    private async Task<bool> IsCallersOwnAsync(ResourceType resourceType, Guid resourceKey, CancellationToken cancellationToken)
+    {
+        if (_currentUserContext.UserId is not { } userKey)
+        {
+            return false;
+        }
+
+        return await _scopeReader.GetPersonAccountKeyAsync(resourceType, resourceKey, cancellationToken) == userKey;
     }
 
     public async Task<ResourceAccessDecision> CheckCapabilityAsync(

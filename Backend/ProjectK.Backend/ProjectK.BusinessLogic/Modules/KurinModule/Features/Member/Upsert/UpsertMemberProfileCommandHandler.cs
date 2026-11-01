@@ -72,11 +72,13 @@ public class UpsertMemberProfileCommandHandler
         var before = existing is null ? null : MemberAuditFields.Of(existing);
 
         // Where they already stand. The record does not say any more, so it is read from the
-        // membership — and it is what the request is measured against.
-        var current = existing is null
-            ? null
-            : (await _memberships.GetActiveForMemberAsync(request.MemberKey, cancellationToken))
-                .FirstOrDefault();
+        // membership — and it is what the request is measured against. Someone in two kurins is
+        // measured by the one the edit is made from.
+        var standing = existing is null
+            ? []
+            : await _memberships.GetActiveForMemberAsync(request.MemberKey, cancellationToken);
+        var current = standing.FirstOrDefault(m => m.KurinKey == _currentUserContext.KurinKey)
+            ?? standing.FirstOrDefault();
 
         // Where a person stands is not a field of their profile. Editing an existing person takes
         // the placement back from the membership they already have — whoever is editing, and
@@ -262,11 +264,15 @@ public class UpsertMemberProfileCommandHandler
         await RecordAsync(existing, before, kurinKey, cancellationToken);
 
         // Where the person stands is the kurin's to record, and it is the only place it is
-        // written. The member module says who was put where; the kurin opens or moves the
-        // membership in response, inside this same unit of work.
-        await _events.PublishAsync(
-            new MemberPlaced(existing.MemberKey, existing.UserKey, kurinKey, groupKey),
-            cancellationToken);
+        // written. The member module says who was put where; the kurin opens the membership in
+        // response, inside this same unit of work. Someone who already stands somewhere keeps
+        // every membership as it is: an edit is not a move.
+        if (current is null)
+        {
+            await _events.PublishAsync(
+                new MemberPlaced(existing.MemberKey, existing.UserKey, kurinKey, groupKey),
+                cancellationToken);
+        }
 
         var changes = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (changes <= 0)

@@ -27,4 +27,9 @@ public class DuesChargeRepository : BaseEntityRepository<DuesCharge>, IDuesCharg
 
         Set.RemoveRange(await Set.Where(c => membershipKeys.Contains(c.MembershipKey)).ToListAsync(cancellationToken));
     }
+
+    public async Task DeleteFromQuarterAsync(Guid membershipKey, int fromQuarter, CancellationToken cancellationToken = default)
+        => Set.RemoveRange(await Set
+            .Where(c => c.MembershipKey == membershipKey && c.Quarter >= fromQuarter)
+            .ToListAsync(cancellationToken));
 }

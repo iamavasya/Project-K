@@ -9,4 +9,10 @@ public interface IDuesChargeRepository : IBaseEntityRepository<DuesCharge>
 
     /// <summary>Drops every charge of these memberships — the people behind them are gone. Through the tracker, so it commits with the caller.</summary>
     Task DeleteForMembershipsAsync(IReadOnlyCollection<Guid> membershipKeys, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Drops a membership's charges from <paramref name="fromQuarter"/> on — the quarters after it
+    /// closed. Through the tracker, so it commits with the caller.
+    /// </summary>
+    Task DeleteFromQuarterAsync(Guid membershipKey, int fromQuarter, CancellationToken cancellationToken = default);
 }

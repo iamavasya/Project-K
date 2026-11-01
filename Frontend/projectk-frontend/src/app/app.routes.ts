@@ -51,6 +51,22 @@ export const routes: Routes = [
     data: { breadcrumb: 'Про Лілейку' }
   },
   {
+    // A shared card: `v` behind the three-minute «перевірити» QR, `c` behind a permanent link. Open to
+    // anyone, signed in or not, without the app's chrome.
+    path: 'v/:token',
+    loadComponent: () => import('./features/authModule/pages/public-card/public-card')
+      .then(m => m.PublicCardComponent),
+    title: 'Картка',
+    data: { mode: 'check' }
+  },
+  {
+    path: 'c/:token',
+    loadComponent: () => import('./features/authModule/pages/public-card/public-card')
+      .then(m => m.PublicCardComponent),
+    title: 'Картка',
+    data: { mode: 'link' }
+  },
+  {
     path: 'privacy',
     loadComponent: () => import('./features/systemModule/pages/privacy-page/privacy-page')
       .then(m => m.PrivacyPageComponent),
@@ -188,6 +204,14 @@ export const routes: Routes = [
       .then(m => m.RosterImportComponent),
     title: 'Імпорт складу',
     data: { breadcrumb: 'Імпорт складу', parent: '/kurin', titleContext: 'kurin' }
+  },
+  {
+    path: 'kurin/transfers',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement')],
+    loadComponent: () => import('./features/kurinModule/pages/transfers/transfers')
+      .then(m => m.TransfersComponent),
+    title: 'Склад куреня',
+    data: { breadcrumb: 'Склад куреня', parent: '/kurin', titleContext: 'kurin' }
   },
   {
     path: 'kurin/registry',
@@ -374,11 +398,11 @@ export const routes: Routes = [
   },
   {
     path: 'kurin/:kurinKey/settings',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement'), EntityGuard],
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinSettings'), EntityGuard],
     loadComponent: () => import('./features/kurinModule/pages/kurin-settings/kurin-settings')
       .then(m => m.KurinSettingsComponent),
     title: 'Налаштування куреня',
-    data: { breadcrumb: 'Налаштування куреня', parent: '/kurin', entityType: 'kurin', entityAction: 'Update', titleContext: 'kurin' }
+    data: { breadcrumb: 'Налаштування куреня', parent: '/kurin', entityType: 'KurinSettings', entityKeyParam: 'kurinKey', entityAction: 'Read', titleContext: 'kurin' }
   },
   {
     path: 'planning/create/:kurinKey',

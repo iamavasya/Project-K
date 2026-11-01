@@ -108,6 +108,29 @@ public class ResourceScopeReaderMembershipTests
         Assert.Null(fromSenior!.GroupKey);
     }
 
+    /// <summary>
+    /// Released from their last kurin, a person is in nobody's scope — and still known as the owner
+    /// of their own record, by the closed membership that names their account.
+    /// </summary>
+    [Fact]
+    public async Task PersonAccount_ShouldStayKnown_AfterTheLastMembershipEnds()
+    {
+        await using var context = NewContext();
+        var memberKey = Guid.NewGuid();
+        var userKey = Guid.NewGuid();
+        var left = Joining(memberKey, Guid.NewGuid(), null, userKey);
+        left.LeftAtUtc = DateTime.UtcNow.AddDays(-1);
+        context.Memberships.Add(left);
+        await context.SaveChangesAsync();
+
+        var reader = new ResourceScopeReader(context);
+
+        Assert.Equal(userKey, await reader.GetPersonAccountKeyAsync(ResourceType.Member, memberKey));
+        Assert.Equal(userKey, await reader.GetPersonAccountKeyAsync(ResourceType.MemberContacts, memberKey));
+        Assert.Null(await reader.GetPersonAccountKeyAsync(ResourceType.Member, Guid.NewGuid()));
+        Assert.Null(await reader.GetPersonAccountKeyAsync(ResourceType.Kurin, memberKey));
+    }
+
     [Fact]
     public async Task LedGroups_ShouldBeEmpty_InAKurinTheUserOnlyLeadsGroupsElsewhere()
     {

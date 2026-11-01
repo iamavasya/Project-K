@@ -68,6 +68,7 @@ public static class DependencyInjection
         services.AddScoped<MeAgendaScopes>();
         services.AddScoped<RefreshTokenInvalidation>();
         services.AddScoped<MePerson>();
+        services.AddScoped<MemberCards>();
 
         services.AddScoped<IAgendaAccess, AgendaAccess>();
         services.AddScoped<KurinReportDataService>();
@@ -119,6 +120,7 @@ public static class DependencyInjection
     private static void AddMemberModule(this IServiceCollection services)
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
+        services.AddScoped<MembershipMoves>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
     }
 }

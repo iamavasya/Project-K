@@ -14,7 +14,9 @@ export type AppNotificationType =
   | 'WaitlistEntrySubmitted'
   | 'CalendarFeedRevoked'
   | 'KurinBranchRequestSubmitted'
-  | 'KurinBranchRequestReviewed';
+  | 'KurinBranchRequestReviewed'
+  | 'MembershipRequested'
+  | 'MembershipRequestDecided';
 
 export type AppNotificationSeverity = 'Info' | 'Success' | 'Warn' | 'Error';
 

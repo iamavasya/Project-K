@@ -37,6 +37,9 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IKurinRepository _kurins;
     private IGroupRepository _groups;
     private IMembershipRepository _memberships;
+    private IMembershipRequestRepository _membershipRequests;
+    private IMemberCardShareRepository _memberCardShares;
+    private IKurinCardSharingRepository _kurinCardSharing;
     private IMemberRepository _members;
     private ILeadershipRepository _leaderships;
     private IPlanningSessionRepository _planningSessions;
@@ -66,6 +69,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     private IDuesConcessionGrantRepository _duesConcessionGrants;
     private IDuesChargeRepository _duesCharges;
     private IDuesEntryRepository _duesEntries;
+    private IKurinDuesSettingsRepository _kurinDuesSettings;
     private IKurinScoreSettingsRepository _kurinScoreSettings;
     private IScoreRuleRepository _scoreRules;
     private IScoreAttendanceRateRepository _scoreAttendanceRates;
@@ -86,6 +90,9 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IKurinBranchRequestRepository KurinBranchRequests => _kurinBranchRequests ??= new KurinBranchRequestRepository(_context);
     public IGroupRepository Groups => _groups ??= new GroupRepository(_context);
     public IMembershipRepository Memberships => _memberships ??= new MembershipRepository(_context);
+    public IMembershipRequestRepository MembershipRequests => _membershipRequests ??= new MembershipRequestRepository(_context);
+    public IMemberCardShareRepository MemberCardShares => _memberCardShares ??= new MemberCardShareRepository(_context);
+    public IKurinCardSharingRepository KurinCardSharing => _kurinCardSharing ??= new KurinCardSharingRepository(_context);
     public IMemberRepository Members => _members ??= new MemberRepository(_context);
     public IAppUserRepository Users => _users ??= new AppUserRepository(_context);
     public ILeadershipRepository Leaderships => _leaderships ??= new LeadershipRepository(_context);
@@ -114,6 +121,7 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
     public IDuesConcessionGrantRepository DuesConcessionGrants => _duesConcessionGrants ??= new DuesConcessionGrantRepository(_context);
     public IDuesChargeRepository DuesCharges => _duesCharges ??= new DuesChargeRepository(_context);
     public IDuesEntryRepository DuesEntries => _duesEntries ??= new DuesEntryRepository(_context);
+    public IKurinDuesSettingsRepository KurinDuesSettings => _kurinDuesSettings ??= new KurinDuesSettingsRepository(_context);
     public IKurinScoreSettingsRepository KurinScoreSettings => _kurinScoreSettings ??= new KurinScoreSettingsRepository(_context);
     public IScoreRuleRepository ScoreRules => _scoreRules ??= new ScoreRuleRepository(_context);
     public IScoreAttendanceRateRepository ScoreAttendanceRates => _scoreAttendanceRates ??= new ScoreAttendanceRateRepository(_context);
@@ -147,6 +155,10 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
             }
 
             throw new DuplicateRowException(exception);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new StaleRowException(exception);
         }
     }
 

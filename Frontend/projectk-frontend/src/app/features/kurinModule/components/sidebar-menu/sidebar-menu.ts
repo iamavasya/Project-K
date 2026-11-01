@@ -22,6 +22,7 @@ import { DuesGroupLinkDto } from '../../../duesModule/models/group-dues.dto';
 import { ReportProblemDialogComponent } from '../../../systemModule/components/report-problem-dialog/report-problem-dialog';
 import { displayCodeName } from '../../../../shared/functions/release-code-name.function';
 import { WaitlistAttentionService } from '../../../adminModule/services/waitlist-attention/waitlist-attention.service';
+import { MembershipService } from '../../services/membership-service/membership.service';
 
 /** Чим курінь користується — від цього залежать пункти меню. */
 interface KurinMenuFeatures {
@@ -43,6 +44,7 @@ export class SidebarMenuComponent implements OnChanges {
   private readonly kurinService = inject(KurinService);
   private readonly waitlistAttention = inject(WaitlistAttentionService);
   private readonly duesService = inject(DuesService);
+  private readonly memberships = inject(MembershipService);
   private readonly installApp = inject(InstallAppService);
   readonly visible = model(false);
   /** «Повідомити про проблему» lives beside the menu so it can be opened from any page. */
@@ -84,9 +86,11 @@ export class SidebarMenuComponent implements OnChanges {
         switchMap(([state, url]) => combineLatest([
           this.features$(state?.kurinKey ?? null),
           this.waitlistAttention.pending$,
-          this.duesGroups$(state?.kurinKey ?? null)
+          this.duesGroups$(state?.kurinKey ?? null),
+          this.requestsWaiting$(state?.kurinKey ?? null)
         ]).pipe(
-          map(([features, pendingWaitlist, duesGroups]) => this.markCurrent(this.buildItems(state, features, pendingWaitlist, duesGroups), url))
+          map(([features, pendingWaitlist, duesGroups, requestsWaiting]) =>
+            this.markCurrent(this.buildItems(state, features, pendingWaitlist, duesGroups, requestsWaiting), url))
         ))
       );
       this.email$ = this.state$().pipe(
@@ -164,14 +168,26 @@ export class SidebarMenuComponent implements OnChanges {
     return this.duesService.getReadableGroups(kurinKey).pipe(catchError(() => of([])));
   }
 
-  private buildItems(state: AuthState | null, features: KurinMenuFeatures = ALL_FEATURES, pendingWaitlist = 0, duesGroups: DuesGroupLinkDto[] = []): MenuItem[] {
+  /**
+   * Скільки запитів від інших куренів чекає відповіді Звʼязкового. Перечитується з кожним переходом,
+   * тож крапка гасне одразу після відповіді.
+   */
+  private requestsWaiting$(kurinKey: string | null): Observable<number> {
+    if (!kurinKey || !this.permissionService.canManageWholeKurin()) {
+      return of(0);
+    }
+
+    return this.memberships.waitingRequests(kurinKey).pipe(catchError(() => of(0)));
+  }
+
+  private buildItems(state: AuthState | null, features: KurinMenuFeatures = ALL_FEATURES, pendingWaitlist = 0, duesGroups: DuesGroupLinkDto[] = [], requestsWaiting = 0): MenuItem[] {
     const kurinKey = state?.kurinKey ?? null;
     const memberKey = state?.memberKey ?? null;
     const isAdmin = this.permissionService.isAdmin();
 
     return [
       ...(memberKey ? this.personalItems(memberKey) : []),
-      ...(kurinKey ? this.kurinItems(kurinKey, features, duesGroups) : []),
+      ...(kurinKey ? this.kurinItems(kurinKey, features, duesGroups, requestsWaiting) : []),
       ...(isAdmin && !kurinKey ? this.adminItems(pendingWaitlist) : []),
       ...this.commonItems()
     ];
@@ -194,7 +210,7 @@ export class SidebarMenuComponent implements OnChanges {
     ];
   }
 
-  private kurinItems(kurinKey: string, features: KurinMenuFeatures, duesGroups: DuesGroupLinkDto[]): MenuItem[] {
+  private kurinItems(kurinKey: string, features: KurinMenuFeatures, duesGroups: DuesGroupLinkDto[], requestsWaiting: number): MenuItem[] {
     const isYouthKurin = features.youth;
     const canSeeRegistry = this.permissionService.isAdmin()
       || this.permissionService.canManageWholeKurin()
@@ -209,6 +225,18 @@ export class SidebarMenuComponent implements OnChanges {
     // юнакові його не показуємо; сторінка так само закрита capabilityGuard.
     if (canSeeRegistry) {
       items.push(this.navItem({ label: 'Реєстр', icon: 'pi pi-table', routerLink: ['/kurin/registry'], disabled }));
+    }
+
+    // Вкладка Звʼязкового: переходи між куренями, прийняти за кодом, колишні члени. Крапка — є запит,
+    // на який чекають відповіді.
+    if (this.permissionService.canManageWholeKurin()) {
+      items.push(this.navItem({
+        label: 'Склад куреня',
+        icon: 'pi pi-arrow-right-arrow-left',
+        routerLink: ['/kurin/transfers'],
+        disabled,
+        styleClass: requestsWaiting > 0 ? 'lil-menu-item--attention' : undefined
+      }));
     }
 
     // Імпорт заводить склад цілого куреня — це дія Зв'язкового, не гурткового. Він розкладає людей по
@@ -246,7 +274,7 @@ export class SidebarMenuComponent implements OnChanges {
       items.push(this.navItem({ label: 'Вкладка куреня', icon: 'pi pi-wallet', routerLink: ['/kurin', kurinKey, 'dues'] }));
     }
 
-    if (canManageKurinSettings) {
+    if (this.permissionService.canReadKurinSettings()) {
       items.push(this.navItem({ label: 'Налаштування куреня', icon: 'pi pi-cog', routerLink: ['/kurin', kurinKey, 'settings'] }));
     }
 

@@ -344,7 +344,7 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
       header: 'Вийти без збереження?',
       message: 'Зміни в цій формі пропадуть.',
       icon: 'pi pi-exclamation-triangle',
-      rejectButtonProps: { label: 'Лишитися', severity: 'secondary', variant: 'text' },
+      rejectButtonProps: { label: 'Лишитися', severity: 'secondary', outlined: true },
       acceptButtonProps: { label: 'Вийти', severity: 'danger' },
       accept: () => resolve(true),
       reject: () => resolve(false)
@@ -557,8 +557,8 @@ export class UpsertMemberComponent implements OnInit, LeavesWithUnsavedChanges {
           // Not «Вивести»: this removes the person from Лілейка in every kurin, so it says so and points at the gentler way.
           message: 'Людину буде видалено з Лілейки назавжди — разом із пробами, вмілостями, відзначеннями й членствами в усіх куренях. '
             + 'Якщо людина просто пішла з куреня, закрий її членство кнопкою «Вивести» на картці.',
-          header: 'Видалити профіль',
-          icon: 'pi pi-exclamation-triangle',
+          header: 'Видалити профіль?',
+          icon: 'pi pi-trash',
           rejectLabel: 'Скасувати',
           rejectButtonProps: {
               label: 'Скасувати',

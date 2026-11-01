@@ -78,3 +78,11 @@
   font-size: 0.875rem;
   color: var(--p-text-muted-color);
 }
+
+/* The tiles sit in the page's own grid; the fieldset is only there to switch every control off for a reader. */
+.settings-fieldset {
+  border: 0;
+  display: contents;
+  margin: 0;
+  padding: 0;
+}

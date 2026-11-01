@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
-import { HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from '@openng/optimus-ui/table';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -45,6 +45,12 @@ export interface TallyRow {
 
 /** Ключ вибору колонок. На курінь, бо в різних гілках потрібне різне. */
 const columnChoiceKey = (kurinKey: string) => `registry:columns:${kurinKey}`;
+
+/** Чому «Повернути» не вдалося, коли людина тим часом стала в іншому курені. */
+const TAKE_BACK_ERRORS: Record<string, string> = {
+  RequestPending: 'Запит щодо цієї людини вже чекає відповіді.',
+  ChooseKurin: 'Людина в кількох куренях — попроси її в «Складі куреня».'
+};
 
 @Component({
   selector: 'app-registry',
@@ -95,7 +101,9 @@ export class RegistryComponent implements OnInit {
    * повернути її можна було лише за кодом, який тримає вона сама.
    */
   readonly former = signal<FormerMemberDto[]>([]);
-  readonly formerOpen = signal(false);
+  // `?former=1` — сюди веде картка щойно виведеної людини: її картку курінь уже не відкриває.
+  private scrollToFormer = inject(ActivatedRoute).snapshot.queryParamMap.get('former') === '1';
+  readonly formerOpen = signal(this.scrollToFormer);
   readonly returning = signal<string | null>(null);
 
   /**
@@ -257,7 +265,13 @@ export class RegistryComponent implements OnInit {
     // Тихо: колишні — довідка, а не робота. Курінь, у якому ще нікого не виводили, не має бачити
     // помилку через порожній список.
     this.membershipService.former(this.kurinKey).subscribe({
-      next: people => this.former.set(people),
+      next: people => {
+        this.former.set(people);
+        if (this.scrollToFormer && people.length) {
+          this.scrollToFormer = false;
+          setTimeout(() => document.getElementById('former')?.scrollIntoView({ block: 'start' }));
+        }
+      },
       error: () => this.former.set([])
     });
   }
@@ -288,9 +302,24 @@ export class RegistryComponent implements OnInit {
 
   private takeBack(person: FormerMemberDto): void {
     this.returning.set(person.memberKey);
-    this.membershipService.takeBack(this.kurinKey, person.memberKey).subscribe({
-      next: () => {
+    // Through a request: someone who stands nowhere comes back at once, but someone who has since
+    // joined another kurin is asked for — «перевести» — and that kurin's Звʼязковий answers.
+    this.membershipService.createRequest(this.kurinKey, {
+      memberKey: person.memberKey,
+      kind: 'Transfer',
+      membershipKind: 'Youth'
+    }).subscribe({
+      next: sent => {
         this.returning.set(null);
+        if (!sent.joined) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Запит надіслано',
+            detail: `${this.formerName(person)}: запит надіслано до його куреня.`
+          });
+          return;
+        }
+
         this.former.update(people => people.filter(other => other.memberKey !== person.memberKey));
         this.loadMembers();
         this.messageService.add({
@@ -301,10 +330,11 @@ export class RegistryComponent implements OnInit {
       },
       error: (error: unknown) => {
         this.returning.set(null);
+        const code = error instanceof HttpErrorResponse ? (error.error as { error?: string } | null)?.error : undefined;
         this.messageService.add({
           severity: 'error',
           summary: 'Не вдалося повернути',
-          detail: failureDetail(error)
+          detail: (code && TAKE_BACK_ERRORS[code]) || failureDetail(error)
         });
       }
     });
