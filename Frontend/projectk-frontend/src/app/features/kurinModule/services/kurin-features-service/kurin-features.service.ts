@@ -1,10 +1,10 @@
-import { Injectable, computed, effect, inject } from '@angular/core';
+import { Injectable, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, distinctUntilChanged, map, of, switchMap } from 'rxjs';
+import { catchError, distinctUntilChanged, map, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinService } from '../kurin-service/kurin.service';
 import { hasGroups, isSeniorBranch } from '../../models/enums/kurin-branch.enum';
-import { useKurinRoleNames } from '../../functions/leadership-role-display.function';
+import { actInKurin } from '../../functions/leadership-role-display.function';
 
 /**
  * Чим користується курінь, у якому людина діє зараз: є в ньому гуртки чи ні, ведеться точкування.
@@ -20,6 +20,8 @@ export class KurinFeaturesService {
     this.auth.getAuthState().pipe(
       map(state => state?.kurinKey ?? null),
       distinctUntilChanged(),
+      // Role names read from now on are this kurin's; KurinService remembers them as it reads it.
+      tap(key => actInKurin(key)),
       switchMap(key => key ? this.kurins.getByKey(key).pipe(catchError(() => of(null))) : of(null))
     ),
     { initialValue: null }
@@ -29,9 +31,4 @@ export class KurinFeaturesService {
   readonly hasGroups = computed(() => hasGroups(this.kurin()?.branch));
 
   readonly isSenior = computed(() => isSeniorBranch(this.kurin()?.branch));
-
-  constructor() {
-    // The kurin's own role names follow the kurin the person acts in.
-    effect(() => useKurinRoleNames(this.kurin()?.roleNames));
-  }
 }

@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
+import { rememberKurinRoleNames } from './kurin.labels';
 import { CountryCode } from 'libphonenumber-js';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
@@ -49,7 +50,10 @@ export class KurinApi {
   readonly leadershipChanged = signal(0);
 
   kurin(kurinKey: string): Promise<KurinDto> {
-    return this.api.get(`kurin/${kurinKey}`);
+    return this.api.get<KurinDto>(`kurin/${kurinKey}`).then((kurin) => {
+      rememberKurinRoleNames(kurin.kurinKey, kurin.roleNames);
+      return kurin;
+    });
   }
 
   /** The kurin's record (web kurin-panel «Редагування даних куреня»); the whole record goes back. */

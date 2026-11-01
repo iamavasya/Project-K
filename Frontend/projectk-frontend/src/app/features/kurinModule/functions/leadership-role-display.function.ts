@@ -35,20 +35,32 @@ export function leadershipRoleSeverityForRole(role: LeadershipRole | string): Ro
 }
 
 /**
- * The current kurin's own names for its roles, set by KurinFeaturesService whenever the kurin the
- * person acts in changes. Module state on purpose: the name is read from templates, pipes and plain
- * functions all over, and every one of them must say «Скриптор» where the kurin calls its писар so.
+ * Kurins' own names for their roles, by kurin, and the kurin the person acts in. Module state on
+ * purpose: the name is read from templates, pipes and plain functions all over, and every one of them
+ * must say «Скриптор» where the kurin calls its писар so. KurinService remembers the names of every
+ * kurin it reads or saves; KurinFeaturesService says which kurin is current. Keyed by kurin, so an
+ * administrator saving another kurin's settings changes nothing on the screens of the current one.
  */
-let kurinRoleNames: Partial<Record<string, string>> = {};
+const roleNamesByKurin = new Map<string, Partial<Record<string, string>>>();
+let currentKurinKey: string | null = null;
 
-/** Replaces the current kurin's role names; an empty map restores the usual ones. */
-export function useKurinRoleNames(names: Record<string, string> | null | undefined): void {
-  kurinRoleNames = { ...(names ?? {}) };
+/** Keeps a kurin's own role names as the server sent them; an empty map means the usual ones. */
+export function rememberKurinRoleNames(kurinKey: string, names: Record<string, string> | null | undefined): void {
+  roleNamesByKurin.set(kurinKey, { ...(names ?? {}) });
 }
 
-/** The office's Ukrainian name — the kurin's own when it renamed it — falling back to the raw value for anything unmapped. */
-export function leadershipRoleDisplayName(role: LeadershipRole | string): string {
-  return kurinRoleNames[role] || ROLE_DISPLAY_NAMES[role as LeadershipRole] || String(role);
+/** The kurin whose role names unscoped calls use: the one the person acts in now. */
+export function actInKurin(kurinKey: string | null): void {
+  currentKurinKey = kurinKey;
+}
+
+/**
+ * The office's Ukrainian name — the kurin's own when it renamed it — falling back to the raw value
+ * for anything unmapped. Without a kurin, the one the person acts in.
+ */
+export function leadershipRoleDisplayName(role: LeadershipRole | string, kurinKey: string | null = currentKurinKey): string {
+  const own = kurinKey ? roleNamesByKurin.get(kurinKey)?.[role] : undefined;
+  return own || ROLE_DISPLAY_NAMES[role as LeadershipRole] || String(role);
 }
 
 /** "Прізвище Ім'я По батькові", the way every list renders a member. */

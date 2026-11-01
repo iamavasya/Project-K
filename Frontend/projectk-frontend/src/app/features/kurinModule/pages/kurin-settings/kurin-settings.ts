@@ -23,7 +23,7 @@ import { kurinBranchesName } from '../../../../shared/functions/kurin-label.func
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { ROLE_DISPLAY_NAMES } from '../../models/role-display-name.model';
-import { useKurinRoleNames } from '../../functions/leadership-role-display.function';
+import { rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
 
 /** Ролі, які курінь може назвати по-своєму (сервер: KurinRoleNames.Renamable). Гурткових тут немає. */
 const RENAMABLE_ROLES: LeadershipRole[] = [
@@ -189,7 +189,7 @@ export class KurinSettingsComponent implements OnInit {
         this.profileVerificationEnabled = updated.profileVerificationEnabled ?? false;
         this.scoreEnabled = updated.scoreEnabled ?? true;
         this.roleNames = { ...(updated.roleNames ?? {}) };
-        useKurinRoleNames(updated.roleNames);
+        rememberKurinRoleNames(updated.kurinKey, updated.roleNames);
         this.preparatory = updated.number === null;
         this.number = updated.number;
         this.saving = false;

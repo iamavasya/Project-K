@@ -22,6 +22,9 @@ import {
   sortMembers,
   startedProbeIds,
   upcomingBirthdays,
+  actInKurin,
+  rememberKurinRoleNames,
+  roleName,
 } from './kurin.labels';
 import { GroupDto, GroupedProbeDto, MemberAwardDto, MemberLookupDto, MembershipDto, MentorAssignmentDto, ProbeProgressDto, ProbeSummaryDto } from './kurin.models';
 
@@ -236,5 +239,20 @@ describe('kurin labels', () => {
     expect(membershipPeriod({ isCurrent: false, joinedAtUtc: '2018-09-01T00:00:00Z', leftAtUtc: '2019-06-01T00:00:00Z' } as MembershipDto)).toBe('2018 — 2019');
     expect(phoneHref('+380 (67) 111-22-33')).toBe('tel:+380671112233');
     expect(phoneHref('12')).toBeNull();
+  });
+});
+
+describe('kurin role names', () => {
+  afterEach(() => actInKurin(null));
+
+  it('says the current kurin\'s own name, and keeps it when another kurin\'s names arrive', () => {
+    rememberKurinRoleNames('orden', { Pysar: 'Скриптор' });
+    actInKurin('orden');
+    rememberKurinRoleNames('chorty', { Pysar: 'Літописець' });
+
+    expect(roleName('Pysar')).toBe('Скриптор');
+    expect(roleName('Pysar', 'chorty')).toBe('Літописець');
+    actInKurin(null);
+    expect(roleName('Pysar')).toBe('Писар');
   });
 });

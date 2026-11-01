@@ -15,6 +15,7 @@ import { browserTimeZone } from '../../functions/browser-time-zone.function';
 import { ACCESS_CACHE_PREFIX, ENTITY_CACHE_TTL_MS, GROUP_CACHE_PREFIX, KURIN_CACHE_PREFIX, MEMBER_CACHE_PREFIX } from '../client-cache/cache-policy';
 import { KurinAccessPolicyDto, SetKurinAccessPolicyRequest } from '../../models/kurin-access-policy.dto';
 import { requestFeedback } from '../../../../shared/functions/request-feedback.function';
+import { rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +30,7 @@ export class KurinService {
       `${KURIN_CACHE_PREFIX}by-key:${kurinKey}`,
       ENTITY_CACHE_TTL_MS,
       () => this.http.get<KurinDto>(`${this.apiUrl}/${kurinKey}`)
-    );
+    ).pipe(tap(kurin => rememberKurinRoleNames(kurin.kurinKey, kurin.roleNames)));
   }
 
   getKurins(): Observable<KurinDto[]> {
