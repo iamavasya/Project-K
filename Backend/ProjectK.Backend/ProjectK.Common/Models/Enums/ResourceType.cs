@@ -59,5 +59,12 @@ public enum ResourceType
     MemberTag,
 
     /// <summary>The kurin's settings page, read whole by its КВ. Keyed by the kurin; changing them stays <c>Kurin:Update</c>.</summary>
-    KurinSettings
+    KurinSettings,
+
+    /// <summary>
+    /// The kurin's archive: former offices, memberships and dissolved гуртки. Read and Update are
+    /// seeing and correcting dates and roles; Delete is the danger zone and needs its ticket too.
+    /// Keyed by the kurin; a group-scoped grant reaches the records of the гуртки one leads.
+    /// </summary>
+    KurinArchive
 }

@@ -93,6 +93,7 @@ export class KurinPanelComponent implements OnInit {
   groupPanelConfig: ManagePanelConfig = {
     entityType: 'group',
     title: 'Гурток',
+    deleteAction: { verb: 'Розформувати', question: 'Розформувати гурток', note: 'Гурток і його провід лишаться в архіві куреня.' },
     fields: [
       {
         name: 'groupKey',
@@ -299,8 +300,8 @@ export class KurinPanelComponent implements OnInit {
         command: () => { this.onGroupActionClick(item, 'update'); }
       },
       {
-        label: 'Видалити',
-        icon: 'pi pi-trash',
+        label: 'Розформувати',
+        icon: 'pi pi-inbox',
         command: () => { this.onGroupActionClick(item, 'delete'); }
       }
     ];

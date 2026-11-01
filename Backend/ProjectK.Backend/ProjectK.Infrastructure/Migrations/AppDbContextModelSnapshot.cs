@@ -1905,6 +1905,9 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<DateTime?>("DissolvedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("KurinKey")
                         .HasColumnType("uniqueidentifier");
 
@@ -2465,6 +2468,33 @@ namespace ProjectK.Infrastructure.Migrations
                     b.HasIndex("UserKey", "LeftAtUtc");
 
                     b.ToTable("Memberships");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MembershipGroupStint", b =>
+                {
+                    b.Property<Guid>("MembershipGroupStintKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("FromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("GroupKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MembershipKey")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MembershipGroupStintKey");
+
+                    b.HasIndex("GroupKey");
+
+                    b.HasIndex("MembershipKey", "ToUtc");
+
+                    b.ToTable("MembershipGroupStints");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MembershipRequest", b =>
@@ -4035,6 +4065,17 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Navigation("Group");
 
                     b.Navigation("Kurin");
+                });
+
+            modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MembershipGroupStint", b =>
+                {
+                    b.HasOne("ProjectK.Common.Entities.KurinModule.Membership", "Membership")
+                        .WithMany()
+                        .HasForeignKey("MembershipKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Membership");
                 });
 
             modelBuilder.Entity("ProjectK.Common.Entities.KurinModule.MentorAssignment", b =>

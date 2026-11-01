@@ -93,6 +93,21 @@ public class RolePermissionMapGoldenTests
         .. new[] { "Create", "Update", "Delete", "Manage" }.Select(action => new IntendedChange(
             ChangeKind.Added, $"KurinSettings:{action}:KurinWide",
             "The administrator holds every action on every resource.",
+            [SystemRole.Admin])),
+        .. new[] { "Read", "Update" }.Select(action => new IntendedChange(
+            ChangeKind.Added, $"KurinArchive:{action}:KurinWide",
+            "ARCH-01 (owner, 2026-10-30): the Звʼязковий reads and corrects the kurin's whole archive.",
+            [Zvyazkovyi, SystemRole.Admin])),
+        new(ChangeKind.Added, "KurinArchive:Delete:KurinWide",
+            "ARCH-01 (owner, 2026-11-01): only the Звʼязковий deletes from the archive, in the danger zone.",
+            [Zvyazkovyi, SystemRole.Admin]),
+        .. new[] { "Read", "Update" }.Select(action => new IntendedChange(
+            ChangeKind.Added, $"KurinArchive:{action}:OwnGroups",
+            "ARCH-01 (owner, 2026-10-30): a гурток's провід corrects its own гурток's archive.",
+            ["Group.Hurtkoviy", Vykhovnyk, Instruktor])),
+        .. new[] { "Create", "Manage" }.Select(action => new IntendedChange(
+            ChangeKind.Added, $"KurinArchive:{action}:KurinWide",
+            "The administrator holds every action on every resource.",
             [SystemRole.Admin]))
     ];
 

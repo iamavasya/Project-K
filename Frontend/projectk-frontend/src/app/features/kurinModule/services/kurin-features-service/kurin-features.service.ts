@@ -27,6 +27,9 @@ export class KurinFeaturesService {
     { initialValue: null }
   );
 
+  /** The branch of the kurin the person acts in, for wording that differs by branch. */
+  readonly branch = computed(() => this.kurin()?.branch ?? null);
+
   /** Гуртки є в усіх куренях, крім старших. */
   readonly hasGroups = computed(() => hasGroups(this.kurin()?.branch));
 

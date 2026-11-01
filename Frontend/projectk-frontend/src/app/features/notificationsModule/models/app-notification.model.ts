@@ -16,7 +16,8 @@ export type AppNotificationType =
   | 'KurinBranchRequestSubmitted'
   | 'KurinBranchRequestReviewed'
   | 'MembershipRequested'
-  | 'MembershipRequestDecided';
+  | 'MembershipRequestDecided'
+  | 'ArchiveDangerZoneEntered';
 
 export type AppNotificationSeverity = 'Info' | 'Success' | 'Warn' | 'Error';
 

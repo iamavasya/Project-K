@@ -11,7 +11,7 @@ import { map, take } from "rxjs";
  * It used to take free-form strings ('Admin', 'Manager', 'Mentor') compared in lower case, so a typo
  * silently disabled the check and the names still came from the job titles the office model replaced.
  */
-export type RouteCapability = 'admin' | 'kurinManagement' | 'kurinSettings' | 'groupLeadership' | 'journal';
+export type RouteCapability = 'admin' | 'kurinManagement' | 'kurinSettings' | 'groupLeadership' | 'journal' | 'archive';
 
 export const capabilityGuard = (...capabilities: RouteCapability[]): CanActivateFn => {
     return () => {
@@ -27,7 +27,8 @@ export const capabilityGuard = (...capabilities: RouteCapability[]): CanActivate
                     (capabilities.includes('kurinManagement') && permissionService.canManageWholeKurin()) ||
                     (capabilities.includes('kurinSettings') && permissionService.canReadKurinSettings()) ||
                     (capabilities.includes('groupLeadership') && permissionService.canLeadGroups()) ||
-                    (capabilities.includes('journal') && permissionService.canReadJournal());
+                    (capabilities.includes('journal') && permissionService.canReadJournal()) ||
+                    (capabilities.includes('archive') && permissionService.canReadArchive());
 
                 return allowed ? true : router.createUrlTree(['/forbidden']);
             })

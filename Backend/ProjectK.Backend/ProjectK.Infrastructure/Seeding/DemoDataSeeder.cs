@@ -206,6 +206,9 @@ public partial class DemoDataSeeder : IDemoDataSeeder
         await CreateFormerAsync(kurinKey, sokoly.GroupKey, sokolyLeadership, LeadershipRole.Pysar, leftMonthsAgo: 4, cancellationToken);
         await CreateFormerAsync(kurinKey, levy.GroupKey, null, null, leftMonthsAgo: 11, cancellationToken);
 
+        // 6. The archive: a гурток dissolved last year with its провід, and who held the kurin's roles before.
+        await SeedArchiveAsync(kurinKey, sokoly, kurinLeadership, kvLeadership, instructor, vedmediYouth, cancellationToken);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         var youth = sokolyYouth.Concat(levyYouth).Concat(vedmediYouth).ToList();
@@ -308,13 +311,83 @@ public partial class DemoDataSeeder : IDemoDataSeeder
         return people;
     }
 
-    private async Task CreateFormerAsync(
+    /// <summary>
+    /// What the kurin's archive shows on the demo: «Беркути», dissolved fourteen months ago, with its
+    /// провід and two members who moved on; a писар of three years ago who has since left; and the
+    /// instructor's earlier years as Звʼязковий. The stint dates are set by hand afterwards — the
+    /// context stamps a move with the moment it is saved.
+    /// </summary>
+    private async Task SeedArchiveAsync(
+        Guid kurinKey,
+        Group sokoly,
+        Leadership kurinLeadership,
+        Leadership kvLeadership,
+        Person instructor,
+        IReadOnlyList<Person> vedmediYouth,
+        CancellationToken cancellationToken)
+    {
+        var berkuty = await DataSeeder.EnsureGroupAsync(_dbContext, "Беркути", kurinKey, cancellationToken);
+        berkuty.Description = "Гурток 2019–2025 років.";
+        var dissolvedOn = DateOnly.FromDateTime(_now.AddMonths(-14));
+        var berkutyLeadership = await EnsureLeadershipAsync(LeadershipType.Group, null, berkuty.GroupKey, new DateOnly(2021, 9, 1), cancellationToken);
+        berkutyLeadership.EndDate = dissolvedOn;
+
+        await CreateFormerAsync(kurinKey, berkuty.GroupKey, berkutyLeadership, LeadershipRole.Hurtkoviy, leftMonthsAgo: 14, cancellationToken, new DateOnly(2022, 9, 1));
+        var movedOn = await CreateFormerAsync(kurinKey, berkuty.GroupKey, null, null, leftMonthsAgo: 6, cancellationToken);
+        await CreateFormerAsync(kurinKey, sokoly.GroupKey, kurinLeadership, LeadershipRole.Pysar, leftMonthsAgo: 20, cancellationToken, new DateOnly(2022, 9, 1));
+        SeatOffice(berkutyLeadership, movedOn.MemberKey, LeadershipRole.Pysar, new DateOnly(2023, 9, 1), dissolvedOn);
+        SeatOffice(kurinLeadership, vedmediYouth[^1].Key, LeadershipRole.Skarbnyk, new DateOnly(2023, 9, 1), new DateOnly(2025, 8, 31));
+        SeatOffice(kvLeadership, instructor.Key, LeadershipRole.Zvyazkovyi, new DateOnly(2021, 9, 1), new DateOnly(2024, 8, 31));
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // The one who moved on went from «Беркути» to «Соколи» when the гурток was dissolved.
+        var moving = await _dbContext.Memberships.FirstAsync(ms => ms.MemberKey == movedOn.MemberKey, cancellationToken);
+        var leftAt = moving.LeftAtUtc;
+        moving.LeftAtUtc = null;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        moving.GroupKey = sokoly.GroupKey;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        moving.LeftAtUtc = leftAt;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var dissolvedAt = dissolvedOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        foreach (var stint in await _dbContext.MembershipGroupStints.Where(s => s.MembershipKey == moving.MembershipKey).ToListAsync(cancellationToken))
+        {
+            if (stint.GroupKey == berkuty.GroupKey)
+            {
+                stint.ToUtc = dissolvedAt;
+            }
+            else
+            {
+                stint.FromUtc = dissolvedAt;
+            }
+        }
+
+        // A гурток bounces back from a stint closed twice by the reopen above; keep one per гурток.
+        var duplicates = await _dbContext.MembershipGroupStints
+            .Where(s => s.MembershipKey == moving.MembershipKey && s.GroupKey == berkuty.GroupKey)
+            .OrderBy(s => s.FromUtc)
+            .Skip(1)
+            .ToListAsync(cancellationToken);
+        _dbContext.MembershipGroupStints.RemoveRange(duplicates);
+
+        // As dissolving does: nobody's membership points at the гурток any more.
+        foreach (var membership in await _dbContext.Memberships.Where(ms => ms.GroupKey == berkuty.GroupKey).ToListAsync(cancellationToken))
+        {
+            membership.GroupKey = null;
+        }
+
+        berkuty.DissolvedAtUtc = dissolvedAt;
+    }
+
+    private async Task<Member> CreateFormerAsync(
         Guid kurinKey,
         Guid groupKey,
         Leadership? leadership,
         LeadershipRole? formerOffice,
         int leftMonthsAgo,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        DateOnly? officeSince = null)
     {
         var age = _random.Next(15, 18);
         var dateOfBirth = DateOnly.FromDateTime(_now.AddYears(-age).AddDays(-_random.Next(0, 365)));
@@ -332,7 +405,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
 
         if (leadership is not null && formerOffice is not null)
         {
-            SeatOffice(leadership, member.MemberKey, formerOffice.Value, new DateOnly(2024, 9, 1), DateOnly.FromDateTime(left));
+            SeatOffice(leadership, member.MemberKey, formerOffice.Value, officeSince ?? new DateOnly(2024, 9, 1), DateOnly.FromDateTime(left));
         }
 
         _dbContext.PlastLevelHistories.Add(new PlastLevelHistory
@@ -350,6 +423,7 @@ public partial class DemoDataSeeder : IDemoDataSeeder
             DateAchieved = DateOnly.FromDateTime(joined.AddMonths(15))
         });
         member.LatestPlastLevel = PlastLevel.Uchasnyk;
+        return member;
     }
 
     private DataSeeder.SeededPerson NextPerson(

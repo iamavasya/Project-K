@@ -357,6 +357,14 @@ export const routes: Routes = [
     data: { breadcrumb: 'Журнал дій', parent: '/kurin', titleContext: 'kurin' }
   },
   {
+    path: 'kurin/:kurinKey/archive',
+    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('archive')],
+    loadComponent: () => import('./features/kurinModule/pages/kurin-archive/kurin-archive')
+      .then(m => m.KurinArchiveComponent),
+    title: 'Архів куреня',
+    data: { breadcrumb: 'Архів куреня', parent: '/kurin', titleContext: 'kurin' }
+  },
+  {
     path: 'kurin/:kurinKey/dues',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
     loadComponent: () => import('./features/duesModule/pages/kurin-dues/kurin-dues')
