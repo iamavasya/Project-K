@@ -339,5 +339,16 @@ describe('RegistryComponent', () => {
 
       expect(exported).toEqual(['groupName', 'tags']);
     });
+
+    // The default columns hold «Теги» for every kurin; one with tags off must not export it empty.
+    it('should leave the tags column out of the export while the kurin has tags off', () => {
+      kurinTags = NO_KURIN_TAGS;
+      load([member({})]);
+      component.selectedColumnIds.set(['groupName', 'tags']);
+
+      component.exportToExcel();
+
+      expect(exported).toEqual(['groupName']);
+    });
   });
 });

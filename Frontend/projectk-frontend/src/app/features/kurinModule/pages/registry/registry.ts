@@ -401,7 +401,9 @@ export class RegistryComponent implements OnInit {
     }
 
     this.exporting.set(true);
-    this.kurinService.exportRegistry(this.kurinKey, this.selectedColumnIds()).subscribe({
+    // The columns on screen, not every one ever chosen: a kurin with tags off has no «Теги» column to export.
+    const columns = this.visibleColumns().map(column => column.id);
+    this.kurinService.exportRegistry(this.kurinKey, columns).subscribe({
       next: response => {
         if (response.body) {
           this.saveBlob(response.body, this.fileNameFrom(response));
