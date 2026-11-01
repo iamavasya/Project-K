@@ -452,6 +452,25 @@ export function activeWarning(warnings: MemberWarningDto[] | null | undefined, n
   return { level: WARNING_WEIGHT[top.level] ?? 0, daysLeft: Math.max(0, Math.ceil((expires - now) / 86_400_000)) };
 }
 
+/** A senior card's list of перестороги (web member-card warningRows): current first, then the latest past ones. */
+export function warningRows(
+  warnings: MemberWarningDto[] | null | undefined,
+  now = Date.now(),
+): { key: string; title: string; line: string; active: boolean }[] {
+  return [...(warnings ?? [])]
+    .map((w) => {
+      const expires = utcDate(w.expiresAtUtc)?.getTime() ?? 0;
+      const active = !w.revokedAtUtc && expires > now;
+      const state = w.revokedAtUtc ? 'знято' : active ? `ще ${Math.max(0, Math.ceil((expires - now) / 86_400_000))} дн.` : 'минула';
+      const issued = utcDate(w.issuedAtUtc);
+      const date = issued ? issued.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+      return { key: w.memberWarningKey, title: `${WARNING_NAMES[WARNING_WEIGHT[w.level]] ?? 'Пересторога'} пересторога`, line: [date, state].filter(Boolean).join(' · '), active, at: issued?.getTime() ?? 0 };
+    })
+    .sort((a, b) => Number(b.active) - Number(a.active) || b.at - a.at)
+    .slice(0, 5)
+    .map(({ at, ...row }) => row);
+}
+
 /** «Поточна пересторога: Друга. Залишилось днів: 12.» */
 export function warningText(warning: { level: number; daysLeft: number }): string {
   return `Поточна пересторога: ${WARNING_NAMES[warning.level] ?? 'Пересторога'}. Залишилось днів: ${warning.daysLeft}.`;

@@ -69,6 +69,7 @@ import {
   startedProbeIds,
   utcDate,
   warningText,
+  warningRows,
 } from './kurin.labels';
 import {
   BadgeCatalogItemDto,
@@ -89,7 +90,7 @@ import { RoleTags } from './role-tags';
 import { ProfileEditResult, ProfileEditSheet } from './profile-edit.sheet';
 import { SkillsSheet } from './skills.sheet';
 import { KurinTags, KurinTagsDto } from './kurin-tags';
-import { inKurin, kurinLabel } from '../../core/kurin-label';
+import { inKurin, isSeniorBranch, kurinBranchesName, kurinLabel } from '../../core/kurin-label';
 
 interface Skills {
   catalog: BadgeCatalogItemDto[];
@@ -140,6 +141,9 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
   ],
   host: { '[class.lk-embedded]': 'own()' },
   styles: `
+    ion-item.past {
+      opacity: 0.75;
+    }
     app-role-tags.inline {
       margin-top: 0;
     }
@@ -431,7 +435,48 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
               </ion-list>
             }
 
-            @if (staffOffices().length || mentoredGroups().length) {
+            @if (seniorHere(); as here) {
+              <ion-list [inset]="true" data-testid="senior-kurin">
+                <ion-list-header><ion-label>У курені</ion-label></ion-list-header>
+                <ion-item-group>
+                  <ion-item>
+                    <ion-label class="ion-text-wrap"><h3>{{ seniorName(here) }}</h3>@if (seniorBranches(here); as branches) { <p>{{ branches }}</p> }</ion-label>
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>У курені з</ion-label>
+                    <ion-note slot="end">{{ here.joinedAtUtc.slice(8, 10) }}.{{ here.joinedAtUtc.slice(5, 7) }}.{{ here.joinedAtUtc.slice(0, 4) }}</ion-note>
+                  </ion-item>
+                  @for (office of seniorOffices(); track office.leadershipHistoryKey) {
+                    <ion-item>
+                      <ion-label><app-role-tags class="inline" [tags]="[officeTag(office)]" /></ion-label>
+                      <ion-note slot="end">з {{ office.startDate.slice(0, 4) }}</ion-note>
+                    </ion-item>
+                  }
+                </ion-item-group>
+              </ion-list>
+
+              <ion-list [inset]="true" data-testid="senior-awards">
+                <ion-list-header><ion-label>Відзначення</ion-label></ion-list-header>
+                <ion-item-group>
+                  <ion-item><ion-label class="ion-text-wrap">Відзначень ще немає.</ion-label></ion-item>
+                </ion-item-group>
+              </ion-list>
+
+              <ion-list [inset]="true" data-testid="senior-warnings">
+                <ion-list-header><ion-label>Перестороги</ion-label></ion-list-header>
+                <ion-item-group>
+                  @for (row of seniorWarnings(); track row.key) {
+                    <ion-item [class.past]="!row.active">
+                      <ion-label class="ion-text-wrap"><h3>{{ row.title }}</h3><p>{{ row.line }}</p></ion-label>
+                    </ion-item>
+                  } @empty {
+                    <ion-item><ion-label>Пересторог немає.</ion-label></ion-item>
+                  }
+                </ion-item-group>
+              </ion-list>
+            }
+
+            @if (!seniorHere() && (staffOffices().length || mentoredGroups().length)) {
               <ion-list [inset]="true" data-testid="staff">
                 <ion-list-header><ion-label>Впорядництво</ion-label></ion-list-header>
                 <ion-item-group>
@@ -650,6 +695,28 @@ export class MemberPage implements OnInit {
   protected readonly skillCounts = computed(() => `${this.skillViews().confirmed.length} · очікують ${this.skillViews().pending.length}`);
   protected readonly probeList = computed(() => valueOf(this.probes()) ?? []);
   protected readonly awards = computed<AwardGroup[]>(() => awardGroups(this.memberValue()?.awards));
+  /** The membership here when the kurin is УСП or УПС: the card then shows the kurin, role, awards and перестороги of a senior. */
+  protected readonly seniorHere = computed<MembershipDto | null>(() => {
+    const m = this.memberValue();
+    const list = this.membershipList();
+    const here = list.find((x) => x.isCurrent && x.kurinKey === m?.kurinKey) ?? list.find((x) => x.isCurrent);
+    return here && isSeniorBranch(here.branch) ? here : null;
+  });
+  /** Every current role but a гурток's, by the names the kurin gave them. */
+  protected readonly seniorOffices = computed(() =>
+    currentOffices(this.memberValue()?.leadershipHistories).filter((h) => (h.leadershipType ?? '').toLowerCase() !== 'group'),
+  );
+  protected readonly seniorWarnings = computed(() => warningRows(this.memberValue()?.warnings));
+
+  protected seniorName(m: MembershipDto): string {
+    return m.kurinNamedAfter || kurinLabel(m.kurinNumber, m.branch);
+  }
+
+  protected seniorBranches(m: MembershipDto): string | null {
+    if (!m.kurinNamedAfter) return null;
+    return m.numbering?.length ? kurinBranchesName(m.numbering) : kurinLabel(m.kurinNumber, m.branch);
+  }
+
   protected readonly staffOffices = computed(() =>
     currentOffices(this.memberValue()?.leadershipHistories).filter((h) => (h.leadershipType ?? '').toLowerCase() === 'kv'),
   );
@@ -732,6 +799,7 @@ export class MemberPage implements OnInit {
   }
 
   protected kurinTitle(m: MembershipDto): string {
+    if (isSeniorBranch(m.branch)) return this.seniorName(m);
     return m.kurinNamedAfter ? `${kurinLabel(m.kurinNumber)} · ім. ${m.kurinNamedAfter}` : kurinLabel(m.kurinNumber);
   }
 

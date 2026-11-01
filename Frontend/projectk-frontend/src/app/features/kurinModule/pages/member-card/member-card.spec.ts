@@ -817,6 +817,33 @@ describe('MemberCardComponent', () => {
       expect(memberProgressServiceSpy.getProbeProgress).not.toHaveBeenCalled();
     });
 
+    it('у курені УСП картка своя: курінь і роль, відзначення, перестороги — без юнацьких плиток і «Впорядництва»', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of({
+        ...member,
+        leadershipHistories: [
+          { leadershipHistoryKey: 'h1', leadershipKey: 'l1', role: 'Pysar', leadershipType: 'Kurin', startDate: '2025-09-01', endDate: null, member: null as never },
+          { leadershipHistoryKey: 'h2', leadershipKey: 'l2', role: 'Hurtkoviy', leadershipType: 'Group', startDate: '2025-09-01', endDate: null, member: null as never }
+        ]
+      }));
+      memberServiceSpy.getMemberships.mockReturnValue(of([{
+        ...membershipIn(KurinBranch.USP),
+        kurinNamedAfter: 'Орден Хрестоносців',
+        numbering: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }]
+      }]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      const element = fixture.nativeElement as HTMLElement;
+      expect(component.isSeniorKurinCard).toBe(true);
+      expect(component.seniorKurinName).toBe('Орден Хрестоносців');
+      expect(component.seniorKurinBranches).toBe('5-й курінь УСП · 20-й курінь УПС');
+      expect(component.currentOffices.map(o => o.role)).toEqual(['Pysar']);
+      expect(element.querySelector('[data-testid="senior-kurin-tile"]')).not.toBeNull();
+      expect(element.querySelector('[data-testid="senior-awards-tile"]')).not.toBeNull();
+      expect(element.querySelector('[data-testid="senior-warnings-tile"]')).not.toBeNull();
+    });
+
     it('у юнацькому курені все на місці', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));
       memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.UPYu)]));
@@ -825,6 +852,7 @@ describe('MemberCardComponent', () => {
       fixture.detectChanges();
 
       expect(component.hasYouthProgram).toBe(true);
+      expect(component.isSeniorKurinCard).toBe(false);
       expect(badgesCatalogServiceSpy.getAll).toHaveBeenCalled();
     });
 

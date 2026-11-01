@@ -42,7 +42,8 @@ import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum
 import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
 import { MembershipDto } from '../../models/membership.dto';
-import { hasYouthProgram, KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { hasYouthProgram, isSeniorBranch, KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
 import { memberBranchHere } from '../../functions/member-branch.function';
@@ -67,7 +68,7 @@ import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.
 import { formatPhone } from '../../../../shared/functions/phone.function';
 import { TileBoardComponent } from '../../../../shared/tile-board/tile-board';
 import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directive';
-import { kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
+import { kurinBranchesName, kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
 import { initials } from '../../../dashboardModule/functions/greeting.function';
 import { MemberWarningsDialogComponent } from './components/member-warnings-dialog/member-warnings-dialog';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
@@ -98,6 +99,7 @@ import { MemberTagsEditorComponent } from '../../components/member-tags-editor/m
     MemberWarningsDialogComponent,
     TileBoardComponent,
     TileDefDirective,
+    EmptyStateComponent,
     MemberTagsEditorComponent,
     RouterLink
   ],
@@ -402,6 +404,54 @@ export class MemberCardComponent implements OnInit {
 
   get personalBranch(): KurinBranch {
     return memberBranchHere(this.member, this.memberships);
+  }
+
+  /** Членство в курені, де людину дивляться; перше чинне, якщо такого немає. */
+  get membershipHere(): MembershipDto | null {
+    return this.memberships.find(m => m.isCurrent && m.kurinKey === this.member?.kurinKey)
+      ?? this.memberships.find(m => m.isCurrent)
+      ?? null;
+  }
+
+  /**
+   * Картка старшого куреня: у курені УСП чи УПС своя розкладка — членство й роль, відзначення
+   * старших, перестороги, теги, вкладка — а не юнацька з прихованими плитками.
+   */
+  get isSeniorKurinCard(): boolean {
+    return isSeniorBranch(this.membershipHere?.branch);
+  }
+
+  /** Назва куреня першою; без назви — його гілки. */
+  get seniorKurinName(): string {
+    const here = this.membershipHere;
+    return here?.kurinNamedAfter || kurinLabel(here?.kurinNumber ?? null, here?.branch);
+  }
+
+  /** Гілки під назвою: «5-й курінь УСП · 20-й курінь УПС». */
+  get seniorKurinBranches(): string | null {
+    const here = this.membershipHere;
+    if (!here?.kurinNamedAfter) return null;
+    return here.numbering?.length ? kurinBranchesName(here.numbering) : kurinLabel(here.kurinNumber, here.branch);
+  }
+
+  /** Чинні ролі людини — у проводі куреня й у КВ, назвами, які дав їм курінь. */
+  get currentOffices(): LeadershipHistoryDto[] {
+    return (this.member?.leadershipHistories ?? [])
+      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() !== 'group');
+  }
+
+  /** Перестороги на плитці: чинні першими, далі останні з минулих. */
+  get warningRows(): { key: string; level: string; issued: string; state: string; active: boolean }[] {
+    const now = Date.now();
+    return [...(this.member?.warnings ?? [])]
+      .map(warning => {
+        const revoked = !!warning.revokedAtUtc;
+        const active = !revoked && this.parseUtcDate(warning.expiresAtUtc) > now;
+        const state = revoked ? 'знято' : active ? `ще ${this.getWarningDaysLeft(warning.expiresAtUtc)} дн.` : 'минула';
+        return { key: warning.memberWarningKey, level: `${this.getWarningLevelLabel(warning.level)} пересторога`, issued: warning.issuedAtUtc, state, active };
+      })
+      .sort((a, b) => Number(b.active) - Number(a.active) || this.parseUtcDate(b.issued) - this.parseUtcDate(a.issued))
+      .slice(0, 5);
   }
 
   /** Проби, вмілості й відзначення УПЮ ведуться лише юнацтву. */

@@ -25,6 +25,7 @@ import {
   actInKurin,
   rememberKurinRoleNames,
   roleName,
+  warningRows,
 } from './kurin.labels';
 import { GroupDto, GroupedProbeDto, MemberAwardDto, MemberLookupDto, MembershipDto, MentorAssignmentDto, ProbeProgressDto, ProbeSummaryDto } from './kurin.models';
 
@@ -261,5 +262,22 @@ describe('kurin role names', () => {
     expect(roleName('Pysar', 'chorty')).toBe('Літописець');
     actInKurin(null);
     expect(roleName('Pysar')).toBe('Писар');
+  });
+});
+
+describe('senior warning rows', () => {
+  it('puts a current пересторога first and says how long it lasts', () => {
+    const now = Date.parse('2026-11-01T00:00:00Z');
+    const rows = warningRows(
+      [
+        { memberWarningKey: 'old', level: 'Level1', issuedAtUtc: '2026-01-10T00:00:00Z', expiresAtUtc: '2026-04-10T00:00:00Z' },
+        { memberWarningKey: 'now', level: 'Level2', issuedAtUtc: '2026-10-20T00:00:00Z', expiresAtUtc: '2026-11-11T00:00:00Z' },
+      ],
+      now,
+    );
+    expect(rows.map((r) => r.key)).toEqual(['now', 'old']);
+    expect(rows[0].title).toBe('Друга пересторога');
+    expect(rows[0].line).toContain('ще 10 дн.');
+    expect(rows[1].line).toContain('минула');
   });
 });

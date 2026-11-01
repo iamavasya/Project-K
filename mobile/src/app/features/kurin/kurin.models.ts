@@ -163,6 +163,8 @@ export interface MembershipDto {
   groupName?: string | null;
   kind: 'Youth' | 'Staff';
   joinedAtUtc: string;
+  /** Every гілка of the kurin with its number there (API MembershipRecord.Numbering). */
+  numbering?: KurinNumbering[];
   leftAtUtc?: string | null;
   isCurrent: boolean;
 }
