@@ -42,7 +42,8 @@ import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum
 import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
 import { MembershipDto } from '../../models/membership.dto';
-import { hasYouthProgram, KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { hasYouthProgram, isSeniorBranch, KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
 import { memberBranchHere } from '../../functions/member-branch.function';
@@ -67,7 +68,7 @@ import { emailHref, phoneHref } from '../../../../shared/functions/contact-href.
 import { formatPhone } from '../../../../shared/functions/phone.function';
 import { TileBoardComponent } from '../../../../shared/tile-board/tile-board';
 import { TileDefDirective } from '../../../../shared/tile-board/tile-def.directive';
-import { kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
+import { kurinBranchesName, kurinLabel, kurinName } from '../../../../shared/functions/kurin-label.function';
 import { initials } from '../../../dashboardModule/functions/greeting.function';
 import { MemberWarningsDialogComponent } from './components/member-warnings-dialog/member-warnings-dialog';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
@@ -98,6 +99,7 @@ import { MemberTagsEditorComponent } from '../../components/member-tags-editor/m
     MemberWarningsDialogComponent,
     TileBoardComponent,
     TileDefDirective,
+    EmptyStateComponent,
     MemberTagsEditorComponent,
     RouterLink
   ],
@@ -404,6 +406,55 @@ export class MemberCardComponent implements OnInit {
     return memberBranchHere(this.member, this.memberships);
   }
 
+  /** Членство в курені, де людину дивляться; перше чинне, якщо такого немає. */
+  get membershipHere(): MembershipDto | null {
+    return this.memberships.find(m => m.isCurrent && m.kurinKey === this.member?.kurinKey)
+      ?? this.memberships.find(m => m.isCurrent)
+      ?? null;
+  }
+
+  /**
+   * Картка старшого куреня: у курені УСП чи УПС своя розкладка — членство й роль, відзначення
+   * старших, перестороги, теги, вкладка — а не юнацька з прихованими плитками.
+   */
+  get isSeniorKurinCard(): boolean {
+    return isSeniorBranch(this.membershipHere?.branch);
+  }
+
+  /** Назва куреня першою; без назви — його гілки. */
+  get seniorKurinName(): string {
+    const here = this.membershipHere;
+    return here?.kurinNamedAfter || kurinLabel(here?.kurinNumber ?? null, here?.branch);
+  }
+
+  /** Гілки під назвою: «5-й курінь УСП · 20-й курінь УПС». */
+  get seniorKurinBranches(): string | null {
+    const here = this.membershipHere;
+    if (!here?.kurinNamedAfter) return null;
+    return here.numbering?.length ? kurinBranchesName(here.numbering) : kurinLabel(here.kurinNumber, here.branch);
+  }
+
+  /** Чинні ролі людини — у проводі куреня й у КВ, назвами, які дав їм курінь. */
+  get currentOffices(): LeadershipHistoryDto[] {
+    return (this.member?.leadershipHistories ?? [])
+      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() !== 'group' && this.inThisKurin(office));
+  }
+
+  /** Перестороги на плитці: чинні першими, далі останні з минулих. */
+  get warningRows(): { key: string; level: string; issued: string; state: string; active: boolean }[] {
+    const now = Date.now();
+    return [...(this.member?.warnings ?? [])]
+      .map(warning => {
+        // Lifted by someone is «знято»; one the system closed when it ran out has no one behind it.
+        const revoked = !!warning.revokedAtUtc && !!warning.revokedByUserKey;
+        const active = !warning.revokedAtUtc && this.parseUtcDate(warning.expiresAtUtc) > now;
+        const state = revoked ? 'знято' : active ? `ще ${this.getWarningDaysLeft(warning.expiresAtUtc)} дн.` : 'минула';
+        return { key: warning.memberWarningKey, level: `${this.getWarningLevelLabel(warning.level)} пересторога`, issued: warning.issuedAtUtc, state, active };
+      })
+      .sort((a, b) => Number(b.active) - Number(a.active) || this.parseUtcDate(b.issued) - this.parseUtcDate(a.issued))
+      .slice(0, 5);
+  }
+
   /** Проби, вмілості й відзначення УПЮ ведуться лише юнацтву. */
   get hasYouthProgram(): boolean {
     return hasYouthProgram(this.personalBranch);
@@ -415,7 +466,7 @@ export class MemberCardComponent implements OnInit {
    */
   get staffOffices(): LeadershipHistoryDto[] {
     return (this.member?.leadershipHistories ?? [])
-      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() === 'kv');
+      .filter(office => !office.endDate && office.leadershipType?.toLowerCase() === 'kv' && this.inThisKurin(office));
   }
 
   /** Гуртки, за якими людина закріплена виховником у курені, де її дивимось. */
@@ -436,8 +487,14 @@ export class MemberCardComponent implements OnInit {
     return this.mentoredGroupNames.map(name => ({ groupKey: null, name }));
   }
 
-  officeLabel(role: string): string {
-    return leadershipRoleDisplayName(role);
+  /** Named by the kurin the office is in: a Писар of one kurin is not another kurin's «Скриптор». */
+  officeLabel(office: LeadershipHistoryDto): string {
+    return leadershipRoleDisplayName(office.role, office.kurinKey ?? undefined);
+  }
+
+  /** Whether the office is in the kurin the card is read in; one with no kurin known counts. */
+  private inThisKurin(office: LeadershipHistoryDto): boolean {
+    return !office.kurinKey || !this.member?.kurinKey || office.kurinKey === this.member.kurinKey;
   }
 
   officeSeverity(role: string): RoleSeverity {
@@ -454,9 +511,14 @@ export class MemberCardComponent implements OnInit {
     }
 
     return this.memberships.reduce<Record<string, string>>((stamps, membership) => {
-      stamps[membership.kurinKey] = kurinLabel(membership.kurinNumber);
+      stamps[membership.kurinKey] = this.membershipKurinLabel(membership);
       return stamps;
     }, {});
+  }
+
+  /** A kurin in a line of text: a senior kurin by its own name, else by its number in its гілка. */
+  private membershipKurinLabel(membership: MembershipDto): string {
+    return (isSeniorBranch(membership.branch) && membership.kurinNamedAfter) || kurinLabel(membership.kurinNumber, membership.branch);
   }
 
   /** Курінь, у якому дивиться той, хто дивиться. Дії над членством можливі тільки в ньому. */
@@ -512,7 +574,7 @@ export class MemberCardComponent implements OnInit {
       header: 'Вивести з куреня',
       // Це не видалення людини, і про це варто сказати прямо: саме страх втратити історію
       // змушував провід тримати в курені тих, хто давно пішов.
-      message: `Членство (${kurinLabel(membership.kurinNumber)}) буде закрите. Людина, її проби, `
+      message: `Членство (${this.membershipKurinLabel(membership)}) буде закрите. Людина, її проби, `
         + 'вмілості й відзначення лишаються — вони належать їй, а не куреню.',
       icon: 'pi pi-sign-out',
       acceptLabel: 'Вивести',

@@ -10,6 +10,8 @@ import {
   memberBranch,
   memberRoleTags,
   officeTag,
+  officesIn,
+  membershipOf,
   roleTone,
   membershipPeriod,
   phoneHref,
@@ -25,6 +27,7 @@ import {
   actInKurin,
   rememberKurinRoleNames,
   roleName,
+  warningRows,
 } from './kurin.labels';
 import { GroupDto, GroupedProbeDto, MemberAwardDto, MemberLookupDto, MembershipDto, MentorAssignmentDto, ProbeProgressDto, ProbeSummaryDto } from './kurin.models';
 
@@ -261,5 +264,47 @@ describe('kurin role names', () => {
     expect(roleName('Pysar', 'chorty')).toBe('Літописець');
     actInKurin(null);
     expect(roleName('Pysar')).toBe('Писар');
+  });
+
+  it('names an office by its own kurin and keeps offices of other kurins off this card', () => {
+    rememberKurinRoleNames('orden', { Pysar: 'Скриптор' });
+    actInKurin('orden');
+    const office = (role: string, kurinKey: string) =>
+      ({ leadershipHistoryKey: role + kurinKey, leadershipKey: 'l', role, kurinKey, startDate: '2026-01-01', endDate: null }) as never;
+    const held = [office('Pysar', 'orden'), office('Kurinnyi', 'plain')];
+
+    expect(officeTag(held[0])).toEqual({ label: 'Скриптор', tone: roleTone('Pysar') });
+    expect(officeTag(office('Pysar', 'plain')).label).toBe('Писар');
+    expect(officesIn(held, 'orden').map((h) => h.role)).toEqual(['Pysar']);
+    expect(memberRoleTags({ leadershipHistories: [office('Pysar', 'plain')] } as never)).toEqual([{ label: 'Писар', tone: roleTone('Pysar') }]);
+  });
+});
+
+describe('senior warning rows', () => {
+  it('puts a current пересторога first and says how long it lasts', () => {
+    const now = Date.parse('2026-11-01T00:00:00Z');
+    const rows = warningRows(
+      [
+        { memberWarningKey: 'old', level: 'Level1', issuedAtUtc: '2026-01-10T00:00:00Z', expiresAtUtc: '2026-04-10T00:00:00Z' },
+        { memberWarningKey: 'now', level: 'Level2', issuedAtUtc: '2026-10-20T00:00:00Z', expiresAtUtc: '2026-11-11T00:00:00Z' },
+        { memberWarningKey: 'closed', level: 'Level1', issuedAtUtc: '2025-12-01T00:00:00Z', expiresAtUtc: '2026-03-01T00:00:00Z', revokedAtUtc: '2026-03-01T00:00:00Z' },
+        { memberWarningKey: 'lifted', level: 'Level1', issuedAtUtc: '2025-11-01T00:00:00Z', expiresAtUtc: '2026-02-01T00:00:00Z', revokedAtUtc: '2025-11-05T00:00:00Z', revokedByUserKey: 'u1' },
+      ],
+      now,
+    );
+    expect(rows.map((r) => r.key)).toEqual(['now', 'old', 'closed', 'lifted']);
+    expect(rows[2].line).toContain('минула');
+    expect(rows[3].line).toContain('знято');
+    expect(rows[0].title).toBe('Друга пересторога');
+    expect(rows[0].line).toContain('ще 10 дн.');
+    expect(rows[1].line).toContain('минула');
+  });
+});
+
+describe('membership in a line of text', () => {
+  it('names a senior kurin by its own name and a УПЮ kurin by its number', () => {
+    expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto)).toBe('Членство (Орден Хрестоносців)');
+    expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: null } as MembershipDto)).toBe('Членство (5-й курінь УСП)');
+    expect(membershipOf({ branch: 'UPYu', kurinNumber: 47, kurinNamedAfter: 'Івана Богуна' } as MembershipDto)).toBe('Членство в курені ч. 47');
   });
 });

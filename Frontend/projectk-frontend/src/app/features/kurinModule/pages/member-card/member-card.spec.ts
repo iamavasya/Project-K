@@ -30,6 +30,7 @@ import { MemberProfileVerificationStatus } from '../../models/enums/member-profi
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
+import { actInKurin, rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
 
 describe('MemberCardComponent', () => {
   let fixture: ComponentFixture<MemberCardComponent>;
@@ -817,6 +818,52 @@ describe('MemberCardComponent', () => {
       expect(memberProgressServiceSpy.getProbeProgress).not.toHaveBeenCalled();
     });
 
+    it('у курені УСП картка своя: курінь і роль, відзначення, перестороги — без юнацьких плиток і «Впорядництва»', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of({
+        ...member,
+        leadershipHistories: [
+          { leadershipHistoryKey: 'h1', leadershipKey: 'l1', role: 'Pysar', leadershipType: 'Kurin', startDate: '2025-09-01', endDate: null, member: null as never },
+          { leadershipHistoryKey: 'h2', leadershipKey: 'l2', role: 'Hurtkoviy', leadershipType: 'Group', startDate: '2025-09-01', endDate: null, member: null as never }
+        ]
+      }));
+      memberServiceSpy.getMemberships.mockReturnValue(of([{
+        ...membershipIn(KurinBranch.USP),
+        kurinNamedAfter: 'Орден Хрестоносців',
+        numbering: [{ branch: KurinBranch.USP, number: 5 }, { branch: KurinBranch.UPS, number: 20 }]
+      }]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      const element = fixture.nativeElement as HTMLElement;
+      expect(component.isSeniorKurinCard).toBe(true);
+      expect(component.seniorKurinName).toBe('Орден Хрестоносців');
+      expect(component.seniorKurinBranches).toBe('5-й курінь УСП · 20-й курінь УПС');
+      expect(component.currentOffices.map(o => o.role)).toEqual(['Pysar']);
+      expect(element.querySelector('[data-testid="senior-kurin-tile"]')).not.toBeNull();
+      expect(element.querySelector('[data-testid="senior-awards-tile"]')).not.toBeNull();
+      expect(element.querySelector('[data-testid="senior-warnings-tile"]')).not.toBeNull();
+    });
+
+    it('ролі з іншого куреня на картці немає, а свою курінь називає своїм словом', () => {
+      rememberKurinRoleNames('kurin1', { Pysar: 'Скриптор' });
+      memberServiceSpy.getByKey.mockReturnValue(of({
+        ...member,
+        leadershipHistories: [
+          { leadershipHistoryKey: 'h1', leadershipKey: 'l1', role: 'Pysar', leadershipType: 'Kurin', kurinKey: 'kurin1', startDate: '2025-09-01', endDate: null, member: null as never },
+          { leadershipHistoryKey: 'h2', leadershipKey: 'l2', role: 'Kurinnuy', leadershipType: 'Kurin', kurinKey: 'kurin2', startDate: '2025-09-01', endDate: null, member: null as never }
+        ]
+      }));
+      memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.USP)]));
+
+      createComponent();
+      fixture.detectChanges();
+
+      expect(component.currentOffices.map(o => o.role)).toEqual(['Pysar']);
+      expect(component.officeLabel(component.currentOffices[0])).toBe('Скриптор');
+      actInKurin(null);
+    });
+
     it('у юнацькому курені все на місці', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));
       memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.UPYu)]));
@@ -825,6 +872,7 @@ describe('MemberCardComponent', () => {
       fixture.detectChanges();
 
       expect(component.hasYouthProgram).toBe(true);
+      expect(component.isSeniorKurinCard).toBe(false);
       expect(badgesCatalogServiceSpy.getAll).toHaveBeenCalled();
     });
 
@@ -947,6 +995,22 @@ describe('MemberCardComponent', () => {
       component.confirmLeaveKurin({ kurinKey: member.kurinKey, kurinNumber: 1 } as MembershipDto);
 
       expect(confirm.mock.calls[0][0].header).toBe('Вивести з куреня');
+    });
+
+    it('старший курінь у підтвердженні й на відзначеннях названо його іменем, юнацький — номером', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      duesServiceSpy.getMemberDues.mockReturnValue(of(dues({ balance: 0 })));
+      const orden = { kurinKey: member.kurinKey, kurinNumber: 5, branch: KurinBranch.USP, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto;
+      const upyu = { kurinKey: 'kurin9', kurinNumber: 47, branch: KurinBranch.UPYu, kurinNamedAfter: 'Івана Богуна' } as MembershipDto;
+      memberServiceSpy.getMemberships.mockReturnValue(of([orden, upyu]));
+      createComponent();
+      fixture.detectChanges();
+      const confirm = vi.spyOn(component.confirmationService, 'confirm').mockReturnThis();
+
+      component.confirmLeaveKurin(orden);
+
+      expect(confirm.mock.calls[0][0].message).toContain('Членство (Орден Хрестоносців)');
+      expect(component.kurinStamps).toEqual({ [member.kurinKey]: 'Орден Хрестоносців', kurin9: 'к. ч. 47' });
     });
 
     // Чужа вкладка юнакові не показується: сервер відмовляє, і плитки просто немає.

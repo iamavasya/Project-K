@@ -337,7 +337,8 @@ export class MemberListComponent implements OnInit {
   }
 
   private getMemberRoleLabel(history: LeadershipHistoryDto): string {
-    const roleName = this.getRoleDisplayName(history.role);
+    // Named by the kurin the office is in, not by the one the list is in.
+    const roleName = leadershipRoleDisplayName(history.role, history.kurinKey ?? undefined);
     const type = (history.leadershipType ?? '').toLowerCase();
     if (type === 'group' && history.groupName) {
       return `${roleName}: ${history.groupName}`;

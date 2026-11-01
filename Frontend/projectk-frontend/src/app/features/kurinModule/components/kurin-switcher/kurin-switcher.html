@@ -29,7 +29,7 @@
             </span>
             <span class="kurin-switcher-meta">
               <p-tag [value]="subline(option)" severity="secondary" />
-              <span class="kurin-switcher-kind">{{ kindLabels[option.kind] }}</span>
+              <span class="kurin-switcher-kind">{{ kindLabel(option.kind, option.branch) }}</span>
             </span>
             @if (isCurrent(option)) {
               <i class="pi pi-check kurin-switcher-mark" aria-label="Поточний курінь"></i>

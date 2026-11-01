@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using ProjectK.Common.Entities.AuthModule;
 using ProjectK.Common.Entities.KraiModule;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Entities.KurinModule.Tags;
+using ProjectK.Common.Models.Tags;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -38,6 +40,7 @@ public partial class DemoDataSeeder
         orden.RoleNames = KurinRoleNames.Normalize(new Dictionary<string, string?> { [nameof(LeadershipRole.Pysar)] = "Скриптор" }, out _);
         var ordenLeadership = await EnsureLeadershipAsync(LeadershipType.Kurin, orden.KurinKey, null, new DateOnly(2025, 9, 1), cancellationToken);
         SeatOffice(ordenLeadership, ordenMembers[1].MemberKey, LeadershipRole.Pysar, new DateOnly(2025, 9, 1));
+        await SeedOrdenCardsAsync(orden.KurinKey, ordenMembers, cancellationToken);
 
         var chorty = await EnsureSeniorKurinAsync(
             [new KurinNumbering(KurinBranch.USP, 7)],
@@ -81,6 +84,64 @@ public partial class DemoDataSeeder
             });
         }
 
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// What a senior card shows besides the kurin and the role: tags (on in senior kurins by default)
+    /// and a пересторога still running beside one that has run out, so the card has both kinds.
+    /// </summary>
+    private async Task SeedOrdenCardsAsync(Guid kurinKey, IReadOnlyList<Member> members, CancellationToken cancellationToken)
+    {
+        if (await _dbContext.KurinTags.AnyAsync(t => t.KurinKey == kurinKey, cancellationToken))
+        {
+            return;
+        }
+
+        var palette = KurinTagRules.Palette;
+        var mountains = new KurinTag { KurinKey = kurinKey, Name = "Мандрівники", ColorHex = palette[0] };
+        var council = new KurinTag { KurinKey = kurinKey, Name = "Рада куреня", ColorHex = palette[2] };
+        var seniors = new KurinTag { KurinKey = kurinKey, Name = "Сеніори", ColorHex = palette[4] };
+        _dbContext.KurinTags.AddRange(mountains, council, seniors);
+        foreach (var (member, tag) in new[] { (members[0], mountains), (members[1], council), (members[1], mountains), (members[2], seniors), (members[3], seniors) })
+        {
+            _dbContext.MemberTags.Add(new MemberTag { KurinTagKey = tag.KurinTagKey, MemberKey = member.MemberKey });
+        }
+
+        // Their ступені: старші пластуни, двоє старших уже сеніори.
+        var levels = new[] { PlastLevel.Starshoplastun, PlastLevel.Starshoplastun, PlastLevel.Senior, PlastLevel.SeniorPratsi, PlastLevel.Starshoplastun };
+        for (var i = 0; i < members.Count; i++)
+        {
+            members[i].LatestPlastLevel = levels[i % levels.Length];
+            _dbContext.PlastLevelHistories.Add(new PlastLevelHistory
+            {
+                MemberKey = members[i].MemberKey,
+                KurinKey = kurinKey,
+                PlastLevel = levels[i % levels.Length],
+                DateAchieved = DateOnly.FromDateTime(_now.AddYears(-2 - i))
+            });
+        }
+
+        var issuer = await _dbContext.Users.Where(u => u.Email == OrdenEmail).Select(u => u.Id).FirstAsync(cancellationToken);
+        _dbContext.MemberWarnings.AddRange(
+            new MemberWarning
+            {
+                MemberKey = members[0].MemberKey,
+                KurinKey = kurinKey,
+                Level = MemberWarningLevel.Level1,
+                IssuedAtUtc = _now.AddDays(-12),
+                ExpiresAtUtc = _now.AddDays(78),
+                IssuedByUserKey = issuer
+            },
+            new MemberWarning
+            {
+                MemberKey = members[0].MemberKey,
+                KurinKey = kurinKey,
+                Level = MemberWarningLevel.Level1,
+                IssuedAtUtc = _now.AddMonths(-9),
+                ExpiresAtUtc = _now.AddMonths(-6),
+                IssuedByUserKey = issuer
+            });
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 

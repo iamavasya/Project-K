@@ -50,6 +50,8 @@ export interface MemberWarningDto {
   expiresAtUtc: string;
   /** Who gave it: only they lift it (web canClearWarning). */
   issuedByUserKey?: string | null;
+  /** Who lifted it; empty when the system closed it once it ran out. */
+  revokedByUserKey?: string | null;
   revokedAtUtc?: string | null;
 }
 
@@ -59,6 +61,8 @@ export interface LeadershipHistoryDto {
   role: string;
   leadershipType?: string | null;
   groupName?: string | null;
+  /** The kurin the office is in; a card carries offices from every kurin the person stands in. */
+  kurinKey?: string | null;
   startDate: string;
   endDate: string | null;
   member: MemberLookupDto;
@@ -163,6 +167,8 @@ export interface MembershipDto {
   groupName?: string | null;
   kind: 'Youth' | 'Staff';
   joinedAtUtc: string;
+  /** Every гілка of the kurin with its number there (API MembershipRecord.Numbering). */
+  numbering?: KurinNumbering[];
   leftAtUtc?: string | null;
   isCurrent: boolean;
 }

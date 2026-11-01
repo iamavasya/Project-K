@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { KurinMarkComponent } from '../../../kurinModule/components/kurin-mark/kurin-mark';
-import { MEMBERSHIP_KIND_LABELS } from '../../../kurinModule/models/enums/membership-kind.enum';
+import { membershipKindLabel } from '../../../kurinModule/models/enums/membership-kind.enum';
 import { KurinScopeOption } from '../../../kurinModule/models/kurin-scope-option.model';
 import { MyGroupDto } from '../../models/me.dto';
 import { compareKurinNumbers, kurinHeadline, kurinLabel, kurinSubline } from '../../../../shared/functions/kurin-label.function';
@@ -40,7 +40,7 @@ export class MyKurinsTileComponent {
   readonly open = output<KurinScopeOption>();
   readonly openGroup = output<MyGroupDto>();
 
-  readonly kindLabels = MEMBERSHIP_KIND_LABELS;
+  readonly kindLabel = membershipKindLabel;
 
   readonly rows = computed<KurinRow[]>(() => {
     const current = this.currentKurinKey();

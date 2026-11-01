@@ -25,7 +25,7 @@
               <span class="kurins-tile__name">{{ headline(row.option) }}</span>
               <span class="kurins-tile__meta">
                 <p-tag [value]="subline(row.option)" severity="secondary" />
-                <span>{{ kindLabels[row.option.kind] }}</span>
+                <span>{{ kindLabel(row.option.kind, row.option.branch) }}</span>
               </span>
               @if (row.isCurrent && currentOffices().length) {
                 <span class="kurins-tile__offices">{{ currentOffices().join(' · ') }}</span>

@@ -3,7 +3,7 @@ import { TagModule } from '@openng/optimus-ui/tag';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
 import { MembershipDto } from '../../../../models/membership.dto';
 import { KURIN_BRANCH_LABELS, hasGroups, isSeniorBranch } from '../../../../models/enums/kurin-branch.enum';
-import { MEMBERSHIP_KIND_LABELS } from '../../../../models/enums/membership-kind.enum';
+import { membershipKindLabel } from '../../../../models/enums/membership-kind.enum';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { RouterLink } from '@angular/router';
 import { kurinLabel } from '../../../../../../shared/functions/kurin-label.function';
@@ -47,7 +47,7 @@ export class MemberMembershipsTileComponent {
   readonly openKurin = output<MembershipDto>();
 
   readonly branchLabels = KURIN_BRANCH_LABELS;
-  readonly kindLabels = MEMBERSHIP_KIND_LABELS;
+  readonly kindLabel = membershipKindLabel;
 
   readonly current = computed(() => this.memberships().filter(m => m.isCurrent));
   readonly past = computed(() => this.memberships().filter(m => !m.isCurrent));

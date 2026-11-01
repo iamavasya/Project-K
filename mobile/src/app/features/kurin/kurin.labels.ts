@@ -1,3 +1,4 @@
+import { inKurin, isSeniorBranch, kurinLabel as kurinNumberLabel } from '../../core/kurin-label';
 import { AuthState } from '../../auth/auth.models';
 import { amountFormat, currencySymbol, DEFAULT_CURRENCY, DEFAULT_NUMBER_LOCALE } from '../../me/labels';
 import {
@@ -234,8 +235,18 @@ export function roleTone(role: string): TagTone {
 }
 
 /** An office as a tag; an ended one is grey whatever it was (web leadershipRoleSeverity). */
-export function officeTag(history: Pick<LeadershipHistoryDto, 'role' | 'endDate'>): RoleTag {
-  return { label: roleName(history.role), tone: history.endDate ? 'secondary' : roleTone(history.role) };
+export function officeTag(history: Pick<LeadershipHistoryDto, 'role' | 'endDate' | 'kurinKey'>): RoleTag {
+  return { label: officeName(history), tone: history.endDate ? 'secondary' : roleTone(history.role) };
+}
+
+/** Named by the kurin the office is in, not by the one being read (web officeLabel). */
+export function officeName(history: Pick<LeadershipHistoryDto, 'role' | 'kurinKey'>): string {
+  return history.kurinKey ? roleName(history.role, history.kurinKey) : roleName(history.role);
+}
+
+/** The current offices held in one kurin; an office with no kurin known counts (web inThisKurin). */
+export function officesIn(histories: LeadershipHistoryDto[] | null | undefined, kurinKey: string | null | undefined): LeadershipHistoryDto[] {
+  return currentOffices(histories).filter((h) => !h.kurinKey || !kurinKey || h.kurinKey === kurinKey);
 }
 
 /**
@@ -245,7 +256,7 @@ export function officeTag(history: Pick<LeadershipHistoryDto, 'role' | 'endDate'
 export function memberRoleTags(member: MemberLookupDto): RoleTag[] {
   const active = currentOffices(member.leadershipHistories);
   const tags = active.map((h) => ({
-    label: (h.leadershipType ?? '').toLowerCase() === 'group' && h.groupName ? `${roleName(h.role)}: ${h.groupName}` : roleName(h.role),
+    label: (h.leadershipType ?? '').toLowerCase() === 'group' && h.groupName ? `${officeName(h)}: ${h.groupName}` : officeName(h),
     tone: roleTone(h.role),
   }));
   const mentored = member.mentoredGroupNames ?? [];
@@ -450,6 +461,26 @@ export function activeWarning(warnings: MemberWarningDto[] | null | undefined, n
   const top = active.reduce((a, b) => (WARNING_WEIGHT[b.level] > WARNING_WEIGHT[a.level] ? b : a), active[0]);
   const expires = utcDate(top.expiresAtUtc)?.getTime() ?? now;
   return { level: WARNING_WEIGHT[top.level] ?? 0, daysLeft: Math.max(0, Math.ceil((expires - now) / 86_400_000)) };
+}
+
+/** A senior card's list of перестороги (web member-card warningRows): current first, then the latest past ones. */
+export function warningRows(
+  warnings: MemberWarningDto[] | null | undefined,
+  now = Date.now(),
+): { key: string; title: string; line: string; active: boolean }[] {
+  return [...(warnings ?? [])]
+    .map((w) => {
+      const expires = utcDate(w.expiresAtUtc)?.getTime() ?? 0;
+      const active = !w.revokedAtUtc && expires > now;
+      // Lifted by someone is «знято»; one the system closed when it ran out has no one behind it.
+      const state = w.revokedAtUtc && w.revokedByUserKey ? 'знято' : active ? `ще ${Math.max(0, Math.ceil((expires - now) / 86_400_000))} дн.` : 'минула';
+      const issued = utcDate(w.issuedAtUtc);
+      const date = issued ? issued.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+      return { key: w.memberWarningKey, title: `${WARNING_NAMES[WARNING_WEIGHT[w.level]] ?? 'Пересторога'} пересторога`, line: [date, state].filter(Boolean).join(' · '), active, at: issued?.getTime() ?? 0 };
+    })
+    .sort((a, b) => Number(b.active) - Number(a.active) || b.at - a.at)
+    .slice(0, 5)
+    .map(({ at, ...row }) => row);
 }
 
 /** «Поточна пересторога: Друга. Залишилось днів: 12.» */
@@ -809,4 +840,11 @@ export function phoneHref(phone: string | null | undefined): string | null {
 export function emailHref(email: string | null | undefined): string | null {
   const address = (email ?? '').trim();
   return address.includes('@') ? `mailto:${address}` : null;
+}
+
+/** «Членство в курені ч. 47», or a senior kurin by its own name (web member-card membershipKurinLabel). */
+export function membershipOf(m: Pick<MembershipDto, 'branch' | 'kurinNumber' | 'kurinNamedAfter'>): string {
+  return isSeniorBranch(m.branch)
+    ? `Членство (${m.kurinNamedAfter || kurinNumberLabel(m.kurinNumber, m.branch)})`
+    : `Членство в ${inKurin(m.kurinNumber)}`;
 }

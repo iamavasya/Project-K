@@ -184,8 +184,13 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                         PlastLevel = h.PlastLevel,
                         DateAchieved = h.DateAchieved
                     }).ToList(),
+                    // Offices of this kurin only, like Office above: a role held in another kurin is
+                    // not this kurin's to show, and would be named by this kurin's own role names.
                     LeadershipHistories = x.Person.LeadershipHistories
-                    .Where(h => h.EndDate == null)
+                    .Where(h => h.EndDate == null
+                        && h.Leadership.EndDate == null
+                        && (h.Leadership.KurinKey == x.Placement.KurinKey
+                            || (h.Leadership.GroupKey != null && h.Leadership.Group!.KurinKey == x.Placement.KurinKey)))
                     .Select(h => new LeadershipHistoryDto
                     {
                         LeadershipHistoryKey = h.LeadershipHistoryKey,
@@ -194,6 +199,7 @@ public class MemberRepository : BaseEntityRepository<Member>, IMemberRepository
                         Role = h.Role,
                         LeadershipType = h.Leadership.Type,
                         GroupName = h.Leadership.Group != null ? h.Leadership.Group.Name : null,
+                        KurinKey = x.Placement.KurinKey,
                         StartDate = h.StartDate,
                         EndDate = h.EndDate
                     }).ToList(),

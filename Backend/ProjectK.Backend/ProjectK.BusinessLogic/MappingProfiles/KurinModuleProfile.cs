@@ -151,7 +151,8 @@ public class KurinModuleProfile : Profile
         // Leadership History Mapping
         CreateMap<LeadershipHistory, LeadershipHistoryDto>()
             .ForMember(dest => dest.LeadershipType, opt => opt.MapFrom(src => src.Leadership.Type))
-            .ForMember(dest => dest.GroupName, opt => opt.MapFrom(src => src.Leadership.Group != null ? src.Leadership.Group.Name : null));
+            .ForMember(dest => dest.GroupName, opt => opt.MapFrom(src => src.Leadership.Group != null ? src.Leadership.Group.Name : null))
+            .ForMember(dest => dest.KurinKey, opt => opt.MapFrom(src => src.Leadership.KurinKey ?? (src.Leadership.Group != null ? src.Leadership.Group.KurinKey : (Guid?)null)));
 
         CreateMap<LeadershipHistory, LeadershipHistoryMemberDto>()
             .ForMember(dest => dest.LeadershipKey, opt => opt.Ignore());

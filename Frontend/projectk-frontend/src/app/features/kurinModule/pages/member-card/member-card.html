@@ -305,7 +305,66 @@
         </ng-template>
         }
 
-        @if (staffOffices.length || mentoredGroupNames.length) {
+        @if (isSeniorKurinCard) {
+        <ng-template [appTileDef]="{ key: 'senior-kurin', span: 'half', label: 'У курені' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="senior-kurin-tile">
+                <div class="mb-4">
+                    <h2 class="member-section-title">{{ seniorKurinName }}</h2>
+                    @if (seniorKurinBranches; as branches) {
+                    <p class="member-section-subtitle text-sm">{{ branches }}</p>
+                    }
+                </div>
+                <dl class="senior-facts">
+                    <div>
+                        <dt>У курені з</dt>
+                        <dd>{{ (membershipHere?.joinedAtUtc | date:'dd.MM.yyyy') || '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt>Роль</dt>
+                        <dd>
+                            @for (office of currentOffices; track office.leadershipHistoryKey) {
+                            <p-tag [value]="officeLabel(office)" [severity]="officeSeverity(office.role)" />
+                            } @empty {
+                            <span class="member-section-subtitle">—</span>
+                            }
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+        </ng-template>
+
+        <ng-template [appTileDef]="{ key: 'senior-awards', span: 'half', label: 'Відзначення' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="senior-awards-tile">
+                <div class="mb-4">
+                    <h2 class="member-section-title">Відзначення</h2>
+                    <p class="member-section-subtitle text-sm">УСП · УПС</p>
+                </div>
+                <app-empty-state art="list" title="Відзначень ще немає" />
+            </section>
+        </ng-template>
+
+        <ng-template [appTileDef]="{ key: 'senior-warnings', span: 'half', label: 'Перестороги' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="senior-warnings-tile">
+                <div class="mb-4">
+                    <h2 class="member-section-title">Перестороги</h2>
+                </div>
+                @if (warningRows.length) {
+                <ul class="senior-warnings">
+                    @for (row of warningRows; track row.key) {
+                    <li [class.senior-warnings__row--past]="!row.active">
+                        <p-tag [value]="row.level" [severity]="row.active ? 'warn' : 'secondary'" />
+                        <span class="member-section-subtitle text-sm">{{ row.issued | date:'dd.MM.yyyy' }} · {{ row.state }}</span>
+                    </li>
+                    }
+                </ul>
+                } @else {
+                <div class="member-empty-state rounded-xl p-4 text-sm">Пересторог немає.</div>
+                }
+            </section>
+        </ng-template>
+        }
+
+        @if (!isSeniorKurinCard && (staffOffices.length || mentoredGroupNames.length)) {
         <ng-template [appTileDef]="{ key: 'staff', span: 'half', label: 'Впорядництво' }">
             <section class="member-tile h-full rounded-2xl p-4 md:p-5">
                 <div class="mb-4">
@@ -316,7 +375,7 @@
                 <ul class="space-y-2.5">
                     @for (office of staffOffices; track office.leadershipHistoryKey) {
                     <li class="flex flex-wrap items-center gap-2">
-                        <p-tag [value]="officeLabel(office.role)" [severity]="officeSeverity(office.role)" />
+                        <p-tag [value]="officeLabel(office)" [severity]="officeSeverity(office.role)" />
                         <span class="member-section-subtitle text-sm">з {{ office.startDate | date: 'yyyy' }}</span>
                     </li>
                     }
