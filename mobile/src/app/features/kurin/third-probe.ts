@@ -119,3 +119,12 @@ export const THIRD_PROBE_STAGES: readonly { key: keyof ThirdProbeStagesRequest; 
   { key: 'namedOn', label: 'Іменовано', closing: true },
   { key: 'archivedOn', label: 'В архіві', closing: true },
 ];
+
+/**
+ * Wraps `start` so that calls made while it is pending share its result instead of starting again:
+ * several pictures dropped into an unsaved project make one project, not one each.
+ */
+export function sharedWhilePending<T>(start: () => Promise<T>): () => Promise<T> {
+  let pending: Promise<T> | null = null;
+  return () => (pending ??= start().finally(() => (pending = null)));
+}

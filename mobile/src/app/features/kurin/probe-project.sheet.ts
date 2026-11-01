@@ -22,7 +22,7 @@ import { ProbeProjectArea, ProbeProjectDto, ProbeProjectReach, ProbeProjectReque
 import { KurinApi } from './kurin.service';
 import { MarkdownBlock, parseProjectMarkdown } from './project-markdown';
 import { IMAGE_MIME_TYPES, RichEditor } from './rich-editor';
-import { PROJECT_AREAS } from './third-probe';
+import { PROJECT_AREAS, sharedWhilePending } from './third-probe';
 
 const IMAGE_SCHEME = 'project-image:';
 
@@ -202,7 +202,8 @@ export class ProbeProjectSheet implements OnInit {
   protected readonly isShared = signal(false);
   protected readonly sharedWith = signal('');
   protected readonly busy = signal(false);
-  protected readonly uploading = signal(false);
+  private readonly uploads = signal(0);
+  protected readonly uploading = computed(() => this.uploads() > 0);
   private readonly key = signal<string | null>(null);
   protected readonly isSpare = computed(() => !this.project && this.tab.projects.filter((p) => !p.isSpare).length >= this.tab.limits.maxMainProjects);
 
@@ -271,26 +272,32 @@ export class ProbeProjectSheet implements OnInit {
       await this.toasts.show(REFUSALS.UnsupportedImageType, 'danger');
       return;
     }
-    this.uploading.set(true);
+    this.uploads.update((count) => count + 1);
     try {
-      let key = this.key();
-      if (!key) {
-        const body = this.request();
-        if (!body) return;
-        const saved = await this.data.saveProbeProject(this.memberKey, this.probeId, null, { ...body, description: '', goal: '', plan: '', results: '' });
-        key = saved.projectKey;
-        this.key.set(key);
-        this.latest = saved.tab;
-      }
+      const key = await this.projectKey();
+      if (!key) return;
       const image = await this.data.uploadProbeProjectImage(this.memberKey, this.probeId, key, file);
       this.imageKeys.set(image.url, image.imageKey);
       this.editor(field)?.insertImage(image.url);
     } catch (error) {
       await this.toasts.show(apiErrorText(error, 'Не вдалося завантажити зображення. PNG, JPEG або WebP до 1 МБ.', REFUSALS), 'danger');
     } finally {
-      this.uploading.set(false);
+      this.uploads.update((count) => count - 1);
     }
   }
+
+  /** The project to put pictures into; a new one is saved first, which needs a title. */
+  private async projectKey(): Promise<string | null> {
+    return this.key() ?? (this.request() ? await this.create() : null);
+  }
+
+  private readonly create = sharedWhilePending(async () => {
+    const body = this.request()!;
+    const saved = await this.data.saveProbeProject(this.memberKey, this.probeId, null, { ...body, description: '', goal: '', plan: '', results: '' });
+    this.key.set(saved.projectKey);
+    this.latest = saved.tab;
+    return saved.projectKey;
+  });
 
   private editor(field: TextField): RichEditor | undefined {
     return this.editors()[TEXTS.findIndex((text) => text.field === field)];

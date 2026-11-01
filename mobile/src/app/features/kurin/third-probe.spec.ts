@@ -1,5 +1,5 @@
 import { ThirdProbeDto } from './kurin.models';
-import { countdownParts, dayWord, reachLabels, thirdProbeChecklist, youthEndsOn } from './third-probe';
+import { countdownParts, dayWord, reachLabels, sharedWhilePending, thirdProbeChecklist, youthEndsOn } from './third-probe';
 
 function tab(overrides: Partial<ThirdProbeDto> = {}): ThirdProbeDto {
   return {
@@ -43,5 +43,23 @@ describe('third probe on the phone', () => {
     expect(checklist[3].detail).toBe('0 з 4 · без тіловиховання');
     expect(checklist[0].label).toBe('Рефлексія');
     expect(checklist[2].detail).toBe('ще не вказано');
+  });
+
+  it('saves a new project once for pictures dropped together, and again after a failure', async () => {
+    let calls = 0;
+    let fail = false;
+    const create = sharedWhilePending(async () => {
+      calls++;
+      if (fail) throw new Error('offline');
+      return `p-${calls}`;
+    });
+
+    expect(await Promise.all([create(), create()])).toEqual(['p-1', 'p-1']);
+    expect(calls).toBe(1);
+
+    fail = true;
+    await expect(create()).rejects.toThrow('offline');
+    fail = false;
+    expect(await create()).toBe('p-3');
   });
 });

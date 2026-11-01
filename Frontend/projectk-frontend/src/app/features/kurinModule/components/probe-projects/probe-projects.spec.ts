@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { MockedObject } from 'vitest';
 import { ConfirmationService } from '@openng/optimus-ui/api';
 import { MemberProgressService } from '../../services/probes-and-badges/member-progress.service';
@@ -123,5 +123,27 @@ describe('ProbeProjectsComponent', () => {
     component.save();
 
     expect(component.errorMessage()).toBe('Спільних з іншими третьопробниками може бути лише два з пʼяти основних.');
+  });
+
+  it('saves a new project once for several pictures dropped together', async () => {
+    await render(thirdProbeTab());
+    const component = fixture.componentInstance;
+    const created = new Subject<{ projectKey: string; tab: ThirdProbeDto }>();
+    progress.addProbeProject.mockReturnValue(created as never);
+    progress.uploadProbeProjectImage.mockReturnValue(of({ imageKey: IMAGE_KEY, url: 'https://blob/a.jpg?sig' }));
+    const attach = (component as unknown as { attach(file: File, field: string): void }).attach.bind(component);
+
+    component.openNew();
+    component.title.set('Похід');
+    attach(new File([new Uint8Array(10)], 'a.png', { type: 'image/png' }), 'goal');
+    attach(new File([new Uint8Array(10)], 'b.png', { type: 'image/png' }), 'results');
+    expect(component.isUploading()).toBe(true);
+    created.next({ projectKey: 'p-new', tab: thirdProbeTab() });
+    created.complete();
+
+    expect(progress.addProbeProject).toHaveBeenCalledTimes(1);
+    expect(progress.uploadProbeProjectImage).toHaveBeenCalledTimes(2);
+    expect(progress.uploadProbeProjectImage.mock.calls.map(call => call[2])).toEqual(['p-new', 'p-new']);
+    expect(component.isUploading()).toBe(false);
   });
 });

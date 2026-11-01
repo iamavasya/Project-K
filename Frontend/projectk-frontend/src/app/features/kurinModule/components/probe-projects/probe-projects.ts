@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { map, Observable, shareReplay, tap } from 'rxjs';
 import { ButtonModule } from '@openng/optimus-ui/button';
 import { CheckboxModule } from '@openng/optimus-ui/checkbox';
 import { ConfirmationService } from '@openng/optimus-ui/api';
@@ -116,6 +116,8 @@ export class ProbeProjectsComponent {
   private readonly editors = new Map<ProjectText, QuillLike>();
   /** Picture links in the editors and the keys they stand for. */
   private readonly imageKeys = new Map<string, string>();
+  /** The quiet first save of a new project; every picture dropped meanwhile waits for this one. */
+  private creating: Observable<string> | null = null;
 
   readonly memberKey = input.required<string>();
   readonly probeId = input.required<string>();
@@ -143,7 +145,8 @@ export class ProbeProjectsComponent {
   readonly coordinatorContact = signal('');
   readonly imageCount = signal(0);
   readonly isSaving = signal(false);
-  readonly isUploading = signal(false);
+  private readonly uploads = signal(0);
+  readonly isUploading = computed(() => this.uploads() > 0);
   readonly errorMessage = signal<string | null>(null);
 
   readonly completing = signal<ProbeProjectDto | null>(null);
@@ -315,6 +318,7 @@ export class ProbeProjectsComponent {
   }
 
   private openEditor(project: ProbeProjectDto | null): void {
+    this.creating = null;
     this.editingKey.set(project?.projectKey ?? null);
     this.title.set(project?.title ?? '');
     this.area.set(project?.area ?? this.firstUncoveredArea());
@@ -418,31 +422,44 @@ export class ProbeProjectsComponent {
       return;
     }
 
-    this.isUploading.set(true);
-    this.progress.addProbeProject(this.memberKey(), this.probeId(), { ...request, description: '', goal: '', plan: '', results: '' }).subscribe({
-      next: (saved: ProbeProjectSavedDto) => {
-        this.editingKey.set(saved.projectKey);
-        this.tabChange.emit(saved.tab);
-        this.upload(saved.projectKey, file, field);
+    this.uploads.update(count => count + 1);
+    this.creating ??= this.progress
+      .addProbeProject(this.memberKey(), this.probeId(), { ...request, description: '', goal: '', plan: '', results: '' })
+      .pipe(
+        tap((saved: ProbeProjectSavedDto) => {
+          this.editingKey.set(saved.projectKey);
+          this.tabChange.emit(saved.tab);
+        }),
+        map(saved => saved.projectKey),
+        shareReplay(1)
+      );
+    const creating = this.creating;
+    creating.subscribe({
+      next: projectKey => {
+        this.uploads.update(count => count - 1);
+        this.upload(projectKey, file, field);
       },
       error: (error: unknown) => {
-        this.isUploading.set(false);
+        if (this.creating === creating) {
+          this.creating = null;
+        }
+        this.uploads.update(count => count - 1);
         this.errorMessage.set(refusal(error, 'Не вдалося зберегти проєкт. Спробуй ще раз.'));
       }
     });
   }
 
   private upload(projectKey: string, file: File, field: ProjectText): void {
-    this.isUploading.set(true);
+    this.uploads.update(count => count + 1);
     this.errorMessage.set(null);
     this.progress.uploadProbeProjectImage(this.memberKey(), this.probeId(), projectKey, file).subscribe({
       next: image => {
-        this.isUploading.set(false);
+        this.uploads.update(count => count - 1);
         this.imageKeys.set(image.url, image.imageKey);
         this.insertImage(field, image.url);
       },
       error: (error: unknown) => {
-        this.isUploading.set(false);
+        this.uploads.update(count => count - 1);
         const limit = `PNG, JPEG або WebP до ${this.maxImageLabel()} МБ.`;
         this.errorMessage.set(error instanceof HttpErrorResponse && error.status === 413
           ? `Зображення завелике: ${limit}`
