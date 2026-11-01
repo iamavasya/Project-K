@@ -62,12 +62,12 @@ public sealed class GetKraiConcessionReportQueryHandler
             var ledger = await _ledgers.OpenAsync(kurin.KurinKey, cancellationToken);
             foreach (var account in ledger.Accounts())
             {
-                if (!account.Quarters.Any(q => q.Quarter == quarter))
+                if (account.Quarters.FirstOrDefault(q => q.Quarter == quarter) is not { } charged)
                 {
                     continue;
                 }
 
-                var price = ledger.Priced(account.MembershipKey, account.GroupKey, quarter);
+                var price = ledger.Priced(account.MembershipKey, account.GroupKey, quarter, charged.RateTagKey);
                 if (price.Grant is not { } grant)
                 {
                     continue;

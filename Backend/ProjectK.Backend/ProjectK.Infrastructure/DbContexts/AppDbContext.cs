@@ -419,7 +419,9 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
                           (a, b) => JsonSerializer.Serialize(a, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(b, (JsonSerializerOptions?)null),
                           a => JsonSerializer.Serialize(a, (JsonSerializerOptions?)null).GetHashCode(),
                           a => JsonSerializer.Deserialize<List<KurinDuesArticle>>(JsonSerializer.Serialize(a, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null)!));
-            entity.HasIndex(e => new { e.KurinKey, e.FromQuarter }).IsUnique();
+            // One rate per tag per quarter, and one for everyone: the null tag is a value here, so the
+            // index must not get EF's default IS NOT NULL filter.
+            entity.HasIndex(e => new { e.KurinKey, e.TagKey, e.FromQuarter }).IsUnique().HasFilter(null);
         });
 
         builder.Entity<GroupDuesRate>(entity =>

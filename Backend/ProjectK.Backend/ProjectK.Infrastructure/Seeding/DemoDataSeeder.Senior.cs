@@ -29,7 +29,7 @@ public partial class DemoDataSeeder
             "Старший курінь у двох уладах: 5-й курінь УСП і 20-й курінь УПС. Один склад, одна домівка, "
             + "сходини щочетверга й мандрівки Карпатами.",
             cancellationToken);
-        await EnsureSeniorLeaderAsync(orden.KurinKey, OrdenEmail, "Остап", "Гнатюк", 1979, cancellationToken);
+        var ordenLeader = await EnsureSeniorLeaderAsync(orden.KurinKey, OrdenEmail, "Остап", "Гнатюк", 1979, cancellationToken);
         var ordenMembers = new List<Member>();
         foreach (var (first, last, login, year) in OrdenMembers)
         {
@@ -41,6 +41,8 @@ public partial class DemoDataSeeder
         var ordenLeadership = await EnsureLeadershipAsync(LeadershipType.Kurin, orden.KurinKey, null, new DateOnly(2025, 9, 1), cancellationToken);
         SeatOffice(ordenLeadership, ordenMembers[1].MemberKey, LeadershipRole.Pysar, new DateOnly(2025, 9, 1));
         await SeedOrdenCardsAsync(orden.KurinKey, ordenMembers, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await SeedSeniorDuesAsync(orden, ordenLeader, ordenMembers, ordenLeadership, cancellationToken);
 
         var chorty = await EnsureSeniorKurinAsync(
             [new KurinNumbering(KurinBranch.USP, 7)],
@@ -59,7 +61,7 @@ public partial class DemoDataSeeder
                 RequestedByUserKey = chortyLink.UserKey!.Value,
                 UspNumber = 7,
                 UpsNumber = 12,
-                Note = "Половина куреня вже сеньйори, а число 12 в УПС вільне — підтверджено з крайовою булавою.",
+                Note = "Половина куреня вже сеньйори, а число 12 в УПС вільне — підтверджено з краєм.",
                 RequestedAtUtc = _now.AddDays(-1)
             });
         }

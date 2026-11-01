@@ -106,8 +106,11 @@ function kurinEntries(state: AuthState, context: MenuContext, kurinKey: string):
       link: `/tabs/kurin/group/${group.groupKey}/dues`,
     });
   }
+  // A senior kurin keeps each person's account in its own box: the treasurer's register is the web's.
   if (access.seeKurinDues) {
-    items.push({ key: 'kurin-dues', label: 'Вкладка куреня', icon: 'wallet', tile: '#34a853', link: '/tabs/kurin/dues' });
+    items.push(context.youthKurin
+      ? { key: 'kurin-dues', label: 'Вкладка куреня', icon: 'wallet', tile: '#34a853', link: '/tabs/kurin/dues' }
+      : { key: 'kurin-dues', label: 'Вкладка куреня', icon: 'wallet', tile: '#34a853', web: `/kurin/${kurinKey}/dues` });
   }
   if (canReadKurinSettings) {
     items.push({

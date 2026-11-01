@@ -36,6 +36,19 @@ public sealed class KurinDuesResponse
     public decimal SentToKrai { get; init; }
 
     public IReadOnlyList<KurinGroupHandoverDto> Groups { get; init; } = [];
+
+    /// <summary>A senior kurin has no гуртки: each person's account is in the kurin's own box.</summary>
+    public bool IsSenior { get; init; }
+
+    /// <summary>The personal accounts in the kurin's own box — the treasurer's register of a senior kurin.</summary>
+    public IReadOnlyList<DuesAccountDto> Accounts { get; init; } = [];
+
+    /// <summary>The kurin's tags, for its rates and for naming and filtering the register.</summary>
+    public IReadOnlyList<DuesTagDto> Tags { get; init; } = [];
+
+    /// <summary>The пільги of the край the kurin may give, for its own accounts.</summary>
+    public IReadOnlyList<KraiConcessionDto> KraiConcessions { get; init; } = [];
+
     public IReadOnlyList<DuesTransferDto> Transfers { get; init; } = [];
 
     /// <summary>
@@ -137,3 +150,4 @@ public sealed class KurinDuesViewerDto
 
     public bool CanSetRates { get; init; }
 }
+

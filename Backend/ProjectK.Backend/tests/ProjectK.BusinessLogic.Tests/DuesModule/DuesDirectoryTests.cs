@@ -25,13 +25,16 @@ public class DuesDirectoryTests
     private readonly FixedTimeProvider _time = new(new DateTimeOffset(2026, 10, 7, 12, 0, 0, TimeSpan.Zero));
     private readonly List<DuesEntry> _entries = [];
 
+    // A senior kurin keeps the account in its own box, with no гурток.
+    private Guid? _group = Group;
+
     private DuesDirectory Directory()
     {
         IReadOnlyList<KurinDuesRate> kurinRates = [new KurinDuesRate { KurinKey = Kurin, FromQuarter = Q1.Index, StanytsiaFull = 240, StanytsiaReduced = 180, KurinShare = 15 }];
         IReadOnlyList<GroupDuesRate> groupRates = [new GroupDuesRate { KurinKey = Kurin, GroupKey = Group, FromQuarter = Q1.Index, GroupShare = 45 }];
         IReadOnlyList<DuesConcession> concessions = [];
         IReadOnlyList<DuesCharge> charges = new[] { Q1, Q2, Q3, new DuesQuarter(2026, 4) }
-            .Select(q => new DuesCharge { KurinKey = Kurin, GroupKey = Group, MembershipKey = Youth, Quarter = q.Index })
+            .Select(q => new DuesCharge { KurinKey = Kurin, GroupKey = _group, MembershipKey = Youth, Quarter = q.Index })
             .ToList();
         IReadOnlyList<DuesEntry> entries = _entries;
 
@@ -48,7 +51,7 @@ public class DuesDirectoryTests
 
     private void Pay(decimal amount) => _entries.Add(new DuesEntry
     {
-        KurinKey = Kurin, GroupKey = Group, MembershipKey = Youth, Kind = DuesEntryKind.Contribution,
+        KurinKey = Kurin, GroupKey = _group, MembershipKey = Youth, Kind = DuesEntryKind.Contribution,
         Method = DuesPaymentMethod.Cash, Amount = amount, OccurredOn = new DateOnly(2026, 2, 1)
     });
 
@@ -70,6 +73,18 @@ public class DuesDirectoryTests
         var paid = await Directory().GetPaidQuartersAsync(Kurin);
 
         paid.Select(p => p.QuarterIndex).Should().Equal(Q1.Index, Q2.Index, Q3.Index);
+    }
+
+    [Fact]
+    public async Task InASeniorKurin_TheDebtForPastQuarters_IsOwedFromThePersonalAccount()
+    {
+        _group = null;
+        Pay(255);
+
+        var owed = await Directory().GetOwedAsync(Kurin, [Youth]);
+
+        // Q1 is paid; Q2 and Q3 are over and owed; the running Q4 is not counted.
+        owed.Should().Be(510);
     }
 
     [Fact]

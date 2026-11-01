@@ -629,7 +629,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("GroupKey")
+                    b.Property<Guid?>("GroupKey")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("KurinKey")
@@ -640,6 +640,9 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Property<int>("Quarter")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("RateTagKey")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
@@ -948,12 +951,15 @@ namespace ProjectK.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<Guid?>("TagKey")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("UpdatedDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("KurinDuesRateKey");
 
-                    b.HasIndex("KurinKey", "FromQuarter")
+                    b.HasIndex("KurinKey", "TagKey", "FromQuarter")
                         .IsUnique();
 
                     b.ToTable("KurinDuesRates");
