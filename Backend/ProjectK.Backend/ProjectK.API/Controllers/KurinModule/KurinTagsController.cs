@@ -114,7 +114,7 @@ public class KurinTagsController : ControllerBase
     /// <summary>The kurin's tag switches: on or off, and whether people see their own.</summary>
     [Authorize(Policy = AuthorizationPolicies.RequireUser)]
     [HttpGet("api/kurin/{kurinKey:guid}/tag-settings")]
-    [ResourceAuthorize(ResourceType.Kurin, ResourceAction.Update, "route:kurinKey")]
+    [ResourceAuthorize(ResourceType.KurinSettings, ResourceAction.Read, "route:kurinKey")]
     [ProducesResponseType(typeof(KurinTagSettingsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTagSettings(Guid kurinKey, CancellationToken cancellationToken)
