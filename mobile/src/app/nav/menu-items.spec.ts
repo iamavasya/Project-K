@@ -117,6 +117,13 @@ describe('menuEntries', () => {
     ]);
   });
 
+  it('opens a senior kurin’s box in the web, where its register is', () => {
+    const entries = menuEntries(state({ permissions: ['KurinDues:Read:KurinWide'] }), { youthKurin: false, duesGroups: [] });
+    const dues = entries.find((entry) => entry.key === 'kurin-dues');
+    expect(dues?.web).toBe('/kurin/k1/dues');
+    expect(dues?.link).toBeUndefined();
+  });
+
   it('gives an administrator outside a kurin the administration, with the applications on the phone', () => {
     const admin = state({ isAdmin: true, kurinKey: null, memberKey: null });
     expect(labels(admin)).toEqual([

@@ -709,7 +709,7 @@ export class MemberPage implements OnInit {
 
   protected balanceHint(d: MemberDuesDto): string {
     if (d.balance === 0) return 'боргу немає';
-    return d.balance < 0 ? 'борг — віддай скарбникові гуртка' : 'надлишок — піде на наступний квартал';
+    return d.balance < 0 ? 'борг — віддай скарбникові' : 'надлишок — піде на наступний квартал';
   }
 
   protected duesLine(d: MemberDuesDto): string {
