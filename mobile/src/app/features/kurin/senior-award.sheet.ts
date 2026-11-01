@@ -102,9 +102,9 @@ import { KurinApi } from './kurin.service';
           </ion-item>
           <ion-item>
             <div class="lk-field">
-              <span class="lk-field__label">Нотатка</span>
+              <span class="lk-field__label">За що</span>
               <div class="lk-input-box">
-                <ion-textarea aria-label="Нотатка" [autoGrow]="true" [rows]="2" [value]="note()" (ionInput)="note.set($any($event).detail.value ?? '')" />
+                <ion-textarea aria-label="За що" [autoGrow]="true" [rows]="2" [value]="note()" (ionInput)="note.set($any($event).detail.value ?? '')" />
               </div>
             </div>
           </ion-item>

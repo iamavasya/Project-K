@@ -26,7 +26,7 @@ import {
   NavController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, alertCircle, checkmarkCircle, flag, gitNetwork, lockClosed, logOut, medal, ribbon } from 'ionicons/icons';
+import { add, alertCircle, checkmarkCircle, flag, gitNetwork, lockClosed, logOut, medal, pin, ribbon } from 'ionicons/icons';
 import { AuthService } from '../../auth/auth.service';
 import { formatPhone } from '../../core/phone';
 import { apiErrorText } from '../../core/api';
@@ -35,14 +35,13 @@ import { Toasts } from '../../core/toast';
 import { dateLabel, dayMonthLabel } from '../../me/labels';
 import { AwardSheet } from './award.sheet';
 import { SeniorAwardSheet } from './senior-award.sheet';
+import { AwardBlocksSheet, AwardBlocksResult } from './award-blocks.sheet';
 import {
-  AwardGroup,
   BRANCH_LABELS,
   DUES_KIND_LABELS,
   ProbeRow,
   SkillView,
   activeWarning,
-  awardGroups,
   awardTitle,
   awardWeight,
   bornOn,
@@ -63,7 +62,10 @@ import {
   quarterLabel,
   officeTag,
   degreeRows,
-  seniorAwardRows,
+  seniorAwardBlocks,
+  groupAwardGrants,
+  orderAwardBlocks,
+  AwardBlockRow,
   SENIOR_LADDER,
   YOUTH_LADDER,
   officesIn,
@@ -206,6 +208,74 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
     }
     .dots span.on {
       background: var(--lk-danger);
+    }
+    .degree-top {
+      width: 72px;
+      height: 84px;
+      object-fit: contain;
+      margin-inline-end: 16px;
+    }
+    .blocks-item {
+      --padding-start: 12px;
+      --inner-padding-end: 12px;
+    }
+    .award-blocks {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding: 8px 0;
+    }
+    .award-block {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 4px 8px;
+      border: 1px solid var(--lk-border, rgba(127, 127, 127, 0.25));
+      border-radius: 14px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: center;
+    }
+    .award-block img,
+    .award-block > ion-icon:not(.award-pin) {
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+    }
+    .award-block span {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .award-block small {
+      font-size: 11px;
+      color: var(--lk-muted);
+    }
+    .award-block .award-pending {
+      color: var(--ion-color-warning-shade);
+    }
+    .award-count {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--ion-color-primary);
+      color: var(--ion-color-primary-contrast);
+      font-size: 11px;
+      font-style: normal;
+    }
+    .award-pin {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 14px;
+      height: 14px;
+      color: var(--ion-color-primary);
     }
     .thumb {
       width: 36px;
@@ -419,17 +489,27 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
               <ion-list [inset]="true" data-testid="awards">
                 <ion-list-header><ion-label>Відзначення УПЮ</ion-label></ion-list-header>
                 <ion-item-group>
-                  @for (group of awards(); track group.level) {
-                    <ion-item [button]="canOpenAward(group.latest)" [detail]="canOpenAward(group.latest)" (click)="openAward(group.latest)" data-testid="award">
-                      @if (awardImage(group.latest); as src) { <img class="thumb" slot="start" [src]="src" alt="" /> }
-                      @else { <ion-icon class="thumb" slot="start" name="medal" aria-hidden="true" /> }
-                      <ion-label class="ion-text-wrap">
-                        <h3>{{ awardTitle(group.level) }}{{ group.count > 1 ? ' ×' + group.count : '' }}</h3>
-                        <p>{{ shortDate(dateOnly(group.latest.dateAcquired)) }}</p>
-                      </ion-label>
-                      @if (isPending(group.latest)) { <ion-note slot="end">очікує</ion-note> }
+                  @if (youthBlocks().length) {
+                  <ion-item lines="none" class="blocks-item">
+                    <div class="award-blocks">
+                      @for (block of youthBlocks().slice(0, 3); track block.key) {
+                        <button type="button" class="award-block" (click)="openYouthBlock(block.key, false)" data-testid="award-block">
+                          @if (block.pinned) { <ion-icon class="award-pin" name="pin" aria-label="Закріплене" /> }
+                          @if (block.grants.length > 1) { <em class="award-count">×{{ block.grants.length }}</em> }
+                          @if (block.imageUrl) { <img [src]="block.imageUrl" alt="" /> } @else { <ion-icon name="medal" aria-hidden="true" /> }
+                          <span>{{ block.title }}</span>
+                          <small>{{ block.section ? block.section + ' · ' : '' }}{{ shortDate(dateOnly(block.grants[0].award.dateAcquired)) }}</small>
+                          @if (block.pending) { <small class="award-pending">очікує</small> }
+                        </button>
+                      }
+                    </div>
+                  </ion-item>
+                  @if (youthBlocks().length > 3) {
+                    <ion-item [button]="true" [detail]="true" (click)="openYouthBlock(null, true)" data-testid="awards-all">
+                      <ion-label>Переглянути всі ({{ youthBlocks().length }})</ion-label>
                     </ion-item>
-                  } @empty {
+                  }
+                  } @else {
                     <ion-item><ion-label>Немає здобутих відзначень.</ion-label></ion-item>
                   }
                   @if (canEdit()) {
@@ -445,16 +525,25 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
             <ion-list [inset]="true" data-testid="degrees">
               <ion-list-header><ion-label>Ступені</ion-label></ion-list-header>
               <ion-item-group>
-                @for (row of degrees(); track row.key) {
-                  <ion-item data-testid="degree">
-                    @if (row.imageUrl) { <img class="thumb" slot="start" [src]="row.imageUrl" alt="" /> }
-                    @else { <ion-icon class="thumb" slot="start" name="flag" aria-hidden="true" /> }
+                @if (highestDegree(); as top) {
+                  <ion-item data-testid="degree-highest">
+                    @if (top.imageUrl) { <img class="degree-top" slot="start" [src]="top.imageUrl" alt="" /> }
+                    @else { <ion-icon class="degree-top" slot="start" name="flag" aria-hidden="true" /> }
                     <ion-label class="ion-text-wrap">
-                      <h3>{{ row.title }}</h3>
-                      @if (row.date) { <p>{{ shortDate(row.date) }}</p> }
+                      <h2>{{ top.title }}</h2>
+                      @if (top.date) { <p>{{ shortDate(top.date) }}</p> }
                     </ion-label>
                   </ion-item>
-                } @empty {
+                  @for (row of earlierDegrees(); track row.key) {
+                    <ion-item data-testid="degree">
+                      @if (row.imageUrl) { <img class="thumb" slot="start" [src]="row.imageUrl" alt="" /> }
+                      @else { <ion-icon class="thumb" slot="start" name="flag" aria-hidden="true" /> }
+                      <ion-label class="ion-text-wrap">
+                        <p>{{ row.title }}{{ row.date ? ' · ' + shortDate(row.date) : '' }}</p>
+                      </ion-label>
+                    </ion-item>
+                  }
+                } @else {
                   <ion-item><ion-label>Ступенів ще немає.</ion-label></ion-item>
                 }
               </ion-item-group>
@@ -483,17 +572,27 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
               <ion-list [inset]="true" data-testid="senior-awards">
                 <ion-list-header><ion-label>Відзначення</ion-label></ion-list-header>
                 <ion-item-group>
-                  @for (row of seniorAwards(); track row.award.memberAwardKey) {
-                    <ion-item [button]="canChangeSeniorAward()" [detail]="canChangeSeniorAward()" (click)="openSeniorAward(row.award)" data-testid="senior-award">
-                      @if (row.imageUrl) { <img class="thumb" slot="start" [src]="row.imageUrl" alt="" /> }
-                      @else { <ion-icon class="thumb" slot="start" name="medal" aria-hidden="true" /> }
-                      <ion-label class="ion-text-wrap">
-                        <h3>{{ row.title }}</h3>
-                        <p>{{ row.section ? row.section + ' · ' : '' }}{{ shortDate(dateOnly(row.award.dateAcquired)) }}</p>
-                        @if (row.award.note) { <p>{{ row.award.note }}</p> }
-                      </ion-label>
+                  @if (seniorBlocks().length) {
+                  <ion-item lines="none" class="blocks-item">
+                    <div class="award-blocks">
+                      @for (block of seniorBlocks().slice(0, 3); track block.key) {
+                        <button type="button" class="award-block" (click)="openSeniorBlock(block.key, false)" data-testid="award-block">
+                          @if (block.pinned) { <ion-icon class="award-pin" name="pin" aria-label="Закріплене" /> }
+                          @if (block.grants.length > 1) { <em class="award-count">×{{ block.grants.length }}</em> }
+                          @if (block.imageUrl) { <img [src]="block.imageUrl" alt="" /> } @else { <ion-icon name="medal" aria-hidden="true" /> }
+                          <span>{{ block.title }}</span>
+                          <small>{{ block.section ? block.section + ' · ' : '' }}{{ shortDate(dateOnly(block.grants[0].award.dateAcquired)) }}</small>
+                          @if (block.pending) { <small class="award-pending">очікує</small> }
+                        </button>
+                      }
+                    </div>
+                  </ion-item>
+                  @if (seniorBlocks().length > 3) {
+                    <ion-item [button]="true" [detail]="true" (click)="openSeniorBlock(null, true)" data-testid="awards-all">
+                      <ion-label>Переглянути всі ({{ seniorBlocks().length }})</ion-label>
                     </ion-item>
-                  } @empty {
+                  }
+                  } @else {
                     <ion-item><ion-label class="ion-text-wrap">Відзначень ще немає.</ion-label></ion-item>
                   }
                   @if (canEdit()) {
@@ -737,7 +836,6 @@ export class MemberPage implements OnInit {
   protected readonly skillPreview = computed(() => [...this.skillViews().confirmed.slice(0, 3), ...this.skillViews().pending].slice(0, 4));
   protected readonly skillCounts = computed(() => `${this.skillViews().confirmed.length} · очікують ${this.skillViews().pending.length}`);
   protected readonly probeList = computed(() => valueOf(this.probes()) ?? []);
-  protected readonly awards = computed<AwardGroup[]>(() => awardGroups(this.memberValue()?.awards));
   /** The membership here when the kurin is УСП or УПС: the card then shows the kurin, role, awards and перестороги of a senior. */
   protected readonly seniorHere = computed<MembershipDto | null>(() => {
     const m = this.memberValue();
@@ -755,7 +853,58 @@ export class MemberPage implements OnInit {
   protected readonly degrees = computed(() =>
     degreeRows(this.memberValue()?.plastLevelHistories, this.seniorHere() ? SENIOR_LADDER : YOUTH_LADDER, this.honours()),
   );
-  protected readonly seniorAwards = computed(() => seniorAwardRows(this.memberValue()?.awards, this.honours()));
+  protected readonly seniorBlocks = computed(() => seniorAwardBlocks(this.memberValue()?.awards, this.honours(), this.canChangeSeniorAward()));
+  /** The УПЮ відзначення as blocks: one per level, every grant of it inside (web member-awards-tile blocks). */
+  protected readonly youthBlocks = computed(() => {
+    const visible = (this.memberValue()?.awards ?? []).filter((award) => {
+      const status = progressStatus(award.status);
+      return !!award.level && (status === 'Submitted' || status === 'Confirmed');
+    });
+    return orderAwardBlocks(
+      [...groupAwardGrants(visible, (award) => award.level!).values()].map((grants) => ({
+        key: grants[0].level!,
+        title: this.awardTitle(grants[0].level!),
+        imageUrl: this.awardImage(grants[0]),
+        section: '',
+        grants: grants.map((award) => ({ award, pending: this.isPending(award), canOpen: this.canOpenAward(award) })),
+        pinned: grants.some((award) => award.isPinned),
+        pending: grants.some((award) => this.isPending(award)),
+        pin: { level: grants[0].level },
+      })),
+    );
+  });
+  /** The highest ступінь large, the ones before it small, newest first (web member-degrees-tile). */
+  protected readonly highestDegree = computed(() => this.degrees().at(-1) ?? null);
+  protected readonly earlierDegrees = computed(() => this.degrees().slice(0, -1).reverse());
+
+  protected openYouthBlock(key: string | null, all: boolean): Promise<void> {
+    return this.openBlocks(this.youthBlocks(), key, all, (award) => this.openAward(award));
+  }
+
+  protected openSeniorBlock(key: string | null, all: boolean): Promise<void> {
+    return this.openBlocks(this.seniorBlocks(), key, all, (award) => this.openSeniorAward(award));
+  }
+
+  private async openBlocks(blocks: AwardBlockRow[], key: string | null, all: boolean, open: (award: MemberAwardDto) => Promise<void>): Promise<void> {
+    const memberKey = this.key();
+    if (!memberKey) return;
+    const modal = await this.modals.create({
+      component: AwardBlocksSheet,
+      componentProps: { blocks, startKey: key, all, ownCard: this.isOwnCard() },
+      presentingElement: this.presenting(),
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss<AwardBlocksResult>();
+    if (data?.open) await open(data.open);
+    else if (data?.pin) {
+      try {
+        await this.data.pinAward({ ...data.pin.pin, pinned: !data.pin.pinned });
+        await settle(this.data.member(memberKey), this.member);
+      } catch (error) {
+        await this.toasts.show(apiErrorText(error, 'Не вдалося закріпити. Спробуй ще раз.'), 'danger');
+      }
+    }
+  }
   /** A senior відзначення is changed by the person or by whoever may remove awards (web canChange). */
   protected readonly canChangeSeniorAward = computed(() => this.isOwnCard() || this.abilities().awards.remove);
 
@@ -812,7 +961,7 @@ export class MemberPage implements OnInit {
   protected readonly pastMemberships = computed(() => this.membershipList().filter((m) => !m.isCurrent));
 
   constructor() {
-    addIcons({ add, alertCircle, checkmarkCircle, flag, gitNetwork, lockClosed, logOut, medal, ribbon });
+    addIcons({ add, alertCircle, checkmarkCircle, flag, gitNetwork, lockClosed, logOut, medal, pin, ribbon });
   }
 
   ngOnInit(): void {

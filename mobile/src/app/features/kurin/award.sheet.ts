@@ -124,10 +124,10 @@ const STATUS_LABELS: Record<string, string> = {
           </ion-item>
           <ion-item>
             <div class="lk-field">
-              <span class="lk-field__label">Нотатка</span>
+              <span class="lk-field__label">За що</span>
               <div class="lk-input-box">
                 <ion-textarea
-                  aria-label="Нотатка"
+                  aria-label="За що"
                   [autoGrow]="true"
                   [rows]="3"
                   [value]="note()"

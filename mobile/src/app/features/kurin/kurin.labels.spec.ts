@@ -13,6 +13,8 @@ import {
   officesIn,
   degreeRows,
   seniorAwardRows,
+  seniorAwardBlocks,
+  orderAwardBlocks,
   SENIOR_LADDER,
   YOUTH_LADDER,
   membershipOf,
@@ -340,5 +342,37 @@ describe('ступені й старші відзначення з катало�
       ['b', 'Орден святого Юрія в бронзі', 'https://catalog.test/o.png', 'УСП'],
     ]);
     expect(awardGroups(awards).map((g) => g.latest.memberAwardKey)).toEqual(['a']);
+  });
+});
+
+describe('відзначення блоками', () => {
+  const base = { memberKey: 'm', kurinKey: 'k', status: 'Confirmed' as const };
+  const honours = [
+    { id: 'usp-hramota-zasluhy', kind: 'Award', title: 'Грамота заслуги', group: 'usp-vidznachennia', ulad: 'usp', order: 0, imageUrl: '' },
+    { id: 'ups-hramota-zasluhy', kind: 'Award', title: 'Грамота заслуги', group: 'ups-vidznachennia', ulad: 'ups', order: 1, imageUrl: '' },
+  ] as const;
+
+  it('puts every grant of one відзначення under one block, newest first, and pinned blocks before the rest', () => {
+    const blocks = seniorAwardBlocks(
+      [
+        { ...base, memberAwardKey: 'a', catalogId: 'usp-hramota-zasluhy', dateAcquired: '2012-10-20T00:00:00', note: 'За табір' },
+        { ...base, memberAwardKey: 'b', catalogId: 'usp-hramota-zasluhy', dateAcquired: '2015-03-14T00:00:00' },
+        { ...base, memberAwardKey: 'c', catalogId: 'ups-hramota-zasluhy', dateAcquired: '2020-01-01T00:00:00', isPinned: true },
+        { ...base, memberAwardKey: 'd', level: 'First' as const, dateAcquired: '2021-01-01T00:00:00' },
+      ],
+      [...honours],
+      true,
+    );
+
+    expect(blocks.map((b) => [b.key, b.section, b.grants.map((g) => g.award.memberAwardKey), b.pinned])).toEqual([
+      ['ups-hramota-zasluhy', 'УПС', ['c'], true],
+      ['usp-hramota-zasluhy', 'УСП', ['b', 'a'], false],
+    ]);
+  });
+
+  it('orders unpinned blocks by the latest grant', () => {
+    const block = (key: string, date: string, pinned = false) =>
+      ({ key, title: key, imageUrl: null, section: '', pinned, pending: false, pin: {}, grants: [{ award: { ...base, memberAwardKey: key, dateAcquired: date }, pending: false, canOpen: true }] });
+    expect(orderAwardBlocks([block('old', '2010-01-01'), block('new', '2024-01-01'), block('liked', '2005-01-01', true)]).map((b) => b.key)).toEqual(['liked', 'new', 'old']);
   });
 });

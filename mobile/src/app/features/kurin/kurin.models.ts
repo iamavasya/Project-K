@@ -145,7 +145,10 @@ export interface MemberAwardDto {
   /** A senior відзначення's catalogue id; null for an УПЮ one. */
   catalogId?: string | null;
   dateAcquired: string;
+  /** What it was given for. */
   note?: string | null;
+  /** The person pinned it to the front of their card. */
+  isPinned?: boolean;
   status: ProgressStatus | number;
   imageUrl?: string | null;
   /** Who put it forward; they may withdraw it while it waits. */

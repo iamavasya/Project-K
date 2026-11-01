@@ -16,6 +16,7 @@ import {
   KurinDto,
   LeadershipDto,
   MemberAwardDto,
+  AwardLevel,
   CatalogHonour,
   MemberDto,
   MemberDuesDto,
@@ -263,6 +264,11 @@ export class KurinApi {
 
   deleteAward(memberKey: string, awardKey: string): Promise<void> {
     return this.api.delete(`member/${memberKey}/awards/${awardKey}`);
+  }
+
+  /** Pins or unpins one of the caller's own відзначення: every grant of that level or catalogue id. */
+  pinAward(request: { level?: AwardLevel | null; catalogId?: string | null; pinned: boolean }): Promise<boolean> {
+    return this.api.put('me/awards/pin', request);
   }
 
   private honoursRead?: Promise<CatalogHonour[]>;
