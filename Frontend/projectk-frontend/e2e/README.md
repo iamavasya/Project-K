@@ -54,6 +54,12 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
   - a person records their own from the catalogue, it counts at once (no «Очікує»), a repeat joins the block as «×2», and the person pins it;
   - more blocks than the tile holds open under «Переглянути всі»;
   - an УПЮ kurin refuses a senior відзначення through the API and its card offers none.
+- Check kurin tags (`kurin-tags.spec.ts`, `kurin-tags-boundaries.spec.ts`, helpers in `support/kurin-tags.ts`). Each test opens a kurin of its own, since tags switch on and off per kurin and the senior dues suite reads the Order's seeded tags:
+  - the Звʼязковий switches tags on in the kurin settings, creates, renames and deletes tags under «Теги куреня» in the registry, and switches them off, after which the registry has neither the list nor the «Теги» column;
+  - «Змінити теги» on a card puts a tag on a person; the registry shows it, filters by it and exports the «Теги» column, and with tags off has neither the column, the filter nor the column in the file;
+  - «Нова задача» addresses «Усі з тегом …» through «Оберіть курінь, гуртки, учасників або теги», and with tags off the API refuses the same task;
+  - a виховник of the КВ reads the tag settings («Лише перегляд») and gets 403 changing them;
+  - a youth sees their own tag, has no «Змінити теги», and gets 403 putting tags on or creating one.
 
 - Check senior kurin dues (DUES-06), each test in a УСП kurin of its own opened from a join request
   (`e2e/support/senior-dues.ts`):
