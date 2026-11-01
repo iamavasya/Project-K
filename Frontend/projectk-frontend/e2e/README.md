@@ -32,6 +32,19 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
   - kurin-level profile, group, KV, leadership and member controls by role;
   - group action menu contents by role and assigned mentor scope;
   - planning create/delete controls by role.
+- Check «Архів куреня» (`kurin-archive.spec.ts`), each test in a kurin of its own from `e2e/support/kurin-archive.ts`:
+  - the Звʼязковий sees former roles and memberships and corrects a closed membership's dates;
+  - their own record carries «своє» and no correction;
+  - a гуртковий sees only their гурток's former memberships and no danger zone;
+  - «Розформувати» sends an empty гурток to the archive and refuses one with money in its box, with a message.
+- Check the archive's danger zone (`kurin-archive-danger.spec.ts`):
+  - a wrong password is refused, the right one opens the zone with ten deletions;
+  - one deletion at a time, after a confirmation;
+  - a membership with dues and one whose role is still held are refused, each with its message;
+  - leaving the page ends the zone on the server: its ticket no longer deletes.
+- Check «Пластовий життєпис» (`life-story.spec.ts`):
+  - a youth's story has only the УПЮ stage (both projects);
+  - for the senior from the demo seed: the button on the card, the УПЮ and УСП stages with every ступінь, and the Order's Звʼязковий may correct them while its Скриптор may not (chromium only: it signs in as shared seeded accounts).
 
 ## Seeded Users
 
