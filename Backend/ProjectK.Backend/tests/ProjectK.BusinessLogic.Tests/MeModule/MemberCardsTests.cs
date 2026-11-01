@@ -11,6 +11,7 @@ using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
+using ProjectK.Common.Models.Catalog;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Settings;
@@ -37,6 +38,8 @@ public class MemberCardsTests
     private readonly Mock<IMemberCardShareRepository> _shares = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Mock<ICardTokenSigner> _signer = new();
+    private readonly Mock<IResourceScopeReader> _scope = new();
+    private readonly Mock<IHonoursCatalog> _honours = new();
     private readonly List<KurinCardSharing> _settings = [];
     private readonly List<Membership> _standing = [];
     private MemberCardShare? _share;
@@ -73,6 +76,8 @@ public class MemberCardsTests
         Mock.Of<IProbesCatalogService>(),
         Mock.Of<IBadgesCatalogService>(),
         new FakeBlobReadLinks(),
+        _scope.Object,
+        _honours.Object,
         Options.Create(new EmailSettings { BaseUrl = "https://lileyka.test" }),
         new FixedTimeProvider(Now));
 
@@ -194,5 +199,39 @@ public class MemberCardsTests
             new Modules.MeModule.Models.CardAllowance(true, false, CardField.Kurin | CardField.Level, false), options);
 
         json.Should().Contain("\"maxFields\":6");
+    }
+
+    private void Earned()
+    {
+        _members.Setup(m => m.GetConfirmedAwardsAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new ConfirmedAward(null, "usp-hramota-zaslugy", new DateTime(2025, 5, 1)),
+            new ConfirmedAward(MemberAwardLevel.Second, null, new DateTime(2019, 5, 1))
+        ]);
+        _honours.Setup(h => h.GetById("usp-hramota-zaslugy"))
+            .Returns(new CatalogHonour("usp-hramota-zaslugy", HonourKind.Award, "Грамота заслуги", "usp-vidznachennia", "usp", 0, "https://catalog.test/hramota.png"));
+    }
+
+    [Fact]
+    public async Task AYouth_ShowsTheirUpyuAwards_ByLevel()
+    {
+        Born(18);
+        Earned();
+
+        var card = await Cards().ReadAsync(_person, CardField.Awards, null, default);
+
+        card!.Awards.Should().Equal(new Modules.MeModule.Models.PublicCardAward(2, "2-е відзначення", null, new DateTime(2019, 5, 1)));
+    }
+
+    [Fact]
+    public async Task ASenior_ShowsTheSeniorAwards_WithTheCatalogueTitleAndPicture_NotTheYouthOnes()
+    {
+        Born(25);
+        Earned();
+        _scope.Setup(s => s.StandsInSeniorKurinAsync(ResourceType.Member, _person, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var card = await Cards().ReadAsync(_person, CardField.Awards, null, default);
+
+        card!.Awards.Should().Equal(new Modules.MeModule.Models.PublicCardAward(null, "Грамота заслуги", "https://catalog.test/hramota.png", new DateTime(2025, 5, 1)));
     }
 }

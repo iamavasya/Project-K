@@ -46,7 +46,7 @@ public interface IMemberDirectory
     /// <summary>The person's date of birth; null when it was never written down or the person does not exist.</summary>
     Task<DateOnly?> GetDateOfBirthAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
-    /// <summary>The person's confirmed відзначення, newest first.</summary>
+    /// <summary>The person's confirmed відзначення, УПЮ and senior alike, newest first.</summary>
     Task<IReadOnlyList<ConfirmedAward>> GetConfirmedAwardsAsync(Guid memberKey, CancellationToken cancellationToken = default);
 
     /// <summary>Everyone in a kurin, in one read.</summary>

@@ -4,6 +4,8 @@ import { environment } from '../../../../../environments/environment';
 import { kurinInText } from '../../../../shared/functions/kurin-label.function';
 import { PublicCardDto } from '../../services/card-service/card.service';
 
+type SharedAward = NonNullable<PublicCardDto['awards']>[number];
+
 const AWARD_NAMES: Record<1 | 2 | 3 | 4, string> = {
   1: 'Перше відзначення',
   2: 'Друге відзначення',
@@ -34,11 +36,11 @@ export class SharedCardComponent {
         .filter(Boolean).join(' · '))
       .join('; '));
 
-  awardName(level: 1 | 2 | 3 | 4): string {
-    return AWARD_NAMES[level];
+  awardName(award: SharedAward): string {
+    return award.level ? AWARD_NAMES[award.level] : award.title;
   }
 
-  awardImage(level: number): string {
-    return `${environment.apiUrl}/awards/images/${level}?colored=true`;
+  awardImage(award: SharedAward): string | null {
+    return award.level ? `${environment.apiUrl}/awards/images/${award.level}?colored=true` : award.imageUrl;
   }
 }

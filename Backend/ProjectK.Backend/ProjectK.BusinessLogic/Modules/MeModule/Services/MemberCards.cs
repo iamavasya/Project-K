@@ -8,6 +8,7 @@ using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Interfaces.Modules.ProbesAndBadgesModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Reports;
 using ProjectK.Common.Models.Settings;
 
 namespace ProjectK.BusinessLogic.Modules.MeModule.Services;
@@ -30,6 +31,8 @@ public sealed class MemberCards
     private readonly IProbesCatalogService _probes;
     private readonly IBadgesCatalogService _badges;
     private readonly IBlobReadLinks _links;
+    private readonly IResourceScopeReader _scope;
+    private readonly IHonoursCatalog _honours;
     private readonly EmailSettings _site;
     private readonly TimeProvider _time;
 
@@ -40,9 +43,13 @@ public sealed class MemberCards
         IProbesCatalogService probes,
         IBadgesCatalogService badges,
         IBlobReadLinks links,
+        IResourceScopeReader scope,
+        IHonoursCatalog honours,
         IOptions<EmailSettings> site,
         TimeProvider time)
     {
+        _scope = scope;
+        _honours = honours;
         _time = time;
         _unitOfWork = unitOfWork;
         _members = members;
@@ -154,8 +161,12 @@ public sealed class MemberCards
         IReadOnlyList<PublicCardAward>? awards = null;
         if (fields.HasFlag(CardField.Awards))
         {
+            // A person in a УСП or УПС kurin shows the senior відзначення; their УПЮ ones are a closed
+            // youth record, which their own card hides too.
+            var senior = await _scope.StandsInSeniorKurinAsync(ResourceType.Member, memberKey, cancellationToken);
             awards = (await _members.GetConfirmedAwardsAsync(memberKey, cancellationToken))
-                .Select(a => new PublicCardAward((int)a.Level, a.DateAcquired))
+                .Where(a => senior ? a.CatalogId is not null : a.Level is not null)
+                .Select(ToPublic)
                 .ToList();
         }
 
@@ -194,5 +205,16 @@ public sealed class MemberCards
             badges,
             probes,
             checkedAtUtc);
+    }
+
+    private PublicCardAward ToPublic(ConfirmedAward award)
+    {
+        if (award.Level is { } level)
+        {
+            return new PublicCardAward((int)level, KurinReportTerminology.AwardLevel(level), null, award.DateAcquired);
+        }
+
+        var item = _honours.GetById(award.CatalogId!);
+        return new PublicCardAward(null, item?.Title ?? award.CatalogId!, item?.ImageUrl, award.DateAcquired);
     }
 }
