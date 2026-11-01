@@ -58,9 +58,10 @@ public sealed class MemberDirectory : IMemberDirectory
 
     public async Task<IReadOnlyList<ConfirmedAward>> GetConfirmedAwardsAsync(Guid memberKey, CancellationToken cancellationToken = default)
         => (await _unitOfWork.MemberAwards.GetByMemberKeyAsync(memberKey, cancellationToken))
-            .Where(a => a.Status == BadgeProgressStatus.Confirmed)
+            // The УПЮ відзначення, by level; a senior one has none and is not on the shared card.
+            .Where(a => a.Status == BadgeProgressStatus.Confirmed && a.Level != null)
             .OrderByDescending(a => a.DateAcquired)
-            .Select(a => new ConfirmedAward(a.Level, a.DateAcquired))
+            .Select(a => new ConfirmedAward(a.Level!.Value, a.DateAcquired))
             .ToList();
 
     public Task<IReadOnlyCollection<MemberSummary>> GetByKurinAsync(

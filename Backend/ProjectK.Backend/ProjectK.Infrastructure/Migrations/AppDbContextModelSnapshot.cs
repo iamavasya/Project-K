@@ -2299,16 +2299,23 @@ namespace ProjectK.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CatalogId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("DateAcquired")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("bit");
+
                     b.Property<Guid>("KurinKey")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Level")
+                    b.Property<int?>("Level")
                         .HasColumnType("int");
 
                     b.Property<Guid>("MemberKey")
@@ -2701,6 +2708,9 @@ namespace ProjectK.Infrastructure.Migrations
 
                     b.Property<DateOnly>("DateAchieved")
                         .HasColumnType("date");
+
+                    b.Property<bool>("IsPlastunka")
+                        .HasColumnType("bit");
 
                     b.Property<Guid?>("KurinKey")
                         .HasColumnType("uniqueidentifier");

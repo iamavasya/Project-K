@@ -40,9 +40,12 @@ import { TooltipModule } from '@openng/optimus-ui/tooltip';
 import { MemberWarningDto } from '../../models/member-warning.dto';
 import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum';
 import { MemberAwardsTileComponent } from './components/member-awards-tile/member-awards-tile';
+import { YouthAwardDto, isYouthAward } from '../../models/member-award.dto';
+import { MemberSeniorAwardsTileComponent } from './components/member-senior-awards-tile/member-senior-awards-tile';
+import { AwardBlock } from './components/award-blocks/award-blocks.function';
+import { MemberDegreesTileComponent } from './components/member-degrees-tile/member-degrees-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
 import { MembershipDto } from '../../models/membership.dto';
-import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { hasYouthProgram, isSeniorBranch, KurinBranch } from '../../models/enums/kurin-branch.enum';
 import { LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
@@ -94,12 +97,13 @@ import { MemberTagsEditorComponent } from '../../components/member-tags-editor/m
     SkillMiniCardComponent,
     BadgeDetailsDialogComponent,
     MemberAwardsTileComponent,
+    MemberSeniorAwardsTileComponent,
+    MemberDegreesTileComponent,
     MemberMembershipsTileComponent,
     ProfileVerificationBadgeComponent,
     MemberWarningsDialogComponent,
     TileBoardComponent,
     TileDefDirective,
-    EmptyStateComponent,
     MemberTagsEditorComponent,
     RouterLink
   ],
@@ -629,6 +633,11 @@ export class MemberCardComponent implements OnInit {
 
   get hasAnySkills(): boolean {
     return this.confirmedSkillsCount > 0 || this.pendingSkillsCount > 0;
+  }
+
+  /** The УПЮ відзначення, by level; a senior one is on the senior tile. */
+  get youthAwards(): YouthAwardDto[] {
+    return (this.member?.awards ?? []).filter(isYouthAward);
   }
 
   get canEditMember(): boolean {
@@ -1282,6 +1291,14 @@ export class MemberCardComponent implements OnInit {
       error: (error) => {
         console.error('Error saving award:', error);
       }
+    });
+  }
+
+  /** The person pins or unpins a відзначення of their own; the card reads the order again. */
+  onPinAward(block: AwardBlock): void {
+    this.memberAwardService.pinAward({ ...block.pin, pinned: !block.pinned }).subscribe({
+      next: () => this.refreshData(),
+      error: (error) => console.error('Error pinning award:', error)
     });
   }
 

@@ -373,7 +373,8 @@ public class UpsertMemberProfileCommandHandler
                     MemberKey = memberKey,
                     KurinKey = kurinKey,
                     PlastLevel = dto.PlastLevel,
-                    DateAchieved = dto.DateAchieved
+                    DateAchieved = dto.DateAchieved,
+                    IsPlastunka = dto.IsPlastunka
                 });
             }
             else
@@ -385,6 +386,7 @@ public class UpsertMemberProfileCommandHandler
                 {
                     existingHistory.PlastLevel = dto.PlastLevel;
                     existingHistory.DateAchieved = dto.DateAchieved;
+                    existingHistory.IsPlastunka = dto.IsPlastunka;
                 }
             }
         }

@@ -24,6 +24,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Get;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Agenda.Update;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.PlanningSession.Create;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MemberAward.Pin;
 using ProjectK.Common.Models.Dtos.AuthModule;
 using ProjectK.Common.Models.Dtos.AuthModule.Requests;
 using ProjectK.Common.Models.Dtos.KurinModule.Requests;
@@ -290,6 +291,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Row<Action<BadgesCatalogController>>(nameof(BadgesCatalogController.GetMetadata), "RequireUser");
         yield return Row<Action<BadgesCatalogController, int>>(nameof(BadgesCatalogController.GetAll), "RequireUser");
         yield return Row<Action<BadgesCatalogController, string>>(nameof(BadgesCatalogController.GetById), "RequireUser");
+        yield return Row<Action<HonoursCatalogController>>(nameof(HonoursCatalogController.GetAll), "RequireUser");
+        yield return Row<Action<MyAwardsController, PinMyAwardCommand>>(nameof(MyAwardsController.Pin), "RequireUser");
 
         yield return Row<Action<ProbesCatalogController>>(nameof(ProbesCatalogController.GetAll), "RequireUser");
         yield return Row<Action<ProbesCatalogController, string>>(nameof(ProbesCatalogController.GetGroupedById), "RequireUser");

@@ -291,7 +291,7 @@
 
         <ng-template [appTileDef]="{ key: 'awards', span: 'full', label: 'Нагороди' }">
         <section class="member-tile rounded-2xl p-4 md:p-5">
-            <app-member-awards-tile [awards]="member.awards || []"
+            <app-member-awards-tile [awards]="youthAwards"
                 [kurinStamps]="kurinStamps"
                 [canEdit]="canEditMember"
                 [confirmLevels]="abilities.awards.confirm"
@@ -300,10 +300,21 @@
                 [ownCard]="isOwnCard"
                 (saveAward)="onSaveAward($event)"
                 (deleteAward)="onDeleteAward($event)"
-                (reviewAward)="onReviewAward($event)" />
+                (reviewAward)="onReviewAward($event)"
+                (pinAward)="onPinAward($event)" />
         </section>
         </ng-template>
         }
+
+        <ng-template [appTileDef]="{ key: 'degrees', span: 'half', label: 'Ступені' }">
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
+            <app-member-degrees-tile
+                [histories]="member.plastLevelHistories"
+                [senior]="isSeniorKurinCard"
+                [canEdit]="canEditMember"
+                (edit)="onEditMember()" />
+            </section>
+        </ng-template>
 
         @if (isSeniorKurinCard) {
         <ng-template [appTileDef]="{ key: 'senior-kurin', span: 'half', label: 'У курені' }">
@@ -334,12 +345,15 @@
         </ng-template>
 
         <ng-template [appTileDef]="{ key: 'senior-awards', span: 'half', label: 'Відзначення' }">
-            <section class="member-tile h-full rounded-2xl p-4 md:p-5" data-testid="senior-awards-tile">
-                <div class="mb-4">
-                    <h2 class="member-section-title">Відзначення</h2>
-                    <p class="member-section-subtitle text-sm">УСП · УПС</p>
-                </div>
-                <app-empty-state art="list" title="Відзначень ще немає" />
+            <section class="member-tile h-full rounded-2xl p-4 md:p-5">
+            <app-member-senior-awards-tile
+                [awards]="member.awards ?? []"
+                [canAdd]="canEditMember"
+                [ownCard]="isOwnCard"
+                [canRemove]="abilities.awards.remove"
+                (saveAward)="onSaveAward($event)"
+                (deleteAward)="onDeleteAward($event)"
+                (pinAward)="onPinAward($event)" />
             </section>
         </ng-template>
 

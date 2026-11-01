@@ -41,6 +41,7 @@ public partial class DemoDataSeeder
         var ordenLeadership = await EnsureLeadershipAsync(LeadershipType.Kurin, orden.KurinKey, null, new DateOnly(2025, 9, 1), cancellationToken);
         SeatOffice(ordenLeadership, ordenMembers[1].MemberKey, LeadershipRole.Pysar, new DateOnly(2025, 9, 1));
         await SeedOrdenCardsAsync(orden.KurinKey, ordenMembers, cancellationToken);
+        await SeedOrdenHonoursAsync(orden.KurinKey, ordenLeader, ordenMembers, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
         await SeedSeniorDuesAsync(orden, ordenLeader, ordenMembers, ordenLeadership, cancellationToken);
 
@@ -144,6 +145,66 @@ public partial class DemoDataSeeder
                 ExpiresAtUtc = _now.AddMonths(-6),
                 IssuedByUserKey = issuer
             });
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The Order's ступені and відзначення as its people would record them: the зв'язковий's whole
+    /// senior way, and the пластунки's ступені drawn as theirs. Runs on its own guard, so a stand seeded
+    /// before senior відзначення existed gets them too.
+    /// </summary>
+    private async Task SeedOrdenHonoursAsync(Guid kurinKey, Member leader, IReadOnlyList<Member> members, CancellationToken cancellationToken)
+    {
+        if (await _dbContext.MemberAwards.AnyAsync(a => a.MemberKey == leader.MemberKey && a.CatalogId != null, cancellationToken))
+        {
+            return;
+        }
+
+        var plastunky = new[] { members[1].MemberKey, members[3].MemberKey };
+        foreach (var level in await _dbContext.PlastLevelHistories.Where(h => plastunky.Contains(h.MemberKey)).ToListAsync(cancellationToken))
+        {
+            level.IsPlastunka = true;
+        }
+
+        if (!await _dbContext.PlastLevelHistories.AnyAsync(h => h.MemberKey == leader.MemberKey, cancellationToken))
+        {
+            foreach (var (level, on) in new[]
+            {
+                (PlastLevel.Skob, new DateOnly(1995, 6, 10)),
+                (PlastLevel.Starshoplastun, new DateOnly(1997, 11, 15)),
+                (PlastLevel.Senior, new DateOnly(2014, 4, 26)),
+                (PlastLevel.SeniorPratsi, new DateOnly(2016, 5, 14))
+            })
+            {
+                _dbContext.PlastLevelHistories.Add(new PlastLevelHistory { MemberKey = leader.MemberKey, KurinKey = kurinKey, PlastLevel = level, DateAchieved = on });
+            }
+
+            leader.LatestPlastLevel = PlastLevel.SeniorPratsi;
+        }
+
+        MemberAward Award(Member who, string catalogId, DateTime on, string? note = null) => new()
+        {
+            MemberKey = who.MemberKey,
+            KurinKey = kurinKey,
+            CatalogId = catalogId,
+            DateAcquired = on,
+            Note = note,
+            Status = BadgeProgressStatus.Confirmed,
+            SubmittedAtUtc = on,
+            SubmittedByUserKey = who.UserKey
+        };
+
+        static MemberAward Pinned(MemberAward award)
+        {
+            award.IsPinned = true;
+            return award;
+        }
+
+        _dbContext.MemberAwards.AddRange(
+            Award(leader, "usp-hramota-zasluhy", new DateTime(2012, 10, 20), "За табір «Вогні Карпат»"),
+            Pinned(Award(leader, "orden-sv-yuriia-bronza", new DateTime(2018, 4, 23))),
+            Award(leader, "usp-hramota-zasluhy", new DateTime(2015, 3, 14), "За вишкіл новаків"),
+            Award(members[1], "usp-hramota-podiaky", new DateTime(2024, 6, 9)));
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 

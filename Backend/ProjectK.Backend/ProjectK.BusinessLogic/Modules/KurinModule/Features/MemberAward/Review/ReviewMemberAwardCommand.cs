@@ -67,7 +67,8 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         }
 
         var fromStatus = award.Status;
-        if (fromStatus != BadgeProgressStatus.Submitted)
+        // A senior відзначення has no level and nobody confirms it: it stands as recorded.
+        if (fromStatus != BadgeProgressStatus.Submitted || award.Level is not { } awardLevel)
         {
             return new ServiceResult<MemberAwardDto>(ResultType.Conflict);
         }
@@ -75,7 +76,7 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
         // The permission at the endpoint is shared by every level; which levels this person may
         // confirm is the kurin's policy.
         var level = await _access.CheckCapabilityAsync(
-            KurinCapabilities.ConfirmAward(award.Level), ResourceType.Member, award.MemberKey, cancellationToken);
+            KurinCapabilities.ConfirmAward(awardLevel), ResourceType.Member, award.MemberKey, cancellationToken);
         if (!level.IsAllowed)
         {
             return ServiceResult<MemberAwardDto>.Failure(
@@ -99,7 +100,7 @@ public sealed class ReviewMemberAwardCommandHandler : IRequestHandler<ReviewMemb
                 AuditArea.Award,
                 approved ? AuditActions.Award.Confirmed : AuditActions.Award.Rejected,
                 award.MemberAwardKey,
-                KurinReportTerminology.AwardLevel(award.Level),
+                KurinReportTerminology.AwardLevel(awardLevel),
                 award.MemberKey,
                 AuditChanges.Of(("status", fromStatus, award.Status))),
             cancellationToken);

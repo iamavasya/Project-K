@@ -653,7 +653,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         {
             entity.HasKey(e => e.MemberAwardKey);
             entity.Property(e => e.Level)
-                .HasConversion<int>();
+                .HasConversion<int?>();
+            entity.Property(e => e.CatalogId).HasMaxLength(MemberAward.CatalogIdMaxLength);
             entity.Property(e => e.Status)
                 .HasConversion<int>();
             entity.HasIndex(e => new { e.MemberKey, e.Level });

@@ -162,6 +162,7 @@ public static class DependencyInjection
         services.AddSingleton<IBadgesCatalog>(sp => sp.GetRequiredService<CatalogStore>());
         services.AddSingleton<IProbesCatalog>(sp => sp.GetRequiredService<CatalogStore>());
         services.AddSingleton<ICatalogKraiNames>(sp => sp.GetRequiredService<CatalogStore>());
+        services.AddSingleton<IHonoursCatalog>(sp => sp.GetRequiredService<CatalogStore>());
         services.AddHttpClient(CatalogClient.HttpClientName, client => client.Timeout = timeout);
         services.AddSingleton<CatalogClient>();
         services.AddSingleton<IAwardImagesCatalog, CatalogAwardImages>();

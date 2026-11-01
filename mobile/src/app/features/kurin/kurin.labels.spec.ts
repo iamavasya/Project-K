@@ -11,6 +11,12 @@ import {
   memberRoleTags,
   officeTag,
   officesIn,
+  degreeRows,
+  seniorAwardRows,
+  seniorAwardBlocks,
+  orderAwardBlocks,
+  SENIOR_LADDER,
+  YOUTH_LADDER,
   membershipOf,
   roleTone,
   membershipPeriod,
@@ -306,5 +312,67 @@ describe('membership in a line of text', () => {
     expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: 'Орден Хрестоносців' } as MembershipDto)).toBe('Членство (Орден Хрестоносців)');
     expect(membershipOf({ branch: 'USP', kurinNumber: 5, kurinNamedAfter: null } as MembershipDto)).toBe('Членство (5-й курінь УСП)');
     expect(membershipOf({ branch: 'UPYu', kurinNumber: 47, kurinNamedAfter: 'Івана Богуна' } as MembershipDto)).toBe('Членство в курені ч. 47');
+  });
+});
+
+describe('ступені й старші відзначення з каталогу', () => {
+  const honours = [
+    { id: 'usp-starsha-plastunka', kind: 'Degree', title: 'Старша пластунка', group: 'usp', ulad: 'usp', order: 2, imageUrl: 'https://catalog.test/spl.svg' },
+    { id: 'upyu-virlytsia', kind: 'Degree', title: 'Пластунка вірлиця', group: 'upyu', ulad: 'upyu', order: 7, imageUrl: '' },
+    { id: 'orden-sv-yuriia-bronza', kind: 'Award', title: 'Орден святого Юрія в бронзі', group: 'orden-sv-yuriia', ulad: 'usp', order: 0, imageUrl: 'https://catalog.test/o.png' },
+  ] as const;
+  const histories = [
+    { plastLevel: 'Skob', dateAchieved: '2014-06-10', isPlastunka: true, catalogId: 'upyu-virlytsia' },
+    { plastLevel: 'Starshoplastun', dateAchieved: '2016-12-03', isPlastunka: true, catalogId: 'usp-starsha-plastunka' },
+  ];
+
+  it('shows each membership its own ladder, named and drawn for a пластунка', () => {
+    expect(degreeRows(histories, YOUTH_LADDER, [...honours]).map((r) => r.title)).toEqual(['Пластунка вірлиця']);
+    expect(degreeRows(histories, SENIOR_LADDER, [...honours]).map((r) => [r.title, r.imageUrl])).toEqual([['Старша пластунка', 'https://catalog.test/spl.svg']]);
+    expect(degreeRows(histories, SENIOR_LADDER, []).map((r) => r.title)).toEqual(['ст. пл.']);
+  });
+
+  it('lists senior відзначення apart from the УПЮ levels', () => {
+    const base = { memberKey: 'm', kurinKey: 'k', status: 'Confirmed' as const };
+    const awards = [
+      { ...base, memberAwardKey: 'a', level: 'First' as const, catalogId: null, dateAcquired: '2015-01-01T00:00:00' },
+      { ...base, memberAwardKey: 'b', level: null, catalogId: 'orden-sv-yuriia-bronza', dateAcquired: '2018-04-23T00:00:00' },
+    ];
+    expect(seniorAwardRows(awards, [...honours]).map((r) => [r.award.memberAwardKey, r.title, r.imageUrl, r.section])).toEqual([
+      ['b', 'Орден святого Юрія в бронзі', 'https://catalog.test/o.png', 'УСП'],
+    ]);
+    expect(awardGroups(awards).map((g) => g.latest.memberAwardKey)).toEqual(['a']);
+  });
+});
+
+describe('відзначення блоками', () => {
+  const base = { memberKey: 'm', kurinKey: 'k', status: 'Confirmed' as const };
+  const honours = [
+    { id: 'usp-hramota-zasluhy', kind: 'Award', title: 'Грамота заслуги', group: 'usp-vidznachennia', ulad: 'usp', order: 0, imageUrl: '' },
+    { id: 'ups-hramota-zasluhy', kind: 'Award', title: 'Грамота заслуги', group: 'ups-vidznachennia', ulad: 'ups', order: 1, imageUrl: '' },
+  ] as const;
+
+  it('puts every grant of one відзначення under one block, newest first, and pinned blocks before the rest', () => {
+    const blocks = seniorAwardBlocks(
+      [
+        { ...base, memberAwardKey: 'a', catalogId: 'usp-hramota-zasluhy', dateAcquired: '2012-10-20T00:00:00', note: 'За табір' },
+        { ...base, memberAwardKey: 'b', catalogId: 'usp-hramota-zasluhy', dateAcquired: '2015-03-14T00:00:00' },
+        { ...base, memberAwardKey: 'c', catalogId: 'ups-hramota-zasluhy', dateAcquired: '2020-01-01T00:00:00', isPinned: true },
+        { ...base, memberAwardKey: 'd', level: 'First' as const, dateAcquired: '2021-01-01T00:00:00' },
+      ],
+      [...honours],
+      true,
+    );
+
+    expect(blocks.map((b) => [b.key, b.section, b.grants.map((g) => g.award.memberAwardKey), b.pinned])).toEqual([
+      ['ups-hramota-zasluhy', 'УПС', ['c'], true],
+      ['usp-hramota-zasluhy', 'УСП', ['b', 'a'], false],
+    ]);
+  });
+
+  it('orders unpinned blocks by the latest grant', () => {
+    const block = (key: string, date: string, pinned = false) =>
+      ({ key, title: key, imageUrl: null, section: '', pinned, pending: false, pin: {}, grants: [{ award: { ...base, memberAwardKey: key, dateAcquired: date }, pending: false, canOpen: true }] });
+    expect(orderAwardBlocks([block('old', '2010-01-01'), block('new', '2024-01-01'), block('liked', '2005-01-01', true)]).map((b) => b.key)).toEqual(['liked', 'new', 'old']);
   });
 });
