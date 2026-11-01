@@ -37,6 +37,7 @@ public class UpsertMemberProfileCommandHandler
     private readonly IKraiProfileProvider _profiles;
     private readonly IMemberFieldAccess _fieldAccess;
     private readonly IKurinAudit _audit;
+    private readonly IResourceAccessService _access;
 
     /// <summary>The error a write without an email is refused with.</summary>
     public const string EmailRequired = "EmailRequired";
@@ -50,8 +51,10 @@ public class UpsertMemberProfileCommandHandler
         IAccountProvisioningService accounts,
         IKraiProfileProvider profiles,
         IMemberFieldAccess fieldAccess,
-        IKurinAudit audit)
+        IKurinAudit audit,
+        IResourceAccessService access)
     {
+        _access = access;
         _fieldAccess = fieldAccess;
         _audit = audit;
         _accounts = accounts;
@@ -252,7 +255,9 @@ public class UpsertMemberProfileCommandHandler
                 existing.ProfileVerificationStatus = MemberProfileVerificationStatus.VerifiedStale;
             }
 
-            if (CanEditPlastLevels(existing))
+            // A senior's ступені: the person, or who holds the kurin-wide right where they stand now.
+            if (CanEditPlastLevels(existing)
+                && (await _access.CheckSeniorYouthRecordAsync(ResourceType.Member, ResourceAction.Update, existing.MemberKey, ownerMayChange: true, cancellationToken)).IsAllowed)
             {
                 UpdatePlastLevelHistory(existing.MemberKey, kurinKey, request.PlastLevelHistories, existing.PlastLevelHistory);
                 existing.LatestPlastLevel = LatestLevelOf(existing.PlastLevelHistory);

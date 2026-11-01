@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { SkeletonModule } from '@openng/optimus-ui/skeleton';
@@ -46,7 +47,9 @@ import { AwardBlock } from './components/award-blocks/award-blocks.function';
 import { MemberDegreesTileComponent } from './components/member-degrees-tile/member-degrees-tile';
 import { MemberMembershipsTileComponent } from './components/member-memberships-tile/member-memberships-tile';
 import { MembershipDto } from '../../models/membership.dto';
-import { hasYouthProgram, isSeniorBranch, KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { hasYouthProgram, isSeniorBranch, KURIN_BRANCH_LABELS, KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { degreeRows, DegreeRow, SENIOR_LADDER, YOUTH_LADDER } from './components/member-degrees-tile/member-degrees.function';
 import { LeadershipHistoryDto } from '../../models/requests/leadership/leadership.dto';
 import { leadershipRoleDisplayName, leadershipRoleSeverityForRole, RoleSeverity } from '../../functions/leadership-role-display.function';
 import { memberBranchHere } from '../../functions/member-branch.function';
@@ -77,6 +80,15 @@ import { MemberWarningsDialogComponent } from './components/member-warnings-dial
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
 import { MemberTagsEditorComponent } from '../../components/member-tags-editor/member-tags-editor';
+import { HonoursService } from '../../services/honours-service/honours.service';
+import { PlastLevel } from '../../models/enums/plast-level.enum';
+
+/** The stages of a life story and their ladders; the day of joining Пласт opens the УПЮ one. */
+const LIFE_LADDERS: readonly { branch: KurinBranch; ladder: readonly PlastLevel[] }[] = [
+  { branch: KurinBranch.UPYu, ladder: [PlastLevel.Entry, ...YOUTH_LADDER] },
+  { branch: KurinBranch.USP, ladder: [PlastLevel.Starshoplastun] },
+  { branch: KurinBranch.UPS, ladder: SENIOR_LADDER.filter(level => level !== PlastLevel.Starshoplastun) }
+];
 
 @Component({
   selector: 'app-member-card',
@@ -105,6 +117,7 @@ import { MemberTagsEditorComponent } from '../../components/member-tags-editor/m
     TileBoardComponent,
     TileDefDirective,
     MemberTagsEditorComponent,
+    EmptyStateComponent,
     RouterLink
   ],
   providers: [ConfirmationService],
@@ -124,6 +137,8 @@ export class MemberCardComponent implements OnInit {
   authService = inject(AuthService);
   entityService = inject(EntityService);
   permissionService = inject(PermissionService);
+  // The catalogue's ступені, named and drawn for a пластун or a пластунка, for the life story's list.
+  private readonly honours = toSignal(inject(HonoursService).all(), { initialValue: [] });
   kurinService = inject(KurinService);
   groupService = inject(GroupService);
   membershipService = inject(MembershipService);
@@ -300,7 +315,7 @@ export class MemberCardComponent implements OnInit {
     }
 
     this.youthProgressRequested = true;
-    if (!this.hasYouthProgram) {
+    if (!this.showsYouthRecord) {
       return;
     }
 
@@ -462,6 +477,99 @@ export class MemberCardComponent implements OnInit {
   /** Проби, вмілості й відзначення УПЮ ведуться лише юнацтву. */
   get hasYouthProgram(): boolean {
     return hasYouthProgram(this.personalBranch);
+  }
+
+  /**
+   * «Пластовий життєпис» (`/member/:key/life`): той самий компонент, але про всю історію людини, а
+   * не про те, хто вона зараз. Юнацьке старшого живе тут, бо з картки воно прибране (`BRANCH-02`).
+   */
+  get isLifeView(): boolean {
+    return this.route.snapshot.data['view'] === 'life';
+  }
+
+  /** Плитки проби, вмілостей і відзначень УПЮ: юнакові на картці, будь-кому в життєписі. */
+  get showsYouthRecord(): boolean {
+    return this.hasYouthProgram || this.isLifeView;
+  }
+
+  /** Звʼязковий куреня, у якому людина стоїть зараз, — той, хто виправляє її минуле. */
+  get isZvyazkovyiHere(): boolean {
+    const auth = this.authService.getAuthStateValue?.();
+    return this.permissionService.canManageWholeKurin()
+      && !!auth?.kurinKey
+      && this.memberships.some(m => m.isCurrent && m.kurinKey === auth.kurinKey);
+  }
+
+  /**
+   * Юнацьке старшого в життєписі виправляє лише Звʼязковий його куреня, і не про себе: проби,
+   * вмілості й відзначення УПЮ людина собі не ставить. У юнака все лишається як на картці.
+   */
+  get youthRecordLocked(): boolean {
+    return this.isLifeView && !this.hasYouthProgram && (this.isOwnCard || !this.isZvyazkovyiHere);
+  }
+
+  /**
+   * Усі ступені з датами, по етапах: УПЮ → УСП → УПС, кожен з назвою й рисунком із каталогу для
+   * пластуна чи пластунки (`degreeRows`, як на плитці картки). Картка показує лише найвищий.
+   */
+  get lifeStages(): { branch: string; levels: DegreeRow[] }[] {
+    const histories = this.member?.plastLevelHistories ?? [];
+    const honours = this.honours();
+    return LIFE_LADDERS
+      .map(stage => ({
+        branch: KURIN_BRANCH_LABELS[stage.branch],
+        levels: degreeRows(histories, stage.ladder, honours).map(row => ({ ...row, title: row.title || 'Вступ до Пласту' }))
+      }))
+      .filter((stage, index) => index === 0 || stage.levels.length > 0);
+  }
+
+  /** Ступені виправляє Звʼязковий куреня, у якому людина зараз, і сама людина; юнакові — як на картці. */
+  get canCorrectLevels(): boolean {
+    return this.canEditMember && (this.hasYouthProgram || this.isZvyazkovyiHere || this.isOwnCard);
+  }
+
+  /** Усі ролі людини в усіх куренях, найновіші першими, з куренем, де їх тримали. */
+  get lifeOffices(): { key: string; label: string; kurin: string; period: string }[] {
+    return [...(this.member?.leadershipHistories ?? [])]
+      .sort((a, b) => (b.startDate ?? '').localeCompare(a.startDate ?? ''))
+      .map(office => ({
+        key: office.leadershipHistoryKey ?? `${office.role}-${office.startDate}`,
+        label: office.groupName ? `${this.officeLabel(office)} · ${office.groupName}` : this.officeLabel(office),
+        kurin: this.kurinOfOffice(office),
+        period: `${this.formatDate(office.startDate)} – ${office.endDate ? this.formatDate(office.endDate) : 'зараз'}`
+      }));
+  }
+
+  private kurinOfOffice(office: LeadershipHistoryDto): string {
+    const membership = this.memberships.find(m => m.kurinKey === office.kurinKey);
+    if (!membership) return '';
+    return isSeniorBranch(membership.branch) && membership.kurinNamedAfter ? membership.kurinNamedAfter : kurinLabel(membership.kurinNumber, membership.branch);
+  }
+
+  /** Архів куреня, де людина стоїть, — там виправляють її ролі й членства. */
+  get archiveKurinKey(): string | null {
+    const kurinKey = this.authService.getAuthStateValue?.()?.kurinKey ?? null;
+    return kurinKey && this.permissionService.canReadArchive() && this.memberships.some(m => m.kurinKey === kurinKey)
+      ? kurinKey
+      : null;
+  }
+
+  openLife(): void {
+    if (this.memberKey) {
+      this.router.navigate(['/member', this.memberKey, 'life']);
+    }
+  }
+
+  openCard(): void {
+    if (this.memberKey) {
+      this.router.navigate(['/member', this.memberKey]);
+    }
+  }
+
+  openArchive(): void {
+    if (this.archiveKurinKey) {
+      this.router.navigate(['/kurin', this.archiveKurinKey, 'archive']);
+    }
   }
 
   /**
