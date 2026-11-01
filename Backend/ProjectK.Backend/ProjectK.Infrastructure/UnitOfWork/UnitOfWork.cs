@@ -150,6 +150,10 @@ public class UnitOfWork : IUnitOfWork, IMemberUnitOfWork, IDuesUnitOfWork, IScor
 
             throw new DuplicateRowException(exception);
         }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new StaleRowException(exception);
+        }
     }
 
     public async Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken token = default)

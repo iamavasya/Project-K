@@ -12,4 +12,7 @@ public interface IMembershipRequestRepository : IBaseEntityRepository<Membership
 
     /// <summary>The asking kurin's requests about one person that still wait for an answer.</summary>
     Task<IReadOnlyList<MembershipRequest>> GetPendingAsync(Guid memberKey, Guid toKurinKey, CancellationToken cancellationToken = default);
+
+    /// <summary>The requests about one person that still wait for the answer of the kurin they stand in, tracked.</summary>
+    Task<IReadOnlyList<MembershipRequest>> GetPendingFromAsync(Guid memberKey, Guid fromKurinKey, CancellationToken cancellationToken = default);
 }

@@ -26,4 +26,9 @@ public class MembershipRequestRepository : BaseEntityRepository<MembershipReques
         => await Set
             .Where(r => r.MemberKey == memberKey && r.ToKurinKey == toKurinKey && r.Status == MembershipRequestStatus.Pending)
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<MembershipRequest>> GetPendingFromAsync(Guid memberKey, Guid fromKurinKey, CancellationToken cancellationToken = default)
+        => await Set
+            .Where(r => r.MemberKey == memberKey && r.FromKurinKey == fromKurinKey && r.Status == MembershipRequestStatus.Pending)
+            .ToListAsync(cancellationToken);
 }

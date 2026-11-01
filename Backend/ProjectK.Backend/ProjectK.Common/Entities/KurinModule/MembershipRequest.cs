@@ -39,5 +39,27 @@ public class MembershipRequest : Entity
     public DateTime? DecidedAtUtc { get; set; }
     public Guid? DecidedByUserKey { get; set; }
 
+    /// <summary>
+    /// Changes with every answer, so two answers given at once cannot both be saved: the second
+    /// finds the row changed and is refused.
+    /// </summary>
+    public Guid ConcurrencyStamp { get; set; } = Guid.NewGuid();
+
     public bool IsOpen(DateTime nowUtc) => Status == MembershipRequestStatus.Pending && nowUtc < ExpiresAtUtc;
+
+    /// <summary>Closes the request: approved, declined or withdrawn.</summary>
+    public void Close(MembershipRequestStatus status, DateTime nowUtc, Guid? byUserKey)
+    {
+        Status = status;
+        DecidedAtUtc = nowUtc;
+        DecidedByUserKey = byUserKey;
+        ConcurrencyStamp = Guid.NewGuid();
+    }
+
+    /// <summary>Lets a request lapse now: the person no longer stands in the kurin it asks.</summary>
+    public void Lapse(DateTime nowUtc)
+    {
+        ExpiresAtUtc = nowUtc;
+        ConcurrencyStamp = Guid.NewGuid();
+    }
 }

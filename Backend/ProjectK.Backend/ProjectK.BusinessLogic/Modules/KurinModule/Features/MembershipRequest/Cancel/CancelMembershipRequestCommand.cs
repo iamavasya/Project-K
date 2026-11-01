@@ -1,4 +1,5 @@
 using MediatR;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -41,10 +42,15 @@ public sealed class CancelMembershipRequestCommandHandler : IRequestHandler<Canc
             return ServiceResult<object>.Failure(ResultType.Conflict, "RequestClosed", "The request was already answered, withdrawn or has lapsed.");
         }
 
-        asked.Status = MembershipRequestStatus.Cancelled;
-        asked.DecidedAtUtc = now;
-        asked.DecidedByUserKey = _currentUser.UserId;
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        asked.Close(MembershipRequestStatus.Cancelled, now, _currentUser.UserId);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (StaleRowException)
+        {
+            return ServiceResult<object>.Failure(ResultType.Conflict, "RequestClosed", "The request was already answered, withdrawn or has lapsed.");
+        }
 
         return new ServiceResult<object>(ResultType.Success);
     }

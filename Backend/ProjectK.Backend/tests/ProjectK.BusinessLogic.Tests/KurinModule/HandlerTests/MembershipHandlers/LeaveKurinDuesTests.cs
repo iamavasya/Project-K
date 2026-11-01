@@ -41,6 +41,7 @@ public class LeaveKurinDuesTests
 
         _unitOfWork.SetupGet(u => u.Memberships).Returns(_memberships.Object);
         _unitOfWork.SetupGet(u => u.Groups).Returns(Mock.Of<IGroupRepository>());
+        _unitOfWork.SetupGet(u => u.MembershipRequests).Returns(NoMembershipRequests.Repository());
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _memberships.Setup(r => r.GetActiveAsync(_membership.MemberKey, _kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(_membership);
         _memberships.Setup(r => r.GetRecordsForMemberAsync(_membership.MemberKey, It.IsAny<CancellationToken>()))
@@ -55,7 +56,7 @@ public class LeaveKurinDuesTests
         new(key, kurinKey, 1, KurinBranch.UPYu, null, null, null, MembershipKind.Youth, DateTime.UtcNow.AddYears(-3), leftAtUtc);
 
     private LeaveKurinCommandHandler Handler() =>
-        new(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), Mock.Of<IMemberDirectory>(), new MembershipMoves(_unitOfWork.Object, _journal.Audit, _events.Object, _dues.Object));
+        new(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), Mock.Of<IMemberDirectory>(), new MembershipMoves(_unitOfWork.Object, _journal.Audit, _events.Object, _dues.Object, TimeProvider.System));
 
     private void Owes(decimal amount) =>
         _dues.Setup(d => d.GetOwedAsync(_kurinKey, It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))

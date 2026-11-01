@@ -199,6 +199,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             entity.Property(e => e.Kind).HasConversion<int>();
             entity.Property(e => e.Status).HasConversion<int>();
             entity.Property(e => e.MembershipKind).HasConversion<int>();
+            entity.Property(e => e.ConcurrencyStamp).IsConcurrencyToken();
             entity.HasIndex(e => e.FromKurinKey);
             entity.HasIndex(e => e.ToKurinKey);
             entity.HasIndex(e => e.MemberKey);

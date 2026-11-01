@@ -43,6 +43,7 @@ public class MembershipJournalTests
 
         _unitOfWork.SetupGet(u => u.Memberships).Returns(_memberships.Object);
         _unitOfWork.SetupGet(u => u.Groups).Returns(_groups.Object);
+        _unitOfWork.SetupGet(u => u.MembershipRequests).Returns(NoMembershipRequests.Repository());
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _memberships.Setup(r => r.GetActiveAsync(_membership.MemberKey, _kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(_membership);
         _memberships.Setup(r => r.GetRecordsForMemberAsync(_membership.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
@@ -59,7 +60,7 @@ public class MembershipJournalTests
     [Fact]
     public async Task Leaving_IsRecordedWithTheGroupTheyLeftFrom()
     {
-        var handler = new LeaveKurinCommandHandler(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), _members.Object, new MembershipMoves(_unitOfWork.Object, _journal.Audit, Mock.Of<IDomainEventPublisher>(), Mock.Of<IDuesDirectory>()));
+        var handler = new LeaveKurinCommandHandler(_unitOfWork.Object, Mock.Of<IAccessChangeSignal>(), _members.Object, new MembershipMoves(_unitOfWork.Object, _journal.Audit, Mock.Of<IDomainEventPublisher>(), Mock.Of<IDuesDirectory>(), TimeProvider.System));
 
         await handler.Handle(new LeaveKurinCommand(_membership.MemberKey, _kurinKey), default);
 

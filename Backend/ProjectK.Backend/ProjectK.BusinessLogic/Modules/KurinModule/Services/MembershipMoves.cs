@@ -19,9 +19,11 @@ public sealed class MembershipMoves
     private readonly IKurinAudit _audit;
     private readonly IDomainEventPublisher _events;
     private readonly IDuesDirectory _dues;
+    private readonly TimeProvider _time;
 
-    public MembershipMoves(IUnitOfWork unitOfWork, IKurinAudit audit, IDomainEventPublisher events, IDuesDirectory dues)
+    public MembershipMoves(IUnitOfWork unitOfWork, IKurinAudit audit, IDomainEventPublisher events, IDuesDirectory dues, TimeProvider time)
     {
+        _time = time;
         _unitOfWork = unitOfWork;
         _audit = audit;
         _events = events;
@@ -42,10 +44,21 @@ public sealed class MembershipMoves
         return await _dues.GetOwedAsync(kurinKey, stretchesHere, cancellationToken);
     }
 
-    /// <summary>Closes a membership now, recorded while the гурток is still known.</summary>
+    /// <summary>
+    /// Closes a membership now, recorded while the гурток is still known. What other kurins still ask
+    /// this one about the person lapses: there is nobody here to let go any more.
+    /// </summary>
     public async Task CloseAsync(MembershipEntity membership, string personName, CancellationToken cancellationToken)
     {
         membership.LeftAtUtc = DateTime.UtcNow;
+
+        var now = _time.GetUtcNow().UtcDateTime;
+        // A request answered in this same unit of work is still pending in the database, not here.
+        foreach (var asked in (await _unitOfWork.MembershipRequests.GetPendingFromAsync(membership.MemberKey, membership.KurinKey, cancellationToken))
+                     .Where(r => r.Status == MembershipRequestStatus.Pending))
+        {
+            asked.Lapse(now);
+        }
 
         var group = membership.GroupKey is { } groupKey
             ? await _unitOfWork.Groups.GetByKeyAsync(groupKey, cancellationToken)

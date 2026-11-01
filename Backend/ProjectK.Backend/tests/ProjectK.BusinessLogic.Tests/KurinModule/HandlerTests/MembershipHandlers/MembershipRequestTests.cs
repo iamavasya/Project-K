@@ -8,6 +8,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Form
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
@@ -32,6 +33,7 @@ public class MembershipRequestTests
 
     private readonly Guid _kurinA = Guid.NewGuid();
     private readonly Guid _kurinB = Guid.NewGuid();
+    private readonly Guid _kurinC = Guid.NewGuid();
     private readonly Guid _person = Guid.NewGuid();
     private readonly Guid _account = Guid.NewGuid();
 
@@ -49,6 +51,7 @@ public class MembershipRequestTests
     private readonly List<Membership> _opened = [];
     private readonly List<MembershipRequest> _created = [];
     private readonly List<MembershipRequest> _pending = [];
+    private readonly List<MembershipRequest> _asked = [];
 
     public MembershipRequestTests()
     {
@@ -69,6 +72,8 @@ public class MembershipRequestTests
         _requests.Setup(r => r.Create(It.IsAny<MembershipRequest>(), It.IsAny<CancellationToken>()))
             .Callback<MembershipRequest, CancellationToken>((r, _) => _created.Add(r));
         _requests.Setup(r => r.GetPendingAsync(_person, _kurinB, It.IsAny<CancellationToken>())).ReturnsAsync(() => _pending);
+        _requests.Setup(r => r.GetPendingFromAsync(_person, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid _, Guid from, CancellationToken _) => _asked.Where(r => r.FromKurinKey == from && r.Status == MembershipRequestStatus.Pending).ToList());
 
         var summary = new MemberSummary(_person, _account, _kurinA, null, "Назар", "Коваль", "n@x", null);
         _members.Setup(d => d.FindAsync(_person, It.IsAny<CancellationToken>())).ReturnsAsync(summary);
@@ -85,7 +90,7 @@ public class MembershipRequestTests
         return membership;
     }
 
-    private MembershipMoves Moves() => new(_unitOfWork.Object, _journal.Audit, _events.Object, _dues.Object);
+    private MembershipMoves Moves() => new(_unitOfWork.Object, _journal.Audit, _events.Object, _dues.Object, _time);
 
     private CreateMembershipRequestCommandHandler Create() =>
         new(_unitOfWork.Object, _members.Object, Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeSignal>(), _time);
@@ -93,18 +98,19 @@ public class MembershipRequestTests
     private DecideMembershipRequestCommandHandler Decide() =>
         new(_unitOfWork.Object, _members.Object, Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeSignal>(), _time);
 
-    private MembershipRequest Asked(MembershipRequestKind kind, DateTime? expires = null)
+    private MembershipRequest Asked(MembershipRequestKind kind, DateTime? expires = null, Guid? by = null)
     {
         var request = new MembershipRequest
         {
             Kind = kind,
             MemberKey = _person,
             FromKurinKey = _kurinA,
-            ToKurinKey = _kurinB,
+            ToKurinKey = by ?? _kurinB,
             CreatedAtUtc = Now.UtcDateTime.AddDays(-1),
             ExpiresAtUtc = expires ?? Now.UtcDateTime.AddDays(13)
         };
         _requests.Setup(r => r.GetAsync(request.MembershipRequestKey, It.IsAny<CancellationToken>())).ReturnsAsync(request);
+        _asked.Add(request);
         return request;
     }
 
@@ -264,6 +270,57 @@ public class MembershipRequestTests
 
         result.ErrorCode.Should().Be("RequestClosed");
         _opened.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task TwoKurinsAskingForOnePerson_OnlyTheFirstApprovedGetsThem()
+    {
+        ActingIn(_kurinA);
+        StandsIn(_kurinA);
+        Owes(0);
+        var toB = Asked(MembershipRequestKind.Transfer);
+        var toC = Asked(MembershipRequestKind.Transfer, by: _kurinC);
+
+        await Decide().Handle(new DecideMembershipRequestCommand(_kurinA, toB.MembershipRequestKey, Approve: true), default);
+
+        toC.IsOpen(Now.UtcDateTime).Should().BeFalse();
+        toC.Status.Should().Be(MembershipRequestStatus.Pending);
+        toB.Status.Should().Be(MembershipRequestStatus.Approved);
+        toB.ExpiresAtUtc.Should().Be(Now.UtcDateTime.AddDays(13));
+
+        var second = await Decide().Handle(new DecideMembershipRequestCommand(_kurinA, toC.MembershipRequestKey, Approve: true), default);
+
+        second.ErrorCode.Should().Be("RequestClosed");
+        _opened.Should().ContainSingle().Which.KurinKey.Should().Be(_kurinB);
+    }
+
+    [Fact]
+    public async Task ARequestAboutSomeoneWhoHasLeft_CannotBeApproved_AndLapses()
+    {
+        ActingIn(_kurinA);
+        StandsIn(_kurinA).LeftAtUtc = Now.UtcDateTime.AddDays(-1);
+        var request = Asked(MembershipRequestKind.AlsoJoin);
+
+        var result = await Decide().Handle(new DecideMembershipRequestCommand(_kurinA, request.MembershipRequestKey, Approve: true), default);
+
+        result.ErrorCode.Should().Be("MemberNotHere");
+        request.IsOpen(Now.UtcDateTime).Should().BeFalse();
+        _opened.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task TwoAnswersAtOnce_TheSecondSaveIsRefused()
+    {
+        ActingIn(_kurinA);
+        StandsIn(_kurinA);
+        var request = Asked(MembershipRequestKind.Transfer);
+        _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new StaleRowException(new Exception()));
+
+        var result = await Decide().Handle(new DecideMembershipRequestCommand(_kurinA, request.MembershipRequestKey, Approve: false), default);
+
+        result.Type.Should().Be(ResultType.Conflict);
+        result.ErrorCode.Should().Be("RequestClosed");
     }
 
     [Fact]

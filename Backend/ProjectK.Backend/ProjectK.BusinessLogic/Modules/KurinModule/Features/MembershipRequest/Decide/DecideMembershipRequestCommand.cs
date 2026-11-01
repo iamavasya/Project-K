@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.Common.Exceptions;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
@@ -74,6 +75,16 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
 
         if (request.Approve)
         {
+            // Someone who has left since the request was sent — let go to another kurin, or released —
+            // is no longer this kurin's to give.
+            var here = await _unitOfWork.Memberships.GetActiveAsync(asked.MemberKey, asked.FromKurinKey, cancellationToken);
+            if (here is null)
+            {
+                asked.Lapse(now);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                return ServiceResult<object>.Failure(ResultType.Conflict, "MemberNotHere", "They no longer stand in this kurin.");
+            }
+
             if (asked.Kind == MembershipRequestKind.Transfer
                 && await _moves.OwedToLeaveAsync(asked.MemberKey, asked.FromKurinKey, cancellationToken) > 0)
             {
@@ -83,8 +94,9 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
                     "They owe this kurin dues; «перевести» waits until they are paid in full.");
             }
 
-            if (asked.Kind == MembershipRequestKind.Transfer
-                && await _unitOfWork.Memberships.GetActiveAsync(asked.MemberKey, asked.FromKurinKey, cancellationToken) is { } here)
+            asked.Close(MembershipRequestStatus.Approved, now, _currentUser.UserId);
+
+            if (asked.Kind == MembershipRequestKind.Transfer)
             {
                 await _moves.CloseAsync(here, person.FullName, cancellationToken);
             }
@@ -94,17 +106,26 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
                 await _moves.OpenAsync(person, asked.ToKurinKey, asked.MembershipKind, cancellationToken);
             }
         }
+        else
+        {
+            asked.Close(MembershipRequestStatus.Declined, now, _currentUser.UserId);
+        }
 
-        asked.Status = request.Approve ? MembershipRequestStatus.Approved : MembershipRequestStatus.Declined;
-        asked.DecidedAtUtc = now;
-        asked.DecidedByUserKey = _currentUser.UserId;
-
-        await _events.PublishAsync(
-            new MembershipRequestDecided(
-                asked.MembershipRequestKey, asked.Kind, asked.MemberKey, person.UserKey, person.FullName,
-                asked.FromKurinKey, asked.ToKurinKey, request.Approve, _currentUser.UserId),
-            cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // The notices save as they are written, so a second answer given at the same time is
+        // refused on whichever save comes first, before anyone hears of it.
+        try
+        {
+            await _events.PublishAsync(
+                new MembershipRequestDecided(
+                    asked.MembershipRequestKey, asked.Kind, asked.MemberKey, person.UserKey, person.FullName,
+                    asked.FromKurinKey, asked.ToKurinKey, request.Approve, _currentUser.UserId),
+                cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (StaleRowException)
+        {
+            return ServiceResult<object>.Failure(ResultType.Conflict, "RequestClosed", "The request was already answered, withdrawn or has lapsed.");
+        }
 
         if (request.Approve && person.UserKey is { } userKey)
         {
