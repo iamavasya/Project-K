@@ -54,21 +54,13 @@ export async function openOwnKurin(request: APIRequestContext, testInfo: TestInf
   const email = scenarioEmail(suffix, 'archive.founder');
   const admin = await loginViaApi(request, e2eUsers.admin);
 
-  // Numbers 101–199 are shared with the onboarding specs. A taken number answers 409; two kurins
-  // opened with one number at the same moment lose a race the server answers with 500. Either way,
-  // another number.
-  let opened = false;
-  let lastFailure = '';
-  for (let attempt = 0; attempt < 8 && !opened; attempt++) {
-    const response = await request.post(`${e2eApiUrl}/auth/register/kurin`, {
-      headers: { Authorization: `Bearer ${admin.tokens!.accessToken}` },
-      data: { email, firstName: `Founder${suffix}`, lastName: 'Архівна', kurinNumber: 101 + randomInt(99) }
-    });
-    opened = response.ok();
-    lastFailure = opened ? '' : `${response.status()} ${await response.text()}`;
-    expect(opened || [409, 500].includes(response.status()), `Failed to open a kurin: ${lastFailure}`).toBe(true);
-  }
-  expect(opened, `No kurin opened after eight tries: ${lastFailure}`).toBe(true);
+  // No number: the onboarding specs draw theirs from 101–199 and have no retry, so a numbered kurin
+  // here could take the one they picked.
+  const response = await request.post(`${e2eApiUrl}/auth/register/kurin`, {
+    headers: { Authorization: `Bearer ${admin.tokens!.accessToken}` },
+    data: { email, firstName: `Founder${suffix}`, lastName: 'Архівна', kurinNumber: null }
+  });
+  expect(response.ok(), `Failed to open a kurin: ${response.status()} ${await response.text()}`).toBe(true);
 
   const invitation = await getLatestInvitationByEmail(request, email);
   await activateAccount(request, invitation.token, founderPassword);
