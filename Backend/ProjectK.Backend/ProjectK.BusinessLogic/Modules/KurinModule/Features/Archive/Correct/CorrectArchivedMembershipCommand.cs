@@ -104,7 +104,9 @@ public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<Co
             return ServiceResult<object>.Failure(ResultType.Conflict, ArchiveErrors.Overlap, "The dates overlap another membership of theirs in this kurin.");
         }
 
-        // A date that did not change keeps its time of day; a corrected one is that day.
+        // A date that did not change keeps its time of day; a corrected one is that day, and on the
+        // day they joined it is no earlier than the moment they joined.
+        var joinedWas = membership.JoinedAtUtc;
         membership.Kind = request.Kind;
         if (request.JoinedOn != joinedOn)
         {
@@ -113,8 +115,12 @@ public sealed class CorrectArchivedMembershipCommandHandler : IRequestHandler<Co
 
         if (request.LeftOn != leftOn)
         {
-            membership.LeftAtUtc = request.LeftOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var corrected = request.LeftOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            membership.LeftAtUtc = corrected < membership.JoinedAtUtc ? membership.JoinedAtUtc : corrected;
         }
+
+        await _unitOfWork.Archive.MoveStintEdgesAsync(
+            membership.MembershipKey, joinedWas, membership.JoinedAtUtc, leftAt, membership.LeftAtUtc!.Value, cancellationToken);
 
         var person = (await _members.GetByKeysAsync([membership.MemberKey], cancellationToken)).FirstOrDefault()?.FullName ?? string.Empty;
         await _audit.RecordAsync(

@@ -1,4 +1,4 @@
-import { APIRequestContext, expect, Locator, Page, TestInfo } from '@playwright/test';
+import { APIRequestContext, expect, Page, TestInfo } from '@playwright/test';
 import { randomInt } from 'node:crypto';
 import { crc32, deflateSync } from 'node:zlib';
 
@@ -211,20 +211,3 @@ export function pngFile(name: string, size = 24): { name: string; mimeType: stri
   return { name, mimeType: 'image/png', buffer };
 }
 
-/**
- * Types a date into a datepicker inside a p-dialog. `fillDatePicker` presses Escape to close the
- * calendar, and in a dialog Escape closes the dialog too, so this leaves the field with Tab.
- */
-export async function fillDialogDate(dialog: Locator, input: Locator, value: string): Promise<void> {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await input.click();
-    await input.fill('');
-    await input.pressSequentially(value, { delay: 50 });
-    await input.press('Tab');
-    await expect(dialog).toBeVisible();
-    if (await input.inputValue() === value) {
-      return;
-    }
-  }
-  await expect(input).toHaveValue(value);
-}

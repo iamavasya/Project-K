@@ -23,7 +23,8 @@ namespace ProjectK.BusinessLogic.Modules.DuesModule.Services;
 /// In a senior kurin each quarter is priced at the highest rate among the person's tags. A quarter not
 /// paid in full follows the tags and rates as they are now: the last quarter fallen due is repriced on
 /// every read, so a tag put on or taken off moves the running charge, and a rate set from a quarter
-/// reprices every unpaid quarter from it. A quarter paid in full keeps the tag it was paid at.
+/// reprices every unpaid quarter from it. A quarter paid in full keeps the tag it was paid at, and so
+/// does any quarter of someone who has left: their tags no longer count, their debt stays what it was.
 /// </para>
 /// </remarks>
 public sealed class DuesAccrual : IDuesAccrual
@@ -217,10 +218,11 @@ public sealed class DuesAccrual : IDuesAccrual
             return new HashSet<Guid>();
         }
 
+        var history = await _memberships.GetForMembersAsync(arriving.Select(a => a.Membership.MemberKey).Distinct().ToList(), cancellationToken);
         var came = new List<(Guid Arriving, Guid Left, int Quarter)>();
         foreach (var (membership, quarter) in arriving)
         {
-            foreach (var before in await _memberships.GetForMemberAsync(membership.MemberKey, cancellationToken))
+            foreach (var before in history.GetValueOrDefault(membership.MemberKey) ?? [])
             {
                 if (before.KurinKey != kurinKey && before.LeftAtUtc is { } leftAt && krai.QuarterOf(leftAt) == quarter)
                 {
@@ -252,8 +254,16 @@ public sealed class DuesAccrual : IDuesAccrual
         DuesQuarter from,
         CancellationToken cancellationToken)
     {
+        // Whoever has left stays out: their tags are no longer read, and that must not move their debt.
+        var members = memberships.Where(m => m.LeftAtUtc is null).ToDictionary(m => m.MembershipKey, m => m.MemberKey);
+        Guid? TagNow(DuesCharge charge) => DuesLedger.RateTagFor(
+            pricing.Rates,
+            pricing.Tags.GetValueOrDefault(members[charge.MembershipKey]) ?? [],
+            DuesQuarter.FromIndex(charge.Quarter));
+
+        // Nearly every read finds nothing to change: the whole ledger is built only when something would.
         var charges = await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken);
-        if (!charges.Any(c => c.Quarter >= from.Index))
+        if (!charges.Any(c => c.Quarter >= from.Index && members.ContainsKey(c.MembershipKey) && TagNow(c) != c.RateTagKey))
         {
             return false;
         }
@@ -268,16 +278,12 @@ public sealed class DuesAccrual : IDuesAccrual
         var unpaid = ledger.Accounts()
             .SelectMany(a => a.Quarters.Where(q => q.Balance < 0).Select(q => (a.MembershipKey, q.Quarter.Index)))
             .ToHashSet();
-        var members = memberships.ToDictionary(m => m.MembershipKey, m => m.MemberKey);
 
         var changed = false;
         var tracked = await _dues.DuesCharges.GetTrackedFromQuarterAsync(kurinKey, from.Index, cancellationToken);
-        foreach (var charge in tracked.Where(c => unpaid.Contains((c.MembershipKey, c.Quarter))))
+        foreach (var charge in tracked.Where(c => members.ContainsKey(c.MembershipKey) && unpaid.Contains((c.MembershipKey, c.Quarter))))
         {
-            var tags = members.TryGetValue(charge.MembershipKey, out var memberKey)
-                ? pricing.Tags.GetValueOrDefault(memberKey) ?? []
-                : [];
-            var tag = DuesLedger.RateTagFor(pricing.Rates, tags, DuesQuarter.FromIndex(charge.Quarter));
+            var tag = TagNow(charge);
             if (tag != charge.RateTagKey)
             {
                 charge.RateTagKey = tag;

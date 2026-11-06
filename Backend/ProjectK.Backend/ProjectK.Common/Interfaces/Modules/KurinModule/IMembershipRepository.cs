@@ -19,6 +19,10 @@ public interface IMembershipRepository : IBaseEntityRepository<Membership>
         Guid memberKey,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<MembershipRecord>>> GetRecordsForMembersAsync(
+        IReadOnlyCollection<Guid> memberKeys,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Who used to belong to this kurin and no longer does — one entry per person, their last
     /// spell here.

@@ -64,6 +64,13 @@ describe('registerRow', () => {
 });
 
 describe('registerCsv', () => {
+  it('не дає таблиці виконати імʼя як формулу, а числа лишає числами', () => {
+    const row = registerRow({ ...owing, fullName: '=HYPERLINK("x")' }, year, current);
+    const [, line] = registerCsv([row], [], 'Людина', current).split('\r\n');
+    expect(line.startsWith('"\'=HYPERLINK(""x"")"')).toBe(true);
+    expect(line).toMatch(/;-\d/);
+  });
+
   it('пише рядок на людину з тегами, через крапку з комою', () => {
     const csv = registerCsv([registerRow(owing, year, current)], [{ tagKey: 'ups', name: 'УПС', colorHex: '#2B6CB0' }], 'Людина', current);
     const [header, line] = csv.split('\r\n');

@@ -75,7 +75,7 @@ public sealed class DuesEntryWriter
 
             var membership = (await _memberships.GetInKurinAsync(kurinKey, cancellationToken))
                 .FirstOrDefault(m => m.MembershipKey == membershipKey);
-            var standsHere = membership is not null && membership.LeftAtUtc is null && membership.Kind == MembershipKind.Youth;
+            var standsHere = membership is not null && membership.LeftAtUtc is null;
             var chargedHere = membership is not null
                 && (await _dues.DuesCharges.GetForKurinAsync(kurinKey, cancellationToken))
                     .Any(c => c.MembershipKey == membershipKey && c.GroupKey is null);

@@ -52,6 +52,18 @@ public interface IKurinArchiveRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>Marks the membership for deletion; its гурток stints go with it in the database.</summary>
+    /// <summary>
+    /// Moves the edges of a membership's гурток stints with a corrected membership: the stint that
+    /// opened at <paramref name="joinedWas"/> and the one that closed at <paramref name="leftWas"/>.
+    /// </summary>
+    Task MoveStintEdgesAsync(
+        Guid membershipKey,
+        DateTime joinedWas,
+        DateTime joinedNow,
+        DateTime leftWas,
+        DateTime leftNow,
+        CancellationToken cancellationToken = default);
+
     void RemoveMembership(Membership membership);
 
     /// <summary>

@@ -147,6 +147,32 @@ public class KurinDuesHandlerTests
     }
 
     [Fact]
+    public async Task TheProvidOfASeniorKurin_MayPayBeforeTheirFirstCharge()
+    {
+        // A kurin paying за пройдений квартал has not charged a new member yet; everyone there pays.
+        var membershipKey = Guid.NewGuid();
+        var directory = new Mock<IMembershipDirectory>();
+        directory.Setup(m => m.GetInKurinAsync(Kurin, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new KurinMembershipRecord(membershipKey, Guid.NewGuid(), null, MembershipKind.Staff, new DateTime(2026, 9, 1), null)]);
+        _dues.SetupGet(d => d.DuesCharges).Returns(Mock.Of<IDuesChargeRepository>(r =>
+            r.GetForKurinAsync(Kurin, It.IsAny<CancellationToken>()) == Task.FromResult<IReadOnlyList<DuesCharge>>(new List<DuesCharge>())));
+        _shape.Setup(s => s.IsSeniorAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var writer = new DuesEntryWriter(_dues.Object, directory.Object, Mock.Of<IMemberDirectory>(), KraiProfiles.Paying(Kurin, _upstream), _shape.Object);
+        var request = new UpsertDuesEntryRequest
+        {
+            Kind = DuesEntryKind.Contribution,
+            Method = DuesPaymentMethod.Card,
+            Amount = 240,
+            OccurredOn = new DateOnly(2026, 10, 5),
+            MembershipKey = membershipKey
+        };
+
+        var refused = await writer.CheckForKurinAsync<object>(Kurin, request, CancellationToken.None);
+
+        refused.Should().BeNull();
+    }
+
+    [Fact]
     public async Task AGroupsOperation_IsNotTheKurinsToEdit()
     {
         var groupExpense = new DuesEntry { KurinKey = Kurin, GroupKey = GroupA, Kind = DuesEntryKind.Expense, Amount = 10 };

@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Audit;
@@ -46,6 +47,27 @@ public class KurinTagHandlerTests
         _transaction.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Callback(() => _order.Add("commit")).Returns(Task.CompletedTask);
         TagsAre(enabled: true);
         InKurin(MemberKey);
+    }
+
+    /// <summary>
+    /// A rate by a deleted tag can be neither seen nor changed, so no unpaid quarter may stay on it;
+    /// the repricing reads the people's tags, so it comes after the tag is gone.
+    /// </summary>
+    [Fact]
+    public async Task DeletingATag_RepricesUnpaidQuartersAfterItIsGone()
+    {
+        var tag = Tag("УСП");
+        _tags.Setup(t => t.GetWithMembersAsync(tag.KurinTagKey, It.IsAny<CancellationToken>())).ReturnsAsync(tag);
+        _uow.Setup(u => u.AgendaItems).Returns(Mock.Of<IAgendaItemRepository>());
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).Callback(() => _order.Add("save")).ReturnsAsync(1);
+        var dues = new Mock<IDuesDirectory>();
+        dues.Setup(d => d.RepriceUnpaidAsync(KurinKey, It.IsAny<CancellationToken>())).Callback(() => _order.Add("reprice")).Returns(Task.CompletedTask);
+
+        var result = await new DeleteKurinTagCommandHandler(_uow.Object, _audit.Object, dues.Object)
+            .Handle(new DeleteKurinTagCommand(KurinKey, tag.KurinTagKey), CancellationToken.None);
+
+        result.Type.Should().Be(ResultType.Success);
+        _order.Should().ContainInOrder("save", "reprice");
     }
 
     /// <summary>

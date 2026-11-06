@@ -28,6 +28,18 @@ public class MembershipRepository : BaseEntityRepository<Membership>, IMembershi
         => await AsRecords(Context.Memberships.Where(m => m.MemberKey == memberKey))
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyCollection<MembershipRecord>>> GetRecordsForMembersAsync(
+        IReadOnlyCollection<Guid> memberKeys,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = Context.Memberships.Where(m => memberKeys.Contains(m.MemberKey));
+        var owners = await rows.Select(m => new { m.MembershipKey, m.MemberKey }).ToDictionaryAsync(m => m.MembershipKey, m => m.MemberKey, cancellationToken);
+        var records = await AsRecords(rows).ToListAsync(cancellationToken);
+        return records
+            .GroupBy(record => owners[record.MembershipKey])
+            .ToDictionary(group => group.Key, group => (IReadOnlyCollection<MembershipRecord>)group.ToList());
+    }
+
     public async Task<IReadOnlyCollection<FormerMember>> GetFormerInKurinAsync(
         Guid kurinKey,
         CancellationToken cancellationToken = default)

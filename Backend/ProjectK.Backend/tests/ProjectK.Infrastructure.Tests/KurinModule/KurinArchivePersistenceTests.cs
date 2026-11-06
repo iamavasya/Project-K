@@ -37,6 +37,34 @@ public class KurinArchivePersistenceTests
     }
 
     [Fact]
+    public async Task CorrectedDates_MoveTheEdgesOfTheStints()
+    {
+        var left = new DateTime(2026, 6, 30);
+        Guid membershipKey;
+        DateTime joined;
+        await using (var context = new AppDbContext(_options))
+        {
+            var membership = Join(context, _sokoly.GroupKey);
+            membership.LeftAtUtc = left;
+            (membershipKey, joined) = (membership.MembershipKey, membership.JoinedAtUtc);
+            await context.SaveChangesAsync();
+        }
+
+        var newLeft = new DateTime(2026, 5, 1);
+        var newJoined = new DateTime(2024, 9, 1);
+        await using (var context = new AppDbContext(_options))
+        {
+            await new KurinArchiveRepository(context).MoveStintEdgesAsync(membershipKey, joined, newJoined, left, newLeft);
+            await context.SaveChangesAsync();
+        }
+
+        await using var read = new AppDbContext(_options);
+        var stint = await read.MembershipGroupStints.SingleAsync();
+        Assert.Equal(newJoined, stint.FromUtc);
+        Assert.Equal(newLeft, stint.ToUtc);
+    }
+
+    [Fact]
     public async Task Joining_Moving_AndLeaving_LeaveOneStintPerGurtok()
     {
         Guid membershipKey;

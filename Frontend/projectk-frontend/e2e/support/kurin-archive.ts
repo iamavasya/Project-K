@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto';
 
-import { APIRequestContext, expect, Locator, TestInfo } from '@playwright/test';
+import { APIRequestContext, expect, TestInfo } from '@playwright/test';
 
 import { activateAccount, getLatestInvitationByEmail, loginViaApi } from './api-client';
 import { e2eApiUrl } from './e2e-api';
@@ -28,26 +28,6 @@ export interface ArchiveMember {
 }
 
 const founderPassword = 'Founder@12345';
-
-/**
- * Types a date into a `p-datepicker` that sits in a dialog and opens only from its icon.
- * `fillDatePicker` ends with Escape to close the overlay; here no overlay is open, so Escape reaches
- * the dialog and closes it. This leaves the field with Tab instead, and checks the value stuck.
- */
-export async function fillDialogDate(input: Locator, value: string): Promise<void> {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await input.click();
-    await input.press('ControlOrMeta+a');
-    await input.pressSequentially(value, { delay: 50 });
-    await input.press('Tab');
-
-    if (await input.inputValue() === value) {
-      return;
-    }
-  }
-
-  await expect(input).toHaveValue(value);
-}
 
 export async function openOwnKurin(request: APIRequestContext, testInfo: TestInfo): Promise<OwnKurin> {
   const suffix = `${scenarioSuffix(testInfo)}${randomInt(1000)}`;

@@ -1,8 +1,8 @@
 import { expect, Page, test } from '@playwright/test';
 
 import { loginThroughUi } from './support/login';
-import { fillDialogDate, openOwnKurin } from './support/kurin-archive';
-import { dialog, openRowMenu } from './support/ui';
+import { openOwnKurin } from './support/kurin-archive';
+import { dialog, fillDialogDate, openRowMenu } from './support/ui';
 
 /**
  * «Архів куреня» (ARCH-01): former roles and memberships, corrections, who sees what, and a гурток

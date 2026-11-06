@@ -96,6 +96,25 @@ export async function fillDatePicker(input: Locator, value: string): Promise<voi
   await expect(input).toHaveValue(value);
 }
 
+/**
+ * Types a date into a datepicker inside a dialog. `fillDatePicker` ends with Escape, and in a dialog
+ * Escape closes the dialog too, so this leaves the field with Tab.
+ */
+export async function fillDialogDate(input: Locator, value: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await input.click();
+    await input.fill('');
+    await input.pressSequentially(value, { delay: 50 });
+    await input.press('Tab');
+
+    if (await input.inputValue() === value) {
+      return;
+    }
+  }
+
+  await expect(input).toHaveValue(value);
+}
+
 export async function fillMemberRequiredFields(page: Page, data: {
   firstName: string;
   middleName: string;

@@ -350,6 +350,23 @@ public class KurinArchiveHandlerTests
     }
 
     [Fact]
+    public async Task ALeaveDateCorrectedToTheDayTheyJoined_IsNotBeforeTheyJoined()
+    {
+        var membership = FormerMembership();
+        membership.JoinedAtUtc = new DateTime(2019, 9, 1, 14, 0, 0, DateTimeKind.Utc);
+        _archive.Setup(a => a.FindMembershipAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _archive.Setup(a => a.GetStintGroupKeysAsync(membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _archive.Setup(a => a.GetOtherPeriodsAsync(membership.MemberKey, _kurinKey, membership.MembershipKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        var leftWas = membership.LeftAtUtc!.Value;
+
+        var result = await CorrectMembership().Handle(new CorrectArchivedMembershipCommand(_kurinKey, membership.MembershipKey, MembershipKind.Youth, new DateOnly(2019, 9, 1), new DateOnly(2019, 9, 1)), default);
+
+        result.Type.Should().Be(ResultType.Success);
+        membership.LeftAtUtc.Should().Be(membership.JoinedAtUtc);
+        _archive.Verify(a => a.MoveStintEdgesAsync(membership.MembershipKey, membership.JoinedAtUtc, membership.JoinedAtUtc, leftWas, membership.JoinedAtUtc, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task CorrectedDates_MayNotOverlapAnotherMembershipOfTheirsInTheKurin()
     {
         var membership = FormerMembership();

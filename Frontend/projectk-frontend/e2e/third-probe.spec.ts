@@ -6,7 +6,6 @@ import {
   addPerson,
   addProject,
   apiStatus,
-  fillDialogDate,
   createProbeKurin,
   getThirdProbe,
   openThirdProbe,
@@ -14,6 +13,7 @@ import {
   projectBody,
   thirdProbeId
 } from './support/third-probe';
+import { fillDialogDate } from './support/ui';
 
 /**
  * The third-probe notebook (PROBE-02): the youth writes it, their впорядник signs it, nobody signs
@@ -45,7 +45,7 @@ test.describe('Third-probe notebook', () => {
       const file = page.getByRole('dialog', { name: 'Ментори, рефлексія й табір' });
       await file.getByLabel('Звʼязковий').fill('Володимир Іваненко');
       await file.getByLabel('Впорядник').fill(`${kurin.mentor.firstName} ${kurin.mentor.lastName}`);
-      await fillDialogDate(file, file.getByLabel('Рефлексія відбулася'), '05.03.2026');
+      await fillDialogDate(file.getByLabel('Рефлексія відбулася'), '05.03.2026');
       await file.getByLabel('З ким').fill('Володимир Іваненко');
       await file.getByRole('combobox', { name: 'КВТ чи інший' }).click();
       await page.getByRole('option', { name: 'КВТ' }).click();

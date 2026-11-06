@@ -46,8 +46,8 @@ function paidUntil(account: DuesAccountDto): QuarterDto | null {
 export function registerCsv(rows: RegisterRow[], tags: DuesTagDto[], nameHeader: string, current: QuarterDto): string {
   const header = [nameHeader, 'Теги', 'Ставка за квартал', 'Сплачено за рік', 'Борг за минулі', quarterLabel(current), 'Сплачено до', 'Баланс'];
   const lines = rows.map(row => [
-    row.account.fullName,
-    tags.filter(t => row.account.tagKeys?.includes(t.tagKey)).map(t => t.name).join(', '),
+    text(row.account.fullName),
+    text(tags.filter(t => row.account.tagKeys?.includes(t.tagKey)).map(t => t.name).join(', ')),
     number(row.account.rateNow),
     number(row.paidThisYear),
     number(row.debtPast),
@@ -60,6 +60,11 @@ export function registerCsv(rows: RegisterRow[], tags: DuesTagDto[], nameHeader:
 
 function number(value: number | null | undefined): string {
   return value === null || value === undefined ? '' : String(value).replace('.', ',');
+}
+
+/** A name a spreadsheet would run as a formula, kept as plain text. Numbers do not come through here: -300 stays a number. */
+function text(value: string): string {
+  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
 }
 
 function cell(value: string): string {

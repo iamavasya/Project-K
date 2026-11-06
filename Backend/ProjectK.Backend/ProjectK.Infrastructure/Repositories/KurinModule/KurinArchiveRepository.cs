@@ -161,6 +161,28 @@ public class KurinArchiveRepository : IKurinArchiveRepository
         return periods.Select(period => (period.JoinedAtUtc, period.LeftAtUtc)).ToList();
     }
 
+    public async Task MoveStintEdgesAsync(
+        Guid membershipKey,
+        DateTime joinedWas,
+        DateTime joinedNow,
+        DateTime leftWas,
+        DateTime leftNow,
+        CancellationToken cancellationToken = default)
+    {
+        foreach (var stint in await _context.MembershipGroupStints.Where(stint => stint.MembershipKey == membershipKey).ToListAsync(cancellationToken))
+        {
+            if (stint.FromUtc == joinedWas)
+            {
+                stint.FromUtc = joinedNow;
+            }
+
+            if (stint.ToUtc == leftWas)
+            {
+                stint.ToUtc = leftNow;
+            }
+        }
+    }
+
     public void RemoveMembership(Membership membership) => _context.Memberships.Remove(membership);
 
     public async Task<int> RemoveDissolvedGroupAsync(Group group, CancellationToken cancellationToken = default)

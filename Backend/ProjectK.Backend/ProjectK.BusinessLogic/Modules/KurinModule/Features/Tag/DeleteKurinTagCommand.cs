@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.Common.Interfaces;
+using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -17,11 +18,13 @@ public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTa
 {
     private readonly IUnitOfWork _uow;
     private readonly IKurinAudit _audit;
+    private readonly IDuesDirectory _dues;
 
-    public DeleteKurinTagCommandHandler(IUnitOfWork uow, IKurinAudit audit)
+    public DeleteKurinTagCommandHandler(IUnitOfWork uow, IKurinAudit audit, IDuesDirectory dues)
     {
         _uow = uow;
         _audit = audit;
+        _dues = dues;
     }
 
     public async Task<ServiceResult<object>> Handle(DeleteKurinTagCommand request, CancellationToken cancellationToken)
@@ -42,6 +45,9 @@ public sealed class DeleteKurinTagCommandHandler : IRequestHandler<DeleteKurinTa
         await _uow.AgendaItems.RemoveAssignmentsForTargetsAsync([tag.KurinTagKey], cancellationToken);
         _uow.KurinTags.Delete(tag, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
+
+        // A rate by this tag can no longer be seen or changed: nobody's debt may stay on it.
+        await _dues.RepriceUnpaidAsync(request.KurinKey, cancellationToken);
 
         return new ServiceResult<object>(ResultType.Success);
     }

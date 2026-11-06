@@ -72,8 +72,9 @@ public class DuesAccrualTests
     {
         var directory = new Mock<IMembershipDirectory>();
         directory.Setup(d => d.GetInKurinAsync(Kurin, It.IsAny<CancellationToken>())).ReturnsAsync(() => _memberships);
-        directory.Setup(d => d.GetForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => _history);
+        directory.Setup(d => d.GetForMembersAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyCollection<Guid> keys, CancellationToken _) =>
+                keys.ToDictionary(key => key, key => (IReadOnlyCollection<MembershipRecord>)_history));
         var profiles = new Mock<IKraiProfileProvider>();
         if (_zone is not null)
         {
@@ -323,6 +324,57 @@ public class DuesAccrualTests
         q1.RateTagKey.Should().BeNull();
         q2.RateTagKey.Should().Be(usp);
         _dues.Verify(d => d.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ARateSetBackwards_LeavesTheDebtOfSomeoneWhoLeft()
+    {
+        // Their tags no longer count in the kurin; that must not turn their debt into the rate for everyone.
+        var usp = Guid.NewGuid();
+        RateFrom(new DuesQuarter(2026, 1));
+        TagRate(usp, new DuesQuarter(2026, 1), 300);
+        var gone = Member(null, new DateTime(2025, 1, 1), left: new DateTime(2026, 4, 2));
+        var q1 = Charged(gone, new DuesQuarter(2026, 1), usp);
+        Senior();
+
+        await Accrual().RepriceKurinAsync(Kurin, new DuesQuarter(2026, 1));
+
+        q1.RateTagKey.Should().Be(usp);
+    }
+
+    [Fact]
+    public async Task ADeletedTag_LeavesNoUnpaidQuarterOnItsRate()
+    {
+        var usp = Guid.NewGuid();
+        RateFrom(new DuesQuarter(2025, 4));
+        TagRate(usp, new DuesQuarter(2025, 4), 300);
+        var person = Member(null, new DateTime(2025, 1, 1));
+        var q4 = Charged(person, new DuesQuarter(2025, 4), usp);
+        var q1 = Charged(person, new DuesQuarter(2026, 1), usp);
+        // The tag's rate is 345 a quarter: the first quarter is paid and keeps the price it was paid at.
+        Paid(person, 345);
+        Senior();
+
+        await Accrual().RepriceKurinAsync(Kurin, DuesQuarter.FromIndex(0));
+
+        q4.RateTagKey.Should().Be(usp);
+        q1.RateTagKey.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task NothingToReprice_ReadsNoLedger()
+    {
+        var usp = Guid.NewGuid();
+        RateFrom(new DuesQuarter(2026, 1));
+        TagRate(usp, new DuesQuarter(2026, 1), 300);
+        var person = Member(null, new DateTime(2025, 1, 1));
+        Charged(person, new DuesQuarter(2026, 1), usp);
+        Charged(person, new DuesQuarter(2026, 2), usp);
+        Senior((person.MemberKey, [usp]));
+
+        await Accrual().AccrueKurinAsync(Kurin);
+
+        _dues.VerifyGet(d => d.DuesEntries, Times.Never);
     }
 
     [Fact]
