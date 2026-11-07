@@ -27,7 +27,7 @@ import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state'
 import { KurinBranchRequestService } from '../../../kurinModule/services/kurin-branch-request-service/kurin-branch-request.service';
 import { KurinBranchRequestDto } from '../../../kurinModule/models/kurin-branch-request.dto';
 import { KurinBranch, KurinNumbering } from '../../../kurinModule/models/enums/kurin-branch.enum';
-import { kurinBranchesName } from '../../../../shared/functions/kurin-label.function';
+import { kurinBranchesName, kurinGroupTitle } from '../../../../shared/functions/kurin-label.function';
 
 @Component({
   selector: 'app-waitlist-management',
@@ -174,7 +174,7 @@ import { kurinBranchesName } from '../../../../shared/functions/kurin-label.func
               } @else if (entry.isPreparatoryKurin) {
                 <p-tag severity="warn" value="Підготовчий курінь" pTooltip="Курінь ще без числа: його задають у налаштуваннях куреня" />
               } @else if (entry.isKurinLeaderCandidate) {
-                <p-tag severity="info" [value]="'Курінь ' + entry.claimedKurinNameOrNumber" />
+                <p-tag severity="info" [value]="youthClaim(entry)" />
               } @else {
                 <span class="text-gray-400 text-sm italic">Звичайний учасник</span>
               }
@@ -340,6 +340,12 @@ export class WaitlistManagementComponent implements OnInit {
 
   branchesName(branches: KurinNumbering[]): string {
     return kurinBranchesName(branches);
+  }
+
+  /** «Курінь ч. 5 УПЮ», from what the applicant claimed: the number alone would read the same in every улад. */
+  youthClaim(entry: WaitlistEntry): string {
+    const claimed = (entry.claimedKurinNameOrNumber ?? '').trim();
+    return /^\d+$/.test(claimed) ? kurinGroupTitle({ number: Number(claimed) }) : `Курінь ${claimed} УПЮ`;
   }
 
   /** «5-й курінь УСП · 20-й курінь УПС», from what the applicant claimed. */

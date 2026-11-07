@@ -20,6 +20,9 @@ public partial class DemoDataSeeder
     internal const string OrdenEmail = "orden@projectk.com";
     internal const string ChortyEmail = "chorty@projectk.com";
 
+    /// <summary>The Зв'язковий of the УПЮ kurin that shares the Order's number in УСП.</summary>
+    internal const string SameNumberYouthEmail = "kurin5@projectk.com";
+
     private async Task SeedSeniorKurinsAsync(CancellationToken cancellationToken)
     {
         var orden = await EnsureSeniorKurinAsync(
@@ -67,6 +70,8 @@ public partial class DemoDataSeeder
             });
         }
 
+        await SeedSameNumberYouthKurinAsync(cancellationToken);
+
         const string applicantEmail = "kulchytskyi@projectk.com";
         if (!await _dbContext.WaitlistEntries.AnyAsync(e => e.Email == applicantEmail, cancellationToken))
         {
@@ -87,6 +92,22 @@ public partial class DemoDataSeeder
             });
         }
 
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// A УПЮ kurin with the Order's УСП number. Each улад counts its own, so 5-й курінь УПЮ and 5-й
+    /// курінь УСП are two kurins, and the admin pages have to keep them apart.
+    /// </summary>
+    private async Task SeedSameNumberYouthKurinAsync(CancellationToken cancellationToken)
+    {
+        var kurin = await EnsureSeniorKurinAsync(
+            [new KurinNumbering(KurinBranch.UPYu, 5)],
+            "Олени Степанів",
+            "Львів",
+            "Курінь УПЮ. Сходини щосуботи в домівці на Личаківській.",
+            cancellationToken);
+        await EnsureSeniorLeaderAsync(kurin.KurinKey, SameNumberYouthEmail, "Соломія", "Дмитрук", 1990, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
