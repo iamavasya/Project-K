@@ -52,6 +52,9 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Service
                 UserId = user.Id,
                 KurinKey = here?.KurinKey,
                 KurinNumber = here?.KurinNumber,
+                KurinBranch = here?.Branch,
+                KurinBranches = here is null ? null : here.KurinBranches ?? [new KurinNumbering(here.Branch, here.KurinNumber)],
+                KurinNamedAfter = here?.KurinNamedAfter,
                 Email = user.Email!,
                 // Admin panel manages the system role only; offices are shown elsewhere.
                 Role = isAdmin ? SystemRole.Admin : SystemRole.Member,

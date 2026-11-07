@@ -1,3 +1,4 @@
+import { UserRow } from '../../functions/user-kurin-groups.function';
 import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UsersListComponent } from './users-list';
@@ -27,7 +28,8 @@ describe('UsersListComponent', () => {
       firstName: 'Jane',
       lastName: 'Smith',
       role: 'Admin',
-      kurinNumber: 101, kurinKey: null
+      // Another kurin with the same number: each улад counts its own, so it is its own group.
+      kurinNumber: 101, kurinKey: 'kurin-2'
     },
     {
       userId: 'user-3',
@@ -35,7 +37,7 @@ describe('UsersListComponent', () => {
       firstName: 'Bob',
       lastName: 'Johnson',
       role: 'Member',
-      kurinNumber: 101, kurinKey: 'kurin-2'
+      kurinNumber: null, kurinKey: null
     }
   ];
 
@@ -139,7 +141,9 @@ describe('UsersListComponent', () => {
       fixture.detectChanges();
 
       expect(mockUserService.getAllUsers).toHaveBeenCalled();
-      expect(component.users).toEqual(mockUsers);
+      expect(component.users).toMatchObject(mockUsers);
+      expect(component.users.map(user => user.groupTitle)).toEqual(['Курінь ч. 101 УПЮ', 'Курінь ч. 101 УПЮ', 'Без куреня']);
+      expect(new Set(component.users.map(user => user.group)).size).toBe(3);
       expect(component.users).toHaveLength(3);
     });
 
@@ -454,7 +458,7 @@ describe('UsersListComponent', () => {
     });
 
     it('should handle user with null kurinKey', () => {
-      const user = component.users[1]; // Admin with null kurinKey
+      const user = component.users[2]; // In no kurin, so listed last
       component.onRowEditInit(user);
       
       expect(component.clonedUsers[user.userId as string].kurinKey).toBeNull();
@@ -485,7 +489,7 @@ describe('UsersListComponent', () => {
       component.ngOnInit();
       
       expect(component.users).toHaveLength(0);
-      expect(() => component.onRowEditInit({} as UserDto)).not.toThrow();
+      expect(() => component.onRowEditInit({} as UserRow)).not.toThrow();
     });
   });
 });
