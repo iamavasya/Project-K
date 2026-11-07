@@ -42,6 +42,9 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Service
             users.Select(user => user.Id).ToList(),
             cancellationToken);
 
+        var kraiOf = (await _unitOfWork.Kurins.GetAllAsync(cancellationToken))
+            .ToDictionary(kurin => kurin.KurinKey, kurin => kurin.KraiCode);
+
         List<UserDto> result = [];
         foreach (var user in users)
         {
@@ -55,6 +58,7 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Service
                 KurinBranch = here?.Branch,
                 KurinBranches = here is null ? null : here.KurinBranches ?? [new KurinNumbering(here.Branch, here.KurinNumber)],
                 KurinNamedAfter = here?.KurinNamedAfter,
+                KurinKraiCode = here is not null && kraiOf.TryGetValue(here.KurinKey, out var krai) ? krai : null,
                 Email = user.Email!,
                 // Admin panel manages the system role only; offices are shown elsewhere.
                 Role = isAdmin ? SystemRole.Admin : SystemRole.Member,

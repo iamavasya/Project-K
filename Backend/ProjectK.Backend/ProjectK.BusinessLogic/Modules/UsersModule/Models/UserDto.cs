@@ -22,6 +22,9 @@ public class UserDto
     public KurinBranch? KurinBranch { get; set; }
     public IReadOnlyList<KurinNumbering>? KurinBranches { get; set; }
     public string? KurinNamedAfter { get; set; }
+
+    /// <summary>The kurin's край: numbers are the kurin's own per край too, so two УПЮ kurins may share one.</summary>
+    public string? KurinKraiCode { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string Email { get; set; }

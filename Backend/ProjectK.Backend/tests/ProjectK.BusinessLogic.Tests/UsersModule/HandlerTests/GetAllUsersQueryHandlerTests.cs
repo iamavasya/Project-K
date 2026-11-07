@@ -144,6 +144,20 @@ public class GetAllUsersQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldNameTheKurinsKrai_SinceTwoKraiCanEachHaveAKurin5()
+    {
+        var userId = Guid.NewGuid();
+        var kurin = new Kurin(5) { KraiCode = "cz" };
+        _kurinRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Kurin> { kurin });
+        SetupUserManagerUsers(new List<AppUser> { new() { Id = userId, Email = "cz5@example.com", FirstName = "Ян", LastName = "Новак" } }.AsQueryable());
+        Standing(userId, kurin.KurinKey, 5);
+
+        var userDto = (await _handler.Handle(new GetAllUsersQuery(), CancellationToken.None)).Data!.Single();
+
+        Assert.Equal("cz", userDto.KurinKraiCode);
+    }
+
+    [Fact]
     public async Task Handle_ShouldReturnSuccessWithEmptyList_WhenNoUsersExist()
     {
         // Arrange
