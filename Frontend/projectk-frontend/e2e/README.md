@@ -28,8 +28,11 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
   - mentors can create members only in assigned groups;
   - leadership setup routes are manager/admin-only;
   - member self-edit hides destructive and warning controls.
-- Check moving people between kurins (1.4, `kurin-transfers.spec.ts`), each test on its own fresh
-  kurins and people from `e2e/support/transfers.ts`, so no seeded person is moved:
+- Check moving people between kurins (1.4, `kurin-transfers.spec.ts`) in the «Переходи» mode of the
+  «Реєстр», each test on its own fresh kurins and people from `e2e/support/transfers.ts`, so no seeded
+  person is moved:
+  - the mode opens from the «Реєстр» tab, and the old `/kurin/transfers?code=` address of a printed QR
+    opens it with the code looked up;
   - a kurin finds a person by their code and asks «прийняти ще й до нас»; the person's kurin approves in
     the confirm dialog; the asking kurin, the person's kurin and the person are notified;
   - «перевести» after the confirm dialog leaves the person in the asking kurin only;
@@ -37,7 +40,7 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
   - a senior kurin asking reads «7-й курінь УСП», not «к. ч. 7» (seeded `chorty@projectk.com`, over
     the API only, its request withdrawn afterwards);
   - a виховник sees the kurin settings read-only («Лише перегляд», no «Зберегти»);
-  - a member without kurin management is sent to `/forbidden` from «Склад куреня».
+  - a member without kurin management is sent to `/forbidden` from «Переходи», by its address and the old one.
 - Check the permanent card link (1.4, `card-link.spec.ts`): made in the account settings, opened in a
   browser that never signed in, switched off, and then «Картку не знайдено».
 - Check conditional organization UI:
@@ -74,16 +77,17 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
 - Check that a debt for past quarters keeps a person in the kurin: «Вивести» on a debtor's card in the
   seeded Орден Хрестоносців names the debt and the release is refused (chromium only — it signs in as
   the Order's seeded Зв'язковий and changes nothing).
-- Check «Архів куреня» (`kurin-archive.spec.ts`), each test in a kurin of its own from `e2e/support/kurin-archive.ts`:
-  - the Звʼязковий sees former roles and memberships and corrects a closed membership's dates;
-  - their own record carries «своє» and no correction;
-  - a гуртковий sees only their гурток's former memberships and no danger zone;
+- Check the «Архів» mode of the «Реєстр» (`kurin-archive.spec.ts`), each test in a kurin of its own from `e2e/support/kurin-archive.ts`:
+  - the Звʼязковий has all four tabs (Склад, Переходи, Архів, Імпорт), sees former roles and memberships and corrects a closed membership's dates;
+  - the Звʼязковий takes a former member back from their archive row;
+  - their own record carries «своє» and no correction; the old `/kurin/:kurinKey/archive` address opens the mode;
+  - a гуртковий sees only their гурток's former memberships, no danger zone, no «Повернути» and no «Переходи» tab;
   - «Розформувати» sends an empty гурток to the archive and refuses one with money in its box, with a message.
 - Check the archive's danger zone (`kurin-archive-danger.spec.ts`):
   - a wrong password is refused, the right one opens the zone with ten deletions;
   - one deletion at a time, after a confirmation;
   - a membership with dues and one whose role is still held are refused, each with its message;
-  - leaving the page ends the zone on the server: its ticket no longer deletes.
+  - another tab of the «Реєстр» ends the zone on the server, with a message: its ticket no longer deletes.
 - Check «Пластовий життєпис» (`life-story.spec.ts`):
   - a youth's story has only the УПЮ stage (both projects);
   - for the senior from the demo seed: the button on the card, the УПЮ and УСП stages with every ступінь, and the Order's Звʼязковий may correct them while its Скриптор may not (chromium only: it signs in as shared seeded accounts).

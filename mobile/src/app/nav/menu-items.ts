@@ -71,10 +71,8 @@ function kurinEntries(state: AuthState, context: MenuContext, kurinKey: string):
   const canReadKurinSettings = canManageKurinSettings || has(state, 'KurinSettings:Read');
   const items: MenuEntry[] = [{ key: 'kurin', label: 'Курінь', icon: 'flag', tile: '#ff9500', link: '/tabs/kurin' }];
   if (canSeeRegistry) {
+    // One web page for склад, переходи, архів and імпорт; the phone keeps «Переходи» of its own.
     items.push({ key: 'registry', label: 'Реєстр', icon: 'grid', tile: '#8e8e93', web: '/kurin/registry' });
-  }
-  if (canManageKurinSettings) {
-    items.push({ key: 'import', label: 'Імпорт складу', icon: 'cloud-upload', tile: '#8e8e93', web: '/kurin/import' });
   }
   items.push(
     { key: 'calendar', label: 'Календар', icon: 'calendar', tile: '#ff3b30', link: '/tabs/calendar' },

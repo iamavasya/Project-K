@@ -61,7 +61,7 @@ export function pwaPathFor(webUrl: string): string {
     [/^\/planning(\/[^/]+)?$/, () => '/m/tabs/calendar/planning'],
     [/^\/tasks(\/[^/]+)?$/, () => '/m/tabs/tasks'],
     [/^\/kurin$/, () => '/m/tabs/kurin'],
-    [/^\/kurin\/transfers$/, () => '/m/tabs/kurin/transfers'],
+    [/^\/kurin(\/registry)?\/transfers$/, () => '/m/tabs/kurin/transfers'],
     [/^\/group\/([^/]+)$/, ([, group]) => `/m/tabs/kurin/group/${group}`],
     [/^\/member\/([^/]+)$/, ([, member]) => `/m/tabs/kurin/member/${member}`],
     [/^\/settings\/account$/, () => '/m/tabs/more/account'],

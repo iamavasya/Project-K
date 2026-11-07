@@ -588,7 +588,7 @@ export class MemberCardComponent implements OnInit {
 
   openArchive(): void {
     if (this.archiveKurinKey) {
-      this.router.navigate(['/kurin', this.archiveKurinKey, 'archive']);
+      this.router.navigate(['/kurin/registry/archive']);
     }
   }
 
@@ -723,14 +723,14 @@ export class MemberCardComponent implements OnInit {
     }
 
     this.membershipService.leave(membership.kurinKey, this.memberKey).subscribe({
-      // Картки виведеної людини курінь більше не відкриває — вона тепер серед колишніх у реєстрі.
+      // Картки виведеної людини курінь більше не відкриває — вона тепер серед колишніх в архіві реєстру.
       next: () => {
         this.messageService.add({
           severity: 'success',
           summary: 'Людину виведено',
-          detail: 'Вона тепер серед колишніх у реєстрі. Акаунт і вся історія лишаються в неї.'
+          detail: 'Вона тепер серед колишніх в архіві реєстру. Акаунт і вся історія лишаються в неї.'
         });
-        this.router.navigate(['/kurin/registry'], { queryParams: { former: 1 }, replaceUrl: true });
+        this.router.navigate(['/kurin/registry/archive'], { queryParams: { former: 1 }, replaceUrl: true });
       },
       error: (error: unknown) => {
         if (error instanceof HttpErrorResponse && error.error?.error === 'MemberOwesDues') {

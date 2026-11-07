@@ -26,7 +26,7 @@ export class TransferCodeDialogComponent {
 
   readonly visible = model(false);
   readonly code = signal<string | null>(null);
-  /** The code as a QR that opens «Склад куреня» with it typed in; none if it did not load — the code still works. */
+  /** The code as a QR that opens «Переходи» with it typed in; none if it did not load — the code still works. */
   readonly qr = signal<string | null>(null);
   readonly failed = signal(false);
 

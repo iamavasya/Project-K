@@ -8,8 +8,8 @@ import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { MessageModule } from '@openng/optimus-ui/message';
 
-import { KurinService } from '../../services/kurin-service/kurin.service';
-import { AuthService } from '../../../authModule/services/auth-service/auth.service';
+import { KurinService } from '../../../../services/kurin-service/kurin.service';
+import { AuthService } from '../../../../../authModule/services/auth-service/auth.service';
 import {
   ApplyRosterRequest,
   ColumnMapping,

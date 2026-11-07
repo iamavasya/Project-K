@@ -9,16 +9,14 @@ import { SelectButtonModule } from '@openng/optimus-ui/selectbutton';
 import { TableModule } from '@openng/optimus-ui/table';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
-import { DialogModule } from '@openng/optimus-ui/dialog';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
-import { AuthService } from '../../../authModule/services/auth-service/auth.service';
-import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
-import { failureDetail } from '../../../../shared/functions/failure-detail.function';
-import { kurinInText } from '../../../../shared/functions/kurin-label.function';
+import { AuthService } from '../../../../../authModule/services/auth-service/auth.service';
+import { EmptyStateComponent } from '../../../../../../shared/empty-state/empty-state';
+import { failureDetail } from '../../../../../../shared/functions/failure-detail.function';
+import { kurinInText } from '../../../../../../shared/functions/kurin-label.function';
 import {
   CreateMembershipRequest,
-  FormerMemberStandingDto,
   MembershipCandidateDto,
   MembershipKindName,
   MembershipRequestDto,
@@ -26,7 +24,8 @@ import {
   MembershipRequestKurinDto,
   MembershipRequestStatus,
   MembershipService
-} from '../../services/membership-service/membership.service';
+} from '../../../../services/membership-service/membership.service';
+import { MEMBERSHIP_KIND_OPTIONS, REQUEST_KIND_OPTIONS, kurinName, requestErrorText, requestSentMessage } from '../../membership-asks';
 
 type TagSeverity = 'success' | 'secondary';
 
@@ -38,19 +37,9 @@ const STATUS: Record<MembershipRequestStatus, { label: string; severity: TagSeve
   Expired: { label: 'Минув строк', severity: 'secondary' }
 };
 
-/** Що сторінка каже на коди помилок API. */
-const ERRORS: Record<string, string> = {
-  AlreadyAMember: 'Ця людина вже у вашому курені.',
-  RequestPending: 'Запит щодо цієї людини вже чекає відповіді.',
-  ChooseKurin: 'Людина стоїть у кількох куренях — вибери, кого питати.',
-  NotInThatKurin: 'Людина вже не стоїть у тому курені. Знайди її за кодом ще раз.',
-  MemberOwesDues: 'Людина винна куреню вкладку за квартали, що минули. Перевести можна, коли її сплачено повністю.',
-  RequestClosed: 'На цей запит уже відповіли, його скасовано або минув строк.',
-  MemberNotHere: 'Людини вже немає в курені.'
-};
-
 /**
- * «Склад куреня» — вкладка Звʼязкового: запити між куренями, прийняти людину за кодом, колишні члени.
+ * «Переходи» — the registry's mode for the Звʼязковий: requests between kurins and taking a person in
+ * by their code. Former members, and taking them back, are in the archive mode.
  * Звʼязковий куреня Б просить людину перевести до себе або прийняти ще й до них; Звʼязковий куреня А
  * підтверджує чи відхиляє. Людина, яка ніде не стоїть, приймається одразу — питати нікого.
  */
@@ -58,7 +47,7 @@ const ERRORS: Record<string, string> = {
   selector: 'app-transfers',
   imports: [
     DatePipe, FormsModule, ButtonModule, InputTextModule, SelectModule, SelectButtonModule, TableModule, TagModule,
-    ConfirmDialogModule, DialogModule, RouterLink, EmptyStateComponent
+    ConfirmDialogModule, EmptyStateComponent
   ],
   templateUrl: './transfers.html',
   styleUrl: './transfers.css',
@@ -72,14 +61,9 @@ export class TransfersComponent implements OnInit {
   private readonly messages = inject(MessageService);
   private readonly route = inject(ActivatedRoute);
 
-  readonly kindOptions: { label: string; value: MembershipRequestKind }[] = [
-    { label: 'Перевести до нас', value: 'Transfer' },
-    { label: 'Прийняти ще й до нас', value: 'AlsoJoin' }
-  ];
-  readonly membershipKindOptions: { label: string; value: MembershipKindName }[] = [
-    { label: 'Юнак', value: 'Youth' },
-    { label: 'Впорядник', value: 'Staff' }
-  ];
+  readonly kindOptions = REQUEST_KIND_OPTIONS;
+  readonly membershipKindOptions = MEMBERSHIP_KIND_OPTIONS;
+  protected readonly kurinName = kurinName;
 
   readonly loading = signal(true);
   readonly incoming = signal<MembershipRequestDto[]>([]);
@@ -94,25 +78,6 @@ export class TransfersComponent implements OnInit {
   readonly membershipKind = signal<MembershipKindName>('Youth');
   readonly fromKurinKey = signal<string | null>(null);
   readonly sending = signal(false);
-
-  readonly former = signal<FormerMemberStandingDto[]>([]);
-  /** Колишні, про кого вже чекає надісланий запит: вдруге не просимо. */
-  readonly askedFor = computed(() =>
-    new Set(this.outgoing().filter(r => r.status === 'Pending').map(r => r.memberKey)));
-  readonly returning = signal<FormerMemberStandingDto | null>(null);
-  readonly returnKind = signal<MembershipRequestKind>('Transfer');
-  readonly returnMembershipKind = signal<MembershipKindName>('Youth');
-  readonly returnFrom = signal<string | null>(null);
-  readonly returnAsked = computed<MembershipRequestKurinDto | null>(() => {
-    const standsIn = this.returning()?.standsIn ?? [];
-    return standsIn.length === 1 ? standsIn[0] : standsIn.find(k => k.kurinKey === this.returnFrom()) ?? null;
-  });
-  readonly returnKurinOptions = computed(() =>
-    (this.returning()?.standsIn ?? []).map(k => ({ label: this.kurinName(k), value: k.kurinKey })));
-  readonly canReturn = computed(() => {
-    const person = this.returning();
-    return !!person && (person.standsIn.length === 0 || !!this.returnAsked());
-  });
 
   /** Людина ніде не стоїть: питати нікого, приймаємо одразу. */
   readonly standsNowhere = computed(() => (this.candidate()?.currentKurins.length ?? 0) === 0);
@@ -152,11 +117,6 @@ export class TransfersComponent implements OnInit {
 
   statusSeverity(request: MembershipRequestDto): TagSeverity {
     return STATUS[request.status].severity;
-  }
-
-  kurinName(kurin: MembershipRequestKurinDto): string {
-    const label = kurinInText(kurin.branches, kurin.number);
-    return kurin.namedAfter ? `${label} · ${kurin.namedAfter}` : label;
   }
 
   kindLine(request: MembershipRequestDto, incoming: boolean): string {
@@ -215,57 +175,19 @@ export class TransfersComponent implements OnInit {
     });
   }
 
-  formerName(person: FormerMemberStandingDto): string {
-    const { lastName, firstName, middleName } = person.former;
-    return [lastName, firstName, middleName].filter(Boolean).join(' ');
-  }
-
-  standsInLine(person: FormerMemberStandingDto): string {
-    return person.standsIn.length
-      ? person.standsIn.map(k => kurinInText(k.branches, k.number)).join(', ')
-      : 'Ніде';
-  }
-
-  openReturn(person: FormerMemberStandingDto): void {
-    this.returnKind.set('Transfer');
-    this.returnMembershipKind.set('Youth');
-    this.returnFrom.set(null);
-    this.returning.set(person);
-  }
-
-  closeReturn(): void {
-    this.returning.set(null);
-  }
-
-  sendReturn(): void {
-    const person = this.returning();
-    if (!person || !this.canReturn()) {
-      return;
-    }
-
-    const asked = this.returnAsked();
-    this.ask({
-      memberKey: person.former.memberKey,
-      kind: this.returnKind(),
-      membershipKind: this.returnMembershipKind(),
-      fromKurinKey: asked?.kurinKey ?? null
-    }, this.formerName(person), asked, () => this.returning.set(null), 'Людину повернуто');
-  }
-
-  private ask(body: CreateMembershipRequest, name: string, asked: MembershipRequestKurinDto | null, done: () => void, joinedSummary = 'Людину прийнято'): void {
+  private ask(body: CreateMembershipRequest, name: string, asked: MembershipRequestKurinDto | null, done: () => void): void {
+    const joinedSummary = 'Людину прийнято';
     this.sending.set(true);
     this.memberships.createRequest(this.kurinKey, body).subscribe({
       next: sent => {
         this.sending.set(false);
-        this.messages.add(sent.joined
-          ? { severity: 'success', summary: joinedSummary, detail: `${name} тепер у вашому курені.` }
-          : { severity: 'success', summary: 'Запит надіслано', detail: `Відповідь дасть Звʼязковий ${kurinInText(asked?.branches, asked?.number)}. Запит діє 14 днів.` });
+        this.messages.add(requestSentMessage(sent.joined, name, asked, joinedSummary));
         done();
         this.load();
       },
       error: (error: unknown) => {
         this.sending.set(false);
-        this.messages.add({ severity: 'error', summary: 'Не вдалося надіслати', detail: this.errorText(error) });
+        this.messages.add({ severity: 'error', summary: 'Не вдалося надіслати', detail: requestErrorText(error) });
       }
     });
   }
@@ -286,7 +208,7 @@ export class TransfersComponent implements OnInit {
           this.load();
         },
         error: (error: unknown) => {
-          this.messages.add({ severity: 'error', summary: 'Не вдалося підтвердити', detail: this.errorText(error) });
+          this.messages.add({ severity: 'error', summary: 'Не вдалося підтвердити', detail: requestErrorText(error) });
           this.load();
         }
       })
@@ -327,14 +249,5 @@ export class TransfersComponent implements OnInit {
       },
       error: () => this.loading.set(false)
     });
-    this.memberships.formerStanding(this.kurinKey).subscribe({
-      next: people => this.former.set(people),
-      error: () => this.former.set([])
-    });
-  }
-
-  private errorText(error: unknown): string {
-    const code = error instanceof HttpErrorResponse ? (error.error as { error?: string } | null)?.error : undefined;
-    return (code && ERRORS[code]) || failureDetail(error);
   }
 }

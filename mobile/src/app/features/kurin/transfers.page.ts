@@ -54,7 +54,7 @@ const ERRORS: Record<string, string> = {
 const kurinNo = (k: MembershipRequestKurinDto): string => kurinInText(k.branches, k.number);
 
 /**
- * «Склад куреня» on a phone (web pages/transfers): the Звʼязковий asks for a person by the code they
+ * «Переходи» on a phone (the web «Реєстр», mode «Переходи»): the Звʼязковий asks for a person by the code they
  * gave, answers other kurins' requests and takes former members back. A tap on a row opens what can
  * be done with it.
  */
@@ -92,7 +92,7 @@ const kurinNo = (k: MembershipRequestKurinDto): string => kurinInText(k.branches
     <ion-header [translucent]="true">
       <ion-toolbar>
         <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/kurin" text="" /></ion-buttons>
-        <ion-title>Склад куреня</ion-title>
+        <ion-title>Переходи</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content [fullscreen]="true">

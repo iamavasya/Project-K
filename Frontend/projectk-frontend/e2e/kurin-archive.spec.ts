@@ -5,15 +5,22 @@ import { openOwnKurin } from './support/kurin-archive';
 import { dialog, fillDialogDate, openRowMenu } from './support/ui';
 
 /**
- * «Архів куреня» (ARCH-01): former roles and memberships, corrections, who sees what, and a гурток
- * dissolved into the archive. Each test opens a kurin of its own; see `support/kurin-archive.ts`.
+ * The archive (ARCH-01), a mode of the kurin's «Реєстр»: former roles and memberships, corrections,
+ * taking a former member back, who sees what, and a гурток dissolved into the archive. Each test opens
+ * a kurin of its own; see `support/kurin-archive.ts`.
  */
 test.describe('Архів куреня', () => {
   test.setTimeout(90_000);
 
-  async function openArchive(page: Page, kurinKey: string): Promise<void> {
-    await page.goto(`/kurin/${kurinKey}/archive`);
-    await expect(page.getByRole('heading', { name: 'Архів куреня' })).toBeVisible();
+  const archiveTab = (page: Page) =>
+    page.getByRole('navigation', { name: 'Режими реєстру' }).getByRole('link', { name: 'Архів' });
+
+  /** The archive's address; `old` is the one cards and links used before the «Реєстр» was one page. */
+  async function openArchive(page: Page, kurinKey: string, old = false): Promise<void> {
+    await page.goto(old ? `/kurin/${kurinKey}/archive` : '/kurin/registry/archive');
+    await expect(page).toHaveURL(/\/kurin\/registry\/archive/);
+    await expect(page.getByRole('heading', { name: 'Реєстр' })).toBeVisible();
+    await expect(archiveTab(page)).toHaveAttribute('aria-current', 'page');
   }
 
   const officeRow = (page: Page, text: string) => page.getByTestId('archive-office').filter({ hasText: text });
@@ -30,6 +37,8 @@ test.describe('Архів куреня', () => {
 
     await loginThroughUi(page, kurin.founder);
     await openArchive(page, kurin.kurinKey);
+    await expect(page.getByRole('navigation', { name: 'Режими реєстру' }).getByRole('link'))
+      .toHaveText(['Склад', /^Переходи/, 'Архів', 'Імпорт']);
 
     await expect(officeRow(page, leader.name)).toContainText('Сови');
     await expect(membershipRow(page, gone.name)).toContainText('Сови');
@@ -44,6 +53,28 @@ test.describe('Архів куреня', () => {
     await expect(membershipRow(page, gone.name)).toContainText('01.09.2024');
   });
 
+  test('Звʼязковий повертає колишнього просто з архіву', async ({ page, request }, testInfo) => {
+    const kurin = await openOwnKurin(request, testInfo);
+    const sovy = await kurin.api.group('Сови');
+    const gone = await kurin.api.member(sovy, 'Ярема', 'Повернений');
+    await kurin.api.leave(gone.memberKey);
+
+    await loginThroughUi(page, kurin.founder);
+    await openArchive(page, kurin.kurinKey);
+
+    const row = membershipRow(page, gone.name);
+    await expect(row).toContainText('Ніде');
+    await row.getByRole('button', { name: 'Повернути' }).click();
+    const back = page.getByRole('dialog', { name: 'Повернути до куреня' });
+    await expect(back).toBeVisible();
+    await back.getByRole('button', { name: 'Повернути' }).click();
+    await expect(back).toBeHidden();
+
+    await expect(page.locator('.p-toast').getByText('Людину повернуто')).toBeVisible();
+    // The stretch stays in the archive as history; there is nobody to take back any more.
+    await expect(row.getByRole('button', { name: 'Повернути' })).toHaveCount(0);
+  });
+
   test('свій запис Звʼязковий не виправляє', async ({ page, request }, testInfo) => {
     const kurin = await openOwnKurin(request, testInfo);
     const sovy = await kurin.api.group('Сови');
@@ -52,7 +83,8 @@ test.describe('Архів куреня', () => {
     await kurin.api.seatGroupLeaders(sovy, [], provid);
 
     await loginThroughUi(page, kurin.founder);
-    await openArchive(page, kurin.kurinKey);
+    // By the address the member card and old links used: it opens the archive mode.
+    await openArchive(page, kurin.kurinKey, true);
 
     const own = officeRow(page, 'Сови');
     await expect(own).toContainText('своє');
@@ -77,6 +109,9 @@ test.describe('Архів куреня', () => {
     await expect(membershipRow(page, ours.name).getByRole('button', { name: 'Виправити' })).toBeVisible();
     await expect(membershipRow(page, theirs.name)).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Небезпечний режим' })).toHaveCount(0);
+    // Taking people back and asking other kurins for them stay the Звʼязковий's.
+    await expect(membershipRow(page, ours.name).getByRole('button', { name: 'Повернути' })).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Режими реєстру' }).getByRole('link', { name: /^Переходи/ })).toHaveCount(0);
   });
 
   test('розформований гурток іде в архів, а гурток із грошима в касі лишається', async ({ page, request }, testInfo) => {

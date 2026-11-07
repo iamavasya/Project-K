@@ -13,6 +13,12 @@ public class UpsertKurinTagRequest
 public class SetMemberTagsRequest
 {
     public List<Guid> TagKeys { get; set; } = [];
+
+    /// <summary>
+    /// Whose tags: only an administrator who has not chosen a kurin names it. Anyone acting in a kurin
+    /// sets that kurin's tags, whatever is sent here.
+    /// </summary>
+    public Guid? KurinKey { get; set; }
 }
 
 /// <summary>Body of <c>PUT api/kurin/{kurinKey}/tags/{tagKey}/members</c>: everyone who should carry it now.</summary>

@@ -1,12 +1,6 @@
 <p-confirmdialog />
 
-<section class="lil-page">
-  <header class="lil-page-head">
-    <div>
-      <h1>Склад куреня</h1>
-    </div>
-    <p-button label="Реєстр" icon="pi pi-table" severity="secondary" [outlined]="true" routerLink="/kurin/registry" />
-  </header>
+<div class="registry-mode">
 
   <section class="kurin-tile">
     <p-table [value]="incoming()" styleClass="project-table" [loading]="loading()">
@@ -115,40 +109,6 @@
   </section>
 
   <section class="kurin-tile">
-    <p-table [value]="former()" styleClass="project-table" [loading]="loading()">
-      <ng-template #caption>
-        <div class="lil-tile-head">
-          <div>
-            <h2>Колишні члени <span class="lil-count">{{ former().length }}</span></h2>
-          </div>
-        </div>
-      </ng-template>
-      <ng-template #body let-p>
-        <tr>
-          <td data-mobile-label="Людина" class="transfers__person">
-            {{ formerName(p) }}
-            <span class="transfers__meta">{{ p.former.groupName ?? 'без гуртка' }} · вибув {{ p.former.leftAtUtc | date:'dd.MM.yyyy' }}</span>
-          </td>
-          <td data-mobile-label="Зараз">{{ standsInLine(p) }}</td>
-          <td class="transfers__actions">
-            @if (askedFor().has(p.former.memberKey)) {
-              <p-tag value="Запит чекає" severity="secondary" />
-            } @else {
-              <p-button [label]="p.standsIn.length ? 'Попросити' : 'Повернути'" icon="pi pi-user-plus"
-                severity="secondary" [outlined]="true" (onClick)="openReturn(p)" />
-            }
-          </td>
-        </tr>
-      </ng-template>
-      <ng-template #emptymessage>
-        <tr><td colspan="3" class="lil-empty-cell">
-          <app-empty-state art="list" title="Колишніх немає" />
-        </td></tr>
-      </ng-template>
-    </p-table>
-  </section>
-
-  <section class="kurin-tile">
     <p-table [value]="outgoing()" styleClass="project-table" [loading]="loading()">
       <ng-template #caption>
         <div class="lil-tile-head">
@@ -179,43 +139,4 @@
       </ng-template>
     </p-table>
   </section>
-</section>
-
-<p-dialog [visible]="!!returning()" (visibleChange)="!$event && closeReturn()" [modal]="true" [closable]="!sending()"
-  [style]="{ width: 'min(92vw, 30rem)' }" [header]="returning()?.standsIn?.length ? 'Попросити назад' : 'Повернути до куреня'">
-  @if (returning(); as p) {
-    <div class="transfers__dialog">
-      <p class="transfers__name">{{ formerName(p) }}</p>
-      @if (p.standsIn.length === 0) {
-        <p class="transfers__hint">Ніде не стоїть</p>
-      } @else {
-        <p class="transfers__hint">Зараз у {{ standsInLine(p) }}</p>
-
-        <div class="lil-dialog-field">
-          <span class="lil-dialog-label" id="return-kind">Що просимо</span>
-          <p-selectbutton [options]="kindOptions" [ngModel]="returnKind()" (ngModelChange)="returnKind.set($event)"
-            [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="return-kind" />
-        </div>
-
-        @if (p.standsIn.length > 1) {
-          <div class="lil-dialog-field">
-            <label class="lil-dialog-label" for="return-from">Кого питати</label>
-            <p-select inputId="return-from" [options]="returnKurinOptions()" [ngModel]="returnFrom()" (ngModelChange)="returnFrom.set($event)"
-              optionLabel="label" optionValue="value" placeholder="Вибери курінь" appendTo="body" />
-          </div>
-        }
-      }
-
-      <div class="lil-dialog-field">
-        <span class="lil-dialog-label" id="return-as">У вашому курені як</span>
-        <p-selectbutton [options]="membershipKindOptions" [ngModel]="returnMembershipKind()" (ngModelChange)="returnMembershipKind.set($event)"
-          [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="return-as" />
-      </div>
-    </div>
-  }
-  <ng-template #footer>
-    <p-button label="Скасувати" severity="secondary" [outlined]="true" [disabled]="sending()" (onClick)="closeReturn()" />
-    <p-button [label]="returning()?.standsIn?.length ? 'Надіслати запит' : 'Повернути'" [icon]="returning()?.standsIn?.length ? 'pi pi-send' : 'pi pi-user-plus'"
-      [loading]="sending()" [disabled]="!canReturn()" (onClick)="sendReturn()" />
-  </ng-template>
-</p-dialog>
+</div>

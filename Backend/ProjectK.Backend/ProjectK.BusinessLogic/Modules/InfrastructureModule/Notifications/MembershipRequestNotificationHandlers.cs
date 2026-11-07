@@ -15,7 +15,7 @@ namespace ProjectK.BusinessLogic.Modules.InfrastructureModule.Notifications;
 /// </summary>
 internal static class MembershipRequestNotices
 {
-    public const string Route = "/kurin/transfers";
+    public const string Route = "/kurin/registry/transfers";
 
     public static async Task<IReadOnlyCollection<Guid>> ZvyazkoviAsync(IUnitOfWork unitOfWork, Guid kurinKey, CancellationToken cancellationToken)
     {

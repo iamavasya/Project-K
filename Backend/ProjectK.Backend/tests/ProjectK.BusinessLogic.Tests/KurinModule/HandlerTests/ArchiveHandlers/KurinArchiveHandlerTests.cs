@@ -232,6 +232,20 @@ public class KurinArchiveHandlerTests
         events.Verify(e => e.PublishAsync(It.Is<ArchiveDangerZoneEntered>(raised => raised.KurinKey == _kurinKey), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task AnAdministratorWithNoMemberCard_IsNamedByTheAccount_WhenTheLeadershipIsTold()
+    {
+        _members.Setup(m => m.FindByAccountAsync(_userKey, It.IsAny<CancellationToken>())).ReturnsAsync((MemberSummary?)null);
+        _reauth.Setup(r => r.VerifyAsync(_userKey, "right", null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ReauthenticationResult(ReauthenticationOutcome.Verified, ReauthenticationMethod.Password, Stamp, "Олена Адмін"));
+        var events = new Mock<IDomainEventPublisher>();
+        var handler = new EnterArchiveDangerZoneCommandHandler(_unitOfWork.Object, Reach(), Zone(), _reauth.Object, _user.Object, _members.Object, _audit.Object, events.Object);
+
+        await handler.Handle(new EnterArchiveDangerZoneCommand(_kurinKey, "right", null), default);
+
+        events.Verify(e => e.PublishAsync(It.Is<ArchiveDangerZoneEntered>(raised => raised.ActorName == "Олена Адмін"), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     private CorrectArchivedOfficeCommandHandler CorrectOffice() => new(_unitOfWork.Object, Reach(), _audit.Object);
 
     [Fact]

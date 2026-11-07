@@ -3,12 +3,14 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
+using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Entities.KurinModule.Tags;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.DuesModule;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.KurinModule;
 using ProjectK.Common.Models.Audit;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Tags;
@@ -148,6 +150,48 @@ public class KurinTagHandlerTests
             (AuditActions.Tag.TakenOff, "Табір 2026", (Guid?)MemberKey)
         });
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SetMemberTags_AnAdminOutsideAnyKurin_SetsThemInTheKurinNamed_OrThePersonsOnlyOne()
+    {
+        _currentUser.Setup(c => c.KurinKey).Returns((Guid?)null);
+        _currentUser.Setup(c => c.IsInRole(SystemRole.Admin)).Returns(true);
+        var tag = Tag("Табір 2026");
+        _tags.Setup(t => t.GetForKurinAsync(KurinKey, It.IsAny<CancellationToken>())).ReturnsAsync([tag]);
+        _tags.Setup(t => t.GetTrackedForMemberAsync(KurinKey, MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+        var named = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, [tag.KurinTagKey], KurinKey), default);
+
+        _memberships.Setup(m => m.GetActiveForMemberAsync(MemberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = MemberKey, KurinKey = KurinKey }]);
+        var only = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, [tag.KurinTagKey]), default);
+
+        named.Type.Should().Be(ResultType.Success);
+        only.Type.Should().Be(ResultType.Success);
+    }
+
+    [Fact]
+    public async Task SetMemberTags_AnAdminOutsideAnyKurin_MustNameItForSomeoneInSeveral()
+    {
+        _currentUser.Setup(c => c.KurinKey).Returns((Guid?)null);
+        _currentUser.Setup(c => c.IsInRole(SystemRole.Admin)).Returns(true);
+        _memberships.Setup(m => m.GetActiveForMemberAsync(MemberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = MemberKey, KurinKey = KurinKey }, new Membership { MemberKey = MemberKey, KurinKey = Guid.NewGuid() }]);
+
+        var result = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, []), default);
+
+        result.ErrorCode.Should().Be(KurinTagErrors.NotInKurin);
+    }
+
+    [Fact]
+    public async Task SetMemberTags_SomeoneOutsideAnyKurinWhoIsNoAdmin_IsRefused()
+    {
+        _currentUser.Setup(c => c.KurinKey).Returns((Guid?)null);
+
+        var result = await MemberTagsHandler().Handle(new SetMemberTagsCommand(MemberKey, [], KurinKey), default);
+
+        result.ErrorCode.Should().Be(KurinTagErrors.NotInKurin);
     }
 
     [Fact]

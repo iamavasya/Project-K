@@ -3,8 +3,9 @@ import { scanTarget } from './scan-target';
 describe('scanTarget', () => {
   const origin = 'https://lileyka.app';
 
-  it('opens a transfer code in «Склад куреня»', () => {
+  it('opens a transfer code in «Переходи»', () => {
     expect(scanTarget('https://lileyka.app/kurin/transfers?code=PL-4F7A2-9D4A1', origin)).toEqual({ kind: 'transfer', code: 'PL-4F7A2-9D4A1' });
+    expect(scanTarget('https://lileyka.app/kurin/registry/transfers?code=PL-4F7A2-9D4A1', origin)).toEqual({ kind: 'transfer', code: 'PL-4F7A2-9D4A1' });
   });
 
   it('opens a shared card, checked or linked', () => {

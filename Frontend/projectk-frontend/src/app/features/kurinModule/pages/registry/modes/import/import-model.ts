@@ -1,5 +1,5 @@
-import { PlastLevel } from '../../models/enums/plast-level.enum';
-import { PLAST_LADDER, PLAST_LEVEL_COLUMN_LABELS } from '../../models/enums/plast-ladder';
+import { PlastLevel } from '../../../../models/enums/plast-level.enum';
+import { PLAST_LADDER, PLAST_LEVEL_COLUMN_LABELS } from '../../../../models/enums/plast-ladder';
 
 /** Дзеркалить `RosterField` на бекенді. Значення — контракт, підписи — ні. */
 export enum RosterField {

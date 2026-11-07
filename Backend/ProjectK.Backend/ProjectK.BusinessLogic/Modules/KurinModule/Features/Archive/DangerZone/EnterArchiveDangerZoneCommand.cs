@@ -75,7 +75,8 @@ public sealed class EnterArchiveDangerZoneCommandHandler : IRequestHandler<Enter
 
         var (ticket, entry) = _zone.Open(userKey, request.KurinKey, proof.SecurityStamp!);
         await RecordAsync(AuditActions.Archive.DangerZoneEntered, userKey, request.KurinKey, method, cancellationToken);
-        var actor = (await _members.FindByAccountAsync(userKey, cancellationToken))?.FullName ?? string.Empty;
+        // An administrator acting in the kurin has no member card; the leadership is told the account's name.
+        var actor = (await _members.FindByAccountAsync(userKey, cancellationToken))?.FullName ?? proof.AccountName ?? string.Empty;
         await _events.PublishAsync(new ArchiveDangerZoneEntered(request.KurinKey, actor, userKey), cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

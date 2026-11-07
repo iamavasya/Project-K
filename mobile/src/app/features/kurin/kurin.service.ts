@@ -383,7 +383,7 @@ export class KurinApi {
     return this.api.get(`kurin/${kurinKey}/membership-requests/former`);
   }
 
-  /** The kurin's requests both ways (web «Склад куреня»). */
+  /** The kurin's requests both ways (web «Реєстр», mode «Переходи»). */
   membershipRequests(kurinKey: string): Promise<{ incoming: MembershipRequestDto[]; outgoing: MembershipRequestDto[] }> {
     return this.api.get(`kurin/${kurinKey}/membership-requests`);
   }

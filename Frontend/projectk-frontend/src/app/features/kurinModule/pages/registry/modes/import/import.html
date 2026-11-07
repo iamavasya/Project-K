@@ -1,10 +1,4 @@
-<section class="import lil-page">
-  <header class="lil-page-head">
-    <div>
-      <h1>Імпорт складу</h1>
-      <p>Завантаж таблицю куреня — і склад опиниться в системі. Нічого не запишеться, поки не підтвердиш.</p>
-    </div>
-  </header>
+<div class="import registry-mode">
 
   @if (error(); as message) {
     <p-message severity="error" [text]="message" styleClass="import__error" />
@@ -170,10 +164,10 @@
 
           <div class="import__actions">
             <p-button label="Імпортувати ще файл" icon="pi pi-upload" severity="secondary" [text]="true" (onClick)="startOver()" />
-            <p-button label="Відкрити реєстр" icon="pi pi-table" (onClick)="openRegistry()" />
+            <p-button label="До складу" icon="pi pi-table" (onClick)="openRegistry()" />
           </div>
         </div>
       }
     }
   }
-</section>
+</div>

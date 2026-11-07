@@ -3,6 +3,7 @@ import { authGuard } from './features/authModule/guards/auth.guard';
 import { publicAuthRedirectGuard } from './features/authModule/guards/public-auth-redirect.guard';
 import { setupGuard } from './features/authModule/guards/setup.guard';
 import { capabilityGuard } from './features/authModule/guards/capability.guard';
+import { formerMembersRedirect, legacyArchiveRedirect, registryModeGuard } from './features/kurinModule/pages/registry/registry-modes';
 import { youthProgramGuard } from './features/kurinModule/guards/youth-program.guard';
 import { kurinFeatureGuard } from './features/kurinModule/guards/kurin-feature.guard';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
@@ -198,29 +199,51 @@ export const routes: Routes = [
     data: { breadcrumb: 'Курінь', parent: '/panel', parentRoles: ['Admin'], titleContext: 'kurin', breadcrumbEntity: 'kurin' },
   },
   {
-    path: 'kurin/import',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement')],
-    loadComponent: () => import('./features/kurinModule/pages/import/import')
-      .then(m => m.RosterImportComponent),
-    title: 'Імпорт складу',
-    data: { breadcrumb: 'Імпорт складу', parent: '/kurin', titleContext: 'kurin' }
-  },
-  {
-    path: 'kurin/transfers',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement')],
-    loadComponent: () => import('./features/kurinModule/pages/transfers/transfers')
-      .then(m => m.TransfersComponent),
-    title: 'Склад куреня',
-    data: { breadcrumb: 'Склад куреня', parent: '/kurin', titleContext: 'kurin' }
-  },
-  {
+    // «Реєстр»: one page for what the four kurin pages did apart — склад, переходи, архів, імпорт.
     path: 'kurin/registry',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('admin', 'kurinManagement', 'groupLeadership')],
+    canActivate: [authGuard, kurinAccessGuard('kurin')],
     loadComponent: () => import('./features/kurinModule/pages/registry/registry')
       .then(m => m.RegistryComponent),
     title: 'Реєстр',
-    data: { breadcrumb: 'Реєстр', parent: '/kurin', titleContext: 'kurin' }
+    data: { breadcrumb: 'Реєстр', parent: '/kurin', titleContext: 'kurin' },
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        canActivate: [formerMembersRedirect, registryModeGuard('roster')],
+        loadComponent: () => import('./features/kurinModule/pages/registry/modes/roster/roster')
+          .then(m => m.RosterComponent)
+      },
+      {
+        path: 'transfers',
+        canActivate: [registryModeGuard('transfers')],
+        loadComponent: () => import('./features/kurinModule/pages/registry/modes/transfers/transfers')
+          .then(m => m.TransfersComponent),
+        title: 'Переходи',
+        data: { breadcrumb: 'Переходи', parent: '/kurin/registry', titleContext: 'kurin' }
+      },
+      {
+        path: 'archive',
+        canActivate: [registryModeGuard('archive')],
+        loadComponent: () => import('./features/kurinModule/pages/registry/modes/archive/archive')
+          .then(m => m.KurinArchiveComponent),
+        title: 'Архів',
+        data: { breadcrumb: 'Архів', parent: '/kurin/registry', titleContext: 'kurin' }
+      },
+      {
+        path: 'import',
+        canActivate: [registryModeGuard('import')],
+        loadComponent: () => import('./features/kurinModule/pages/registry/modes/import/import')
+          .then(m => m.RosterImportComponent),
+        title: 'Імпорт',
+        data: { breadcrumb: 'Імпорт', parent: '/kurin/registry', titleContext: 'kurin' }
+      }
+    ]
   },
+  // The addresses before the «Реєстр» became one page. QR codes on printed cards, letters and links
+  // in the phone app still lead here; each opens its mode.
+  { path: 'kurin/transfers', redirectTo: '/kurin/registry/transfers' },
+  { path: 'kurin/import', redirectTo: '/kurin/registry/import' },
   { 
     path: 'group/:groupKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
@@ -365,14 +388,7 @@ export const routes: Routes = [
     title: 'Журнал дій',
     data: { breadcrumb: 'Журнал дій', parent: '/kurin', titleContext: 'kurin' }
   },
-  {
-    path: 'kurin/:kurinKey/archive',
-    canActivate: [authGuard, kurinAccessGuard('kurin'), capabilityGuard('archive')],
-    loadComponent: () => import('./features/kurinModule/pages/kurin-archive/kurin-archive')
-      .then(m => m.KurinArchiveComponent),
-    title: 'Архів куреня',
-    data: { breadcrumb: 'Архів куреня', parent: '/kurin', titleContext: 'kurin' }
-  },
+  { path: 'kurin/:kurinKey/archive', canActivate: [authGuard, legacyArchiveRedirect], children: [] },
   {
     path: 'kurin/:kurinKey/dues',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
