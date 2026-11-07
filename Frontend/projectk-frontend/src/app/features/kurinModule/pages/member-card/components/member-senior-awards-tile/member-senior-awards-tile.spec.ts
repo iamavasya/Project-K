@@ -123,7 +123,6 @@ describe('MemberDegreesTileComponent', () => {
       providers: [{ provide: HonoursService, useValue: { all: () => of(honours) } }]
     });
     const fixture = TestBed.createComponent(MemberDegreesTileComponent);
-    fixture.componentRef.setInput('senior', true);
     fixture.componentRef.setInput('histories', [
       { plastLevel: PlastLevel.Starshoplastun, dateAchieved: '2016-12-03', isPlastunka: true, catalogId: 'usp-starsha-plastunka' },
       { plastLevel: PlastLevel.SeniorPratsi, dateAchieved: '2020-05-14', catalogId: 'ups-senior-pratsi' }

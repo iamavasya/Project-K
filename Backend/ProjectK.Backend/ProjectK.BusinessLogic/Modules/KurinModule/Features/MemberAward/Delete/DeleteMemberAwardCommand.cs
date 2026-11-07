@@ -26,7 +26,7 @@ public sealed class DeleteMemberAwardCommand : IRequest<ServiceResult<Unit>>
 /// <summary>
 /// Removes an award. An unconfirmed one may be withdrawn by the person it is about or by whoever
 /// submitted it; a confirmed one, or someone else's submission, takes <see cref="KurinCapability.RemoveAward"/>.
-/// A senior відзначення is removed from a УСП or УПС kurin only, as it is recorded.
+/// A senior відзначення is removed from a УСП or УПС kurin, or by its owner wherever they act, as it is recorded.
 /// </summary>
 public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemberAwardCommand, ServiceResult<Unit>>
 {
@@ -66,7 +66,9 @@ public sealed class DeleteMemberAwardCommandHandler : IRequestHandler<DeleteMemb
             return new ServiceResult<Unit>(ResultType.NotFound);
         }
 
-        if (award.CatalogId is not null && !await ActsInSeniorKurinAsync(cancellationToken))
+        if (award.CatalogId is not null
+            && !await ActsInSeniorKurinAsync(cancellationToken)
+            && await _members.FindAccountKeyAsync(award.MemberKey, cancellationToken) != _currentUser.UserId)
         {
             return ServiceResult<Unit>.Failure(
                 ResultType.BadRequest, "SeniorAwardOutsideSeniorKurin", "A senior відзначення is removed in a УСП or УПС kurin.");

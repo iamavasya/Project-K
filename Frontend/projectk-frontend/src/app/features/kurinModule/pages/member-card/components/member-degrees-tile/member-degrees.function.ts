@@ -14,6 +14,12 @@ export const SENIOR_LADDER: readonly PlastLevel[] = [
   PlastLevel.Starshoplastun, PlastLevel.Senior, PlastLevel.SeniorPratsi, PlastLevel.SeniorDovirja, PlastLevel.SeniorKerivnytstva
 ];
 
+/**
+ * Every ступінь with a відзнака, прихильник to сеніор керівництва. Ступені come one after another, so
+ * the highest here is the person's current one, whichever kurin the card is opened in.
+ */
+export const DEGREE_LADDER: readonly PlastLevel[] = [...YOUTH_LADDER, ...SENIOR_LADDER];
+
 /** A ступінь as the card shows it. */
 export interface DegreeRow {
   key: string;
@@ -44,4 +50,15 @@ export function degreeRows(
         date: parseDateOnlyString(history.dateAchieved ?? null)
       };
     });
+}
+
+/**
+ * The person's current ступінь: the highest on the whole ladder, not on the kurin's. A сеніор who leads
+ * an УПЮ kurin still has the скоб of 2002 on record; the card shows the сеніор.
+ */
+export function currentDegree(
+  histories: readonly PlastLevelHistoryDto[] | null | undefined,
+  honours: readonly CatalogHonour[]
+): DegreeRow | null {
+  return degreeRows(histories, DEGREE_LADDER, honours).at(-1) ?? null;
 }

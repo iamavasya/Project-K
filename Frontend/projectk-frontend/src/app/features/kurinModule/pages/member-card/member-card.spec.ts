@@ -1036,6 +1036,60 @@ describe('MemberCardComponent', () => {
       expect(renderedText().toLowerCase()).not.toContain('скоро');
     });
 
+    describe('сеніор, що веде курінь УПЮ', () => {
+      const zvyazkovyi = {
+        ...member,
+        latestPlastLevel: PlastLevel.Senior,
+        plastLevelHistories: [
+          { plastLevel: PlastLevel.Skob, dateAchieved: '2002-06-01' },
+          { plastLevel: PlastLevel.Senior, dateAchieved: '2015-04-26' }
+        ]
+      };
+
+      function openAs(memberKey: string): void {
+        authServiceSpy.getAuthStateValue.mockReturnValue({
+          userKey: 'user-viewer',
+          memberKey,
+          email: 'viewer@example.com',
+          isAdmin: false,
+          permissions: ['Group:Manage:KurinWide', 'Member:Update:KurinWide'],
+          roles: [],
+          kurinKey: member.kurinKey,
+          accessToken: 'token'
+        });
+        memberServiceSpy.getByKey.mockReturnValue(of(zvyazkovyi));
+        memberServiceSpy.getMemberships.mockReturnValue(of([{ ...membershipIn(KurinBranch.UPYu), kind: MembershipKind.Staff }]));
+        createComponent();
+        fixture.detectChanges();
+      }
+
+      it('показує поточний ступінь — сеніора, а не скоба 2002 року', () => {
+        openAs(member.memberKey);
+
+        const highest = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="degree-highest"]');
+        expect(highest?.textContent).toContain('пл. сен.');
+        expect(highest?.textContent).not.toContain('скоб');
+      });
+
+      it('веде свої старші відзначення сам, і в курені УПЮ', () => {
+        openAs(member.memberKey);
+
+        const element = fixture.nativeElement as HTMLElement;
+        expect(component.isSeniorKurinCard).toBe(false);
+        expect(component.showsSeniorAwards).toBe(true);
+        expect(element.querySelector('[data-testid="senior-awards-tile"]')).not.toBeNull();
+        expect(element.querySelector('[data-testid="senior-award-add"]')).not.toBeNull();
+      });
+
+      it('провід куреня УПЮ бачить його старші відзначення, але не вносить їх', () => {
+        openAs('someone-else');
+
+        const element = fixture.nativeElement as HTMLElement;
+        expect(element.querySelector('[data-testid="senior-awards-tile"]')).not.toBeNull();
+        expect(element.querySelector('[data-testid="senior-award-add"]')).toBeNull();
+      });
+    });
+
     it('юнак у курені УПЮ бачить відзначення УПЮ, а впорядництва в нього немає', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));
       memberServiceSpy.getMemberships.mockReturnValue(of([membershipIn(KurinBranch.UPYu)]));

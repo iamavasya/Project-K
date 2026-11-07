@@ -40,6 +40,7 @@ public class SeniorAwardHandlerTests
     private readonly Mock<IHonoursCatalog> _honours = new();
     private readonly Mock<IMemberDirectory> _directory = new();
     private readonly Mock<IResourceAccessService> _access = new();
+    private readonly Mock<IResourceScopeReader> _scope = new();
     private readonly Guid _kurinKey = Guid.NewGuid();
     private readonly Guid _ownerUserKey = Guid.NewGuid();
     private readonly Member _member;
@@ -84,7 +85,7 @@ public class SeniorAwardHandlerTests
 
     private UpsertMemberAwardCommandHandler Upsert() => new(
         _unitOfWork.Object, _currentUser.Object, _events.Object, _mapper.Object, _kurinData.Object, _access.Object,
-        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object);
+        (_journal = new JournalRecorder(_currentUser.Object)).Audit, _honours.Object, _scope.Object);
 
     private DeleteMemberAwardCommandHandler Delete() => new(
         _unitOfWork.Object, _currentUser.Object, _directory.Object, _access.Object,
@@ -149,17 +150,57 @@ public class SeniorAwardHandlerTests
     }
 
     [Fact]
-    public async Task ASeniorAward_IsRemovedOnlyFromASeniorKurin()
+    public async Task SomeoneElsesSeniorAward_IsRemovedOnlyFromASeniorKurin()
     {
         await Record("orden-sv-yuriia-bronza");
         var award = _stored.Single();
         InKurin(KurinBranch.UPYu);
+        ActAs(Guid.NewGuid());
 
         var refused = await Delete().Handle(new DeleteMemberAwardCommand { MemberKey = _member.MemberKey, MemberAwardKey = award.MemberAwardKey }, CancellationToken.None);
 
         refused.Type.Should().Be(ResultType.BadRequest);
         refused.ErrorCode.Should().Be("SeniorAwardOutsideSeniorKurin");
         _awards.Verify(a => a.Delete(It.IsAny<MemberAward>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ASeniorWhoLeadsAnUpyuKurin_KeepsTheirOwnSeniorAwards_ThereToo()
+    {
+        InKurin(KurinBranch.UPYu);
+        // The скоб of 2002 is on record, but the current ступінь is the сеніор's.
+        _member.PlastLevelHistory.Add(new PlastLevelHistory { MemberKey = _member.MemberKey, PlastLevel = PlastLevel.Skob, DateAchieved = new DateOnly(2002, 6, 1) });
+        _member.PlastLevelHistory.Add(new PlastLevelHistory { MemberKey = _member.MemberKey, PlastLevel = PlastLevel.Senior, DateAchieved = new DateOnly(2015, 4, 26) });
+
+        (await Record("orden-sv-yuriia-bronza")).Type.Should().Be(ResultType.Success);
+        var award = _stored.Single();
+        award.Status.Should().Be(BadgeProgressStatus.Confirmed);
+
+        (await Delete().Handle(new DeleteMemberAwardCommand { MemberKey = _member.MemberKey, MemberAwardKey = award.MemberAwardKey }, CancellationToken.None))
+            .Type.Should().Be(ResultType.Success);
+    }
+
+    [Fact]
+    public async Task AnUpyuKurinsProvid_RecordsNobodyElsesSeniorAward_EvenASeniors()
+    {
+        InKurin(KurinBranch.UPYu);
+        _member.PlastLevelHistory.Add(new PlastLevelHistory { MemberKey = _member.MemberKey, PlastLevel = PlastLevel.Senior });
+        ActAs(Guid.NewGuid());
+
+        (await Record("orden-sv-yuriia-bronza")).Type.Should().Be(ResultType.BadRequest);
+        _stored.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task AYouthOnTheirOwnCard_RecordsNoSeniorAward_UnlessTheyStandInASeniorKurin()
+    {
+        InKurin(KurinBranch.UPYu);
+        _member.PlastLevelHistory.Add(new PlastLevelHistory { MemberKey = _member.MemberKey, PlastLevel = PlastLevel.Skob });
+
+        (await Record("orden-sv-yuriia-bronza")).Type.Should().Be(ResultType.BadRequest);
+
+        _scope.Setup(s => s.StandsInSeniorKurinAsync(ResourceType.Member, _member.MemberKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        (await Record("orden-sv-yuriia-bronza")).Type.Should().Be(ResultType.Success);
     }
 
     [Fact]

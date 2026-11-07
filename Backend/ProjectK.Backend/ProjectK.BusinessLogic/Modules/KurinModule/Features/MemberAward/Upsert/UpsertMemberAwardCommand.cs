@@ -46,6 +46,7 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
     private readonly IHonoursCatalog _honours;
     private readonly IResourceAccessService _access;
     private readonly IKurinAudit _audit;
+    private readonly IResourceScopeReader _scope;
 
     public UpsertMemberAwardCommandHandler(
         IMemberUnitOfWork unitOfWork,
@@ -55,8 +56,10 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         IUnitOfWork kurinData,
         IResourceAccessService access,
         IKurinAudit audit,
-        IHonoursCatalog honours)
+        IHonoursCatalog honours,
+        IResourceScopeReader scope)
     {
+        _scope = scope;
         _kurins = kurinData.Kurins;
         _honours = honours;
         _unitOfWork = unitOfWork;
@@ -93,10 +96,12 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
         var inSeniorKurin = kurin is not null && KurinBranchSet.IsSenior(kurin.Branch);
         if (request.CatalogId is not null)
         {
-            return inSeniorKurin
+            // A senior kurin's провід records its people's; anywhere else a senior person keeps their own.
+            var ownsCard = member.UserKey is { } account && account == _currentUserContext.UserId;
+            return inSeniorKurin || (ownsCard && await IsSeniorAsync(member, cancellationToken))
                 ? await UpsertSeniorAsync(request, member, actingKurinKey, existingAward, cancellationToken)
                 : ServiceResult<MemberAwardDto>.Failure(
-                    ResultType.BadRequest, "SeniorAwardOutsideSeniorKurin", "A senior відзначення is recorded in a УСП or УПС kurin.");
+                    ResultType.BadRequest, "SeniorAwardOutsideSeniorKurin", "A senior відзначення is recorded in a УСП or УПС kurin, or by a senior person on their own card.");
         }
 
         if (inSeniorKurin || existingAward?.CatalogId is not null)
@@ -273,6 +278,22 @@ public sealed class UpsertMemberAwardCommandHandler : IRequestHandler<UpsertMemb
     /// <summary>The journal keeps the catalogue's name, not its id.</summary>
     private string? HonourTitle(string? catalogId) =>
         catalogId is null ? null : _honours.GetById(catalogId)?.Title ?? catalogId;
+
+    /// <summary>
+    /// A senior person: their current ступінь, the highest on the whole ladder, is старший пластун or
+    /// a сеніор's, or they stand in a УСП or УПС kurin. A сеніор who leads an УПЮ kurin is one.
+    /// </summary>
+    private async Task<bool> IsSeniorAsync(MemberEntity member, CancellationToken cancellationToken)
+    {
+        var levels = member.PlastLevelHistory.Select(history => history.PlastLevel).ToList();
+        if (member.LatestPlastLevel is { } latest)
+        {
+            levels.Add(latest);
+        }
+
+        return PlastLadder.Highest(levels) is { } current && PlastLadder.BranchOf(current) != KurinBranch.UPYu
+               || await _scope.StandsInSeniorKurinAsync(ResourceType.Member, member.MemberKey, cancellationToken);
+    }
 
     private Task RecordAsync(
         string action,

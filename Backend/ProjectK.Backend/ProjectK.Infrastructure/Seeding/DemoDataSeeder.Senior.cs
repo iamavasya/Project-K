@@ -97,7 +97,9 @@ public partial class DemoDataSeeder
 
     /// <summary>
     /// A УПЮ kurin with the Order's УСП number. Each улад counts its own, so 5-й курінь УПЮ and 5-й
-    /// курінь УСП are two kurins, and the admin pages have to keep them apart.
+    /// курінь УСП are two kurins, and the admin pages have to keep them apart. Its зв'язкова is a
+    /// сеніорка with her вірлиця of 2002 on record: her card shows the сеніорка, and she keeps her own
+    /// senior відзначення in this УПЮ kurin.
     /// </summary>
     private async Task SeedSameNumberYouthKurinAsync(CancellationToken cancellationToken)
     {
@@ -107,7 +109,23 @@ public partial class DemoDataSeeder
             "Львів",
             "Курінь УПЮ. Сходини щосуботи в домівці на Личаківській.",
             cancellationToken);
-        await EnsureSeniorLeaderAsync(kurin.KurinKey, SameNumberYouthEmail, "Соломія", "Дмитрук", 1990, cancellationToken);
+        var leader = await EnsureSeniorLeaderAsync(kurin.KurinKey, SameNumberYouthEmail, "Соломія", "Дмитрук", 1990, cancellationToken);
+        if (!await _dbContext.PlastLevelHistories.AnyAsync(h => h.MemberKey == leader.MemberKey, cancellationToken))
+        {
+            foreach (var (level, on) in new[]
+            {
+                (PlastLevel.Uchasnyk, new DateOnly(2001, 5, 12)),
+                (PlastLevel.Skob, new DateOnly(2002, 7, 20)),
+                (PlastLevel.Starshoplastun, new DateOnly(2008, 11, 15)),
+                (PlastLevel.Senior, new DateOnly(2015, 4, 26))
+            })
+            {
+                _dbContext.PlastLevelHistories.Add(new PlastLevelHistory { MemberKey = leader.MemberKey, KurinKey = kurin.KurinKey, PlastLevel = level, DateAchieved = on, IsPlastunka = true });
+            }
+
+            leader.LatestPlastLevel = PlastLevel.Senior;
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
