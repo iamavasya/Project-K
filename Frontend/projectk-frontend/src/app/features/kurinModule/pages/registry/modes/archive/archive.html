@@ -1,6 +1,6 @@
 <p-confirmdialog />
 
-<section class="lil-page" data-testid="kurin-archive">
+<div class="registry-mode" data-testid="kurin-archive">
   @if (zone()) {
     <div class="archive-danger" data-testid="archive-danger-banner">
       <p-message severity="error" icon="pi pi-exclamation-triangle">
@@ -14,16 +14,11 @@
     </div>
   }
 
-  <header class="lil-page-head">
-    <div>
-      <h1>Архів куреня</h1>
+  @if (canDelete() && !zone()) {
+    <div class="archive-bar">
+      <p-button label="Небезпечний режим" icon="pi pi-lock-open" severity="danger" [outlined]="true" (onClick)="openEnter()" data-testid="archive-danger-open" />
     </div>
-    @if (canDelete() && !zone()) {
-      <div class="lil-page-head__actions">
-        <p-button label="Небезпечний режим" icon="pi pi-lock-open" severity="danger" [outlined]="true" (onClick)="openEnter()" data-testid="archive-danger-open" />
-      </div>
-    }
-  </header>
+  }
 
   @if (loadFailed()) {
     <p-message severity="error" icon="pi pi-exclamation-triangle">Не вдалося завантажити архів. Спробуй оновити сторінку.</p-message>
@@ -37,8 +32,7 @@
             <h2>Ролі й діловодства <span class="lil-count">{{ offices().length }}</span></h2>
           </div>
           <div class="archive-head__tools">
-            <input pInputText type="search" placeholder="Пошук" aria-label="Пошук у ролях і членствах"
-              [ngModel]="search()" (ngModelChange)="search.set($event)" />
+            <app-registry-search inputId="archive-search" label="Пошук у ролях і членствах" [(value)]="search" />
             <p-selectbutton [options]="officeFilterOptions" [ngModel]="officeFilter()" (ngModelChange)="officeFilter.set($event)"
               [allowEmpty]="false" optionLabel="label" optionValue="value" />
           </div>
@@ -85,7 +79,7 @@
     </p-table>
   </section>
 
-  <section class="kurin-tile">
+  <section class="kurin-tile" id="former">
     <p-table [value]="memberships()" styleClass="project-table" [loading]="loading()" dataKey="membershipKey">
       <ng-template #caption>
         <div class="lil-tile-head">
@@ -103,6 +97,9 @@
           }
           <th>Від</th>
           <th>До</th>
+          @if (canReturn) {
+            <th>Зараз</th>
+          }
           <th></th>
         </tr>
       </ng-template>
@@ -115,9 +112,20 @@
           }
           <td data-mobile-label="Від" class="archive-date">{{ date(m.joinedOn) }}</td>
           <td data-mobile-label="До" class="archive-date">{{ date(m.leftOn) }}</td>
+          @if (canReturn) {
+            <td data-mobile-label="Зараз">{{ standingLine(m) }}</td>
+          }
           <td class="archive-actions">
             @if (m.isOwn) {
               <p-tag value="своє" severity="secondary" />
+            }
+            @if (!zone() && returnFor(m); as person) {
+              @if (asked().has(m.memberKey)) {
+                <p-tag value="Запит чекає" severity="secondary" />
+              } @else {
+                <p-button [label]="person.standsIn.length ? 'Попросити' : 'Повернути'" icon="pi pi-user-plus" severity="secondary"
+                  variant="text" (onClick)="returning.set(person)" />
+              }
             }
             @if (m.canCorrect) {
               <p-button icon="pi pi-pencil" severity="secondary" variant="text" ariaLabel="Виправити" (onClick)="openMembership(m)" />
@@ -129,7 +137,7 @@
         </tr>
       </ng-template>
       <ng-template #emptymessage>
-        <tr><td [attr.colspan]="hasGroups() ? 6 : 5" class="lil-empty-cell">
+        <tr><td [attr.colspan]="(hasGroups() ? 6 : 5) + (canReturn ? 1 : 0)" class="lil-empty-cell">
           <app-empty-state art="trail" title="Ніхто не йшов" />
         </td></tr>
       </ng-template>
@@ -174,7 +182,9 @@
       </p-table>
     </section>
   }
-</section>
+</div>
+
+<app-return-dialog [kurinKey]="kurinKey" [person]="returning()" (closed)="returning.set(null)" (sent)="reloadAfterReturn()" />
 
 <p-dialog [visible]="!!editingOffice() || !!editingMembership()" (visibleChange)="!$event && closeEdit()" [modal]="true"
   [closable]="!saving()" [style]="{ width: 'min(92vw, 26rem)' }" [header]="editingOffice() ? 'Виправити роль' : 'Виправити членство'">

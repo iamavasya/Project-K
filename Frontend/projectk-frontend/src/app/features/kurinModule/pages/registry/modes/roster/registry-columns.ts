@@ -1,7 +1,7 @@
-import { MemberDto } from '../../models/member.dto';
-import { KurinBranch, hasGroups } from '../../models/enums/kurin-branch.enum';
-import { PlastLevel } from '../../models/enums/plast-level.enum';
-import { PLAST_LADDER, PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../../models/enums/plast-ladder';
+import { MemberDto } from '../../../../models/member.dto';
+import { KurinBranch, hasGroups } from '../../../../models/enums/kurin-branch.enum';
+import { PlastLevel } from '../../../../models/enums/plast-level.enum';
+import { PLAST_LADDER, PLAST_LEVEL_COLUMN_LABELS, defaultLevelsFor } from '../../../../models/enums/plast-ladder';
 
 export type RegistryColumnKind = 'text' | 'date' | 'phone' | 'email' | 'tags';
 

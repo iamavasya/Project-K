@@ -57,7 +57,7 @@ public sealed class Reauthentication : IReauthentication
     private async Task<ReauthenticationResult> VerifyPasswordAsync(AppUser user, string? password) =>
         string.IsNullOrEmpty(password) || !await _userManager.CheckPasswordAsync(user, password)
             ? new ReauthenticationResult(ReauthenticationOutcome.Wrong, ReauthenticationMethod.Password)
-            : new ReauthenticationResult(ReauthenticationOutcome.Verified, ReauthenticationMethod.Password, user.SecurityStamp ?? string.Empty);
+            : new ReauthenticationResult(ReauthenticationOutcome.Verified, ReauthenticationMethod.Password, user.SecurityStamp ?? string.Empty, NameOf(user));
 
     private async Task<ReauthenticationResult> VerifyCodeAsync(AppUser user, string code)
     {
@@ -71,7 +71,13 @@ public sealed class Reauthentication : IReauthentication
                     || (await _userManager.RedeemTwoFactorRecoveryCodeAsync(user, code.Trim())).Succeeded;
 
         return valid
-            ? new ReauthenticationResult(ReauthenticationOutcome.Verified, ReauthenticationMethod.Code, user.SecurityStamp ?? string.Empty)
+            ? new ReauthenticationResult(ReauthenticationOutcome.Verified, ReauthenticationMethod.Code, user.SecurityStamp ?? string.Empty, NameOf(user))
             : new ReauthenticationResult(ReauthenticationOutcome.Wrong, ReauthenticationMethod.Code);
+    }
+
+    private static string? NameOf(AppUser user)
+    {
+        var name = $"{user.FirstName} {user.LastName}".Trim();
+        return name.Length > 0 ? name : null;
     }
 }

@@ -17,8 +17,9 @@ import {
 import { E2eUser } from './support/test-users';
 
 /**
- * «Склад куреня» (1.4): one kurin asks another for a person, and the person's kurin answers. Every
- * test opens its own two kurins and its own person, so nobody seeded is ever moved.
+ * «Переходи» (1.4), a mode of the kurin's «Реєстр»: one kurin asks another for a person, and the
+ * person's kurin answers. Every test opens its own two kurins and its own person, so nobody seeded is
+ * ever moved.
  */
 
 const requestRow = (page: Page, name: string) => page.getByRole('row').filter({ hasText: name });
@@ -32,10 +33,17 @@ test.describe.configure({ timeout: 90_000 });
 // outlasts the default 7.5 s.
 const firstPaint = 20_000;
 
+const modeTab = (page: Page, name: RegExp) =>
+  page.getByRole('navigation', { name: 'Режими реєстру' }).getByRole('link', { name });
+
+/** Into the «Реєстр», then its «Переходи» tab, as a person would from the menu. */
 async function openTransfersAs(page: Page, user: E2eUser): Promise<void> {
   await loginThroughUi(page, user);
-  await page.goto('/kurin/transfers');
-  await expect(page.getByRole('heading', { name: 'Склад куреня' })).toBeVisible({ timeout: firstPaint });
+  await page.goto('/kurin/registry');
+  await expect(page.getByRole('heading', { name: 'Реєстр' })).toBeVisible({ timeout: firstPaint });
+  await modeTab(page, /^Переходи/).click();
+  await expect(page).toHaveURL(/\/kurin\/registry\/transfers/);
+  await expect(modeTab(page, /^Переходи/)).toHaveAttribute('aria-current', 'page');
 }
 
 test.describe('Moving people between kurins', () => {
@@ -74,6 +82,20 @@ test.describe('Moving people between kurins', () => {
     await expect.poll(() => noticeTitles(request, asking.zvyazkovyi)).toContain('Запит підтверджено');
     await expect.poll(() => noticeTitles(request, person.user)).toContain('Тебе прийнято ще й до куреня');
     expect(await currentKurins(request, home.zvyazkovyi, person)).toEqual([home.kurinKey, asking.kurinKey].sort());
+  });
+
+  test('the address in the person’s QR still opens «Переходи» and looks their code up', async ({ page, request }, testInfo) => {
+    const suffix = scenarioSuffix(testInfo);
+    const home = await freshKurin(request, suffix, 'qr');
+    const asking = await freshKurin(request, suffix, 'scan');
+    const person = await personIn(request, home, suffix, 'qr');
+
+    await loginThroughUi(page, asking.zvyazkovyi);
+    await page.goto(`/kurin/transfers?code=${person.publicId}`);
+
+    await expect(page).toHaveURL(/\/kurin\/registry\/transfers\?code=/, { timeout: firstPaint });
+    await expect(page.getByLabel('Код людини')).toHaveValue(person.publicId);
+    await expect(page.getByText(person.fullName)).toBeVisible();
   });
 
   test('«перевести» moves the person after the confirm dialog, out of one kurin and into the other', async ({ page, request }, testInfo) => {
@@ -143,12 +165,14 @@ test.describe('Who sees what', () => {
     await expect(page.getByRole('button', { name: 'Зберегти' })).toHaveCount(0);
   });
 
-  test('someone without the kurin’s management is refused «Склад куреня»', async ({ page, request }, testInfo) => {
+  test('someone without the kurin’s management is refused «Переходи», by the old address too', async ({ page, request }, testInfo) => {
     const suffix = scenarioSuffix(testInfo);
     const home = await freshKurin(request, suffix, 'plain');
     const person = await personIn(request, home, suffix, 'plain');
 
     await loginThroughUi(page, person.user);
+    await page.goto('/kurin/registry/transfers');
+    await expect(page).toHaveURL(/\/forbidden/, { timeout: firstPaint });
     await page.goto('/kurin/transfers');
     await expect(page).toHaveURL(/\/forbidden/, { timeout: firstPaint });
     await expect(page.getByRole('button', { name: 'Надіслати запит' })).toHaveCount(0);

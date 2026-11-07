@@ -10,8 +10,7 @@
   gap: 0.5rem;
 }
 
-.archive-head__tools input {
-  min-width: 0;
+.archive-head__tools app-registry-search {
   width: 12rem;
 }
 
@@ -82,7 +81,13 @@
 }
 
 @media (max-width: 640px) {
-  .archive-head__tools input {
+  .archive-head__tools app-registry-search {
     width: 100%;
   }
+}
+
+/* The danger zone opens from above the archive, apart from the tables it deletes from. */
+.archive-bar {
+  display: flex;
+  justify-content: flex-end;
 }

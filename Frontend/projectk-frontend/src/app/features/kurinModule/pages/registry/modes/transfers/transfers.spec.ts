@@ -5,9 +5,9 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { of, throwError } from 'rxjs';
-import { AuthService } from '../../../authModule/services/auth-service/auth.service';
-import { FormerMemberStandingDto, MembershipCandidateDto, MembershipRequestDto, MembershipRequestKurinDto, MembershipService } from '../../services/membership-service/membership.service';
-import { KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { AuthService } from '../../../../../authModule/services/auth-service/auth.service';
+import { MembershipCandidateDto, MembershipRequestDto, MembershipRequestKurinDto, MembershipService } from '../../../../services/membership-service/membership.service';
+import { KurinBranch } from '../../../../models/enums/kurin-branch.enum';
 import { TransfersComponent } from './transfers';
 
 describe('TransfersComponent', () => {
@@ -37,23 +37,16 @@ describe('TransfersComponent', () => {
     currentKurins
   });
 
-  const formerPerson = (memberKey: string, standsIn: ReturnType<typeof kurin>[]): FormerMemberStandingDto => ({
-    former: { memberKey, firstName: 'Віталій', lastName: 'Бойко', groupName: 'Соколи', joinedAtUtc: '2023-09-01', leftAtUtc: '2026-10-01' },
-    standsIn
-  });
-
-  function create(incoming: MembershipRequestDto[] = [], outgoing: MembershipRequestDto[] = [], former: FormerMemberStandingDto[] = []) {
+  function create(incoming: MembershipRequestDto[] = [], outgoing: MembershipRequestDto[] = []) {
     memberships = {
       requests: vi.fn(),
       candidate: vi.fn(),
       createRequest: vi.fn(),
       approveRequest: vi.fn(),
       declineRequest: vi.fn(),
-      cancelRequest: vi.fn(),
-      formerStanding: vi.fn()
+      cancelRequest: vi.fn()
     } as MockedObject<MembershipService>;
     memberships.requests.mockReturnValue(of({ incoming, outgoing }));
-    memberships.formerStanding.mockReturnValue(of(former));
     memberships.createRequest.mockReturnValue(of({ membershipRequestKey: 'r9', joined: false }));
 
     TestBed.configureTestingModule({
@@ -171,43 +164,9 @@ describe('TransfersComponent', () => {
     expect(memberships.approveRequest).toHaveBeenCalledWith('k15', 'r1');
   });
 
-  it('lists former members with where they stand now, and marks those already asked for', () => {
-    const fixture = create([], [request({ memberKey: 'asked', fromKurin: kurin(1) })],
-      [formerPerson('nowhere', []), formerPerson('asked', [kurin(1)])]);
+  it('has no former members of its own: they are in the archive', () => {
+    const fixture = create();
 
-    expect(text(fixture)).toContain('Колишні члени');
-    expect(text(fixture)).toContain('Ніде');
-    expect(text(fixture)).toContain('Запит чекає');
-    expect(fixture.componentInstance.askedFor().has('asked')).toBe(true);
-  });
-
-  it('takes back at once a former member who stands nowhere', () => {
-    const fixture = create([], [], [formerPerson('nowhere', [])]);
-    const component = fixture.componentInstance;
-    memberships.createRequest.mockReturnValue(of({ membershipRequestKey: null, joined: true }));
-
-    component.openReturn(component.former()[0]);
-    component.returnMembershipKind.set('Staff');
-    component.sendReturn();
-
-    expect(memberships.createRequest).toHaveBeenCalledWith('k15', {
-      memberKey: 'nowhere', kind: 'Transfer', membershipKind: 'Staff', fromKurinKey: null
-    });
-    expect(component.returning()).toBeNull();
-  });
-
-  it('asks the kurin a former member stands in, «ще й до нас» when chosen', () => {
-    const fixture = create([], [], [formerPerson('elsewhere', [kurin(1), kurin(7)])]);
-    const component = fixture.componentInstance;
-
-    component.openReturn(component.former()[0]);
-    component.returnKind.set('AlsoJoin');
-    expect(component.canReturn()).toBe(false);
-    component.returnFrom.set('k7');
-    component.sendReturn();
-
-    expect(memberships.createRequest).toHaveBeenCalledWith('k15', {
-      memberKey: 'elsewhere', kind: 'AlsoJoin', membershipKind: 'Youth', fromKurinKey: 'k7'
-    });
+    expect(text(fixture)).not.toContain('Колишні');
   });
 });

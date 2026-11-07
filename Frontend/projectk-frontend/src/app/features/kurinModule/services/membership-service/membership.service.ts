@@ -95,11 +95,6 @@ export class MembershipService {
   private readonly cache = inject(ClientCacheService);
   private readonly apiUrl = `${environment.apiUrl}/kurin`;
 
-  /** Кого курінь вивів і ще не повернув. */
-  former(kurinKey: string): Observable<FormerMemberDto[]> {
-    return this.http.get<FormerMemberDto[]>(`${this.apiUrl}/${kurinKey}/memberships/former`);
-  }
-
   /**
    * Прийняти назад того, кого курінь уже знає, — за ключем.
    * Відкривається нове членство, старе лишається в історії.

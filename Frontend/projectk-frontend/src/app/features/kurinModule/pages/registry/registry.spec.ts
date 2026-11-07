@@ -1,354 +1,64 @@
-import type { MockedObject } from 'vitest';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
-
-import { AuthService } from '../../../authModule/services/auth-service/auth.service';
-import { Confirmation, ConfirmationService, MessageService } from '@openng/optimus-ui/api';
+import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { FormerMemberDto, MembershipService } from '../../services/membership-service/membership.service';
+import { BehaviorSubject, of } from 'rxjs';
+import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinService } from '../../services/kurin-service/kurin.service';
-import { MemberService } from '../../services/member-service/member.service';
-import { MemberDto } from '../../models/member.dto';
+import { MembershipService } from '../../services/membership-service/membership.service';
 import { KurinBranch } from '../../models/enums/kurin-branch.enum';
-import { PlastLevel } from '../../models/enums/plast-level.enum';
+import { REGISTRY_MODES, RegistryMode, RegistryModes } from './registry-modes';
 import { RegistryComponent } from './registry';
-import { KurinTagService } from '../../services/kurin-tag-service/kurin-tag.service';
-import { KurinTagsDto, NO_KURIN_TAGS } from '../../models/kurin-tag.dto';
-import { computed, signal } from '@angular/core';
-
-function member(partial: Partial<MemberDto>): MemberDto {
-  return {
-    memberKey: partial.lastName ?? 'k',
-    groupKey: 'g',
-    kurinKey: 'kurin-1',
-    firstName: 'Тест',
-    middleName: '',
-    lastName: 'Особа',
-    email: 'a@b.c',
-    phoneNumber: '0500000000',
-    dateOfBirth: null,
-    plastLevelHistories: [],
-    leadershipHistories: [],
-    profilePhotoUrl: null,
-    ...partial
-  };
-}
-
-function formerPerson(partial: Partial<FormerMemberDto> = {}): FormerMemberDto {
-  return {
-    memberKey: partial.memberKey ?? 'gone-1',
-    firstName: 'Тест',
-    lastName: 'Вибула',
-    groupName: 'Alpha',
-    joinedAtUtc: '2024-01-01T00:00:00Z',
-    leftAtUtc: '2026-09-01T00:00:00Z',
-    ...partial
-  };
-}
 
 describe('RegistryComponent', () => {
-  let component: RegistryComponent;
-  let fixture: ComponentFixture<RegistryComponent>;
-  let membership: MockedObject<MembershipService>;
+  let allowed: RegistryMode[];
+  let waiting: ReturnType<typeof vi.fn>;
 
-  /**
-   * Натиснути «Так» у діалозі. `ConfirmationService` компонент дає сам, тож брати його треба з
-   * інжектора компонента, а не з кореневого; сам діалог тут не рендериться, тож викликаємо те, що
-   * викликав би він.
-   */
-  function acceptConfirmation(): void {
-    const service = fixture.debugElement.injector.get(ConfirmationService);
-    pendingConfirmations = [];
-    vi.spyOn(service, 'confirm').mockImplementation(confirmation => {
-      pendingConfirmations.push(confirmation);
-      return service;
-    });
-  }
-
-  let pendingConfirmations: Confirmation[] = [];
-
-  /** Теги куреня, які бачить реєстр; без тегів — як курінь, що їх не вмикав. */
-  let kurinTags: KurinTagsDto = NO_KURIN_TAGS;
-  let exported: string[] | null = null;
-
-  function tagServiceStub(): Partial<KurinTagService> {
-    const current = signal(kurinTags);
-    const byKey = computed(() => new Map(current().tags.map(tag => [tag.kurinTagKey, tag])));
-    return {
-      current,
-      enabled: computed(() => current().enabled),
-      canManage: computed(() => current().enabled && current().canManage),
-      byKey,
-      revision: signal(0),
-      resolve: (keys: readonly string[] | null | undefined) =>
-        (keys ?? []).map(key => byKey().get(key)!).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name, 'uk')),
-      ensureCurrent: () => undefined,
-      load: () => of(current())
-    };
-  }
-
-  /**
-   * @param setup Підмінити відповідь сервісу до того, як компонент її попросить. Ставити стаб перед
-   *   `load` марно: він перестворює шпигуна, і тест на помилку проходив би, бо порожній список
-   *   виглядає так само, як невдале читання.
-   */
-  function load(
-    people: MemberDto[],
-    branch = KurinBranch.UPYu,
-    former: FormerMemberDto[] = [],
-    setup?: (service: MockedObject<MembershipService>) => void
-  ): void {
-    TestBed.resetTestingModule();
-    membership = {
-      former: vi.fn(),
-      createRequest: vi.fn()
-    } as MockedObject<MembershipService>;
-    membership.former.mockReturnValue(of(former));
-    membership.createRequest.mockReturnValue(of({ membershipRequestKey: null, joined: true }));
-
+  function create() {
+    waiting = vi.fn().mockReturnValue(of(2));
     TestBed.configureTestingModule({
       imports: [RegistryComponent],
       providers: [
-        // Застосунок дає його на рівні app.config; компонент лише споживає.
-        MessageService,
         provideRouter([]),
-        { provide: MembershipService, useValue: membership },
-        { provide: MemberService, useValue: { getAll: () => of(people) } },
+        { provide: AuthService, useValue: { getAuthState: () => new BehaviorSubject({ kurinKey: 'k1' }) } },
+        { provide: KurinService, useValue: { getByKey: () => of({ kurinKey: 'k1', number: 12, branch: KurinBranch.UPYu }) } },
+        { provide: MembershipService, useValue: { waitingRequests: waiting } },
         {
-          provide: KurinService,
+          provide: RegistryModes,
           useValue: {
-            getByKey: () => of({ kurinKey: 'kurin-1', number: 3, branch }),
-            exportRegistry: (_: string, columns: string[]) => {
-              exported = columns;
-              return of({ body: null, headers: { get: () => null } });
-            }
+            allows: (mode: RegistryMode) => allowed.includes(mode),
+            available: () => REGISTRY_MODES.filter(link => allowed.includes(link.mode))
           }
-        },
-        { provide: KurinTagService, useValue: tagServiceStub() },
-        { provide: AuthService, useValue: { getAuthState: () => of({ kurinKey: 'kurin-1' }) } }
+        }
       ]
     });
-
-    setup?.(membership);
-
-    localStorage.clear();
-    fixture = TestBed.createComponent(RegistryComponent);
-    component = fixture.componentInstance;
+    const fixture = TestBed.createComponent(RegistryComponent);
     fixture.detectChanges();
+    return fixture;
   }
 
-  afterEach(() => {
-    localStorage.clear();
-    kurinTags = NO_KURIN_TAGS;
-    exported = null;
+  const tabs = (fixture: ReturnType<typeof create>) =>
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.registry-modes__tab')).map(tab => tab.textContent?.trim());
+
+  it('names the kurin and offers each mode the person has, with the requests waiting on «Переходи»', () => {
+    allowed = ['roster', 'transfers', 'archive', 'import'];
+    const fixture = create();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('12 курінь · УПЮ');
+    expect(tabs(fixture)).toEqual(['Склад', 'Переходи 2', 'Архів', 'Імпорт']);
+    expect(waiting).toHaveBeenCalledWith('k1');
   });
 
-  /**
-   * Розділяє діловодство в кадрі виховників, і бекенд уже сказав, у кого він є. Гуртковий теж має діловодство і
-   * теж юнак — якби ділили за «має діловодство», таблиця юнаків втратила б саме тих, хто веде гуртки.
-   */
-  it('should keep юнаки and впорядники in separate tables', () => {
-    load([
-      member({ lastName: 'Юнак' }),
-      member({ lastName: 'Гуркова', userRole: 'Group.Hurtkoviy' }),
-      member({ lastName: 'Виховна', isStaff: true, mentoredGroupNames: ['Alpha'] })
-    ]);
+  it('shows a гурток\'s провід only their modes, and asks nothing about requests', () => {
+    allowed = ['roster', 'archive'];
+    const fixture = create();
 
-    expect(component.youth().map(person => person.lastName)).toEqual(['Гуркова', 'Юнак']);
-    expect(component.staff().map(person => person.lastName)).toEqual(['Виховна']);
+    expect(tabs(fixture)).toEqual(['Склад', 'Архів']);
+    expect(waiting).not.toHaveBeenCalled();
   });
 
-  it('should lead the staff table with the гуртки they mentor and drop their own', () => {
-    load([member({ lastName: 'Виховна', isStaff: true, mentoredGroupNames: ['Alpha', 'Beta'] })]);
+  it('has no tabs for a single mode', () => {
+    allowed = ['roster'];
+    const fixture = create();
 
-    const ids = component.staffColumns().map(column => column.id);
-
-    expect(ids[0]).toBe('mentoredGroups');
-    expect(ids).not.toContain('groupName');
-
-    const assignment = component.staffColumns()[0];
-    expect(component.cell(component.staff()[0], assignment)).toBe('Alpha, Beta');
-  });
-
-  it('should not offer the закріплення column in the chooser', () => {
-    load([]);
-
-    expect(component.allColumns().map(column => column.id)).not.toContain('mentoredGroups');
-  });
-
-  it('should count only юнаки, one row per ступінь', () => {
-    load([
-      member({ lastName: 'Один', latestPlastLevel: PlastLevel.Uchasnyk }),
-      member({ lastName: 'Два', latestPlastLevel: PlastLevel.Uchasnyk }),
-      member({ lastName: 'Три', latestPlastLevel: PlastLevel.Skob }),
-      member({ lastName: 'Виховна', latestPlastLevel: PlastLevel.Uchasnyk, isStaff: true })
-    ]);
-
-    const counts = new Map(component.tally().map(row => [row.label, row.count]));
-
-    expect(counts.get('пл. уч.')).toBe(2);
-    expect(counts.get('пл. скоб / вірл.')).toBe(1);
-    expect(counts.get('Разом')).toBe(3);
-  });
-
-  /** Незаписаний ступінь — саме те, заради чого цю табличку й читають. */
-  it('should show people with no ступінь rather than losing them', () => {
-    load([member({ lastName: 'Без' }), member({ lastName: 'Учасник', latestPlastLevel: PlastLevel.Uchasnyk })]);
-
-    const counts = new Map(component.tally().map(row => [row.label, row.count]));
-
-    expect(counts.get('Без ступеня / інший')).toBe(1);
-    expect(counts.get('Разом')).toBe(2);
-  });
-
-  it('should count a УПС kurin on its own ladder', () => {
-    load([member({ lastName: 'Сеньйор', latestPlastLevel: PlastLevel.SeniorPratsi })], KurinBranch.UPS);
-
-    const counts = new Map(component.tally().map(row => [row.label, row.count]));
-
-    expect(counts.get('пл. сен. праці')).toBe(1);
-    expect(counts.has('Без ступеня / інший')).toBe(false);
-  });
-
-  /**
-   * Головне в цій задачі. Виведеного не видно в жодному читанні складу — усі вони фільтрують
-   * закриті членства, — тож без цього списку помилковий клік прибирав людину назовсім.
-   */
-  it('should show who the kurin let go, apart from the склад', () => {
-    load([member({ lastName: 'Юнак' })], KurinBranch.UPYu, [formerPerson({ lastName: 'Вибула' })]);
-
-    expect(component.youth().map(person => person.lastName)).toEqual(['Юнак']);
-    expect(component.former().map(person => person.lastName)).toEqual(['Вибула']);
-    expect(component.formerName(component.former()[0])).toBe('Вибула Тест');
-  });
-
-  /** Довідка, а не робота: список згорнутий, поки його не попросили. */
-  it('should keep the former list folded away until asked', () => {
-    load([], KurinBranch.UPYu, [formerPerson()]);
-
-    expect(component.formerOpen()).toBe(false);
-    component.toggleFormer();
-    expect(component.formerOpen()).toBe(true);
-  });
-
-  it('should take someone back by their key, without the code they hold', () => {
-    const person = formerPerson({ memberKey: 'gone-42' });
-    load([], KurinBranch.UPYu, [person]);
-
-    acceptConfirmation();
-    component.confirmTakeBack(person);
-    pendingConfirmations[0].accept?.();
-
-    expect(membership.createRequest).toHaveBeenCalledTimes(1);
-
-    expect(membership.createRequest).toHaveBeenCalledWith('kurin-1', { memberKey: 'gone-42', kind: 'Transfer', membershipKind: 'Youth' });
-    expect(component.former()).toEqual([]);
-  });
-
-  // Since JOIN-01 a kurin does not take someone straight from another one: it asks, and the person stays
-  // on the former list until their kurin answers.
-  it('should ask for someone who has since joined another kurin, and keep them listed', () => {
-    const person = formerPerson({ memberKey: 'gone-42' });
-    load([], KurinBranch.UPYu, [person], service =>
-      service.createRequest.mockReturnValue(of({ membershipRequestKey: 'r-1', joined: false })));
-
-    acceptConfirmation();
-    component.confirmTakeBack(person);
-    pendingConfirmations[0].accept?.();
-
-    expect(component.former()).toHaveLength(1);
-    expect(component.returning()).toBeNull();
-  });
-
-  it('should leave them on the list when taking them back fails', () => {
-    const person = formerPerson({ memberKey: 'gone-42' });
-    load([], KurinBranch.UPYu, [person], service =>
-      service.createRequest.mockReturnValue(throwError(() => new Error('nope'))));
-
-    acceptConfirmation();
-    component.confirmTakeBack(person);
-    pendingConfirmations[0].accept?.();
-
-    expect(component.former()).toHaveLength(1);
-    expect(component.returning()).toBeNull();
-  });
-
-  /** Курінь, у якому ще нікого не виводили, не має бачити помилку через порожній список. */
-  it('should stay quiet when the former list cannot be read', () => {
-    load([member({ lastName: 'Юнак' })], KurinBranch.UPYu, [], service =>
-      service.former.mockReturnValue(throwError(() => new Error('nope'))));
-
-    expect(component.former()).toEqual([]);
-    expect(component.youth()).toHaveLength(1);
-  });
-
-  it('should search across both tables at once', () => {
-    load([
-      member({ lastName: 'Юнак', groupName: 'Alpha' }),
-      member({ lastName: 'Виховна', isStaff: true, mentoredGroupNames: ['Alpha'] }),
-      member({ lastName: 'Стороння', groupName: 'Beta' })
-    ]);
-
-    component.search.set('alpha');
-
-    expect(component.youth().map(person => person.lastName)).toEqual(['Юнак']);
-    expect(component.staff().map(person => person.lastName)).toEqual(['Виховна']);
-  });
-
-  describe('tags', () => {
-    const tag = (kurinTagKey: string, name: string) => ({ kurinTagKey, name, colorHex: '#2F855A', memberCount: null });
-
-    beforeEach(() => {
-      kurinTags = { enabled: true, canManage: true, maxPerMember: 10, palette: [], tags: [tag('t-new', 'Новики'), tag('t-camp', 'Табір')] };
-    });
-
-    it('should keep only people who carry one of the chosen tags', () => {
-      load([
-        member({ lastName: 'Новик', tagKeys: ['t-new'] }),
-        member({ lastName: 'Табірний', tagKeys: ['t-camp'] }),
-        member({ lastName: 'Без тегів' })
-      ]);
-
-      component.tagFilter.set(['t-new']);
-      expect(component.youth().map(person => person.lastName)).toEqual(['Новик']);
-
-      component.tagFilter.set(['t-new', 't-camp']);
-      expect(component.youth().map(person => person.lastName)).toEqual(['Новик', 'Табірний']);
-    });
-
-    it('should give each row its tag names to sort the tags column by', () => {
-      load([member({ lastName: 'Обидва', tagKeys: ['t-camp', 't-new'] })]);
-
-      expect(component.youth()[0].tagSort).toBe('Новики, Табір');
-    });
-
-    it('should offer the tags column only while the kurin uses tags', () => {
-      load([member({})]);
-      expect(component.allColumns().some(column => column.id === 'tags')).toBe(true);
-
-      kurinTags = NO_KURIN_TAGS;
-      load([member({})]);
-      expect(component.allColumns().some(column => column.id === 'tags')).toBe(false);
-    });
-
-    it('should send the tags column to the export like any other', () => {
-      load([member({})]);
-      component.selectedColumnIds.set(['groupName', 'tags']);
-
-      component.exportToExcel();
-
-      expect(exported).toEqual(['groupName', 'tags']);
-    });
-
-    // The default columns hold «Теги» for every kurin; one with tags off must not export it empty.
-    it('should leave the tags column out of the export while the kurin has tags off', () => {
-      kurinTags = NO_KURIN_TAGS;
-      load([member({})]);
-      component.selectedColumnIds.set(['groupName', 'tags']);
-
-      component.exportToExcel();
-
-      expect(exported).toEqual(['groupName']);
-    });
+    expect(tabs(fixture)).toEqual([]);
   });
 });

@@ -7,7 +7,7 @@ import { KurinDto } from '../../models/kurin.dto';
 import { KraiDto } from '../../models/krai.dto';
 import { InviteKurinFounderRequest, KurinFounderInvitationDto } from '../../models/kurin-founder-invitation.dto';
 import { CardFieldsDto, DEFAULT_CARD_FIELDS, KurinCardFieldDto } from '../../models/card-fields.dto';
-import { ApplyRosterRequest, RosterImportReport, RosterPreview } from '../../pages/import/import-model';
+import { ApplyRosterRequest, RosterImportReport, RosterPreview } from '../../pages/registry/modes/import/import-model';
 import { Observable } from 'rxjs/internal/Observable';
 import { catchError, map, of, tap } from 'rxjs';
 import { ClientCacheService } from '../client-cache/client-cache.service';

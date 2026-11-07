@@ -7,7 +7,7 @@ export type ScanTarget =
 const LILEYKA_HOSTS = ['lileyka.app'];
 
 /**
- * Reads a scanned QR. Only Лілейка's own links are followed: a transfer code opens «Склад куреня»
+ * Reads a scanned QR. Only Лілейка's own links are followed: a transfer code opens «Переходи»
  * here in the app, a shared card opens its page. Anything else — another site, plain text — is only
  * shown, never opened: a QR on a poster is not something to follow blindly.
  */
@@ -25,7 +25,8 @@ export function scanTarget(text: string, origin: string): ScanTarget {
   }
 
   const code = url.searchParams.get('code');
-  if (url.pathname === '/kurin/transfers' && code) {
+  // Printed cards carry /kurin/transfers; the web's own address for the mode is /kurin/registry/transfers.
+  if ((url.pathname === '/kurin/transfers' || url.pathname === '/kurin/registry/transfers') && code) {
     return { kind: 'transfer', code };
   }
   if (/^\/(v|c)\/[A-Za-z0-9_-]+$/.test(url.pathname)) {

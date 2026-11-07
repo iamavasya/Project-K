@@ -23,6 +23,7 @@ import { ReportProblemDialogComponent } from '../../../systemModule/components/r
 import { displayCodeName } from '../../../../shared/functions/release-code-name.function';
 import { WaitlistAttentionService } from '../../../adminModule/services/waitlist-attention/waitlist-attention.service';
 import { MembershipService } from '../../services/membership-service/membership.service';
+import { RegistryModes } from '../../pages/registry/registry-modes';
 
 /** Чим курінь користується — від цього залежать пункти меню. */
 interface KurinMenuFeatures {
@@ -46,6 +47,7 @@ export class SidebarMenuComponent implements OnChanges {
   private readonly duesService = inject(DuesService);
   private readonly memberships = inject(MembershipService);
   private readonly installApp = inject(InstallAppService);
+  private readonly registryModes = inject(RegistryModes);
   readonly visible = model(false);
   /** «Повідомити про проблему» lives beside the menu so it can be opened from any page. */
   readonly reportVisible = signal(false);
@@ -212,37 +214,21 @@ export class SidebarMenuComponent implements OnChanges {
 
   private kurinItems(kurinKey: string, features: KurinMenuFeatures, duesGroups: DuesGroupLinkDto[], requestsWaiting: number): MenuItem[] {
     const isYouthKurin = features.youth;
-    const canSeeRegistry = this.permissionService.isAdmin()
-      || this.permissionService.canManageWholeKurin()
-      || this.permissionService.canLeadGroups();
-    const canManageKurinSettings = this.permissionService.canManageKurinSettings();
     const disabled = !kurinKey;
     const items: MenuItem[] = [
       this.navItem({ label: 'Курінь', icon: 'pi pi-flag', routerLink: ['/kurin'], disabled })
     ];
 
-    // Реєстр — суцільний склад куреня рядками, з контактами. Це інструмент проводу, тож
-    // юнакові його не показуємо; сторінка так само закрита capabilityGuard.
-    if (canSeeRegistry) {
-      items.push(this.navItem({ label: 'Реєстр', icon: 'pi pi-table', routerLink: ['/kurin/registry'], disabled }));
-    }
-
-    // Вкладка Звʼязкового: переходи між куренями, прийняти за кодом, колишні члени. Крапка — є запит,
-    // на який чекають відповіді.
-    if (this.permissionService.canManageWholeKurin()) {
+    // «Реєстр» — склад, переходи, архів, імпорт на одній сторінці. Пункт є, коли людина має бодай
+    // один режим; крапка — є запит від іншого куреня, на який чекають відповіді.
+    if (this.registryModes.available().length) {
       items.push(this.navItem({
-        label: 'Склад куреня',
-        icon: 'pi pi-arrow-right-arrow-left',
-        routerLink: ['/kurin/transfers'],
+        label: 'Реєстр',
+        icon: 'pi pi-table',
+        routerLink: ['/kurin/registry'],
         disabled,
         styleClass: requestsWaiting > 0 ? 'lil-menu-item--attention' : undefined
       }));
-    }
-
-    // Імпорт заводить склад цілого куреня — це дія Зв'язкового, не гурткового. Він розкладає людей по
-    // гуртках, тож у старшому курені, де гуртків немає, його немає теж.
-    if (canManageKurinSettings && isYouthKurin) {
-      items.push(this.navItem({ label: 'Імпорт складу', icon: 'pi pi-upload', routerLink: ['/kurin/import'], disabled }));
     }
 
     // Календар і Задачі бачить кожен у курені — учасник бачить призначене йому,
@@ -266,10 +252,6 @@ export class SidebarMenuComponent implements OnChanges {
 
     if (this.permissionService.canReadJournal()) {
       items.push(this.navItem({ label: 'Журнал дій', icon: 'pi pi-history', routerLink: ['/kurin', kurinKey, 'journal'] }));
-    }
-
-    if (this.permissionService.canReadArchive()) {
-      items.push(this.navItem({ label: 'Архів куреня', icon: 'pi pi-box', routerLink: ['/kurin', kurinKey, 'archive'] }));
     }
 
     items.push(...this.duesGroupItems(duesGroups));

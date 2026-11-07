@@ -107,7 +107,7 @@ public class KurinTagsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SetMemberTags(Guid memberKey, [FromBody] SetMemberTagsRequest body, CancellationToken cancellationToken)
     {
-        var response = await _mediator.Send(new SetMemberTagsCommand(memberKey, body.TagKeys), cancellationToken);
+        var response = await _mediator.Send(new SetMemberTagsCommand(memberKey, body.TagKeys, body.KurinKey), cancellationToken);
         return response.ToActionResult(this);
     }
 

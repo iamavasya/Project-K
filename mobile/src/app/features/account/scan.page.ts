@@ -28,7 +28,7 @@ declare global {
 /**
  * «Сканувати QR»: the camera, read a few times a second, until a QR turns up. The phone's own reader
  * (`BarcodeDetector`) where there is one, jsQR where there is not. A Лілейка link is followed — a
- * transfer code into «Склад куреня», a card to its page; anything else is only shown as text.
+ * transfer code into «Переходи», a card to its page; anything else is only shown as text.
  */
 @Component({
   selector: 'app-scan',

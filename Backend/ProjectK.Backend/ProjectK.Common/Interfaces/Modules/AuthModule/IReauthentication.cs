@@ -13,8 +13,11 @@ public interface IReauthentication
     Task<string?> GetSecurityStampAsync(Guid userKey, CancellationToken cancellationToken = default);
 }
 
-/// <summary>How the account proved itself, and the stamp a grant made from it is bound to.</summary>
-public sealed record ReauthenticationResult(ReauthenticationOutcome Outcome, ReauthenticationMethod Method, string? SecurityStamp = null)
+/// <summary>
+/// How the account proved itself, and the stamp a grant made from it is bound to. A verified result
+/// also names the account, for whoever is told about what it did: an administrator has no member card.
+/// </summary>
+public sealed record ReauthenticationResult(ReauthenticationOutcome Outcome, ReauthenticationMethod Method, string? SecurityStamp = null, string? AccountName = null)
 {
     public bool Succeeded => Outcome == ReauthenticationOutcome.Verified;
 }

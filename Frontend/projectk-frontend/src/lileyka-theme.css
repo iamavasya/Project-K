@@ -539,6 +539,13 @@ a.lil-sidebar-brand:hover {
   flex-shrink: 0;
 }
 
+/* Режим «Реєстру» (склад, переходи, архів, імпорт): його плитки стоять з тим самим кроком, що й на сторінці. */
+.registry-mode {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--lil-page-gap);
+}
+
 /* Лічильник поруч із заголовком — плашка, а не частина тексту. */
 .lil-count {
   padding: 0.05rem 0.5rem;

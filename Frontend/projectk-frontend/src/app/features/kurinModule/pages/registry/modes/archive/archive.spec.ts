@@ -5,18 +5,28 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { HttpErrorResponse } from '@angular/common/http';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
 import { of, throwError } from 'rxjs';
-import { archiveDate, KurinArchiveComponent } from './kurin-archive';
-import { KurinArchiveService } from '../../services/kurin-archive-service/kurin-archive.service';
-import { KurinFeaturesService } from '../../services/kurin-features-service/kurin-features.service';
-import { KurinArchiveDto } from '../../models/kurin-archive.dto';
-import { LeadershipRole } from '../../models/enums/leadership-role.enum';
-import { MembershipKind } from '../../models/enums/membership-kind.enum';
+import { archiveDate, KurinArchiveComponent } from './archive';
+import { AuthService } from '../../../../../authModule/services/auth-service/auth.service';
+import { FormerMemberStandingDto, MembershipRequestDto, MembershipService } from '../../../../services/membership-service/membership.service';
+import { RegistryModes } from '../../registry-modes';
+import { KurinBranch } from '../../../../models/enums/kurin-branch.enum';
+import { KurinArchiveService } from '../../../../services/kurin-archive-service/kurin-archive.service';
+import { KurinFeaturesService } from '../../../../services/kurin-features-service/kurin-features.service';
+import { KurinArchiveDto } from '../../../../models/kurin-archive.dto';
+import { LeadershipRole } from '../../../../models/enums/leadership-role.enum';
+import { MembershipKind } from '../../../../models/enums/membership-kind.enum';
 
 describe('KurinArchiveComponent', () => {
   let fixture: ComponentFixture<KurinArchiveComponent>;
   let component: KurinArchiveComponent;
   let service: MockedObject<KurinArchiveService>;
+  let memberships: MockedObject<MembershipService>;
   const hasGroups = signal(true);
+  /** Whether the viewer takes former members back: the Звʼязковий does, a гурток's провід does not. */
+  let canReturn = true;
+  let query: Record<string, string> = {};
+  let standing: FormerMemberStandingDto[] = [];
+  let outgoing: MembershipRequestDto[] = [];
 
   function archive(overrides: Partial<KurinArchiveDto> = {}): KurinArchiveDto {
     return {
@@ -61,13 +71,24 @@ describe('KurinArchiveComponent', () => {
     service.get.mockReturnValue(of(archive()));
     service.endDangerZone.mockReturnValue(of(undefined));
     hasGroups.set(true);
+    memberships = { formerStanding: vi.fn(), requests: vi.fn(), createRequest: vi.fn() } as unknown as MockedObject<MembershipService>;
+    memberships.formerStanding.mockImplementation(() => of(standing));
+    memberships.requests.mockImplementation(() => of({ incoming: [], outgoing }));
 
+    await createComponent();
+  });
+
+  async function createComponent(): Promise<void> {
+    TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [KurinArchiveComponent],
       providers: [
         provideRouter([]),
         MessageService,
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ kurinKey: 'k1' }) } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(query) } } },
+        { provide: AuthService, useValue: { getAuthStateValue: () => ({ kurinKey: 'k1' }) } },
+        { provide: MembershipService, useValue: memberships },
+        { provide: RegistryModes, useValue: { allows: (mode: string) => mode !== 'transfers' || canReturn } },
         { provide: KurinArchiveService, useValue: service },
         { provide: KurinFeaturesService, useValue: { hasGroups, branch: signal(null) } }
       ]
@@ -76,6 +97,13 @@ describe('KurinArchiveComponent', () => {
     fixture = TestBed.createComponent(KurinArchiveComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  }
+
+  afterEach(() => {
+    canReturn = true;
+    query = {};
+    standing = [];
+    outgoing = [];
   });
 
   it('reads dates as text, without a time zone to shift them', () => {
@@ -131,9 +159,81 @@ describe('KurinArchiveComponent', () => {
     component.proof.set('secret');
     component.enter();
 
+    const add = vi.spyOn(TestBed.inject(MessageService), 'add');
+
     fixture.destroy();
 
     expect(service.endDangerZone).toHaveBeenCalledWith('k1', 'Left');
+    // Another mode of the registry is leaving too: the person is told the zone is off.
+    expect(add).toHaveBeenCalledWith({ severity: 'info', summary: 'Небезпечний режим вимкнено' });
+  });
+
+  describe('former members', () => {
+    const elsewhere = { kurinKey: 'k7', number: 7, namedAfter: null, branches: [{ branch: KurinBranch.UPYu, number: 7 }] };
+    const person = (memberKey: string, standsIn: typeof elsewhere[] = []): FormerMemberStandingDto => ({
+      former: { memberKey, firstName: 'Марко', lastName: 'Бойко', joinedAtUtc: '2017-09-12', leftAtUtc: '2023-06-30' },
+      standsIn
+    });
+    const button = (label: string) => Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
+      .filter(b => b.textContent?.includes(label));
+
+    it('are taken back from their row, with where they stand now', async () => {
+      standing = [person('m2')];
+      await createComponent();
+
+      expect(text()).toContain('Ніде');
+      button('Повернути')[0].click();
+      expect(component.returning()?.former.memberKey).toBe('m2');
+    });
+
+    it('are asked for from the kurin they stand in, and not twice', async () => {
+      standing = [person('m2', [elsewhere])];
+      await createComponent();
+      expect(button('Попросити')).toHaveLength(1);
+
+      outgoing = [{ memberKey: 'm2', status: 'Pending' } as MembershipRequestDto];
+      await createComponent();
+      expect(button('Попросити')).toHaveLength(0);
+      expect(text()).toContain('Запит чекає');
+    });
+
+    it('are taken back from their latest membership only', async () => {
+      standing = [person('m2')];
+      const twice = archive().memberships[0];
+      service.get.mockReturnValue(of(archive({
+        memberships: [twice, { ...twice, membershipKey: 'ms0', joinedOn: '2012-09-01', leftOn: '2014-06-30' }]
+      })));
+      await createComponent();
+
+      expect(button('Повернути')).toHaveLength(1);
+      expect(component.returnFor(component.memberships()[1])).toBeNull();
+    });
+
+    it('are only read and corrected by the провід of a гурток', async () => {
+      canReturn = false;
+      standing = [person('m2')];
+      memberships.formerStanding.mockClear();
+      await createComponent();
+
+      expect(memberships.formerStanding).not.toHaveBeenCalled();
+      expect(button('Повернути')).toHaveLength(0);
+      expect(text()).not.toContain('Зараз');
+    });
+
+    it('come into view on the address a card sends a released person to', async () => {
+      query = { former: '1' };
+      const scrolled: Element[] = [];
+      const original = Element.prototype.scrollIntoView;
+      Element.prototype.scrollIntoView = function (this: Element) { scrolled.push(this); };
+      try {
+        await createComponent();
+        await new Promise(resolve => setTimeout(resolve));
+      } finally {
+        Element.prototype.scrollIntoView = original;
+      }
+
+      expect(scrolled.map(element => element.id)).toEqual(['former']);
+    });
   });
 
   it('closes the zone once its last deletion is spent', () => {

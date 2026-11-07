@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { AuthService } from '../../../../../authModule/services/auth-service/auth.service';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -13,13 +14,17 @@ import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { MessageModule } from '@openng/optimus-ui/message';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
-import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
-import { KurinArchiveService } from '../../services/kurin-archive-service/kurin-archive.service';
-import { KurinFeaturesService } from '../../services/kurin-features-service/kurin-features.service';
-import { LEADERSHIP_ROLE_MAP } from '../../components/leadership/leadership/leadership';
-import { leadershipRoleDisplayName } from '../../functions/leadership-role-display.function';
-import { LeadershipRole } from '../../models/enums/leadership-role.enum';
-import { MembershipKind, membershipKindLabel } from '../../models/enums/membership-kind.enum';
+import { EmptyStateComponent } from '../../../../../../shared/empty-state/empty-state';
+import { KurinArchiveService } from '../../../../services/kurin-archive-service/kurin-archive.service';
+import { KurinFeaturesService } from '../../../../services/kurin-features-service/kurin-features.service';
+import { FormerMemberStandingDto, MembershipService } from '../../../../services/membership-service/membership.service';
+import { RegistryModes } from '../../registry-modes';
+import { standsInLine } from '../../membership-asks';
+import { ReturnDialogComponent } from '../../components/return-dialog/return-dialog';
+import { LEADERSHIP_ROLE_MAP } from '../../../../components/leadership/leadership/leadership';
+import { leadershipRoleDisplayName } from '../../../../functions/leadership-role-display.function';
+import { LeadershipRole } from '../../../../models/enums/leadership-role.enum';
+import { MembershipKind, membershipKindLabel } from '../../../../models/enums/membership-kind.enum';
 import {
   ArchivedLeadershipType,
   ArchivedMembershipDto,
@@ -27,7 +32,8 @@ import {
   ArchiveDangerZoneDto,
   DissolvedGroupDto,
   KurinArchiveDto
-} from '../../models/kurin-archive.dto';
+} from '../../../../models/kurin-archive.dto';
+import { RegistrySearchComponent } from '../../components/registry-search/registry-search';
 
 type OfficeFilter = 'former' | 'all';
 type ProofMethod = 'password' | 'code';
@@ -61,14 +67,16 @@ function fromDate(value: Date): string {
 }
 
 /**
- * «Архів куреня»: who held which role and when, the memberships that ended, the гуртки dissolved.
- * Each row the viewer may correct opens a small form. The Звʼязковий may also turn on the danger
- * zone, where records are deleted one at a time; it lives in this page's memory only and ends the
- * moment the page does — on navigation, on a closed tab, by its own clock, or by the button.
+ * «Архів» — the registry's mode for the kurin's past: who held which role and when, the memberships
+ * that ended, the гуртки dissolved. Each row the viewer may correct opens a small form, and the
+ * Звʼязковий takes a former member back from their row. The Звʼязковий may also turn on the danger
+ * zone, where records are deleted one at a time; it lives in this mode's memory only and ends the
+ * moment the mode does — on another mode, on navigation, on a closed tab, by its own clock, or by the button.
  */
 @Component({
   selector: 'app-kurin-archive',
   imports: [
+    RegistrySearchComponent,
     RouterLink,
     FormsModule,
     ButtonModule,
@@ -81,15 +89,18 @@ function fromDate(value: Date): string {
     InputTextModule,
     MessageModule,
     ConfirmDialogModule,
-    EmptyStateComponent
+    EmptyStateComponent,
+    ReturnDialogComponent
   ],
   providers: [ConfirmationService],
-  templateUrl: './kurin-archive.html',
-  styleUrl: './kurin-archive.css',
+  templateUrl: './archive.html',
+  styleUrl: './archive.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class KurinArchiveComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
+  private readonly auth = inject(AuthService);
+  private readonly membershipService = inject(MembershipService);
   private readonly archiveService = inject(KurinArchiveService);
   private readonly features = inject(KurinFeaturesService);
   private readonly confirmation = inject(ConfirmationService);
@@ -110,6 +121,10 @@ export class KurinArchiveComponent implements OnInit, OnDestroy {
 
   protected kurinKey = '';
 
+  /** Taking a former member back is the Звʼязковий's, as on «Переходи»: a гурток's провід only reads and corrects. */
+  protected readonly canReturn = inject(RegistryModes).allows('transfers');
+  private scrollToFormer = this.route.snapshot.queryParamMap.get('former') === '1';
+
   readonly archive = signal<KurinArchiveDto | null>(null);
   readonly loading = signal(true);
   readonly loadFailed = signal(false);
@@ -128,6 +143,23 @@ export class KurinArchiveComponent implements OnInit, OnDestroy {
   });
   readonly dissolvedGroups = computed(() => this.archive()?.dissolvedGroups ?? []);
   readonly canDelete = computed(() => this.archive()?.canDelete === true);
+
+  // ── Повернути колишнього ──
+  private readonly standing = signal<Map<string, FormerMemberStandingDto>>(new Map());
+  /** Former members a sent request already asks for: not asked twice. */
+  readonly asked = signal<Set<string>>(new Set());
+  readonly returning = signal<FormerMemberStandingDto | null>(null);
+  /** A person may have left more than once; they are taken back from their latest membership only. */
+  private readonly latestMembership = computed(() => {
+    const latest = new Map<string, ArchivedMembershipDto>();
+    for (const membership of this.archive()?.memberships ?? []) {
+      const seen = latest.get(membership.memberKey);
+      if (!seen || membership.leftOn > seen.leftOn) {
+        latest.set(membership.memberKey, membership);
+      }
+    }
+    return latest;
+  });
 
   // ── Виправлення ──
   readonly editingOffice = signal<ArchivedOfficeDto | null>(null);
@@ -175,17 +207,50 @@ export class KurinArchiveComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    this.kurinKey = this.route.snapshot.paramMap.get('kurinKey') ?? '';
+    this.kurinKey = this.auth.getAuthStateValue()?.kurinKey ?? '';
     this.destroyRef.onDestroy(() => this.stopTimer());
     this.load();
+    this.loadReturns();
   }
 
-  /** Leaving the page ends the zone: that is the rule, not a convenience. */
+  /** Leaving the mode ends the zone, whether for another mode or another page: that is the rule. */
   ngOnDestroy(): void {
     if (this.zone()) {
       this.zone.set(null);
       this.archiveService.endDangerZone(this.kurinKey, 'Left').subscribe({ error: () => undefined });
+      this.messages.add({ severity: 'info', summary: 'Небезпечний режим вимкнено' });
     }
+  }
+
+  returnFor(membership: ArchivedMembershipDto): FormerMemberStandingDto | null {
+    if (!this.canReturn || this.latestMembership().get(membership.memberKey) !== membership) {
+      return null;
+    }
+    return this.standing().get(membership.memberKey) ?? null;
+  }
+
+  standingLine(membership: ArchivedMembershipDto): string {
+    const person = this.standing().get(membership.memberKey);
+    return person && this.latestMembership().get(membership.memberKey) === membership ? standsInLine(person.standsIn) : '';
+  }
+
+  reloadAfterReturn(): void {
+    this.load();
+    this.loadReturns();
+  }
+
+  private loadReturns(): void {
+    if (!this.canReturn || !this.kurinKey) {
+      return;
+    }
+    this.membershipService.formerStanding(this.kurinKey).subscribe({
+      next: people => this.standing.set(new Map(people.map(person => [person.former.memberKey, person]))),
+      error: () => this.standing.set(new Map())
+    });
+    this.membershipService.requests(this.kurinKey).subscribe({
+      next: requests => this.asked.set(new Set(requests.outgoing.filter(r => r.status === 'Pending').map(r => r.memberKey))),
+      error: () => this.asked.set(new Set())
+    });
   }
 
   @HostListener('window:pagehide')
@@ -429,6 +494,11 @@ export class KurinArchiveComponent implements OnInit, OnDestroy {
         this.archive.set(archive);
         this.loading.set(false);
         this.loadFailed.set(false);
+        // `?former=1`: a card that just released someone sends the Звʼязковий to the former members.
+        if (this.scrollToFormer) {
+          this.scrollToFormer = false;
+          setTimeout(() => document.getElementById('former')?.scrollIntoView({ block: 'start' }));
+        }
       },
       error: () => {
         this.loading.set(false);

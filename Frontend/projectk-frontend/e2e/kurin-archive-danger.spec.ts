@@ -6,7 +6,7 @@ import { OwnKurin, openOwnKurin } from './support/kurin-archive';
 /**
  * The archive's danger zone (ARCH-01): the Звʼязковий proves themselves with the password, deletes
  * one record at a time after a confirmation, is refused what dues or a held role still lean on, and
- * loses the zone on leaving the page. Each test has its own kurin, so the two projects never share a
+ * loses the zone on leaving the archive mode. Each test has its own kurin, so the two projects never share a
  * zone; see `support/kurin-archive.ts`.
  */
 test.describe('Небезпечний режим архіву', () => {
@@ -14,9 +14,11 @@ test.describe('Небезпечний режим архіву', () => {
 
   const membershipRow = (page: Page, text: string) => page.getByTestId('archive-membership').filter({ hasText: text });
   const banner = (page: Page) => page.getByTestId('archive-danger-banner');
+  const modeTab = (page: Page, name: string) =>
+    page.getByRole('navigation', { name: 'Режими реєстру' }).getByRole('link', { name, exact: true });
 
   async function enterZone(page: Page, kurin: OwnKurin): Promise<void> {
-    await page.goto(`/kurin/${kurin.kurinKey}/archive`);
+    await page.goto('/kurin/registry/archive');
     await page.getByRole('button', { name: 'Небезпечний режим' }).click();
     const proof = page.getByRole('dialog', { name: 'Небезпечний режим' });
     await expect(proof).toBeVisible();
@@ -47,7 +49,7 @@ test.describe('Небезпечний режим архіву', () => {
     }
 
     await loginThroughUi(page, kurin.founder);
-    await page.goto(`/kurin/${kurin.kurinKey}/archive`);
+    await page.goto('/kurin/registry/archive');
     await expect(membershipRow(page, gone.name).getByRole('button', { name: 'Видалити' })).toHaveCount(0);
 
     await test.step('a wrong password is refused', async () => {
@@ -85,7 +87,7 @@ test.describe('Небезпечний режим архіву', () => {
     });
   });
 
-  test('вихід зі сторінки закриває режим', async ({ page, request }, testInfo) => {
+  test('інша вкладка реєстру закриває режим', async ({ page, request }, testInfo) => {
     const kurin = await openOwnKurin(request, testInfo);
     const sovy = await kurin.api.group('Сови');
     const gone = await kurin.api.member(sovy, 'Ярема', 'Лишенко');
@@ -101,18 +103,15 @@ test.describe('Небезпечний режим архіву', () => {
     const pageToken = (await openedResponse.request().allHeaders())['authorization'].replace(/^Bearer /, '');
 
     const ended = page.waitForRequest(sent => sent.url().includes('/archive/danger?') && sent.method() === 'DELETE');
-    // Off to «Головна» from the menu, which a phone keeps folded behind the toolbar's first button.
-    const home = page.getByRole('link', { name: /Головна$/ }).filter({ visible: true });
-    if (await home.count() === 0) {
-      await page.getByRole('toolbar').getByRole('button').first().click();
-    }
-    await home.first().click();
+    // Over to «Склад»: leaving the archive mode is leaving the zone, as leaving the page is.
+    await modeTab(page, 'Склад').click();
     await expect(page).not.toHaveURL(/\/archive/);
     expect((await ended).url()).toContain('reason=Left');
+    await expect(page.locator('.p-toast').getByText('Небезпечний режим вимкнено')).toBeVisible();
 
     await expect.poll(async () => (await kurin.api.deleteMembershipAsPage(membershipKey, ticket, pageToken)).code).toBe('DangerZoneClosed');
 
-    await page.goBack();
+    await modeTab(page, 'Архів').click();
     await expect(membershipRow(page, gone.name)).toBeVisible();
     await expect(banner(page)).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Небезпечний режим' })).toBeVisible();

@@ -3,6 +3,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 using ProjectK.Common.Models.Tags;
@@ -11,9 +12,11 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.Tag;
 
 /// <summary>
 /// Makes <paramref name="TagKeys"/> exactly the kurin's tags a person carries, in the kurin the caller
-/// acts in. Answers with the tags they carry after it.
+/// acts in. An administrator who has not chosen a kurin manages tags anywhere (as
+/// <see cref="IKurinTagVisibility.CanManageAsync"/> lets them): they name the kurin, or the person's
+/// only kurin is taken. Answers with the tags they carry after it.
 /// </summary>
-public sealed record SetMemberTagsCommand(Guid MemberKey, IReadOnlyCollection<Guid> TagKeys)
+public sealed record SetMemberTagsCommand(Guid MemberKey, IReadOnlyCollection<Guid> TagKeys, Guid? KurinKey = null)
     : IRequest<ServiceResult<IReadOnlyList<Guid>>>;
 
 public sealed class SetMemberTagsCommandHandler : IRequestHandler<SetMemberTagsCommand, ServiceResult<IReadOnlyList<Guid>>>
@@ -38,7 +41,7 @@ public sealed class SetMemberTagsCommandHandler : IRequestHandler<SetMemberTagsC
     public async Task<ServiceResult<IReadOnlyList<Guid>>> Handle(SetMemberTagsCommand request, CancellationToken cancellationToken)
     {
         // Tags are a kurin's, and the person may be in several: these are the ones of where the caller acts.
-        if (_currentUser.KurinKey is not { } kurinKey)
+        if ((_currentUser.KurinKey ?? await UnscopedAdminKurinAsync(request, cancellationToken)) is not { } kurinKey)
         {
             return ServiceResult<IReadOnlyList<Guid>>.Failure(ResultType.BadRequest, KurinTagErrors.NotInKurin, "Tags are set from inside a kurin.");
         }
@@ -92,5 +95,22 @@ public sealed class SetMemberTagsCommandHandler : IRequestHandler<SetMemberTagsC
         await transaction.CommitAsync(cancellationToken);
 
         return new ServiceResult<IReadOnlyList<Guid>>(ResultType.Success, [.. wanted]);
+    }
+
+    /// <summary>The kurin an administrator outside any kurin means: the one they name, or the person's only one.</summary>
+    private async Task<Guid?> UnscopedAdminKurinAsync(SetMemberTagsCommand request, CancellationToken cancellationToken)
+    {
+        if (!_currentUser.IsInRole(SystemRole.Admin))
+        {
+            return null;
+        }
+
+        if (request.KurinKey is { } named)
+        {
+            return named;
+        }
+
+        var standing = await _uow.Memberships.GetActiveForMemberAsync(request.MemberKey, cancellationToken);
+        return standing.Count == 1 ? standing.First().KurinKey : null;
     }
 }
