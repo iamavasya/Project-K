@@ -27,6 +27,8 @@ import { KurinService } from '../../services/kurin-service/kurin.service';
 import { CardFieldsDto, DEFAULT_CARD_FIELDS } from '../../models/card-fields.dto';
 import { KurinDto } from '../../models/kurin.dto';
 import { MemberProfileVerificationStatus } from '../../models/enums/member-profile-verification-status.enum';
+import { MemberWarningDto } from '../../models/member-warning.dto';
+import { MemberWarningLevel } from '../../models/enums/member-warning-level.enum';
 import { DuesService } from '../../../duesModule/services/dues-service/dues.service';
 import { MemberDuesDto } from '../../../duesModule/models/group-dues.dto';
 import { MemberAbilitiesDto, NO_ABILITIES } from '../../models/member-abilities.dto';
@@ -906,13 +908,26 @@ describe('MemberCardComponent', () => {
       expect(component.youthRecordLocked).toBe(false);
     });
 
-    it('кнопка на картці відкриває життєпис', () => {
+    it('посилання під тегами веде в життєпис', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));
       createComponent();
       fixture.detectChanges();
 
-      component.openLife();
+      const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('[data-testid="member-life"]')!;
+      expect(link.getAttribute('href')).toBe(`/member/${memberKey}/life`);
+      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
       expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', memberKey, 'life']);
+    });
+
+    it('лишає браузерові клік із Ctrl — життєпис відкривається в новій вкладці', () => {
+      memberServiceSpy.getByKey.mockReturnValue(of(member));
+      createComponent();
+      fixture.detectChanges();
+
+      const click = new MouseEvent('click', { cancelable: true, button: 0, ctrlKey: true });
+      component.openLife(click);
+      expect(click.defaultPrevented).toBe(false);
+      expect(routerSpy.navigate).not.toHaveBeenCalled();
     });
   });
 
@@ -1252,6 +1267,20 @@ describe('MemberCardComponent', () => {
   });
 
   describe('verification and перестороги', () => {
+    const activeWarning: MemberWarningDto = {
+      memberWarningKey: 'w-1',
+      memberKey,
+      level: MemberWarningLevel.Level1,
+      issuedAtUtc: '2026-01-01T00:00:00Z',
+      expiresAtUtc: '2999-01-01T00:00:00Z',
+      issuedByUserKey: 'someone'
+    };
+
+    const headButtons = () => Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.member-actions button'));
+    const headButtonLabels = () => headButtons().map(button => button.textContent?.trim() ?? '').filter(text => !!text);
+    const headButton = (ariaLabel: string) => headButtons().find(button => button.getAttribute('aria-label') === ariaLabel) ?? null;
+    const menuLabels = () => component.moreMenuItems.map(item => item.label);
+
     function createAsReviewer(loaded: MemberDto) {
       memberServiceSpy.getByKey.mockReturnValue(of(loaded));
       createComponent();
@@ -1286,7 +1315,8 @@ describe('MemberCardComponent', () => {
 
       expect(component.canEditMember).toBe(false);
       expect(component.canManageWarnings).toBe(true);
-      expect((fixture.nativeElement as HTMLElement).textContent).toContain('Перестороги');
+      expect(menuLabels()).toEqual(['Перестороги']);
+      expect(headButton('Ще')).not.toBeNull();
     });
 
     it('offers the journal filtered to the member when the kurin lets the viewer read it', () => {
@@ -1302,7 +1332,57 @@ describe('MemberCardComponent', () => {
       createAsReviewer(member);
 
       expect(component.journalKurinKey).toBeNull();
-      expect(fixture.nativeElement.querySelector('[data-testid="member-journal"]')).toBeNull();
+      expect(menuLabels()).not.toContain('Журнал дій');
+    });
+
+    it('keeps «Редагувати» as the one main action and the rarer ones under «Ще»', () => {
+      memberServiceSpy.getAbilities.mockReturnValue(of({ ...leaderAbilities, journal: true }));
+      createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.Unverified });
+
+      expect(headButtonLabels()).toEqual(['Редагувати', 'Верифікувати']);
+      expect(headButton('Ще')).not.toBeNull();
+      expect(menuLabels()).toEqual(['Перестороги', 'Журнал дій']);
+    });
+
+    it('moves verification under «Ще» once the profile is verified', () => {
+      createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.VerifiedCurrent });
+
+      expect(headButtonLabels()).toEqual(['Редагувати']);
+      expect(menuLabels()[0]).toBe('Зняти верифікацію');
+    });
+
+    it('asks to verify again when the data changed after verification', () => {
+      createAsReviewer({ ...member, profileVerificationStatus: MemberProfileVerificationStatus.VerifiedStale });
+
+      expect(headButtonLabels()).toContain('Верифікувати');
+      expect(menuLabels()).not.toContain('Зняти верифікацію');
+    });
+
+    it('shows no «Ще» and no buttons to whoever may do nothing to the member', () => {
+      entityServiceSpy.checkEntityAccess.mockReturnValue(of(false));
+      memberServiceSpy.getAbilities.mockReturnValue(of(NO_ABILITIES));
+      createAsReviewer(member);
+
+      expect(component.hasHeadActions).toBe(false);
+      expect((fixture.nativeElement as HTMLElement).querySelector('.member-actions')).toBeNull();
+    });
+
+    it('opens перестороги from the dots for whoever gives them', () => {
+      createAsReviewer({ ...member, warnings: [activeWarning] });
+
+      const dots = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button.member-warning-indicator');
+      expect(dots?.getAttribute('aria-label')).toBe('Перестороги');
+      dots!.click();
+      expect(component.isWarningsDialogVisible).toBe(true);
+    });
+
+    it('keeps the dots a mark for whoever does not give перестороги', () => {
+      memberServiceSpy.getAbilities.mockReturnValue(of(NO_ABILITIES));
+      createAsReviewer({ ...member, warnings: [activeWarning] });
+
+      const host = fixture.nativeElement as HTMLElement;
+      expect(host.querySelector('.member-warning-indicator')).not.toBeNull();
+      expect(host.querySelector('button.member-warning-indicator')).toBeNull();
     });
 
     it('verifies the profile after asking', () => {

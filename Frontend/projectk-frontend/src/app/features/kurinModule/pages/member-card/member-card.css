@@ -74,9 +74,43 @@
 
 .member-actions {
     align-self: flex-start;
+    align-items: center;
     display: flex;
-    flex-direction: column;
     gap: 0.5rem;
+}
+
+/* Перестороги лишаються позначкою; кнопкою вони лише для того, хто їх дає. */
+.member-warning-indicator--action {
+    cursor: pointer;
+    font: inherit;
+}
+
+.member-warning-indicator--action:hover {
+    border-color: var(--p-primary-color);
+}
+
+.member-warning-indicator--action:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+}
+
+.member-life-link {
+    align-items: center;
+    color: var(--p-primary-color);
+    display: inline-flex;
+    font-size: 0.875rem;
+    font-weight: 600;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    text-decoration: none;
+}
+
+.member-life-link:hover {
+    text-decoration: underline;
+}
+
+.member-life-link .pi {
+    font-size: 0.75rem;
 }
 
 .member-section-title,
@@ -229,6 +263,11 @@
 @media (max-width: 767px) {
     .member-actions {
         margin-top: 0.25rem;
+    }
+
+    /* Один рядок під даними людини: головна дія на всю ширину, поруч решта. */
+    .member-actions > p-button:first-of-type {
+        flex: 1;
     }
 }
 
