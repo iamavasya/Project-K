@@ -441,6 +441,24 @@ export class MemberCardComponent implements OnInit {
     return isSeniorBranch(this.membershipHere?.branch);
   }
 
+  /**
+   * Старша людина: поточний ступінь — старший пластун чи сеніор, або вона стоїть у курені УСП/УПС.
+   * Сеніор, що веде УПЮ-курінь, теж старший, і свої старші відзначення веде сам (сервер — той самий поділ).
+   */
+  get isSeniorPerson(): boolean {
+    return this.isSeniorKurinCard || isSeniorBranch(this.personalBranch) || this.isClosedYouthRecord;
+  }
+
+  /** Плитка старших відзначень: на старшій картці й на картці старшої людини в УПЮ-курені. */
+  get showsSeniorAwards(): boolean {
+    return !this.isLifeView && this.isSeniorPerson;
+  }
+
+  /** У старшому курені вносить і провід; в УПЮ-курені старша людина вносить лише собі. */
+  get canAddSeniorAwards(): boolean {
+    return this.isSeniorKurinCard ? this.canEditMember : this.isOwnCard;
+  }
+
   /** Назва куреня першою; без назви — його гілки. */
   get seniorKurinName(): string {
     const here = this.membershipHere;

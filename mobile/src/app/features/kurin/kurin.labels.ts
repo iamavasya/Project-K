@@ -858,6 +858,28 @@ export function membershipOf(m: Pick<MembershipDto, 'branch' | 'kurinNumber' | '
 export const YOUTH_LADDER = ['Prykhylnyk', 'Uchasnyk', 'Rozviduvach', 'Skob', 'HetmanskiySkob'] as const;
 export const SENIOR_LADDER = ['Starshoplastun', 'Senior', 'SeniorPratsi', 'SeniorDovirja', 'SeniorKerivnytstva'] as const;
 
+/**
+ * The whole ladder, прихильник to сеніор керівництва (web DEGREE_LADDER). Ступені come one after
+ * another, so the highest here is the person's current one, whichever kurin the card is opened in.
+ */
+export const DEGREE_LADDER = [...YOUTH_LADDER, ...SENIOR_LADDER] as const;
+
+/** The person's current ступінь: the highest on the whole ladder, not on the kurin's (web currentDegree). */
+export function currentDegree(histories: PlastLevelHistoryDto[] | null | undefined, honours: readonly CatalogHonour[]): DegreeRow | null {
+  return degreeRows(histories, DEGREE_LADDER, honours).at(-1) ?? null;
+}
+
+/**
+ * A senior person (web isSeniorPerson): their current ступінь is старший пластун or a сеніор's, or they
+ * stand in a УСП or УПС kurin here. A сеніор who leads an УПЮ kurin is one, and keeps their own senior відзначення.
+ */
+export function isSeniorPerson(
+  member: Pick<MemberLookupDto, 'latestPlastLevel' | 'plastLevelHistories'> & { kurinKey?: string | null },
+  memberships: MembershipDto[],
+): boolean {
+  return isSeniorBranch(memberBranch(member, memberships));
+}
+
 export interface DegreeRow {
   key: string;
   title: string;

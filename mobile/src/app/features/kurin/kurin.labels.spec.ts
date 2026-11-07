@@ -1,5 +1,7 @@
 import {
   activeWarning,
+  currentDegree,
+  isSeniorPerson,
   awardGroups,
   birthdayWhen,
   duesAmountLabel,
@@ -330,6 +332,22 @@ describe('ступені й старші відзначення з катало�
     expect(degreeRows(histories, YOUTH_LADDER, [...honours]).map((r) => r.title)).toEqual(['Пластунка вірлиця']);
     expect(degreeRows(histories, SENIOR_LADDER, [...honours]).map((r) => [r.title, r.imageUrl])).toEqual([['Старша пластунка', 'https://catalog.test/spl.svg']]);
     expect(degreeRows(histories, SENIOR_LADDER, []).map((r) => r.title)).toEqual(['ст. пл.']);
+  });
+
+  it('shows the current ступінь, the highest on the whole ladder: a сеніор over the скоб of 2002', () => {
+    const zvyazkovyi = [
+      { plastLevel: 'Skob', dateAchieved: '2002-06-01' },
+      { plastLevel: 'Senior', dateAchieved: '2015-04-26' },
+    ];
+    expect(currentDegree(zvyazkovyi, [])?.title).toBe('пл. сен.');
+    expect(currentDegree(histories, [...honours])?.title).toBe('Старша пластунка');
+    expect(currentDegree([], [])).toBeNull();
+  });
+
+  it('counts a сеніор who leads an УПЮ kurin as a senior person, a юнак as not', () => {
+    const upyu = [{ membershipKey: 'm', kurinKey: 'k', kurinNumber: 5, branch: 'UPYu', kind: 'Staff', isCurrent: true, joinedAtUtc: '2020-01-01' }] as never;
+    expect(isSeniorPerson({ kurinKey: 'k', latestPlastLevel: 'Senior', plastLevelHistories: [{ plastLevel: 'Skob' }, { plastLevel: 'Senior' }] } as never, upyu)).toBe(true);
+    expect(isSeniorPerson({ kurinKey: 'k', latestPlastLevel: 'Skob', plastLevelHistories: [{ plastLevel: 'Skob' }] } as never, upyu)).toBe(false);
   });
 
   it('lists senior відзначення apart from the УПЮ levels', () => {
