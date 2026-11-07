@@ -74,7 +74,8 @@ describeRole('mentor', 'Mentor role UI controls', ({ user }) => {
     const memberKey = await getFirstSeededGroupMemberKey(request, user);
 
     await page.goto(`/member/${memberKey}`);
-    await expect(page.locator('.member-actions')).toBeHidden();
+    await expect(page.getByTestId('member-life')).toBeVisible();
+    await expect(page.locator('.member-actions')).toHaveCount(0);
 
     await page.goto(`/kurin/${kurinKey}/review/skills`);
     await expect(page).toHaveURL(new RegExp(`/kurin/${kurinKey}/review/skills`));
@@ -89,7 +90,8 @@ describeRole('member', 'Member role UI controls', ({ user }) => {
     const memberKey = await getFirstSeededGroupMemberKey(request, user);
 
     await page.goto(`/member/${memberKey}`);
-    await expect(page.locator('.member-actions')).toBeHidden();
+    await expect(page.getByTestId('member-life')).toBeVisible();
+    await expect(page.locator('.member-actions')).toHaveCount(0);
 
     await page.goto(`/kurin/${kurinKey}/review/skills`);
     await expect(page).toHaveURL(new RegExp(`/kurin/${kurinKey}/review/skills`));

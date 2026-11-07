@@ -134,7 +134,8 @@ export async function fillMemberRequiredFields(page: Page, data: {
 }
 
 export async function openWarningPanel(page: Page): Promise<void> {
-  // Перестороги live on the member card, in a dialog behind their own button.
-  await page.locator('.member-actions').getByRole('button', { name: 'Перестороги' }).click();
+  // Перестороги live on the member card, in a dialog behind «Ще» in the card head.
+  await page.locator('.member-actions').getByRole('button', { name: 'Ще' }).click();
+  await page.getByRole('menuitem', { name: 'Перестороги' }).click();
   await expect(page.getByRole('dialog', { name: 'Перестороги' })).toBeVisible();
 }

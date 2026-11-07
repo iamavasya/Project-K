@@ -78,6 +78,21 @@
                             [status]="member.profileVerificationStatus" />
 
                         @if (hasActiveWarnings) {
+                        @if (canManageWarnings) {
+                        <button type="button"
+                            class="member-warning-indicator member-warning-indicator--action"
+                            aria-label="Перестороги"
+                            pTooltip="{{ warningTooltip }}"
+                            tooltipPosition="top"
+                            (click)="openWarnings()">
+                            @for (level of warningLevels; track level) {
+                            <span
+                                class="member-warning-dot"
+                                [class.member-warning-dot--active]="getWarningDotActive(level)"
+                            ></span>
+                            }
+                        </button>
+                        } @else {
                         <div
                             class="member-warning-indicator"
                             pTooltip="{{ warningTooltip }}"
@@ -91,6 +106,7 @@
                             }
                         </div>
                         }
+                        }
 
                         <p-tag [value]="member.latestPlastLevelDisplay || member.latestPlastLevel || 'Рівень не вказано'"
                             severity="info"
@@ -103,6 +119,10 @@
                         [memberKey]="member.memberKey"
                         [tagKeys]="member.tagKeys ?? []"
                         (changed)="onTagsChanged($event)" />
+
+                    <a class="member-life-link" [href]="'/member/' + member.memberKey + '/life'" (click)="openLife($event)" data-testid="member-life">
+                        Пластовий життєпис <i class="pi pi-arrow-right" aria-hidden="true"></i>
+                    </a>
 
                     @if (showsField('middleName')) {
                     <p class="member-middle-name mt-1 text-sm">
@@ -176,53 +196,37 @@
 
                 </div>
 
+                @if (hasHeadActions) {
                 <div class="member-actions md:justify-self-end">
                     @if (canEditMember) {
                     <p-button (onClick)="onEditMember()"
                         label="Редагувати"
                         icon="pi pi-pencil"
-                        severity="secondary"
-                        styleClass="!rounded-lg !px-4 !py-2 !text-sm !font-semibold"
+                        [fluid]="true"
                      />
                     }
-                    @if (canManageProfileVerification) {
+                    @if (needsProfileVerification) {
                     <p-button (onClick)="onProfileVerificationAction()"
-                        [label]="isProfileVerified ? 'Зняти верифікацію' : 'Верифікувати'"
-                        [icon]="isProfileVerified ? 'pi pi-undo' : 'pi pi-verified'"
+                        label="Верифікувати"
+                        icon="pi pi-verified"
                         severity="secondary"
-                        variant="text"
-                        size="small"
                         [loading]="profileVerificationSubmitting"
                      />
                     }
-                    @if (canManageWarnings) {
-                    <p-button (onClick)="isWarningsDialogVisible = true"
-                        label="Перестороги"
-                        icon="pi pi-exclamation-triangle"
+                    @if (moreMenuItems.length) {
+                    <p-menu #moreMenu [model]="moreMenuItems" [popup]="true" appendTo="body" />
+                    <p-button (onClick)="moreMenu.toggle($event)"
+                        icon="pi pi-ellipsis-v"
                         severity="secondary"
-                        variant="text"
-                        size="small"
+                        [outlined]="true"
+                        ariaLabel="Ще"
+                        pTooltip="Ще"
+                        tooltipPosition="top"
+                        data-testid="member-more"
                      />
                     }
-                    @if (journalKurinKey) {
-                    <p-button (onClick)="openJournal()"
-                        label="Журнал"
-                        icon="pi pi-history"
-                        severity="secondary"
-                        variant="text"
-                        size="small"
-                        data-testid="member-journal"
-                     />
-                    }
-                    <p-button (onClick)="openLife()"
-                        label="Пластовий життєпис"
-                        icon="pi pi-book"
-                        severity="secondary"
-                        variant="text"
-                        size="small"
-                        data-testid="member-life"
-                     />
                 </div>
+                }
             </div>
         </section>
         </ng-template>
