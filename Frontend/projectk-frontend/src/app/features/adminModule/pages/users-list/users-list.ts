@@ -15,6 +15,8 @@ import { TagModule } from '@openng/optimus-ui/tag';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
 import { failureDetail } from '../../../../shared/functions/failure-detail.function';
 import { UserRow, usersByKurin } from '../../functions/user-kurin-groups.function';
+import { KurinService } from '../../../kurinModule/services/kurin-service/kurin.service';
+import { catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-users-list',
@@ -31,6 +33,9 @@ export class UsersListComponent implements OnInit {
   private readonly userService = inject(UserService);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly kurinService = inject(KurinService);
+  /** Краї by code, to name one where two kurins' headings would read the same. */
+  private kraiNames = new Map<string, string>();
 
   // System-level roles only. Kurin offices are managed on the Leadership screen.
   // Posted by name, so the backend enum's order is not part of the contract.
@@ -41,12 +46,16 @@ export class UsersListComponent implements OnInit {
 
   ngOnInit() {
     this.loadUsers();
+    this.kurinService.getKrais().pipe(catchError(() => of([]))).subscribe(krais => {
+      this.kraiNames = new Map(krais.map(krai => [krai.code, krai.name]));
+      this.users = usersByKurin(this.users, this.kraiNames);
+    });
   }
 
   loadUsers() {
     this.userService.getAllUsers().subscribe({
       next: (users) => {
-        this.users = usersByKurin(users);
+        this.users = usersByKurin(users, this.kraiNames);
         this.users.forEach(user => this.expandedRows[user.group] = false);
       },
       error: () => this.messageService.add({ severity: 'error', summary: 'Помилка', detail: 'Не вдалося завантажити користувачів' })

@@ -1,4 +1,5 @@
 import { UserRow } from '../../functions/user-kurin-groups.function';
+import { KurinService } from '../../../kurinModule/services/kurin-service/kurin.service';
 import type { MockedObject } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UsersListComponent } from './users-list';
@@ -58,7 +59,8 @@ describe('UsersListComponent', () => {
       providers: [
         provideHttpClient(),
         MessageService,
-        { provide: UserService, useValue: mockUserService }
+        { provide: UserService, useValue: mockUserService },
+        { provide: KurinService, useValue: { getKrais: () => of([]) } }
       ],
     })
     .compileComponents();

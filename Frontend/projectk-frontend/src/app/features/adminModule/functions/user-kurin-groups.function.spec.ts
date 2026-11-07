@@ -45,6 +45,20 @@ describe('usersByKurin', () => {
     expect(rows.at(-1)).toMatchObject({ group: NO_KURIN_GROUP, groupTitle: 'Без куреня' });
   });
 
+  it('names the край only where two kurins would read the same', () => {
+    const lviv5 = { ...youth5, kurinNamedAfter: null, kurinKraiCode: 'ua' };
+    const praha5 = { ...youth5, kurinKey: 'youth-5-cz', kurinNamedAfter: null, kurinKraiCode: 'cz' };
+    const rows = usersByKurin([user('ua', lviv5), user('cz', praha5), user('o', { ...orden, kurinKraiCode: 'ua' })], new Map([['ua', 'Україна'], ['cz', 'Чехія']]));
+
+    expect([...new Set(rows.map(row => row.groupTitle))]).toEqual([
+      'Курінь ч. 5 УПЮ · Україна',
+      'Курінь ч. 5 УПЮ · Чехія',
+      'Орден Хрестоносців · 5-й курінь УСП · 20-й курінь УПС'
+    ]);
+    // Without the names yet, the code still tells them apart.
+    expect(usersByKurin([user('ua', lviv5), user('cz', praha5)]).map(row => row.groupTitle)).toEqual(['Курінь ч. 5 УПЮ · ua', 'Курінь ч. 5 УПЮ · cz']);
+  });
+
   it('reads a kurin without its улад as УПЮ, as the server did before it sent one', () => {
     const rows = usersByKurin([user('old', { kurinKey: 'k', kurinNumber: 12 })]);
 

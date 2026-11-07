@@ -17,6 +17,8 @@ export interface UserDto {
     kurinBranch?: KurinBranch | null;
     kurinBranches?: KurinNumbering[] | null;
     kurinNamedAfter?: string | null;
+    /** The kurin's край; it tells apart two kurins of one улад and number in different краї. */
+    kurinKraiCode?: string | null;
     firstName: string;
     lastName: string;
     /** Refused at sign-in by an administrator; reversible, unlike deletion. */
