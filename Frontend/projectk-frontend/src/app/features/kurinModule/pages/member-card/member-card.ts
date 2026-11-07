@@ -11,7 +11,9 @@ import { ButtonModule } from '@openng/optimus-ui/button';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { DialogModule } from '@openng/optimus-ui/dialog';
 import { ConfirmDialogModule } from '@openng/optimus-ui/confirmdialog';
-import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
+import { ConfirmationService, MenuItem, MessageService } from '@openng/optimus-ui/api';
+import { MenuModule } from '@openng/optimus-ui/menu';
+import { MenuItemsCache } from '../../functions/menu-items-cache';
 import { catchError, finalize, forkJoin, map, of, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
@@ -107,6 +109,7 @@ const LIFE_LADDERS: readonly { branch: KurinBranch; ladder: readonly PlastLevel[
     InputIconModule,
     SelectModule,
     TooltipModule,
+    MenuModule,
     SkillMiniCardComponent,
     BadgeDetailsDialogComponent,
     MemberAwardsTileComponent,
@@ -206,6 +209,7 @@ export class MemberCardComponent implements OnInit {
   profileVerificationEnabled = false;
   profileVerificationSubmitting = false;
   isWarningsDialogVisible = false;
+  private readonly moreMenuCache = new MenuItemsCache();
 
   readonly addSkillPageSize = 12;
   readonly warningLevels = [
@@ -441,6 +445,24 @@ export class MemberCardComponent implements OnInit {
     return isSeniorBranch(this.membershipHere?.branch);
   }
 
+  /**
+   * Старша людина: поточний ступінь — старший пластун чи сеніор, або вона стоїть у курені УСП/УПС.
+   * Сеніор, що веде УПЮ-курінь, теж старший, і свої старші відзначення веде сам (сервер — той самий поділ).
+   */
+  get isSeniorPerson(): boolean {
+    return this.isSeniorKurinCard || isSeniorBranch(this.personalBranch) || this.isClosedYouthRecord;
+  }
+
+  /** Плитка старших відзначень: на старшій картці й на картці старшої людини в УПЮ-курені. */
+  get showsSeniorAwards(): boolean {
+    return !this.isLifeView && this.isSeniorPerson;
+  }
+
+  /** У старшому курені вносить і провід; в УПЮ-курені старша людина вносить лише собі. */
+  get canAddSeniorAwards(): boolean {
+    return this.isSeniorKurinCard ? this.canEditMember : this.isOwnCard;
+  }
+
   /** Назва куреня першою; без назви — його гілки. */
   get seniorKurinName(): string {
     const here = this.membershipHere;
@@ -574,7 +596,12 @@ export class MemberCardComponent implements OnInit {
       : null;
   }
 
-  openLife(): void {
+  /** The link keeps its address for a new tab; a plain click stays inside the app. */
+  openLife(event?: MouseEvent): void {
+    if (event && (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)) {
+      return;
+    }
+    event?.preventDefault();
     if (this.memberKey) {
       this.router.navigate(['/member', this.memberKey, 'life']);
     }
@@ -786,6 +813,46 @@ export class MemberCardComponent implements OnInit {
 
   get canManageProfileVerification(): boolean {
     return this.canEditMember && this.profileVerificationEnabled && !this.isOwnCard && this.permissionService.isReviewer();
+  }
+
+  /** «Верифікувати» stands by «Редагувати» only while the profile waits for it; taking it back is rare and sits under «Ще». */
+  get needsProfileVerification(): boolean {
+    return this.canManageProfileVerification && !this.isProfileVerified;
+  }
+
+  get hasHeadActions(): boolean {
+    return this.canEditMember || this.needsProfileVerification || this.moreMenuItems.length > 0;
+  }
+
+  /** The rarer actions on someone: «Зняти верифікацію», «Перестороги», «Журнал дій». Empty — no «Ще» at all. */
+  get moreMenuItems(): MenuItem[] {
+    const canUnverify = this.canManageProfileVerification && this.isProfileVerified;
+    return this.moreMenuCache.get(
+      [canUnverify, this.profileVerificationSubmitting, this.canManageWarnings, this.journalKurinKey],
+      () => this.buildMoreMenuItems(canUnverify));
+  }
+
+  private buildMoreMenuItems(canUnverify: boolean): MenuItem[] {
+    const items: MenuItem[] = [];
+    if (canUnverify) {
+      items.push({
+        label: 'Зняти верифікацію',
+        icon: 'pi pi-undo',
+        disabled: this.profileVerificationSubmitting,
+        command: () => this.onProfileVerificationAction()
+      });
+    }
+    if (this.canManageWarnings) {
+      items.push({ label: 'Перестороги', icon: 'pi pi-exclamation-triangle', command: () => this.openWarnings() });
+    }
+    if (this.journalKurinKey) {
+      items.push({ label: 'Журнал дій', icon: 'pi pi-history', command: () => this.openJournal() });
+    }
+    return items;
+  }
+
+  openWarnings(): void {
+    this.isWarningsDialogVisible = true;
   }
 
   get canManageWarnings(): boolean {

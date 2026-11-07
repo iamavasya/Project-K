@@ -90,7 +90,8 @@ public class MemberAwardHandlerTests
             _kurinDataMock.Object,
             _access.Object,
             _journal.Audit,
-            _honours.Object);
+            _honours.Object,
+            Mock.Of<IResourceScopeReader>());
         _reviewHandler = new ReviewMemberAwardCommandHandler(
             _unitOfWorkMock.Object, _memberDirectory.Object,
             _currentUserContextMock.Object,

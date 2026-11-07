@@ -70,6 +70,27 @@ export function kurinWithName(kurin: KurinNaming): string {
 }
 
 /**
+ * A kurin heading a group in a list, where УПЮ and senior kurins sit side by side: «Курінь ч. 5 УПЮ
+ * ім. Івана Богуна», and a senior one by its name and гілки, «Орден Хрестоносців · 5-й курінь УСП».
+ */
+export function kurinGroupTitle(kurin: KurinNaming): string {
+  if (kurin.branch && isSeniorBranch(kurin.branch)) {
+    return kurinWithName(kurin);
+  }
+  const name = `${kurinName(kurin.number)} ${KURIN_BRANCH_LABELS[KurinBranch.UPYu]}`;
+  return kurin.namedAfter ? `${name} ім. ${kurin.namedAfter}` : name;
+}
+
+/**
+ * УПЮ kurins first, then senior ones, by number inside each and підготовчі last. A number is the
+ * kurin's own in its улад, so 5-й УПЮ and 5-й УСП stay two kurins.
+ */
+export function compareKurinsByBranch(a: KurinNaming, b: KurinNaming): number {
+  return Number(isSeniorBranch(a.branch)) - Number(isSeniorBranch(b.branch))
+    || compareKurinNumbers(a.number, b.number);
+}
+
+/**
  * The first of two lines naming a kurin: a senior kurin's own name ("Орден Хрестоносців"), or its
  * гілки when it has none; a УПЮ kurin as before, "к. ч. 47 ім. Івана Богуна".
  */

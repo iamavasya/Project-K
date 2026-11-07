@@ -61,13 +61,12 @@ import {
   progressStatus,
   quarterLabel,
   officeTag,
-  degreeRows,
   seniorAwardBlocks,
   groupAwardGrants,
   orderAwardBlocks,
   AwardBlockRow,
-  SENIOR_LADDER,
-  YOUTH_LADDER,
+  currentDegree,
+  isSeniorPerson,
   officesIn,
   membershipOf,
   roleTone,
@@ -559,7 +558,9 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
                   }
                 </ion-item-group>
               </ion-list>
+            }
 
+            @if (seniorPerson()) {
               <ion-list [inset]="true" data-testid="senior-awards">
                 <ion-list-header><ion-label>Відзначення</ion-label></ion-list-header>
                 <ion-item-group>
@@ -586,7 +587,7 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
                   } @else {
                     <ion-item><ion-label class="ion-text-wrap">Відзначень ще немає.</ion-label></ion-item>
                   }
-                  @if (canEdit()) {
+                  @if (canAddSeniorAward()) {
                     <ion-item [button]="true" [detail]="false" (click)="openSeniorAward(null)" data-testid="add-senior-award">
                       <ion-icon slot="start" name="add" color="primary" aria-hidden="true" />
                       <ion-label color="primary">Додати відзначення</ion-label>
@@ -594,7 +595,9 @@ const OWES_DUES_TEXT = 'Борг не переходить разом із не�
                   }
                 </ion-item-group>
               </ion-list>
+            }
 
+            @if (seniorHere()) {
               <ion-list [inset]="true" data-testid="senior-warnings">
                 <ion-list-header><ion-label>Перестороги</ion-label></ion-list-header>
                 <ion-item-group>
@@ -841,9 +844,6 @@ export class MemberPage implements OnInit {
   protected readonly seniorWarnings = computed(() => warningRows(this.memberValue()?.warnings));
   /** The catalogue's ступені and senior відзначення: names and pictures for the card. */
   private readonly honours = signal<CatalogHonour[]>([]);
-  protected readonly degrees = computed(() =>
-    degreeRows(this.memberValue()?.plastLevelHistories, this.seniorHere() ? SENIOR_LADDER : YOUTH_LADDER, this.honours()),
-  );
   protected readonly seniorBlocks = computed(() => seniorAwardBlocks(this.memberValue()?.awards, this.honours(), this.canChangeSeniorAward()));
   /** The УПЮ відзначення as blocks: one per level, every grant of it inside (web member-awards-tile blocks). */
   protected readonly youthBlocks = computed(() => {
@@ -864,8 +864,8 @@ export class MemberPage implements OnInit {
       })),
     );
   });
-  /** Only the highest ступінь, large; the whole way is the пластовий життєпис's (web member-degrees-tile). */
-  protected readonly highestDegree = computed(() => this.degrees().at(-1) ?? null);
+  /** Only the current ступінь, the highest on the whole ladder, large; the whole way is the пластовий життєпис's (web member-degrees-tile). */
+  protected readonly highestDegree = computed(() => currentDegree(this.memberValue()?.plastLevelHistories, this.honours()));
 
   protected openYouthBlock(key: string | null, all: boolean): Promise<void> {
     return this.openBlocks(this.youthBlocks(), key, all, (award) => this.openAward(award));
@@ -895,12 +895,22 @@ export class MemberPage implements OnInit {
       }
     }
   }
-  /** A senior відзначення is changed by the person or by whoever may remove awards (web canChange). */
-  protected readonly canChangeSeniorAward = computed(() => this.isOwnCard() || this.abilities().awards.remove);
+  /**
+   * A senior person (web isSeniorPerson): their current ступінь is старший пластун or a сеніор's, or the
+   * card is a senior kurin's. A сеніор who leads an УПЮ kurin keeps their senior відзначення too.
+   */
+  protected readonly seniorPerson = computed(() => {
+    const m = this.memberValue();
+    return !!this.seniorHere() || (!!m && this.memberships().state !== 'loading' && isSeniorPerson(m, this.membershipList()));
+  });
+  /** In a senior kurin its провід records them too; elsewhere a senior person records only their own. */
+  protected readonly canAddSeniorAward = computed(() => (this.seniorHere() ? this.canEdit() : this.isOwnCard()));
+  /** A senior відзначення is changed by the person, or in a senior kurin by whoever may remove awards (web canChange). */
+  protected readonly canChangeSeniorAward = computed(() => this.isOwnCard() || (!!this.seniorHere() && this.abilities().awards.remove));
 
   protected async openSeniorAward(award: MemberAwardDto | null): Promise<void> {
     const key = this.key();
-    if (!key || (award ? !this.canChangeSeniorAward() : !this.canEdit())) return;
+    if (!key || (award ? !this.canChangeSeniorAward() : !this.canAddSeniorAward())) return;
     const honours = this.honours().length ? this.honours() : await this.loadHonours();
     if (!honours.length) {
       await this.toasts.show('Каталог зараз недоступний. Спробуй пізніше.', 'danger');
