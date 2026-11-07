@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, RedirectFunction, Router } from '@angular/router';
 import { catchError, map, of } from 'rxjs';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
@@ -63,6 +63,13 @@ export const registryModeGuard = (mode: RegistryMode): CanActivateFn => () => {
   const other = modes.available()[0];
   return router.parseUrl(other ? other.link : '/forbidden');
 };
+
+/**
+ * An address from before the «Реєстр» was one page, sent on to its mode with its query: the QR on a
+ * printed card carries the person's `?code=`, and a plain `redirectTo` string would drop it.
+ */
+export const toRegistryMode = (mode: RegistryMode): RedirectFunction => ({ queryParams }) =>
+  inject(Router).createUrlTree([REGISTRY_MODES.find(link => link.mode === mode)!.link], { queryParams });
 
 /**
  * `/kurin/registry?former=1` was where a card sent a person just released from the kurin. The

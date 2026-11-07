@@ -12,15 +12,13 @@ import { dialog, fillDialogDate, openRowMenu } from './support/ui';
 test.describe('Архів куреня', () => {
   test.setTimeout(90_000);
 
-  const archiveTab = (page: Page) =>
-    page.getByRole('navigation', { name: 'Режими реєстру' }).getByRole('link', { name: 'Архів' });
+  const modeTabs = (page: Page) => page.getByRole('navigation', { name: 'Режими реєстру' }).getByRole('link');
 
   /** The archive's address; `old` is the one cards and links used before the «Реєстр» was one page. */
   async function openArchive(page: Page, kurinKey: string, old = false): Promise<void> {
     await page.goto(old ? `/kurin/${kurinKey}/archive` : '/kurin/registry/archive');
     await expect(page).toHaveURL(/\/kurin\/registry\/archive/);
     await expect(page.getByRole('heading', { name: 'Реєстр' })).toBeVisible();
-    await expect(archiveTab(page)).toHaveAttribute('aria-current', 'page');
   }
 
   const officeRow = (page: Page, text: string) => page.getByTestId('archive-office').filter({ hasText: text });
@@ -37,8 +35,8 @@ test.describe('Архів куреня', () => {
 
     await loginThroughUi(page, kurin.founder);
     await openArchive(page, kurin.kurinKey);
-    await expect(page.getByRole('navigation', { name: 'Режими реєстру' }).getByRole('link'))
-      .toHaveText(['Склад', /^Переходи/, 'Архів', 'Імпорт']);
+    await expect(modeTabs(page)).toHaveText([/Склад/, /Переходи/, /Архів/, /Імпорт/]);
+    await expect(modeTabs(page).filter({ hasText: 'Архів' })).toHaveAttribute('aria-current', 'page');
 
     await expect(officeRow(page, leader.name)).toContainText('Сови');
     await expect(membershipRow(page, gone.name)).toContainText('Сови');
@@ -109,9 +107,10 @@ test.describe('Архів куреня', () => {
     await expect(membershipRow(page, ours.name).getByRole('button', { name: 'Виправити' })).toBeVisible();
     await expect(membershipRow(page, theirs.name)).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Небезпечний режим' })).toHaveCount(0);
-    // Taking people back and asking other kurins for them stay the Звʼязковий's.
+    // Taking people back and asking other kurins for them stay the Звʼязковий's. The archive is the
+    // гуртковий's only mode, so the «Реєстр» shows no tabs at all.
     await expect(membershipRow(page, ours.name).getByRole('button', { name: 'Повернути' })).toHaveCount(0);
-    await expect(page.getByRole('navigation', { name: 'Режими реєстру' }).getByRole('link', { name: /^Переходи/ })).toHaveCount(0);
+    await expect(modeTabs(page)).toHaveCount(0);
   });
 
   test('розформований гурток іде в архів, а гурток із грошима в касі лишається', async ({ page, request }, testInfo) => {

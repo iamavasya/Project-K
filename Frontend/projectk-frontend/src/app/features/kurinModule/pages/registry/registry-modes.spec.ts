@@ -5,7 +5,7 @@ import { Observable, firstValueFrom, isObservable, of, throwError } from 'rxjs';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinFeaturesService } from '../../services/kurin-features-service/kurin-features.service';
 import { KurinBranch } from '../../models/enums/kurin-branch.enum';
-import { formerMembersRedirect, legacyArchiveRedirect, registryModeGuard, RegistryModes } from './registry-modes';
+import { formerMembersRedirect, legacyArchiveRedirect, RegistryMode, registryModeGuard, RegistryModes, toRegistryMode } from './registry-modes';
 
 describe('RegistryModes', () => {
   const zvyazkovyi = ['Group:Manage:KurinWide', 'Group:Update:KurinWide', 'KurinArchive:Read:KurinWide', 'Kurin:Update:KurinWide'];
@@ -69,6 +69,14 @@ describe('RegistryModes', () => {
 
       state.permissions = [];
       expect(url(run(registryModeGuard('roster')))).toBe('/forbidden');
+    });
+
+    it('sends the old addresses on to their mode with their query, the QR\'s code included', () => {
+      const redirect = (mode: RegistryMode, queryParams: Record<string, string>) => TestBed.runInInjectionContext(() =>
+        toRegistryMode(mode)({ queryParams } as unknown as Parameters<ReturnType<typeof toRegistryMode>>[0]));
+
+      expect(url(redirect('transfers', { code: 'PL-4F7A2-9D4A1' }))).toBe('/kurin/registry/transfers?code=PL-4F7A2-9D4A1');
+      expect(url(redirect('import', {}))).toBe('/kurin/registry/import');
     });
 
     it('sends the old «former members» address of the склад to the archive', () => {

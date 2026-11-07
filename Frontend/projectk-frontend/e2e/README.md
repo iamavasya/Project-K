@@ -81,7 +81,7 @@ Playwright is the UI automation layer for Stage 8 of `0.13.0-beta`.
   - the Звʼязковий has all four tabs (Склад, Переходи, Архів, Імпорт), sees former roles and memberships and corrects a closed membership's dates;
   - the Звʼязковий takes a former member back from their archive row;
   - their own record carries «своє» and no correction; the old `/kurin/:kurinKey/archive` address opens the mode;
-  - a гуртковий sees only their гурток's former memberships, no danger zone, no «Повернути» and no «Переходи» tab;
+  - a гуртковий sees only their гурток's former memberships, no danger zone, no «Повернути», and no tabs (the archive is their only mode);
   - «Розформувати» sends an empty гурток to the archive and refuses one with money in its box, with a message.
 - Check the archive's danger zone (`kurin-archive-danger.spec.ts`):
   - a wrong password is refused, the right one opens the zone with ten deletions;

@@ -3,7 +3,7 @@ import { authGuard } from './features/authModule/guards/auth.guard';
 import { publicAuthRedirectGuard } from './features/authModule/guards/public-auth-redirect.guard';
 import { setupGuard } from './features/authModule/guards/setup.guard';
 import { capabilityGuard } from './features/authModule/guards/capability.guard';
-import { formerMembersRedirect, legacyArchiveRedirect, registryModeGuard } from './features/kurinModule/pages/registry/registry-modes';
+import { formerMembersRedirect, legacyArchiveRedirect, registryModeGuard, toRegistryMode } from './features/kurinModule/pages/registry/registry-modes';
 import { youthProgramGuard } from './features/kurinModule/guards/youth-program.guard';
 import { kurinFeatureGuard } from './features/kurinModule/guards/kurin-feature.guard';
 import { kurinAccessGuard } from './features/authModule/guards/kurin.guard';
@@ -242,8 +242,8 @@ export const routes: Routes = [
   },
   // The addresses before the «Реєстр» became one page. QR codes on printed cards, letters and links
   // in the phone app still lead here; each opens its mode.
-  { path: 'kurin/transfers', redirectTo: '/kurin/registry/transfers' },
-  { path: 'kurin/import', redirectTo: '/kurin/registry/import' },
+  { path: 'kurin/transfers', redirectTo: toRegistryMode('transfers') },
+  { path: 'kurin/import', redirectTo: toRegistryMode('import') },
   { 
     path: 'group/:groupKey',
     canActivate: [authGuard, kurinAccessGuard('kurin'), EntityGuard],
