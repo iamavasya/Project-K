@@ -596,17 +596,6 @@ export class MemberCardComponent implements OnInit {
       : null;
   }
 
-  /** The link keeps its address for a new tab; a plain click stays inside the app. */
-  openLife(event?: MouseEvent): void {
-    if (event && (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)) {
-      return;
-    }
-    event?.preventDefault();
-    if (this.memberKey) {
-      this.router.navigate(['/member', this.memberKey, 'life']);
-    }
-  }
-
   openCard(): void {
     if (this.memberKey) {
       this.router.navigate(['/member', this.memberKey]);
@@ -824,11 +813,11 @@ export class MemberCardComponent implements OnInit {
     return this.canEditMember || this.needsProfileVerification || this.moreMenuItems.length > 0;
   }
 
-  /** The rarer actions on someone: «Зняти верифікацію», «Перестороги», «Журнал дій». Empty — no «Ще» at all. */
+  /** The rarer actions on someone: «Зняти верифікацію», «Перестороги», «Журнал дій», then «Пластовий життєпис» for everyone. */
   get moreMenuItems(): MenuItem[] {
     const canUnverify = this.canManageProfileVerification && this.isProfileVerified;
     return this.moreMenuCache.get(
-      [canUnverify, this.profileVerificationSubmitting, this.canManageWarnings, this.journalKurinKey],
+      [canUnverify, this.profileVerificationSubmitting, this.canManageWarnings, this.journalKurinKey, this.member?.memberKey],
       () => this.buildMoreMenuItems(canUnverify));
   }
 
@@ -847,6 +836,10 @@ export class MemberCardComponent implements OnInit {
     }
     if (this.journalKurinKey) {
       items.push({ label: 'Журнал дій', icon: 'pi pi-history', command: () => this.openJournal() });
+    }
+    if (this.member) {
+      // A routerLink, not a command: Ctrl-click still opens the life story in a new tab.
+      items.push({ label: 'Пластовий життєпис', icon: 'pi pi-book', routerLink: ['/member', this.member.memberKey, 'life'] });
     }
     return items;
   }

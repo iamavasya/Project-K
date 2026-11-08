@@ -80,8 +80,8 @@ describeRole('mentor', 'Mentor role UI controls', ({ user }) => {
     await expect(head.getByRole('button', { name: 'Журнал' })).toHaveCount(0);
     await head.getByRole('button', { name: 'Ще' }).click();
     await expect(page.getByRole('menuitem', { name: 'Перестороги' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Пластовий життєпис' })).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(page.getByTestId('member-life')).toBeVisible();
 
     await page.goto(`/kurin/${kurinKey}/review/skills`);
     await expect(page).toHaveURL(new RegExp(`/kurin/${kurinKey}/review/skills`));
@@ -97,10 +97,12 @@ describeRole('member', 'Member role UI controls', ({ user }) => {
     const memberKey = await getFirstSeededGroupMemberKey(request, user);
 
     await page.goto(`/member/${memberKey}`);
-    await expect(page.getByTestId('member-life')).toBeVisible();
     const head = page.locator('.member-actions');
     await expect(head.getByRole('button', { name: 'Редагувати' })).toBeVisible();
-    await expect(head.getByRole('button')).toHaveCount(1);
+    await expect(head.getByRole('button')).toHaveCount(2);
+    await head.getByRole('button', { name: 'Ще' }).click();
+    await expect(page.getByRole('menuitem')).toHaveText(['Пластовий життєпис']);
+    await page.keyboard.press('Escape');
 
     await page.goto(`/kurin/${kurinKey}/review/skills`);
     await expect(page).toHaveURL(new RegExp(`/kurin/${kurinKey}/review/skills`));

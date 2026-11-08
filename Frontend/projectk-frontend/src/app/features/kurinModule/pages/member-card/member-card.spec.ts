@@ -908,26 +908,15 @@ describe('MemberCardComponent', () => {
       expect(component.youthRecordLocked).toBe(false);
     });
 
-    it('посилання під тегами веде в життєпис', () => {
+    it('життєпис — останній пункт меню «Ще», посиланням', () => {
       memberServiceSpy.getByKey.mockReturnValue(of(member));
       createComponent();
       fixture.detectChanges();
 
-      const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('[data-testid="member-life"]')!;
-      expect(link.getAttribute('href')).toBe(`/member/${memberKey}/life`);
-      link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
-      expect(routerSpy.navigate).toHaveBeenCalledWith(['/member', memberKey, 'life']);
-    });
-
-    it('лишає браузерові клік із Ctrl — життєпис відкривається в новій вкладці', () => {
-      memberServiceSpy.getByKey.mockReturnValue(of(member));
-      createComponent();
-      fixture.detectChanges();
-
-      const click = new MouseEvent('click', { cancelable: true, button: 0, ctrlKey: true });
-      component.openLife(click);
-      expect(click.defaultPrevented).toBe(false);
-      expect(routerSpy.navigate).not.toHaveBeenCalled();
+      const life = component.moreMenuItems.at(-1)!;
+      expect(life.label).toBe('Пластовий життєпис');
+      expect(life.routerLink).toEqual(['/member', memberKey, 'life']);
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="member-life"]')).toBeNull();
     });
   });
 
@@ -1315,7 +1304,7 @@ describe('MemberCardComponent', () => {
 
       expect(component.canEditMember).toBe(false);
       expect(component.canManageWarnings).toBe(true);
-      expect(menuLabels()).toEqual(['Перестороги']);
+      expect(menuLabels()).toEqual(['Перестороги', 'Пластовий життєпис']);
       expect(headButton('Ще')).not.toBeNull();
     });
 
@@ -1341,7 +1330,7 @@ describe('MemberCardComponent', () => {
 
       expect(headButtonLabels()).toEqual(['Редагувати', 'Верифікувати']);
       expect(headButton('Ще')).not.toBeNull();
-      expect(menuLabels()).toEqual(['Перестороги', 'Журнал дій']);
+      expect(menuLabels()).toEqual(['Перестороги', 'Журнал дій', 'Пластовий життєпис']);
     });
 
     it('moves verification under «Ще» once the profile is verified', () => {
@@ -1358,13 +1347,14 @@ describe('MemberCardComponent', () => {
       expect(menuLabels()).not.toContain('Зняти верифікацію');
     });
 
-    it('shows no «Ще» and no buttons to whoever may do nothing to the member', () => {
+    it('leaves only «Ще» with the life story to whoever may do nothing to the member', () => {
       entityServiceSpy.checkEntityAccess.mockReturnValue(of(false));
       memberServiceSpy.getAbilities.mockReturnValue(of(NO_ABILITIES));
       createAsReviewer(member);
 
-      expect(component.hasHeadActions).toBe(false);
-      expect((fixture.nativeElement as HTMLElement).querySelector('.member-actions')).toBeNull();
+      expect(headButtonLabels()).toEqual([]);
+      expect(headButton('Ще')).not.toBeNull();
+      expect(menuLabels()).toEqual(['Пластовий життєпис']);
     });
 
     it('opens перестороги from the dots for whoever gives them', () => {

@@ -120,10 +120,6 @@
                         [tagKeys]="member.tagKeys ?? []"
                         (changed)="onTagsChanged($event)" />
 
-                    <a class="member-life-link" [href]="'/member/' + member.memberKey + '/life'" (click)="openLife($event)" data-testid="member-life">
-                        Пластовий життєпис <i class="pi pi-arrow-right" aria-hidden="true"></i>
-                    </a>
-
                     @if (showsField('middleName')) {
                     <p class="member-middle-name mt-1 text-sm">
                         {{ member.middleName || 'По батькові не вказано' }}

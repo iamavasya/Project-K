@@ -4,6 +4,7 @@ import { getFirstSeededGroupMemberKey } from './support/api-client';
 import { getLifeStoryMemberKey, ordenSkryptor, ordenZvyazkovyi } from './support/life-story';
 import { loginThroughUi } from './support/login';
 import { describeRole } from './support/role-test';
+import { openLifeFromCardMenu } from './support/ui';
 
 /** «Пластовий життєпис» (LIFE-01): the whole Plast way on one page, opened from the card. */
 const levelsTile = (page: Page): Locator => page.getByTestId('life-levels');
@@ -11,7 +12,7 @@ const stageNames = (page: Page): Locator => levelsTile(page).locator('.life-stag
 
 async function openLifeFromCard(page: Page, memberKey: string): Promise<void> {
   await page.goto(`/member/${memberKey}`);
-  await page.getByTestId('member-life').click();
+  await openLifeFromCardMenu(page);
   await expect(page).toHaveURL(new RegExp(`/member/${memberKey}/life`));
   await expect(page.getByTestId('life-head')).toBeVisible();
 }

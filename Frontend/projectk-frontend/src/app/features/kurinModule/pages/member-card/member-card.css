@@ -94,25 +94,6 @@
     outline-offset: 2px;
 }
 
-.member-life-link {
-    align-items: center;
-    color: var(--p-primary-color);
-    display: inline-flex;
-    font-size: 0.875rem;
-    font-weight: 600;
-    gap: 0.35rem;
-    margin-top: 0.5rem;
-    text-decoration: none;
-}
-
-.member-life-link:hover {
-    text-decoration: underline;
-}
-
-.member-life-link .pi {
-    font-size: 0.75rem;
-}
-
 .member-section-title,
 .dialog-skill-row {
     color: var(--p-text-color);
