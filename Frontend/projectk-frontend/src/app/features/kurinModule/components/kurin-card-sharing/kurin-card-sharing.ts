@@ -6,6 +6,7 @@ import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import {
   CARD_FIELD, CARD_FIELDS, CardFieldName, CardService, KurinCardSharingDto, hasCardField
 } from '../../../authModule/services/card-service/card.service';
+import { countChanges } from '../../../../shared/functions/count-changes.function';
 
 /**
  * «Картки до 18 років» in the kurin settings: whether the kurin's people under 18 may show their card
@@ -28,6 +29,16 @@ export class KurinCardSharingComponent {
   protected readonly value = signal<KurinCardSharingDto | null>(null);
   private readonly saved = signal<KurinCardSharingDto | null>(null);
   readonly dirty = computed(() => JSON.stringify(this.value()) !== JSON.stringify(this.saved()));
+  /** How many of the rule's parts differ from what the server has; each field counts on its own. */
+  readonly changeCount = computed(() => {
+    const value = this.value();
+    const saved = this.saved();
+    if (!value || !saved) {
+      return 0;
+    }
+    const flags = Object.values(CARD_FIELD).filter(bit => (value.minorFields & bit) !== (saved.minorFields & bit)).length;
+    return countChanges({ share: saved.minorsMayShare, link: saved.minorsMayLink }, { share: value.minorsMayShare, link: value.minorsMayLink }) + flags;
+  });
 
   constructor() {
     effect(() => {

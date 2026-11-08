@@ -44,11 +44,23 @@
   color: var(--p-red-500);
 }
 
+/* Always in view at the bottom of the screen, so a change is not left behind unsaved. */
 .settings-actions {
+  position: sticky;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.75rem;
-  margin-top: 1.25rem;
+}
+
+.settings-actions__count {
+  margin-right: auto;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  font-weight: 600;
 }
 
 @media (max-width: 640px) {

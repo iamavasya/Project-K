@@ -34,9 +34,13 @@ test.describe('Kurin tags', () => {
     await test.step('a youth kurin starts with tags off; the Звʼязковий switches them on', async () => {
       await page.goto(`/kurin/${kurin.kurinKey}/settings`);
       await expect(toggle).not.toBeChecked({ timeout: 15_000 });
+      await expect(page.getByRole('button', { name: 'Зберегти' })).toBeDisabled();
       await toggle.click();
       await expect(toggle).toBeChecked();
+      // The bar at the bottom counts what is not saved yet.
+      await expect(page.getByTestId('unsaved-count')).toHaveText('1 незбережена зміна');
       await saveSettings(page);
+      await expect(page.getByTestId('unsaved-count')).toHaveText('');
     });
 
     await test.step('creates, renames and deletes tags in «Теги куреня»', async () => {

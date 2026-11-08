@@ -129,6 +129,13 @@ export class KurinAccessPolicyComponent implements OnInit {
     return groups;
   });
 
+  /** How many cells on screen differ from what the server has. */
+  readonly changeCount = computed(() => {
+    const values = this.values();
+    return (this.policy()?.capabilities ?? []).reduce((sum, capability) => sum + capability.cells
+      .filter(cell => (values[cellKey(capability.key, cell.audience)] ?? cell.effective) !== cell.effective).length, 0);
+  });
+
   /** Anything on screen that the server does not have yet. */
   readonly dirty = computed(() => {
     const values = this.values();

@@ -28,6 +28,7 @@ import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { ROLE_DISPLAY_NAMES } from '../../models/role-display-name.model';
 import { rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
+import { countChanges, unsavedChangesLabel } from '../../../../shared/functions/count-changes.function';
 
 /** Ролі, які курінь може назвати по-своєму (сервер: KurinRoleNames.Renamable). Гурткових тут немає. */
 const RENAMABLE_ROLES: LeadershipRole[] = [
@@ -35,6 +36,11 @@ const RENAMABLE_ROLES: LeadershipRole[] = [
   LeadershipRole.Suddya, LeadershipRole.Horunjiy, LeadershipRole.Gospodar, LeadershipRole.Hronikar,
   LeadershipRole.Instruktor, LeadershipRole.Vykhovnyk, LeadershipRole.OtherKurin
 ];
+
+/** Role names under their own keys, so a role cannot collide with a page setting of the same name. */
+function prefixed(names: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(Object.entries(names).map(([role, name]) => [`role:${role}`, name]));
+}
 
 @Component({
   selector: 'app-kurin-settings',
@@ -237,4 +243,39 @@ export class KurinSettingsComponent implements OnInit {
   cancel(): void {
     this.router.navigate(['/kurin']);
   }
+
+  /**
+   * Everything on the page the server does not have yet: the page's own settings, one role name
+   * each, and whatever each section counts as its own.
+   */
+  changeCount(): number {
+    const kurin = this.kurin;
+    if (!kurin || this.loading) {
+      return 0;
+    }
+
+    const own = countChanges(
+      {
+        profileVerification: kurin.profileVerificationEnabled ?? false,
+        score: kurin.scoreEnabled ?? true,
+        number: kurin.number,
+        ...prefixed(kurin.canRenameRoles ? kurin.roleNames ?? {} : {})
+      },
+      {
+        profileVerification: this.profileVerificationEnabled,
+        score: this.scoreEnabled,
+        number: this.preparatory ? null : this.number,
+        ...prefixed(kurin.canRenameRoles ? this.trimmedRoleNames() : {})
+      });
+
+    return own
+      + (this.archivePolicy()?.changeCount() ?? 0)
+      + (this.cardFields()?.changeCount() ?? 0)
+      + (this.accessPolicy()?.changeCount() ?? 0)
+      + (this.probeEditions()?.changeCount() ?? 0)
+      + (this.tagSettings()?.changeCount() ?? 0)
+      + (this.cardSharing()?.changeCount() ?? 0);
+  }
+
+  protected readonly unsavedLabel = unsavedChangesLabel;
 }

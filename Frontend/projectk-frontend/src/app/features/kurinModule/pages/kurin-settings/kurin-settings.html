@@ -214,7 +214,8 @@
   </fieldset>
 
   @if (!readOnly) {
-  <footer class="settings-actions">
+  <footer class="settings-actions kurin-tile" data-testid="settings-save-bar">
+    <span class="settings-actions__count" aria-live="polite" data-testid="unsaved-count">{{ unsavedLabel(changeCount()) }}</span>
     <p-button
       label="Скасувати"
       severity="secondary"
@@ -225,7 +226,8 @@
       label="Зберегти"
       icon="pi pi-save"
       [loading]="saving"
-      [disabled]="loading || saving || !kurin || !!numberProblem"
+      [severity]="changeCount() > 0 ? 'primary' : 'secondary'"
+      [disabled]="loading || saving || !kurin || !!numberProblem || changeCount() === 0"
       (onClick)="save()" />
   </footer>
   }

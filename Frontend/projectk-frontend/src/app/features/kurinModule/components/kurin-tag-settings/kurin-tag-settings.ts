@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ToggleSwitchModule } from '@openng/optimus-ui/toggleswitch';
 import { map, Observable, of } from 'rxjs';
 import { KurinTagService } from '../../services/kurin-tag-service/kurin-tag.service';
 import { KurinTagSettingsDto } from '../../models/kurin-tag.dto';
+import { countChanges } from '../../../../shared/functions/count-changes.function';
 
 /**
  * Чи курінь користується тегами й чи бачить людина свої. Хто бачить теги інших — рядок «Бачити
@@ -23,11 +24,15 @@ export class KurinTagSettingsComponent implements OnInit {
 
   protected readonly loaded = signal(false);
   protected readonly settings = signal<KurinTagSettingsDto | null>(null);
+  private readonly saved = signal<KurinTagSettingsDto | null>(null);
+  /** How many settings differ from what the server has. */
+  readonly changeCount = computed(() => countChanges(this.saved(), this.settings()));
 
   ngOnInit(): void {
     this.tags.getSettings(this.kurinKey()).subscribe({
       next: settings => {
         this.settings.set(settings);
+        this.saved.set(settings);
         this.loaded.set(true);
       },
       error: () => this.loaded.set(true)
@@ -45,6 +50,7 @@ export class KurinTagSettingsComponent implements OnInit {
     }
     return this.tags.setSettings(this.kurinKey(), settings).pipe(map(saved => {
       this.settings.set(saved);
+      this.saved.set(saved);
     }));
   }
 }
