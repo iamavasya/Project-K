@@ -258,7 +258,7 @@ test('lets the курінний seat the kurin’s провід, all but himself
   await expect(sheet.getByTestId('seat-Skarbnyk')).toContainText('Коваль');
   await sheet.getByTestId('seat-Pysar').click();
   await picker(page).getByTestId('pick-none').click();
-  await expect(sheet.getByTestId('seat-Pysar')).toContainText('Не обсаджено');
+  await expect(sheet.getByTestId('seat-Pysar').locator('ion-note')).toHaveText('');
   await sheet.getByTestId('show-archive').click();
   await expect(sheet.getByTestId('archived-office')).toContainText('Коваль');
   await expect(sheet.getByTestId('archived-office')).toContainText('Курінний · 01.09.23 – 31.08.25');
