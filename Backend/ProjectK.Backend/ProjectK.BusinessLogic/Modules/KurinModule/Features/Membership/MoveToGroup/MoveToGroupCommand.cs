@@ -1,6 +1,7 @@
 using MediatR;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Audit;
 using ProjectK.Common.Models.Enums;
@@ -23,14 +24,17 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
     private readonly IDomainEventPublisher _events;
     private readonly IMemberDirectory _members;
     private readonly IKurinAudit _audit;
+    private readonly ICurrentUserContext _currentUser;
 
     public MoveToGroupCommandHandler(
         IUnitOfWork unitOfWork,
         IDomainEventPublisher events,
         IAccessChangeSignal accessChanges,
         IMemberDirectory members,
-        IKurinAudit audit)
+        IKurinAudit audit,
+        ICurrentUserContext currentUser)
     {
+        _currentUser = currentUser;
         _unitOfWork = unitOfWork;
         _accessChanges = accessChanges;
         _events = events;
@@ -55,6 +59,12 @@ public sealed class MoveToGroupCommandHandler : IRequestHandler<MoveToGroupComma
         {
             return ServiceResult<object>.Failure(
                 ResultType.NotFound, "NotAMember", "They do not currently belong to this kurin.");
+        }
+
+        if (membership.UserKey is { } holder && holder == _currentUser.UserId)
+        {
+            return ServiceResult<object>.Failure(
+                ResultType.Forbidden, "OwnMembership", "Nobody moves themselves between гуртки.");
         }
 
         string? toGroup = null;

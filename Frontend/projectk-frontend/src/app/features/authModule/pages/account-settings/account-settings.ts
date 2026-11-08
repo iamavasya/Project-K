@@ -9,6 +9,7 @@ import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { PasswordModule } from '@openng/optimus-ui/password';
 import { TagModule } from '@openng/optimus-ui/tag';
 import { CalendarFeedSectionComponent } from '../../components/calendar-feed-section/calendar-feed-section';
+import { CardSectionComponent } from '../../components/card-section/card-section';
 import { MfaSetupDialogComponent } from '../../components/mfa-setup-dialog/mfa-setup-dialog';
 import { AccountSettings, AccountSettingsService } from '../../services/account-settings-service/account-settings.service';
 import { AuthService } from '../../services/auth-service/auth.service';
@@ -18,10 +19,13 @@ import { PasswordRulesComponent } from '../../../../shared/password-rules/passwo
 import { PhoneInputComponent } from '../../../../shared/phone-input/phone-input';
 import { passwordMeetsRules } from '../../../../shared/functions/password-rules.function';
 import { AccountRoleTag, signedInRoleTag } from '../../../kurinModule/functions/account-role-tag.function';
+import { PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../../kurinModule/services/page-groups/page-groups.service';
 
 @Component({
   selector: 'app-account-settings',
   imports: [
+    PageTabsComponent,
     FormsModule,
     InputTextModule,
     PasswordModule,
@@ -30,6 +34,7 @@ import { AccountRoleTag, signedInRoleTag } from '../../../kurinModule/functions/
     TagModule,
     MfaSetupDialogComponent,
     CalendarFeedSectionComponent,
+    CardSectionComponent,
     PasswordRulesComponent,
     PhoneInputComponent
   ],
@@ -40,6 +45,8 @@ import { AccountRoleTag, signedInRoleTag } from '../../../kurinModule/functions/
 export class AccountSettingsComponent implements OnInit {
   private readonly accountService = inject(AccountSettingsService);
   private readonly authService = inject(AuthService);
+  /** Налаштування куреня й акаунта — одне місце в меню, дві вкладки. */
+  protected readonly tabs = inject(PageGroups).settings(this.authService.getAuthStateValue()?.kurinKey ?? null);
   private readonly mfaEnforcer = inject(MfaEnforcerService);
   private readonly messageService = inject(MessageService);
   private readonly permissionService = inject(PermissionService);

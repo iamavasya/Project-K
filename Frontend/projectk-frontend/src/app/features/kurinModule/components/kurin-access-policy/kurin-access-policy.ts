@@ -80,6 +80,8 @@ export class KurinAccessPolicyComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly kurinKey = input.required<string>();
+  /** The page is open for reading: every cell shows, none changes. */
+  readonly readOnly = input(false);
 
   readonly loaded = signal(false);
   readonly failed = signal(false);
@@ -125,6 +127,13 @@ export class KurinAccessPolicyComponent implements OnInit {
       });
     }
     return groups;
+  });
+
+  /** How many cells on screen differ from what the server has. */
+  readonly changeCount = computed(() => {
+    const values = this.values();
+    return (this.policy()?.capabilities ?? []).reduce((sum, capability) => sum + capability.cells
+      .filter(cell => (values[cellKey(capability.key, cell.audience)] ?? cell.effective) !== cell.effective).length, 0);
   });
 
   /** Anything on screen that the server does not have yet. */

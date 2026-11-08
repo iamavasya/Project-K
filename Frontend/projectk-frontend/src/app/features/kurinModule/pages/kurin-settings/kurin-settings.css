@@ -44,11 +44,23 @@
   color: var(--p-red-500);
 }
 
+/* Always in view at the bottom of the screen, so a change is not left behind unsaved. */
 .settings-actions {
+  position: sticky;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.75rem;
-  margin-top: 1.25rem;
+}
+
+.settings-actions__count {
+  margin-right: auto;
+  color: var(--p-text-muted-color);
+  font-size: var(--lil-text-caption);
+  font-weight: 600;
 }
 
 @media (max-width: 640px) {
@@ -60,4 +72,29 @@
   .settings-actions {
     justify-content: stretch;
   }
+}
+
+.role-names {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
+.role-names__row {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.role-names__usual {
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+}
+
+/* The tiles sit in the page's own grid; the fieldset is only there to switch every control off for a reader. */
+.settings-fieldset {
+  border: 0;
+  display: contents;
+  margin: 0;
+  padding: 0;
 }
