@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { catchError, filter, of } from 'rxjs';
 import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 import { KurinService } from '../../services/kurin-service/kurin.service';
 import { MembershipService } from '../../services/membership-service/membership.service';
 import { KURIN_BRANCH_LABELS, KurinBranch } from '../../models/enums/kurin-branch.enum';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
 import { RegistryModeLink, RegistryModes } from './registry-modes';
 
 /**
@@ -15,7 +16,7 @@ import { RegistryModeLink, RegistryModes } from './registry-modes';
  */
 @Component({
   selector: 'app-registry',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, PageTabsComponent],
   templateUrl: './registry.html',
   styleUrl: './registry.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -30,6 +31,14 @@ export class RegistryComponent {
 
   readonly modes = signal<RegistryModeLink[]>([]);
   readonly waiting = signal(0);
+  readonly tabs = computed<PageTab[]>(() => this.modes().map(mode => ({
+    label: mode.label,
+    link: mode.link,
+    exact: mode.mode === 'roster',
+    count: mode.mode === 'transfers' ? this.waiting() : 0,
+    countLabel: `Чекають відповіді: ${this.waiting()}`,
+    testId: `registry-mode-${mode.mode}`
+  })));
   private readonly kurinNumber = signal<number | null>(null);
   private readonly branch = signal<KurinBranch | null>(null);
   private readonly kurinLoaded = signal(false);

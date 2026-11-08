@@ -1,6 +1,5 @@
 import { Component, inject, OnInit, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
-import { MessageService } from '@openng/optimus-ui/api';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from '@openng/optimus-ui/button';
@@ -29,6 +28,8 @@ import { LeadershipRole } from '../../models/enums/leadership-role.enum';
 import { ROLE_DISPLAY_NAMES } from '../../models/role-display-name.model';
 import { rememberKurinRoleNames } from '../../functions/leadership-role-display.function';
 import { countChanges, unsavedChangesLabel } from '../../../../shared/functions/count-changes.function';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../services/page-groups/page-groups.service';
 
 /** Ролі, які курінь може назвати по-своєму (сервер: KurinRoleNames.Renamable). Гурткових тут немає. */
 const RENAMABLE_ROLES: LeadershipRole[] = [
@@ -45,6 +46,7 @@ function prefixed(names: Record<string, string>): Record<string, string> {
 @Component({
   selector: 'app-kurin-settings',
   imports: [
+    PageTabsComponent,
     FormsModule,
     ButtonModule,
     MessageModule,
@@ -71,7 +73,6 @@ export class KurinSettingsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly kurinService = inject(KurinService);
   private readonly onboardingService = inject(OnboardingService);
-  private readonly messages = inject(MessageService);
   /** The archive terms are part of the page and go out with its one «Зберегти». */
   private readonly archivePolicy = viewChild<AgendaArchivePolicyComponent>('archivePolicy');
   private readonly cardFields = viewChild<KurinCardFieldsComponent>('cardFields');
@@ -106,6 +107,9 @@ export class KurinSettingsComponent implements OnInit {
   readonly readOnly = !inject(PermissionService).canManageKurinSettings();
 
   kurinKey = '';
+  private readonly pageGroups = inject(PageGroups);
+  /** Налаштування куреня й акаунта — одне місце в меню, дві вкладки. */
+  tabs: PageTab[] = [];
   kurin: KurinDto | null = null;
   profileVerificationEnabled = false;
   /** Точкування в цьому курені; вимкнене зникає з меню, плиток і сторінок, а бали лишаються. */
@@ -121,6 +125,7 @@ export class KurinSettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.kurinKey = this.route.snapshot.paramMap.get('kurinKey') ?? '';
+    this.tabs = this.pageGroups.settings(this.kurinKey || null);
 
     if (!this.kurinKey) {
       this.errorMessage = 'Не вдалося визначити курінь для налаштувань.';
@@ -215,7 +220,7 @@ export class KurinSettingsComponent implements OnInit {
         this.preparatory = updated.number === null;
         this.number = updated.number;
         this.saving = false;
-        this.messages.add({ severity: 'success', summary: 'Збережено' });
+        // «Збережено» comes from the request feedback, once for the click; a toast here would be a second one.
       },
       error: (error: HttpErrorResponse) => {
         console.error('Error saving kurin settings:', error);

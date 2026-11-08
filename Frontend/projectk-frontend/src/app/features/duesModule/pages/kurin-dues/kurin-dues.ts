@@ -50,6 +50,8 @@ import {
 } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 import { DuesEntryDialogComponent } from '../group-dues/components/dues-entry-dialog/dues-entry-dialog';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../../kurinModule/services/page-groups/page-groups.service';
 
 /**
  * The kurin's box: what each гурток has collected for the станиця and the kurin and handed over,
@@ -60,6 +62,7 @@ import { DuesEntryDialogComponent } from '../group-dues/components/dues-entry-di
 @Component({
   selector: 'app-kurin-dues',
   imports: [
+    PageTabsComponent,
     DatePipe, FormsModule, RouterLink, ButtonModule, TableModule, TagModule, SelectModule, CheckboxModule,
     ToggleSwitchModule, TooltipModule, SkeletonModule, ConfirmDialogModule, SelectButtonModule, DialogModule, InputTextModule,
     EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent, DuesRegisterComponent, KraiConcessionGrantsComponent
@@ -82,6 +85,9 @@ export class KurinDuesComponent implements OnInit {
   readonly kurinKinds = computed(() => kurinDuesKinds(this.upstream(), this.isSenior()));
 
   kurinKey = '';
+  private readonly pageGroups = inject(PageGroups);
+  /** Вкладка куреня і вкладки гуртків — одне місце в меню. */
+  readonly tabs = signal<PageTab[]>([]);
 
   readonly data = signal<KurinDuesDto | null>(null);
   readonly loading = signal(true);
@@ -226,6 +232,7 @@ export class KurinDuesComponent implements OnInit {
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.kurinKey = params.get('kurinKey') ?? '';
+      this.pageGroups.dues(this.kurinKey).subscribe(tabs => this.tabs.set(tabs));
       this.groupFilter.set(null);
       this.load();
     });

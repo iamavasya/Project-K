@@ -10,6 +10,8 @@
       }
     </header>
 
+    <app-page-tabs [tabs]="tabs" label="Розділи налаштувань" />
+
     @if (loading || confirmingEmail) {
       <div class="settings-loading">
         {{ confirmingEmail ? 'Підтвердження email...' : 'Завантаження...' }}

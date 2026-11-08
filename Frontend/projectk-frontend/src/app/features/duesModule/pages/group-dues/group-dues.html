@@ -37,6 +37,8 @@
     }
   </header>
 
+  <app-page-tabs [tabs]="tabs()" label="Вкладка куреня і гуртків" />
+
   @if (loading() && !data()) {
     <section class="kurin-tile">
       <div class="lil-stats">

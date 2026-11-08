@@ -108,7 +108,8 @@ export class SidebarMenuComponent implements OnChanges {
    * Flags the item whose routerLink best matches the current URL. PanelMenu only marks
    * headers it expands, and every item here is a leaf, so the current page would never
    * be highlighted without this. The longest match wins, otherwise "/kurin" would light
-   * up alongside "/kurin/<key>/settings".
+   * up alongside "/kurin/<key>/settings". An item that stands for a page of tabs also answers to
+   * its other tabs' addresses (`state.also`).
    */
   private markCurrent(items: MenuItem[], url: string): MenuItem[] {
     const path = url.split(/[?#]/)[0];
@@ -116,13 +117,15 @@ export class SidebarMenuComponent implements OnChanges {
     let bestLength = 0;
 
     for (const item of items) {
-      const link = this.toPath(item.routerLink);
-      if (!link || item.disabled) {
+      const own = this.toPath(item.routerLink);
+      if (!own || item.disabled) {
         continue;
       }
-      if ((path === link || path.startsWith(`${link}/`)) && link.length > bestLength) {
-        best = item;
-        bestLength = link.length;
+      for (const link of [own, ...((item.state?.['also'] as string[] | undefined) ?? [])]) {
+        if ((path === link || path.startsWith(`${link}/`)) && link.length > bestLength) {
+          best = item;
+          bestLength = link.length;
+        }
       }
     }
 
@@ -191,7 +194,7 @@ export class SidebarMenuComponent implements OnChanges {
       ...(memberKey ? this.personalItems(memberKey) : []),
       ...(kurinKey ? this.kurinItems(kurinKey, features, duesGroups, requestsWaiting) : []),
       ...(isAdmin && !kurinKey ? this.adminItems(pendingWaitlist) : []),
-      ...this.commonItems()
+      ...this.commonItems(kurinKey)
     ];
   }
 
@@ -234,10 +237,10 @@ export class SidebarMenuComponent implements OnChanges {
     // Календар і Задачі бачить кожен у курені — учасник бачить призначене йому,
     // провід керує. Створення обмежене на рівні сторінки/бекенду (canManageAgenda).
     // Таблицю гуртків бачить кожен у курені; хто ставить бали, вирішує сторінка.
+    // Календар і Планування — одна сторінка з двома вкладками (PageGroups.calendar).
     items.push(
-      this.navItem({ label: 'Календар', icon: 'pi pi-calendar', routerLink: ['/calendar', kurinKey] }),
-      this.navItem({ label: 'Задачі', icon: 'pi pi-check-square', routerLink: ['/tasks', kurinKey] }),
-      this.navItem({ label: 'Планування', icon: 'pi pi-clock', routerLink: ['/planning', kurinKey] })
+      this.navItem({ label: 'Календар', icon: 'pi pi-calendar', routerLink: ['/calendar', kurinKey], state: { also: [`/planning/${kurinKey}`] } }),
+      this.navItem({ label: 'Задачі', icon: 'pi pi-check-square', routerLink: ['/tasks', kurinKey] })
     );
     if (features.score) {
       items.push(this.navItem({ label: 'Точкування', icon: 'pi pi-trophy', routerLink: ['/kurin', kurinKey, 'score'] }));
@@ -254,33 +257,26 @@ export class SidebarMenuComponent implements OnChanges {
       items.push(this.navItem({ label: 'Журнал дій', icon: 'pi pi-history', routerLink: ['/kurin', kurinKey, 'journal'] }));
     }
 
-    items.push(...this.duesGroupItems(duesGroups));
-
-    if (this.permissionService.canSeeKurinDues()) {
-      items.push(this.navItem({ label: 'Вкладка куреня', icon: 'pi pi-wallet', routerLink: ['/kurin', kurinKey, 'dues'] }));
-    }
-
-    if (this.permissionService.canReadKurinSettings()) {
-      items.push(this.navItem({ label: 'Налаштування куреня', icon: 'pi pi-cog', routerLink: ['/kurin', kurinKey, 'settings'] }));
-    }
+    items.push(...this.duesItem(kurinKey, duesGroups));
 
     return items;
   }
 
-  /** One гурток — straight to its box; several — a fold with one entry each. */
-  private duesGroupItems(duesGroups: DuesGroupLinkDto[]): MenuItem[] {
-    if (duesGroups.length === 1) {
-      const [group] = duesGroups;
-      return [this.navItem({ label: 'Вкладка гуртка', icon: 'pi pi-wallet', routerLink: ['/group', group.groupKey, 'dues'] })];
+  /**
+   * «Вкладка»: the kurin's box and the гуртків' are one page of tabs (PageGroups.dues). The item
+   * opens the kurin's where the person keeps it, otherwise their first гурток's.
+   */
+  private duesItem(kurinKey: string, duesGroups: DuesGroupLinkDto[]): MenuItem[] {
+    const links = [
+      ...(this.permissionService.canSeeKurinDues() ? [`/kurin/${kurinKey}/dues`] : []),
+      ...duesGroups.map(group => `/group/${group.groupKey}/dues`)
+    ];
+    if (links.length === 0) {
+      return [];
     }
-    if (duesGroups.length > 1) {
-      return [{
-        label: 'Вкладка гуртків',
-        icon: 'pi pi-wallet',
-        items: duesGroups.map(group => this.navItem({ label: group.groupName, routerLink: ['/group', group.groupKey, 'dues'] }))
-      }];
-    }
-    return [];
+
+    const [first, ...also] = links;
+    return [this.navItem({ label: 'Вкладка', icon: 'pi pi-wallet', routerLink: [first], state: { also } })];
   }
 
   private adminItems(pendingWaitlist: number): MenuItem[] {
@@ -298,9 +294,23 @@ export class SidebarMenuComponent implements OnChanges {
     ];
   }
 
-  private commonItems(): MenuItem[] {
+  /**
+   * «Налаштування»: the kurin's and the account's are one page of tabs (PageGroups.settings). The
+   * item opens the kurin's for whoever may read them, the account's for everyone else.
+   */
+  private settingsItem(kurinKey: string | null): MenuItem {
+    const kurinSettings = kurinKey && this.permissionService.canReadKurinSettings() ? `/kurin/${kurinKey}/settings` : null;
+    return this.navItem({
+      label: 'Налаштування',
+      icon: 'pi pi-cog',
+      routerLink: [kurinSettings ?? '/settings/account'],
+      state: { also: kurinSettings ? ['/settings/account'] : [] }
+    });
+  }
+
+  private commonItems(kurinKey: string | null): MenuItem[] {
     return [
-      this.navItem({ label: 'Налаштування акаунта', icon: 'pi pi-shield', routerLink: ['/settings/account'] }),
+      this.settingsItem(kurinKey),
       // The guide is another site (PROJECTK_DOCS_URL is its root), so it opens in a new tab and never
       // takes the «current» mark: markCurrent only knows routerLinks. The welcome page sends people
       // to the root; from inside the app they already know what Лілейка is, so straight to the guide.

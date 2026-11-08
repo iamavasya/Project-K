@@ -36,7 +36,7 @@ describe('RegistryComponent', () => {
   }
 
   const tabs = (fixture: ReturnType<typeof create>) =>
-    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.registry-modes__tab')).map(tab => tab.textContent?.trim());
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.page-tabs__tab')).map(tab => tab.textContent?.trim());
 
   it('names the kurin and offers each mode the person has, with the requests waiting on «Переходи»', () => {
     allowed = ['roster', 'transfers', 'archive', 'import'];

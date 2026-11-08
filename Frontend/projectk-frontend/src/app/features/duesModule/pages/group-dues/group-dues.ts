@@ -40,6 +40,9 @@ import {
 } from '../../models/group-dues.dto';
 import { DuesService } from '../../services/dues-service/dues.service';
 import { DuesEntryDialogComponent } from './components/dues-entry-dialog/dues-entry-dialog';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../../kurinModule/services/page-groups/page-groups.service';
+import { AuthService } from '../../../authModule/services/auth-service/auth.service';
 
 /**
  * The гурток's box: who paid what by quarter, every operation with the впорядник's mark, and what
@@ -49,6 +52,7 @@ import { DuesEntryDialogComponent } from './components/dues-entry-dialog/dues-en
 @Component({
   selector: 'app-group-dues',
   imports: [
+    PageTabsComponent,
     DatePipe, FormsModule, ButtonModule, TableModule, TagModule, SelectModule, CheckboxModule, DialogModule,
     InputTextModule, ToggleSwitchModule, TooltipModule, SkeletonModule, ConfirmDialogModule,
     EmptyStateComponent, DuesEntryDialogComponent, KurinRateDialogComponent, KraiConcessionGrantsComponent, DuesRegisterComponent
@@ -59,6 +63,11 @@ import { DuesEntryDialogComponent } from './components/dues-entry-dialog/dues-en
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GroupDuesComponent implements OnInit {
+  private readonly pageGroups = inject(PageGroups);
+  private readonly authState = inject(AuthService);
+  /** Вкладка куреня і вкладки гуртків — одне місце в меню; курінь той, у якому людина діє. */
+  readonly tabs = signal<PageTab[]>([]);
+
   private readonly route = inject(ActivatedRoute);
   private readonly dues = inject(DuesService);
   private readonly confirmation = inject(ConfirmationService);
@@ -169,6 +178,10 @@ export class GroupDuesComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const kurinKey = this.authState.getAuthStateValue()?.kurinKey;
+    if (kurinKey) {
+      this.pageGroups.dues(kurinKey).subscribe(tabs => this.tabs.set(tabs));
+    }
     this.route.paramMap.subscribe(params => {
       this.groupKey = params.get('groupKey') ?? '';
       this.personFilter.set(null);

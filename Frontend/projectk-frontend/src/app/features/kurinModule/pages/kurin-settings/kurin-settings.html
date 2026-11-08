@@ -17,6 +17,8 @@
     </div>
   </header>
 
+  <app-page-tabs [tabs]="tabs" label="Розділи налаштувань" />
+
   @if (errorMessage) {
     <p-message severity="error" icon="pi pi-exclamation-triangle">{{ errorMessage }}</p-message>
   }

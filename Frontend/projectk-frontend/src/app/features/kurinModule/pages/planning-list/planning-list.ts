@@ -13,14 +13,17 @@ import { PlanningSessionDto } from '../../models/planning-session.dto';
 import { PlanningDetailComponent } from '../../components/planning-detail/planning-detail';
 import { PermissionService } from '../../../authModule/services/permission-service/permission.service';
 import { EmptyStateComponent } from '../../../../shared/empty-state/empty-state';
+import { PageTab, PageTabsComponent } from '../../../../shared/page-tabs/page-tabs';
+import { PageGroups } from '../../services/page-groups/page-groups.service';
 
 @Component({
   selector: 'app-planning-list',
-  imports: [TableModule, ButtonModule, TagModule, TooltipModule, ConfirmDialogModule, RouterModule, PlanningDetailComponent, EmptyStateComponent, DatePipe],
+  imports: [PageTabsComponent, TableModule, ButtonModule, TagModule, TooltipModule, ConfirmDialogModule, RouterModule, PlanningDetailComponent, EmptyStateComponent, DatePipe],
   providers: [ConfirmationService],
   template: `
     <p-confirmdialog />
     <div class="planning-page">
+      <app-page-tabs [tabs]="tabs" label="Календар і планування" />
       <section class="kurin-tile">
         <div class="planning-header">
           <h1 class="planning-title">Планування таборів</h1>
@@ -195,6 +198,9 @@ export class PlanningListComponent implements OnInit {
   selectedSessionId: string | null = null;
 
   kurinKey = '';
+  private readonly pageGroups = inject(PageGroups);
+  /** Календар і Планування — одне місце в меню, дві вкладки. */
+  tabs: PageTab[] = [];
 
   get canCreatePlanning(): boolean {
     return this.permissionService.canCreatePlanning();
@@ -203,6 +209,7 @@ export class PlanningListComponent implements OnInit {
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       this.kurinKey = params.get('kurinKey')!;
+      this.tabs = this.pageGroups.calendar(this.kurinKey);
     });
     this.loadData();
   }

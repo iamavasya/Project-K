@@ -8,20 +8,7 @@
     </div>
   </header>
 
-  @if (modes().length > 1) {
-    <nav class="registry-modes" aria-label="Режими реєстру">
-      @for (mode of modes(); track mode.mode) {
-        <a class="registry-modes__tab" [routerLink]="mode.link" routerLinkActive="registry-modes__tab--on"
-          [routerLinkActiveOptions]="{ exact: mode.mode === 'roster' }" ariaCurrentWhenActive="page"
-          [attr.data-testid]="'registry-mode-' + mode.mode">
-          {{ mode.label }}
-          @if (mode.mode === 'transfers' && waiting() > 0) {
-            <span class="registry-modes__count" [attr.aria-label]="'Чекають відповіді: ' + waiting()">{{ waiting() }}</span>
-          }
-        </a>
-      }
-    </nav>
-  }
+  <app-page-tabs [tabs]="tabs()" label="Режими реєстру" />
 
   <router-outlet />
 </section>

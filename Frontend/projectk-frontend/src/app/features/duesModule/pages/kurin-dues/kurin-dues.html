@@ -4,7 +4,7 @@
   <header class="lil-page-head">
     <div>
       <p class="lil-page-head__eyebrow">Курінь</p>
-      <h1>Вкладка куреня</h1>
+      <h1>Вкладка</h1>
       @if (data(); as d) {
         <p>
           зараз {{ quarterLabel(d.currentQuarter) }}
@@ -40,6 +40,8 @@
       </div>
     }
   </header>
+
+  <app-page-tabs [tabs]="tabs()" label="Вкладка куреня і гуртків" />
 
   @if (loading() && !data()) {
     <section class="kurin-tile">
