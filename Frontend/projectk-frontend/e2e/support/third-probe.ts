@@ -153,6 +153,18 @@ export function projectBody(title: string, plan: string): Record<string, unknown
 }
 
 /** Status of a write the actor may or may not make; the boundary tests read only this. */
+/**
+ * The kurin's Звʼязковий sets «Пробу відкрито»: until then the notebook shows only the way to the
+ * opening, without the countdown, the camp or the projects.
+ */
+export async function openProbe(request: APIRequestContext, kurin: ProbeKurin, memberKey: string, probeId: string): Promise<void> {
+  const status = await apiStatus(request, kurin.founder, 'PUT', `member/${memberKey}/probes/${probeId}/third-probe/stages`, {
+    motivationLetterOn: null, selfReflectionOn: null, applicationSubmittedOn: null, openedOn: '2026-03-01',
+    completedOn: null, namedOn: null, archivedOn: null
+  });
+  expect(status, 'the Звʼязковий could not open the probe').toBe(200);
+}
+
 export async function apiStatus(
   request: APIRequestContext,
   actor: E2eUser,
@@ -184,7 +196,8 @@ export interface ThirdProbeTab {
 
 export async function openThirdProbe(page: Page, memberKey: string, probeId: string): Promise<void> {
   await page.goto(`/member/${memberKey}/probe/${probeId}`);
-  await expect(page.getByTestId('third-probe-checklist')).toBeVisible({ timeout: 15_000 });
+  // The stages show before and after the opening; the checklist only after it.
+  await expect(page.getByTestId('third-probe-stages')).toBeVisible({ timeout: 15_000 });
 }
 
 /** A small real PNG (solid colour), made here so its checksums are right; the server decodes and re-encodes it. */

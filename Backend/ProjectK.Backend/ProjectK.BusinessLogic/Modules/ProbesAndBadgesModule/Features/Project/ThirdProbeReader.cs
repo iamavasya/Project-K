@@ -3,6 +3,8 @@ using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Services;
 using ProjectK.Common.Entities.ProbesAndBadgesModule;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
+using ProjectK.Common.Models.Authorization;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
 
@@ -24,14 +26,17 @@ public sealed class ThirdProbeReader : IThirdProbeReader
     private readonly IMemberProbeLine _line;
     private readonly IBadgesCatalogService _badges;
     private readonly IBlobReadLinks _links;
+    private readonly IMemberDirectory _members;
 
     public ThirdProbeReader(
         IUnitOfWork unitOfWork,
         IProbeProjectAccess access,
         IMemberProbeLine line,
         IBadgesCatalogService badges,
-        IBlobReadLinks links)
+        IBlobReadLinks links,
+        IMemberDirectory members)
     {
+        _members = members;
         _unitOfWork = unitOfWork;
         _access = access;
         _line = line;
@@ -70,7 +75,39 @@ public sealed class ThirdProbeReader : IThirdProbeReader
                 .Select(project => ProbeProjectMapping.ToResponse(project, _links))
                 .ToList(),
             await BadgesAsync(memberKey, openedOn, cancellationToken),
-            ProbeProjectMapping.Limits);
+            ProbeProjectMapping.Limits,
+            canEdit ? await MentorOptionsAsync(memberKey, cancellationToken) : null);
+    }
+
+    private async Task<ThirdProbeMentorOptions> MentorOptionsAsync(Guid memberKey, CancellationToken cancellationToken)
+    {
+        var zvyazkovyi = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
+        var zvyazkovi = new List<string>();
+        var ownGroup = new List<string>();
+        var kurinWide = new List<string>();
+        foreach (var membership in await _unitOfWork.Memberships.GetActiveForMemberAsync(memberKey, cancellationToken))
+        {
+            zvyazkovi.AddRange((await _unitOfWork.Leaderships.GetOfficeMembersLookupAsync(membership.KurinKey, LeadershipType.KV, cancellationToken))
+                .Where(holder => holder.UserRole == zvyazkovyi && holder.MemberKey != memberKey)
+                .Select(holder => $"{holder.FirstName} {holder.LastName}".Trim()));
+
+            foreach (var assignment in (await _unitOfWork.MentorAssignments.GetByKurinKeyAsync(membership.KurinKey, cancellationToken))
+                         .Where(assignment => assignment.RevokedAtUtc is null))
+            {
+                var mentor = await _members.FindByAccountAsync(assignment.MentorUserKey, cancellationToken);
+                if (mentor is null || mentor.MemberKey == memberKey)
+                {
+                    continue;
+                }
+
+                (assignment.GroupKey == membership.GroupKey ? ownGroup : kurinWide).Add(mentor.FullName);
+            }
+        }
+
+        static IReadOnlyList<string> Names(IEnumerable<string> names) =>
+            names.Where(name => name.Length > 0).Distinct(StringComparer.Ordinal).ToList();
+
+        return new ThirdProbeMentorOptions(Names(zvyazkovi), Names(ownGroup.Concat(kurinWide.OrderBy(name => name, StringComparer.Ordinal))));
     }
 
     private async Task<DateOnly?> ClosedOnAsync(Guid memberKey, string probeId, CancellationToken cancellationToken)

@@ -8,12 +8,15 @@
 </section>
 } @else if (tab()?.isProjectProbe && tab(); as t) {
 
+@if (isOpened()) {
 <app-third-probe-countdown [dateOfBirth]="member()?.dateOfBirth ?? null" [age]="t.limits.youthEndsAtAge" />
+}
 
 @if (errorMessage(); as message) {
 <p class="tp-error" role="alert">{{ message }}</p>
 }
 
+@if (isOpened()) {
 <section class="kurin-tile" data-testid="third-probe-checklist">
     <div class="tp-head">
         <h2 class="tp-title">Що вже є</h2>
@@ -29,19 +32,22 @@
         }
     </ul>
 </section>
+}
 
 <section class="kurin-tile" data-testid="third-probe-stages">
     <div class="tp-head">
         <div>
-            <h2 class="tp-title">Відкриття й закриття проби</h2>
+            <h2 class="tp-title">{{ isOpened() ? 'Закриття проби' : 'Відкриття проби' }}</h2>
             <p class="tp-muted text-xs">Етапи, які веде референт ІІІ проби@if (t.file?.stages.updatedByName) { · востаннє {{ t.file.stages.updatedByName }} }</p>
         </div>
         @if (canSign()) {
         <p-button label="Змінити етапи" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="openStagesDialog()" />
         }
     </div>
+    @if (isOpened()) {
+    <p class="tp-opened" data-testid="third-probe-opened"><span class="pi pi-check" aria-hidden="true"></span> Пробу відкрито {{ openedLabel() }}</p>
+    }
     @for (part of stageParts(); track part.title) {
-    <p class="tp-stages__part">{{ part.title }}</p>
     <ol class="tp-stages" [style.--tp-stage-columns]="part.stages.length">
         @for (stage of part.stages; track stage.key) {
         <li class="tp-stage" [class.tp-stage--done]="stage.day">
@@ -49,7 +55,6 @@
             <span class="tp-stage__label">{{ stage.label }}</span>
             <span class="tp-muted text-xs">
                 @if (stage.day) { {{ stage.day }} } @else if (stage.hint) { {{ stage.hint }} } @else { — }
-                @if (stage.key === 'openedOn' && t.file?.openedOnIsDerived) { · коли закрили другу пробу }
             </span>
         </li>
         }
@@ -57,6 +62,21 @@
     }
 </section>
 
+@if (!isOpened()) {
+<section class="kurin-tile tp-section" data-testid="third-probe-mentors">
+    <div class="tp-head">
+        <h2 class="tp-title">Ментори</h2>
+        @if (canEdit()) {
+        <p-button label="Редагувати" icon="pi pi-pencil" size="small" severity="secondary" variant="text" (onClick)="openFileDialog()" />
+        }
+    </div>
+    <ul class="tp-mentors">
+        @for (mentor of mentors(); track mentor.role) {
+        <li><span class="tp-muted">{{ mentor.role }}:</span> {{ mentor.name || '—' }}</li>
+        }
+    </ul>
+</section>
+} @else {
 <div class="tp-grid">
     <section class="kurin-tile tp-section" data-testid="third-probe-mentors">
         <div class="tp-head">
@@ -197,24 +217,28 @@
     <p class="tp-muted text-sm">Життєпис у Пласті: коли вступив, які проби, табори, вмілості й ролі мав, чим займаєшся поза Пластом.</p>
     }
 </section>
+}
 
-<p-dialog header="Ментори, рефлексія й табір" [visible]="fileDialogVisible()" (visibleChange)="fileDialogVisible.set($event)"
+<p-dialog [header]="isOpened() ? 'Ментори, рефлексія й табір' : 'Ментори'" [visible]="fileDialogVisible()" (visibleChange)="fileDialogVisible.set($event)"
     [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 40rem)' }" styleClass="third-probe-dialog">
     <fieldset class="tp-fieldset">
         <legend class="tp-legend">Ментори</legend>
         <div class="tp-field">
             <label for="tp-mentor-zv">Звʼязковий</label>
-            <input pInputText id="tp-mentor-zv" class="w-full" maxlength="200" [ngModel]="mentorZvyazkovyi()" (ngModelChange)="mentorZvyazkovyi.set($event)" />
+            <p-select inputId="tp-mentor-zv" [options]="zvyazkovyiOptions()" [editable]="true" [showClear]="true" [filter]="zvyazkovyiOptions().length > 6"
+                appendTo="body" styleClass="w-full" [maxlength]="200" [ngModel]="mentorZvyazkovyi()" (ngModelChange)="mentorZvyazkovyi.set($event ?? '')" />
         </div>
         <div class="tp-field">
             <label for="tp-mentor-vp">Впорядник</label>
-            <input pInputText id="tp-mentor-vp" class="w-full" maxlength="200" [ngModel]="mentorVporiadnyk()" (ngModelChange)="mentorVporiadnyk.set($event)" />
+            <p-select inputId="tp-mentor-vp" [options]="vporiadnykOptions()" [editable]="true" [showClear]="true" [filter]="vporiadnykOptions().length > 6"
+                appendTo="body" styleClass="w-full" [maxlength]="200" [ngModel]="mentorVporiadnyk()" (ngModelChange)="mentorVporiadnyk.set($event ?? '')" />
         </div>
         <div class="tp-field">
             <label for="tp-mentor-ref">Референт ІІІ проби</label>
             <input pInputText id="tp-mentor-ref" class="w-full" maxlength="200" [ngModel]="mentorReferent()" (ngModelChange)="mentorReferent.set($event)" />
         </div>
     </fieldset>
+    @if (isOpened()) {
     <div class="tp-field-row">
         <div class="tp-field">
             <label for="tp-reflection">Рефлексія відбулася</label>
@@ -223,8 +247,8 @@
         </div>
         <div class="tp-field">
             <label for="tp-reflection-with">З ким</label>
-            <input pInputText id="tp-reflection-with" class="w-full" maxlength="200" placeholder="Звʼязковий чи референт"
-                [ngModel]="reflectionWith()" (ngModelChange)="reflectionWith.set($event)" />
+            <p-select inputId="tp-reflection-with" [options]="reflectionWithOptions()" [editable]="true" [showClear]="true"
+                appendTo="body" styleClass="w-full" [maxlength]="200" [ngModel]="reflectionWith()" (ngModelChange)="reflectionWith.set($event ?? '')" />
         </div>
     </div>
     <div class="tp-field-row">
@@ -253,6 +277,7 @@
         </div>
     </div>
     <p class="tp-muted tp-hint">Якщо змінити дату чи співрозмовника рефлексії, її підтвердження знімається.</p>
+    }
     @if (dialogError(); as message) { <p class="tp-error" role="alert">{{ message }}</p> }
     <ng-template #footer>
         <p-button label="Скасувати" variant="text" severity="secondary" (onClick)="fileDialogVisible.set(false)" />
@@ -264,12 +289,14 @@
     [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: 'min(96vw, 34rem)' }" styleClass="third-probe-dialog">
     <p class="tp-muted tp-hint">День, коли етап відбувся. Порожньо — ще не було. Ці етапи бачить і інструмент референта.</p>
     @for (stage of stageList; track stage.key) {
+    @if (!stage.closing || isOpened()) {
     @if (stage.key === 'completedOn') { <p class="tp-legend">Закриття</p> } @else if ($first) { <p class="tp-legend">Відкриття</p> }
     <div class="tp-field">
         <label [for]="'stage-' + stage.key">{{ stage.label }}@if (stage.hint) { <span class="tp-muted"> · {{ stage.hint }}</span> }</label>
         <p-datepicker [inputId]="'stage-' + stage.key" dateFormat="dd.mm.yy" [showIcon]="true" [showClear]="true" appendTo="body" styleClass="w-full"
             [ngModel]="stageDates()[stage.key]" (ngModelChange)="setStage(stage.key, $event)" />
     </div>
+    }
     }
     @if (dialogError(); as message) { <p class="tp-error" role="alert">{{ message }}</p> }
     <ng-template #footer>

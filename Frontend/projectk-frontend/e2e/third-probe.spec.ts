@@ -8,6 +8,7 @@ import {
   apiStatus,
   createProbeKurin,
   getThirdProbe,
+  openProbe,
   openThirdProbe,
   pngFile,
   projectBody,
@@ -29,6 +30,18 @@ test.describe('Third-probe notebook', () => {
     const probeId = await thirdProbeId(request, kurin.youth.user, kurin.youth.memberKey);
     await signInAs(page, request, kurin.youth.user);
     await openThirdProbe(page, kurin.youth.memberKey, probeId);
+
+    await test.step('before the opening only the way there shows: no countdown, camp or projects', async () => {
+      await expect(page.getByTestId('third-probe-stages')).toContainText('Відкриття проби');
+      await expect(page.getByTestId('third-probe-stages')).toContainText('Мотиваційний лист');
+      await expect(page.getByTestId('third-probe-stages')).not.toContainText('Пробу завершено');
+      await expect(page.getByTestId('third-probe-countdown')).toHaveCount(0);
+      await expect(page.getByTestId('third-probe-camp')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Додати проєкт' })).toHaveCount(0);
+    });
+
+    await openProbe(request, kurin, kurin.youth.memberKey, probeId);
+    await page.reload();
 
     await test.step('the countdown runs to the 18th birthday, and nothing is done yet', async () => {
       const countdown = page.getByTestId('third-probe-countdown');
@@ -114,6 +127,7 @@ test.describe('Third-probe notebook', () => {
     const kurin = await createProbeKurin(request, testInfo);
     const probeId = await thirdProbeId(request, kurin.youth.user, kurin.youth.memberKey);
     const projectKey = await addProject(request, kurin.youth.user, kurin.youth.memberKey, probeId, 'Шпаківні для парку');
+    await openProbe(request, kurin, kurin.youth.memberKey, probeId);
     expect(await apiStatus(request, kurin.youth.user, 'PUT', `member/${kurin.youth.memberKey}/probes/${probeId}/third-probe`, {
       reflectionOn: '2026-03-05', reflectionWith: 'Володимир Іваненко', resume: ''
     })).toBe(200);
@@ -153,6 +167,7 @@ test.describe('Third-probe notebook', () => {
     const kurin = await createProbeKurin(request, testInfo);
     const probeId = await thirdProbeId(request, kurin.mentor.user, kurin.mentor.memberKey);
     const projectKey = await addProject(request, kurin.mentor.user, kurin.mentor.memberKey, probeId, 'Ватра для новаків');
+    await openProbe(request, kurin, kurin.mentor.memberKey, probeId);
 
     await signInAs(page, request, kurin.mentor.user);
     await openThirdProbe(page, kurin.mentor.memberKey, probeId);
@@ -173,6 +188,7 @@ test.describe('Third-probe notebook', () => {
     const kurin = await createProbeKurin(request, testInfo);
     const probeId = await thirdProbeId(request, kurin.youth.user, kurin.youth.memberKey);
     const projectKey = await addProject(request, kurin.youth.user, kurin.youth.memberKey, probeId, 'Таборова газета');
+    await openProbe(request, kurin, kurin.youth.memberKey, probeId);
     const otherGroup = await createGroupViaApi(request, kurin.founder, kurin.kurinKey, `Інший гурток ${kurin.suffix}`);
     const reader = await addPerson(request, kurin.founder, { kurinKey: kurin.kurinKey }, kurin.suffix, 'Сусідній', 'reader', 'mentor');
     await assignMentorViaApi(request, kurin.founder, otherGroup.groupKey, reader.userKey);

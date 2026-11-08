@@ -160,10 +160,30 @@ export class ThirdProbeComponent {
     }));
   });
 
-  readonly stageParts = computed(() => [
-    { title: 'Відкриття', stages: this.stages().filter(stage => !stage.closing) },
-    { title: 'Закриття', stages: this.stages().filter(stage => stage.closing) }
-  ]);
+  /**
+   * The probe is open once the referent sets «Пробу відкрито». Until then the tab is about getting
+   * there: the countdown, the requirements, the camp and the projects wait.
+   */
+  readonly isOpened = computed(() => !!this.file()?.stages.openedOn);
+  readonly openedLabel = computed(() => dayLabel(this.file()?.stages.openedOn ?? null));
+
+  /**
+   * The stages that matter now: before the opening, the opening ones; after it, the closing ones.
+   * Of those, the ones done and the next one — later stages are not drawn ahead of time.
+   */
+  readonly stageParts = computed(() => {
+    const opened = this.isOpened();
+    const phase = this.stages().filter(stage => stage.closing === opened);
+    const next = phase.findIndex(stage => !stage.day);
+    return [{
+      title: opened ? 'Закриття' : 'Відкриття',
+      stages: phase.filter((stage, index) => !!stage.day || index === next)
+    }];
+  });
+
+  readonly zvyazkovyiOptions = computed(() => withCurrent(this.tab()?.mentorOptions?.zvyazkovi ?? [], this.file()?.mentorZvyazkovyi));
+  readonly vporiadnykOptions = computed(() => withCurrent(this.tab()?.mentorOptions?.vporiadnyky ?? [], this.file()?.mentorVporiadnyk));
+  readonly reflectionWithOptions = computed(() => withCurrent(this.tab()?.mentorOptions?.zvyazkovi ?? [], this.file()?.reflectionWith));
 
   /** Offices held since the probe opened: «Які діловодства ти виконував протягом проби». */
   readonly offices = computed(() => {
@@ -354,6 +374,12 @@ export class ThirdProbeComponent {
       }
     });
   }
+}
+
+/** The names to pick from, with the one already written kept even when it is not among them. */
+function withCurrent(names: readonly string[], current: string | null | undefined): string[] {
+  const written = current?.trim();
+  return written && !names.includes(written) ? [written, ...names] : [...names];
 }
 
 function emptyStages(): Record<StageKey, Date | null> {

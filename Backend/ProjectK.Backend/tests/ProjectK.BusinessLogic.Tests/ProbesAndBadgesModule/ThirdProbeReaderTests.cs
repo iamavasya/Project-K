@@ -1,3 +1,9 @@
+using ProjectK.Common.Models.Records;
+using ProjectK.Common.Models.Dtos.KurinModule;
+using ProjectK.Common.Models.Authorization;
+using ProjectK.Common.Entities.KurinModule;
+using ProjectK.Common.Interfaces.Modules.KurinModule;
+using ProjectK.Common.Interfaces.Modules.MemberModule;
 using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.ProbesAndBadgesModule.Features.Project;
@@ -26,6 +32,7 @@ public class ThirdProbeReaderTests
     private readonly Mock<IMemberProbeLine> _line = new();
     private readonly Mock<IBadgesCatalogService> _catalog = new();
     private readonly Mock<IBlobReadLinks> _links = new();
+    private readonly Mock<IMemberDirectory> _members = new();
     private readonly Guid _memberKey = Guid.NewGuid();
     private readonly ThirdProbeReader _reader;
 
@@ -50,7 +57,7 @@ public class ThirdProbeReaderTests
             new BadgeProgress { BadgeId = "pending", Status = BadgeProgressStatus.Submitted }
         ]);
         _catalog.Setup(c => c.GetBadgeById("biker")).Returns(new Badge("biker", "Велосипедист", "img", "", "Велосипедна", "", null, "", "", "", [], [], "", []));
-        _reader = new ThirdProbeReader(_unitOfWork.Object, _access.Object, _line.Object, _catalog.Object, _links.Object);
+        _reader = new ThirdProbeReader(_unitOfWork.Object, _access.Object, _line.Object, _catalog.Object, _links.Object, _members.Object);
     }
 
     private BadgeProgress Badge(string id, DateTime confirmedAt) =>
@@ -87,5 +94,50 @@ public class ThirdProbeReaderTests
 
         tab.IsProjectProbe.Should().BeFalse();
         tab.File.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task OffersTheKurinsZvyazkovi_AndTheGroupsVporiadnykyFirst_ToWhoeverMayWriteTheFile()
+    {
+        var kurinKey = Guid.NewGuid();
+        var groupKey = Guid.NewGuid();
+        var ownMentor = Guid.NewGuid();
+        var otherMentor = Guid.NewGuid();
+        _access.Setup(a => a.CanEditAsync(_memberKey, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var memberships = new Mock<IMembershipRepository>();
+        memberships.Setup(m => m.GetActiveForMemberAsync(_memberKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Membership { MemberKey = _memberKey, KurinKey = kurinKey, GroupKey = groupKey }]);
+        _unitOfWork.SetupGet(u => u.Memberships).Returns(memberships.Object);
+        var leaderships = new Mock<ILeadershipRepository>();
+        leaderships.Setup(l => l.GetOfficeMembersLookupAsync(kurinKey, LeadershipType.KV, It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new MemberLookupDto { MemberKey = Guid.NewGuid(), FirstName = "Остап", LastName = "Коваль", UserRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi) },
+            new MemberLookupDto { MemberKey = Guid.NewGuid(), FirstName = "Ірина", LastName = "Бойко", UserRole = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Vykhovnyk) }
+        ]);
+        _unitOfWork.SetupGet(u => u.Leaderships).Returns(leaderships.Object);
+        var mentors = new Mock<IMentorAssignmentRepository>();
+        mentors.Setup(m => m.GetByKurinKeyAsync(kurinKey, It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            new MentorAssignment { MentorUserKey = otherMentor, GroupKey = Guid.NewGuid() },
+            new MentorAssignment { MentorUserKey = ownMentor, GroupKey = groupKey }
+        ]);
+        _unitOfWork.SetupGet(u => u.MentorAssignments).Returns(mentors.Object);
+        _members.Setup(d => d.FindByAccountAsync(ownMentor, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), ownMentor, kurinKey, null, "Марта", "Шевчук", "m@x", null));
+        _members.Setup(d => d.FindByAccountAsync(otherMentor, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(Guid.NewGuid(), otherMentor, kurinKey, null, "Андрій", "Гнатюк", "a@x", null));
+
+        var tab = await _reader.ReadAsync(_memberKey, "probe-3");
+
+        tab.MentorOptions!.Zvyazkovi.Should().Equal("Остап Коваль");
+        tab.MentorOptions.Vporiadnyky.Should().Equal("Марта Шевчук", "Андрій Гнатюк");
+    }
+
+    [Fact]
+    public async Task OffersNoNames_ToWhoeverOnlyReads()
+    {
+        var tab = await _reader.ReadAsync(_memberKey, "probe-3");
+
+        tab.MentorOptions.Should().BeNull();
     }
 }

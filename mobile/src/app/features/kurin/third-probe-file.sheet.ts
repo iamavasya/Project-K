@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
 import {
   IonButton,
+  IonChip,
   IonButtons,
   IonContent,
   IonHeader,
@@ -41,7 +42,7 @@ type FileField = 'mentorZvyazkovyi' | 'mentorVporiadnyk' | 'mentorReferent' | 'r
 @Component({
   selector: 'app-third-probe-file-sheet',
   imports: [
-    IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonList, IonListHeader, IonLabel, IonItem, IonInput,
+    IonChip, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonList, IonListHeader, IonLabel, IonItem, IonInput,
     IonSelect, IonSelectOption, IonSpinner, RichEditor,
   ],
   styles: `
@@ -62,7 +63,7 @@ type FileField = 'mentorZvyazkovyi' | 'mentorVporiadnyk' | 'mentorReferent' | 'r
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      @for (group of groups; track group.title) {
+      @for (group of shownGroups(); track group.title) {
         <ion-list [inset]="true">
           <ion-list-header><ion-label>{{ group.title }}</ion-label></ion-list-header>
           @for (field of group.fields; track field.key) {
@@ -73,6 +74,13 @@ type FileField = 'mentorZvyazkovyi' | 'mentorVporiadnyk' | 'mentorReferent' | 'r
                   <ion-input [type]="field.date ? 'date' : 'text'" [attr.aria-label]="field.label" maxlength="200" [placeholder]="field.placeholder ?? ''"
                     [value]="values()[field.key]" (ionInput)="set(field.key, $any($event).detail.value ?? '')" />
                 </div>
+                @if (picksFor(field.picks); as names) {
+                  <div class="picks" [attr.data-testid]="'picks-' + field.key">
+                    @for (name of names; track name) {
+                      <ion-chip [outline]="values()[field.key] !== name" (click)="set(field.key, name)">{{ name }}</ion-chip>
+                    }
+                  </div>
+                }
               </div>
             </ion-item>
           }
@@ -105,12 +113,12 @@ export class ThirdProbeFileSheet implements OnInit {
   probeId = '';
   tab!: ThirdProbeDto;
 
-  protected readonly groups: readonly { title: string; fields: readonly { key: FileField; label: string; date?: boolean; placeholder?: string }[] }[] = [
+  protected readonly groups: readonly { title: string; fields: readonly { key: FileField; label: string; date?: boolean; placeholder?: string; picks?: 'zvyazkovi' | 'vporiadnyky' }[] }[] = [
     {
       title: 'Ментори',
       fields: [
-        { key: 'mentorZvyazkovyi', label: 'Звʼязковий' },
-        { key: 'mentorVporiadnyk', label: 'Впорядник' },
+        { key: 'mentorZvyazkovyi', label: 'Звʼязковий', picks: 'zvyazkovi' },
+        { key: 'mentorVporiadnyk', label: 'Впорядник', picks: 'vporiadnyky' },
         { key: 'mentorReferent', label: 'Референт ІІІ проби' },
       ],
     },
@@ -118,7 +126,7 @@ export class ThirdProbeFileSheet implements OnInit {
       title: 'Рефлексія зі звʼязковим',
       fields: [
         { key: 'reflectionOn', label: 'Коли відбулася', date: true },
-        { key: 'reflectionWith', label: 'З ким', placeholder: 'Звʼязковий чи референт' },
+        { key: 'reflectionWith', label: 'З ким', placeholder: 'Звʼязковий чи референт', picks: 'zvyazkovi' },
       ],
     },
     {
@@ -130,6 +138,17 @@ export class ThirdProbeFileSheet implements OnInit {
       ],
     },
   ];
+
+  /** Before «Пробу відкрито» only the mentors: the reflection and the camp come with the probe. */
+  protected shownGroups() {
+    return this.tab?.file?.stages?.openedOn ? this.groups : this.groups.filter((group) => group.title === 'Ментори');
+  }
+
+  /** The kurin's people to tap instead of typing a name (web mentor pickers). */
+  protected picksFor(kind: 'zvyazkovi' | 'vporiadnyky' | undefined): string[] | null {
+    const names = kind ? this.tab?.mentorOptions?.[kind] ?? [] : [];
+    return names.length ? names : null;
+  }
 
   protected resume: MarkdownBlock[] = [];
   protected readonly values = signal<Record<FileField, string>>({

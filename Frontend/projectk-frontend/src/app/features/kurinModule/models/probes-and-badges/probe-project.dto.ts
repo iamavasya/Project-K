@@ -127,6 +127,8 @@ export interface ThirdProbeDto {
   projects: ProbeProjectDto[];
   badges: ThirdProbeBadgeDto[];
   limits: ProbeProjectLimitsDto;
+  /** Whom the file may name: the kurin's Звʼязкові, the гурток's впорядники first. Only for who may write it. */
+  mentorOptions?: { zvyazkovi: string[]; vporiadnyky: string[] } | null;
 }
 
 export interface ProbeProjectSavedDto {

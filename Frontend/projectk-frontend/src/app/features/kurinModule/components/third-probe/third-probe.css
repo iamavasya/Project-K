@@ -332,3 +332,13 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* The day the probe opened, in place of the opening stages it took to get there. */
+.tp-opened {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0 0 0.75rem;
+  color: var(--p-primary-color);
+  font-weight: 600;
+}

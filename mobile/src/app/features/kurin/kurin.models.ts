@@ -490,6 +490,8 @@ export interface ThirdProbeDto {
     requiredBadges: number;
     youthEndsAtAge: number;
   };
+  /** Whom the file may name (web ThirdProbeDto.mentorOptions); only for who may write it. */
+  mentorOptions?: { zvyazkovi: string[]; vporiadnyky: string[] } | null;
 }
 
 // ── Requests between kurins (web membership.service) ────────────────────────────────────────────

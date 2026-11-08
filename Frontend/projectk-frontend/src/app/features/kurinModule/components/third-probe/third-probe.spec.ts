@@ -45,6 +45,12 @@ describe('ThirdProbeComponent', () => {
     }).compileComponents();
   });
 
+  /** The same tab once the referent has set «Пробу відкрито». */
+  const opened = (tab = thirdProbeTab()) => ({
+    ...tab,
+    file: { ...tab.file!, stages: { ...tab.file!.stages, openedOn: '2026-03-01' } }
+  });
+
   it('shows nothing for a probe that is not the third', async () => {
     const page = await render(thirdProbeTab({ isProjectProbe: false, file: null }));
 
@@ -52,18 +58,21 @@ describe('ThirdProbeComponent', () => {
   });
 
   it('lays out the countdown, the checklist and every part of the file', async () => {
-    const page = await render(thirdProbeTab({
+    const page = await render(opened(thirdProbeTab({
       file: { ...thirdProbeTab().file!, campName: 'КВТ «Говерла»', campKind: 'Kvt' },
       badges: [
         { badgeId: 'run', title: 'Легка атлетика', imagePath: null, specialization: 'Спортивна', confirmedAtUtc: '2026-04-01T00:00:00Z', duringProbe: true },
         { badgeId: 'swim', title: 'Плавання', imagePath: null, specialization: 'Спортивна', confirmedAtUtc: '2025-04-01T00:00:00Z', duringProbe: false }
       ]
-    }), { dateOfBirth: new Date(2010, 5, 3), leadershipHistories: [] });
+    })), { dateOfBirth: new Date(2010, 5, 3), leadershipHistories: [] });
 
     expect(page.querySelector('[data-testid="third-probe-countdown"]')).not.toBeNull();
     expect(page.textContent).toContain('Що вже є');
     expect(page.textContent).toContain('КВТ «Говерла»');
-    expect(page.textContent).toContain('коли закрили другу пробу');
+    expect(page.textContent).toContain('Пробу відкрито 1 березня 2026');
+    // Of the closing stages only the next one is drawn.
+    expect(page.textContent).toContain('Пробу завершено');
+    expect(page.textContent).not.toContain('Іменовано');
     expect(page.textContent).toContain('Референт ІІІ проби');
     expect(page.textContent).toContain('Зараховує табір край');
     expect(page.textContent).toContain('Легка атлетика');
@@ -98,7 +107,7 @@ describe('ThirdProbeComponent', () => {
   });
 
   it('lets a leader confirm the reflection and set the stages, and nobody else', async () => {
-    const tab = thirdProbeTab({ file: { ...thirdProbeTab().file!, reflectionOn: '2026-03-01' } });
+    const tab = opened(thirdProbeTab({ file: { ...thirdProbeTab().file!, reflectionOn: '2026-03-01' } }));
     const youth = (await render(tab)).textContent!;
     expect(youth).not.toContain('Підтвердити рефлексію');
     expect(youth).not.toContain('Змінити етапи');
@@ -107,6 +116,34 @@ describe('ThirdProbeComponent', () => {
     const leader = (await render({ ...tab, canSign: true })).textContent!;
     expect(leader).toContain('Підтвердити рефлексію');
     expect(leader).toContain('Змінити етапи');
+  });
+
+  it('before the opening shows only the way there: no countdown, requirements, camp or projects', async () => {
+    const page = await render(thirdProbeTab({
+      file: { ...thirdProbeTab().file!, stages: { ...thirdProbeTab().file!.stages, motivationLetterOn: '2025-09-01' } }
+    }), { dateOfBirth: new Date(2010, 5, 3), leadershipHistories: [] });
+
+    expect(page.querySelector('[data-testid="third-probe-countdown"]')).toBeNull();
+    expect(page.querySelector('[data-testid="third-probe-checklist"]')).toBeNull();
+    expect(page.querySelector('[data-testid="third-probe-camp"]')).toBeNull();
+    expect(page.querySelector('[data-testid="third-probe-resume"]')).toBeNull();
+    expect(page.querySelector('[data-testid="third-probe-mentors"]')).not.toBeNull();
+    expect(page.textContent).toContain('Мотиваційний лист');
+    expect(page.textContent).toContain('Саморефлексія');
+    expect(page.textContent).not.toContain('Зголошення до краю');
+    expect(page.textContent).not.toContain('Пробу завершено');
+  });
+
+  it('offers the kurin’s people as mentors, keeping a name already written', async () => {
+    await render(thirdProbeTab({
+      canEdit: true,
+      file: { ...thirdProbeTab().file!, mentorVporiadnyk: 'Хтось Давній' },
+      mentorOptions: { zvyazkovi: ['Остап Коваль'], vporiadnyky: ['Марта Шевчук'] }
+    }));
+    const component = fixture.componentInstance;
+
+    expect(component.zvyazkovyiOptions()).toEqual(['Остап Коваль']);
+    expect(component.vporiadnykOptions()).toEqual(['Хтось Давній', 'Марта Шевчук']);
   });
 
   it('sends the stages whole, a cleared day as null', async () => {

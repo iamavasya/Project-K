@@ -101,7 +101,7 @@ interface ProjectView {
     .s { text-decoration: line-through; }
   `,
   template: `
-    @if (deadline(); as end) {
+    @if (opened() && deadline()) {
       <ion-card data-testid="third-probe-countdown" [class.soon]="parts().days < 90">
         <ion-card-content>
           @if (!parts().isOver) {
@@ -121,6 +121,7 @@ interface ProjectView {
       </ion-card>
     }
 
+    @if (opened()) {
     <ion-card data-testid="third-probe-checklist">
       <ion-card-content>
         <h2>Що вже є</h2>
@@ -134,10 +135,14 @@ interface ProjectView {
         </div>
       </ion-card-content>
     </ion-card>
+    }
 
     <ion-card data-testid="third-probe-stages">
       <ion-card-content>
-        <h2>Відкриття й закриття</h2>
+        <h2>{{ opened() ? 'Закриття проби' : 'Відкриття проби' }}</h2>
+        @if (opened()) {
+          <p class="line" data-testid="third-probe-opened">✓ Пробу відкрито {{ day(data().file?.stages?.openedOn ?? null) }}</p>
+        }
         <div class="checks">
           @for (stage of stages(); track stage.key) {
             <div class="check" [class.done]="stage.day">
@@ -154,12 +159,13 @@ interface ProjectView {
 
     <ion-card data-testid="third-probe-file">
       <ion-card-content>
-        <h2>Ментори й рефлексія</h2>
+        <h2>{{ opened() ? 'Ментори й рефлексія' : 'Ментори' }}</h2>
         <ul class="mentors">
           <li><span class="meta">Звʼязковий:</span> {{ data().file?.mentorZvyazkovyi || '—' }}</li>
           <li><span class="meta">Впорядник:</span> {{ data().file?.mentorVporiadnyk || '—' }}</li>
           <li><span class="meta">Референт ІІІ проби:</span> {{ data().file?.mentorReferent || '—' }}</li>
         </ul>
+        @if (opened()) {
         <p class="line"><strong>Рефлексія:</strong> {{ day(data().file?.reflectionOn ?? null) ?? 'ще не відбулася' }}@if (data().file?.reflectionConfirmedAtUtc) { ✓ }</p>
         <p class="line"><strong>Табір:</strong> {{ data().file?.campName ?? 'ще не вказано' }}</p>
         @if (data().file?.campCertificate; as cert) {
@@ -170,9 +176,12 @@ interface ProjectView {
           }
         }
         <p class="meta">Зараховує табір край; Лілейка лише зберігає, що це був за табір.</p>
+        }
         <div class="actions">
           @if (canEdit()) {
             <ion-button size="small" fill="outline" (click)="editFile()" data-testid="edit-third-probe">Редагувати</ion-button>
+          }
+          @if (canEdit() && opened()) {
             <ion-button size="small" fill="clear" (click)="certificateInput.click()">
               {{ data().file?.campCertificate ? 'Замінити посвідку' : 'Прикріпити посвідку' }}
             </ion-button>
@@ -188,6 +197,7 @@ interface ProjectView {
       </ion-card-content>
     </ion-card>
 
+    @if (opened()) {
     <ion-card data-testid="third-probe-badges">
       <ion-card-content>
         <h2>Вмілості</h2>
@@ -263,6 +273,7 @@ interface ProjectView {
         }
       </ion-card-content>
     </ion-card>
+    }
 
     <ng-template #blocksTpl let-blocks>
       @for (block of blocks; track $index) {
@@ -330,9 +341,15 @@ export class ThirdProbeCard {
   protected readonly days = computed(() => dayWord(this.parts().days));
   protected readonly endLabel = computed(() => this.deadline()?.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' }) ?? '');
   protected readonly checklist = computed(() => thirdProbeChecklist(this.data()));
-  protected readonly stages = computed(() =>
-    THIRD_PROBE_STAGES.map((stage) => ({ ...stage, day: this.day(this.data().file?.stages?.[stage.key] ?? null) })),
-  );
+  /** Open once the referent sets «Пробу відкрито» (web third-probe isOpened); until then only the way there shows. */
+  protected readonly opened = computed(() => !!this.data().file?.stages?.openedOn);
+  /** The stages of the phase now — opening, then closing — those done and the next one (web stageParts). */
+  protected readonly stages = computed(() => {
+    const phase = THIRD_PROBE_STAGES.filter((stage) => stage.closing === this.opened())
+      .map((stage) => ({ ...stage, day: this.day(this.data().file?.stages?.[stage.key] ?? null) }));
+    const next = phase.findIndex((stage) => !stage.day);
+    return phase.filter((stage, index) => !!stage.day || index === next);
+  });
   protected readonly during = computed(() => this.data().badges.filter((badge) => badge.duringProbe));
   protected readonly earlier = computed(() => this.data().badges.filter((badge) => !badge.duringProbe));
   protected readonly earlierTitles = computed(() => this.earlier().map((badge) => badge.title).join(', '));
