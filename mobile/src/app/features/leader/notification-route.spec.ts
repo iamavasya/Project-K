@@ -23,6 +23,7 @@ describe('mobileRouteOf', () => {
   it('opens the phone «Переходи» for a request from another kurin, by the old address or the new', () => {
     expect(mobileRouteOf(note({ route: '/kurin/registry/transfers' }), 'k1')).toBe('/tabs/kurin/transfers');
     expect(mobileRouteOf(note({ route: '/kurin/transfers' }), 'k1')).toBe('/tabs/kurin/transfers');
+    expect(mobileRouteOf(note({ route: '/invitations' }), 'k1')).toBe('/tabs/more/invitations');
   });
 
   it('opens the review queue of the current kurin only', () => {

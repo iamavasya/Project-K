@@ -511,7 +511,8 @@ export interface MembershipRequestDto {
   status: MembershipRequestStatus;
   memberKey: string;
   memberName: string;
-  fromKurin: MembershipRequestKurinDto;
+  /** Null: the person answers themself (web MembershipRequestDto). */
+  fromKurin: MembershipRequestKurinDto | null;
   toKurin: MembershipRequestKurinDto;
   membershipKind: 'Youth' | 'Staff';
   createdAtUtc: string;
@@ -520,10 +521,29 @@ export interface MembershipRequestDto {
   owedToLeave: number;
 }
 
+/** What the kurin may offer and who answers (web MembershipAskOfferDto). */
+export interface MembershipAskOfferDto {
+  seniorKurin: boolean;
+  joinsAtOnce: boolean;
+  personAnswers: boolean;
+  transferAllowed: boolean;
+  askKurins: MembershipRequestKurinDto[];
+}
+
 export interface MembershipCandidateDto {
   member: { memberKey: string; publicId: string; fullName: string };
   alreadyInThisKurin: boolean;
   currentKurins: MembershipRequestKurinDto[];
+  offer: MembershipAskOfferDto;
+}
+
+/** A kurin's invitation the person answers themself (web MembershipInvitationDto). */
+export interface MembershipInvitationDto {
+  membershipRequestKey: string;
+  kurin: MembershipRequestKurinDto;
+  membershipKind: 'Youth' | 'Staff';
+  createdAtUtc: string;
+  expiresAtUtc: string;
 }
 
 /** A former member and the kurins they stand in now (web FormerMemberStandingDto); empty — nowhere, taken back at once. */
@@ -538,4 +558,5 @@ export interface FormerMemberStandingDto {
     leftAtUtc: string;
   };
   standsIn: MembershipRequestKurinDto[];
+  offer: MembershipAskOfferDto;
 }

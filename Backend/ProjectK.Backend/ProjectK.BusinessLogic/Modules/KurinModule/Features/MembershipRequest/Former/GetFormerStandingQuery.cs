@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Models.Enums;
@@ -19,11 +20,13 @@ public sealed class GetFormerStandingQueryHandler
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
+    private readonly MembershipAskRouting _routing;
 
-    public GetFormerStandingQueryHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUser)
+    public GetFormerStandingQueryHandler(IUnitOfWork unitOfWork, ICurrentUserContext currentUser, MembershipAskRouting routing)
     {
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
+        _routing = routing;
     }
 
     public async Task<ServiceResult<IReadOnlyList<FormerMemberStanding>>> Handle(GetFormerStandingQuery request, CancellationToken cancellationToken)
@@ -51,7 +54,7 @@ public sealed class GetFormerStandingQueryHandler
                 standsIn.Add(kurin);
             }
 
-            result.Add(new FormerMemberStanding(person, standsIn));
+            result.Add(new FormerMemberStanding(person, standsIn, await _routing.OfferAsync(person.MemberKey, request.KurinKey, cancellationToken)));
         }
 
         return new ServiceResult<IReadOnlyList<FormerMemberStanding>>(ResultType.Success, result);

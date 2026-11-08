@@ -16,7 +16,7 @@
           <td data-mobile-label="Людина" class="transfers__person">{{ r.memberName }}</td>
           <td data-mobile-label="Запит">
             {{ kindLine(r, true) }}
-            <span class="transfers__meta">як {{ r.membershipKind === 'Staff' ? 'впорядника' : 'юнака' }} · до {{ r.expiresAtUtc | date:'dd.MM.yyyy' }}</span>
+            <span class="transfers__meta">@if (!isSeniorRequest(r)) {як {{ r.membershipKind === 'Staff' ? 'впорядника' : 'юнака' }} · }до {{ r.expiresAtUtc | date:'dd.MM.yyyy' }}</span>
             @if (r.status === 'Pending' && r.owedToLeave > 0) {
               <span class="transfers__owes">Борг за минулі квартали</span>
             }
@@ -77,13 +77,15 @@
             @for (k of c.currentKurins; track k.kurinKey; let last = $last) { {{ kurinName(k) }}@if (!last) {, } }
           </p>
 
-          <div class="lil-dialog-field">
-            <span class="lil-dialog-label" id="transfer-kind">Що просимо</span>
-            <p-selectbutton [options]="kindOptions" [ngModel]="kind()" (ngModelChange)="kind.set($event)"
-              [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="transfer-kind" />
-          </div>
+          @if (c.offer.transferAllowed) {
+            <div class="lil-dialog-field">
+              <span class="lil-dialog-label" id="transfer-kind">Що просимо</span>
+              <p-selectbutton [options]="kindOptions()" [ngModel]="kind()" (ngModelChange)="kind.set($event)"
+                [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="transfer-kind" />
+            </div>
+          }
 
-          @if (c.currentKurins.length > 1) {
+          @if (c.offer.askKurins.length > 1) {
             <div class="lil-dialog-field">
               <label class="lil-dialog-label" for="transfer-from">Кого питати</label>
               <p-select inputId="transfer-from" [options]="kurinOptions()" [ngModel]="fromKurinKey()" (ngModelChange)="fromKurinKey.set($event)"
@@ -93,14 +95,20 @@
         }
 
         @if (!c.alreadyInThisKurin) {
-          <div class="lil-dialog-field">
-            <span class="lil-dialog-label" id="transfer-as">У вашому курені як</span>
-            <p-selectbutton [options]="membershipKindOptions" [ngModel]="membershipKind()" (ngModelChange)="membershipKind.set($event)"
-              [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="transfer-as" />
-          </div>
+          @if (c.offer.personAnswers) {
+            <p class="transfers__hint">Відповідає сама людина</p>
+          }
+
+          @if (!c.offer.seniorKurin) {
+            <div class="lil-dialog-field">
+              <span class="lil-dialog-label" id="transfer-as">У вашому курені як</span>
+              <p-selectbutton [options]="membershipKindOptions" [ngModel]="membershipKind()" (ngModelChange)="membershipKind.set($event)"
+                [allowEmpty]="false" optionLabel="label" optionValue="value" ariaLabelledBy="transfer-as" />
+            </div>
+          }
 
           <div class="transfers__send">
-            <p-button [label]="standsNowhere() ? 'Прийняти до куреня' : 'Надіслати запит'" icon="pi pi-send"
+            <p-button [label]="sendLabel()" icon="pi pi-send"
               [loading]="sending()" [disabled]="!canSend()" (onClick)="send()" />
           </div>
         }

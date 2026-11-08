@@ -14,10 +14,12 @@ import {
 } from '../../../../services/membership-service/membership.service';
 import {
   MEMBERSHIP_KIND_OPTIONS,
-  REQUEST_KIND_OPTIONS,
   kurinName,
   requestErrorText,
   requestSentMessage,
+  askButtonLabel,
+  defaultKind,
+  kindOptionsFor,
   standsInLine
 } from '../../membership-asks';
 
@@ -42,7 +44,8 @@ export class ReturnDialogComponent {
   /** A request went out or the person came back; the caller reads its lists again. */
   readonly sent = output<void>();
 
-  protected readonly kindOptions = REQUEST_KIND_OPTIONS;
+  protected readonly kindOptions = computed(() => kindOptionsFor(this.person()?.offer));
+  protected readonly sendLabel = computed(() => askButtonLabel(this.person()?.offer, 'Повернути'));
   protected readonly membershipKindOptions = MEMBERSHIP_KIND_OPTIONS;
   protected readonly standsIn = standsInLine;
 
@@ -52,21 +55,22 @@ export class ReturnDialogComponent {
   readonly sending = signal(false);
 
   readonly asked = computed<MembershipRequestKurinDto | null>(() => {
-    const standsIn = this.person()?.standsIn ?? [];
-    return standsIn.length === 1 ? standsIn[0] : standsIn.find(k => k.kurinKey === this.from()) ?? null;
+    const askable = this.person()?.offer.askKurins ?? [];
+    return askable.length === 1 ? askable[0] : askable.find(k => k.kurinKey === this.from()) ?? null;
   });
   readonly kurinOptions = computed(() =>
-    (this.person()?.standsIn ?? []).map(k => ({ label: kurinName(k), value: k.kurinKey })));
+    (this.person()?.offer.askKurins ?? []).map(k => ({ label: kurinName(k), value: k.kurinKey })));
   readonly canSend = computed(() => {
-    const person = this.person();
-    return !!person && (person.standsIn.length === 0 || !!this.asked());
+    const offer = this.person()?.offer;
+    return !!offer && (offer.joinsAtOnce || offer.personAnswers || !!this.asked());
   });
 
   constructor() {
     // Every person opens on the plain answer, not on what was picked for the one before.
     effect(() => {
-      if (this.person()) {
-        this.kind.set('Transfer');
+      const person = this.person();
+      if (person) {
+        this.kind.set(defaultKind(person.offer));
         this.membershipKind.set('Youth');
         this.from.set(null);
       }
@@ -100,7 +104,7 @@ export class ReturnDialogComponent {
     }).subscribe({
       next: result => {
         this.sending.set(false);
-        this.messages.add(requestSentMessage(result.joined, this.name(person), asked, 'Людину повернуто'));
+        this.messages.add(requestSentMessage(result, this.name(person), asked, 'Людину повернуто'));
         this.sent.emit();
         this.closed.emit();
       },

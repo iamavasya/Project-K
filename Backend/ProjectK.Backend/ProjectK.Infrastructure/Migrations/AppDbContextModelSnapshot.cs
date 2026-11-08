@@ -2538,7 +2538,7 @@ namespace ProjectK.Infrastructure.Migrations
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("FromKurinKey")
+                    b.Property<Guid?>("FromKurinKey")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Kind")

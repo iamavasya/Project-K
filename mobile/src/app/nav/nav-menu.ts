@@ -31,6 +31,7 @@ import {
   idCard,
   informationCircle,
   key,
+  mail,
   notifications,
   openOutline,
   options,
@@ -256,6 +257,19 @@ const THEME_LABELS = { system: 'Системна', light: 'Світла', dark: 
             }
           </ion-item>
         }
+        @if (invitationCount() > 0) {
+          <ion-item
+            [button]="true"
+            [detail]="true"
+            [class.current]="current() === 'invitations'"
+            (click)="open('/tabs/more/invitations')"
+            data-testid="invitations-row"
+          >
+            <ion-icon class="lk-tile" slot="start" name="mail" aria-hidden="true" style="--lk-tile: #34c759" />
+            <ion-label>Запрошення</ion-label>
+            <ion-note slot="end">{{ invitationCount() }}</ion-note>
+          </ion-item>
+        }
         @if (scopes.options().length > 1) {
           <ion-item
             [button]="true"
@@ -316,6 +330,8 @@ export class NavMenu implements OnInit {
   protected readonly member = signal<MemberDto | null>(null);
   private readonly duesGroups = signal<{ groupKey: string; groupName: string }[]>([]);
   protected readonly leaving = signal(false);
+  /** Kurins waiting on the person's own answer: the row shows only while there are some. */
+  protected readonly invitationCount = signal(0);
   private readonly savedAccounts = signal<SavedAccount[]>([]);
   /** The account being switched to, while the server answers. */
   protected readonly switching = signal<string | null>(null);
@@ -350,7 +366,7 @@ export class NavMenu implements OnInit {
   );
   protected readonly current = computed(() => {
     const url = this.url();
-    const own = ['appearance', 'kurins', 'privacy'].find((page) => url.startsWith(`/tabs/more/${page}`));
+    const own = ['appearance', 'kurins', 'privacy', 'invitations'].find((page) => url.startsWith(`/tabs/more/${page}`));
     if (own) return own;
     if (url.startsWith('/tabs/more/profile')) return 'profile';
     return currentEntry(this.entries(), url);
@@ -386,6 +402,7 @@ export class NavMenu implements OnInit {
       idCard,
       informationCircle,
       key,
+      mail,
       notifications,
       openOutline,
       options,
@@ -411,6 +428,10 @@ export class NavMenu implements OnInit {
       () => undefined, // The switcher shows only «Додати акаунт».
     );
     if (user.memberKey) {
+      this.kurinApi.myInvitations().then(
+        (invitations) => this.invitationCount.set(invitations.length),
+        () => undefined, // No row.
+      );
       this.me.member(user.memberKey).then(
         (member) => this.member.set(member),
         () => undefined, // The row keeps the email.

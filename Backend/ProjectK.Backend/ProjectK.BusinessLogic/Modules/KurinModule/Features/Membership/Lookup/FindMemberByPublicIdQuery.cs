@@ -1,5 +1,6 @@
 using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Models;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
@@ -20,18 +21,20 @@ public sealed record FindMemberByPublicIdQuery(Guid KurinKey, string PublicId)
 /// asking means asking a particular kurin — «перевести» from it, or «прийняти ще й до нас» alongside it.
 /// No contact details, and nothing about kurins they once left.
 /// </summary>
-public sealed record MembershipCandidate(MemberCard Member, bool AlreadyInThisKurin, IReadOnlyList<MembershipRequestKurin> CurrentKurins);
+public sealed record MembershipCandidate(MemberCard Member, bool AlreadyInThisKurin, IReadOnlyList<MembershipRequestKurin> CurrentKurins, MembershipAskOffer Offer);
 
 public sealed class FindMemberByPublicIdQueryHandler
     : IRequestHandler<FindMemberByPublicIdQuery, ServiceResult<MembershipCandidate>>
 {
     private readonly IMemberDirectory _members;
     private readonly IUnitOfWork _kurinData;
+    private readonly MembershipAskRouting _routing;
 
-    public FindMemberByPublicIdQueryHandler(IMemberDirectory members, IUnitOfWork kurinData)
+    public FindMemberByPublicIdQueryHandler(IMemberDirectory members, IUnitOfWork kurinData, MembershipAskRouting routing)
     {
         _members = members;
         _kurinData = kurinData;
+        _routing = routing;
     }
 
     public async Task<ServiceResult<MembershipCandidate>> Handle(
@@ -63,6 +66,10 @@ public sealed class FindMemberByPublicIdQueryHandler
 
         return new ServiceResult<MembershipCandidate>(
             ResultType.Success,
-            new MembershipCandidate(card, standing.Any(m => m.KurinKey == request.KurinKey), elsewhere));
+            new MembershipCandidate(
+                card,
+                standing.Any(m => m.KurinKey == request.KurinKey),
+                elsewhere,
+                await _routing.OfferAsync(card.MemberKey, request.KurinKey, cancellationToken)));
     }
 }

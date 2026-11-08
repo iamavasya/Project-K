@@ -33,6 +33,13 @@
                 </button>
             }
 
+            @if (invitationCount() > 0) {
+                <button type="button" class="account-switcher__row account-switcher__add" (click)="showInvitations()" data-testid="account-invitations">
+                    <span class="account-switcher__avatar account-switcher__avatar--empty pi pi-envelope" aria-hidden="true"></span>
+                    <span class="account-switcher__title">Запрошення <span class="lil-count">{{ invitationCount() }}</span></span>
+                </button>
+            }
+
             @if (hasOwnCode) {
                 <button type="button" class="account-switcher__row account-switcher__add" (click)="showCode()">
                     <span class="account-switcher__avatar account-switcher__avatar--empty pi pi-id-card" aria-hidden="true"></span>

@@ -128,6 +128,14 @@ export const routes: Routes = [
     data: { breadcrumb: 'Акаунт' }
   },
   {
+    path: 'invitations',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/authModule/pages/invitations/invitations')
+      .then(m => m.InvitationsComponent),
+    title: 'Запрошення',
+    data: { breadcrumb: 'Запрошення' }
+  },
+  {
     path: 'forbidden',
     loadComponent: () => import('./features/authModule/pages/forbidden/forbidden')
       .then(m => m.ForbiddenComponent),

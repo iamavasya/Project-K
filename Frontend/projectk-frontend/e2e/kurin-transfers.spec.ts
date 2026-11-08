@@ -2,8 +2,11 @@ import { BrowserContextOptions, expect, Page, test } from '@playwright/test';
 
 import { loginThroughUi } from './support/login';
 import { scenarioSuffix } from './support/scenarios';
+import { createSeniorKurin } from './support/senior-dues';
 import {
   askFor,
+  askRaw,
+  asStaffIn,
   currentKurins,
   freshKurin,
   groupIn,
@@ -149,6 +152,58 @@ test.describe('Moving people between kurins', () => {
     } finally {
       await withdraw(request, senior, asked);
     }
+  });
+});
+
+test.describe('Youth and senior kurins', () => {
+  test('a senior kurin invites a впорядник of a youth kurin, only alongside, and the person answers themself', async ({ page, request, browser }, testInfo) => {
+    const suffix = scenarioSuffix(testInfo);
+    const home = await freshKurin(request, suffix, 'staff');
+    const person = await personIn(request, home, suffix, 'staff', { dateOfBirth: '1995-01-01' });
+    await asStaffIn(request, home, person);
+    const senior = await createSeniorKurin(request, suffix, 'User@12345');
+    const asking = { kurinKey: senior.kurinKey, zvyazkovyi: senior.founder };
+
+    await openTransfersAs(page, asking.zvyazkovyi);
+    await page.getByLabel('Код людини').fill(person.publicId);
+    await page.getByRole('button', { name: 'Знайти' }).click();
+    await expect(page.getByText(person.fullName)).toBeVisible();
+    await expect(page.getByText('Відповідає сама людина')).toBeVisible();
+    await expect(page.getByText('Перевести до нас')).toHaveCount(0);
+    await expect(page.getByText('У вашому курені як')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Надіслати запрошення' }).click();
+    await expect(requestRow(page, person.fullName)).toContainText('Запрошення людині');
+
+    await expect.poll(() => noticeTitles(request, person.user)).toContain('Запрошення до куреня');
+
+    const own = await browser.newContext(testInfo.project.use as BrowserContextOptions);
+    try {
+      const personPage = await own.newPage();
+      await loginThroughUi(personPage, person.user);
+      await personPage.goto('/invitations');
+      const invitation = personPage.getByTestId('invitation');
+      await expect(invitation).toContainText('УСП', { timeout: firstPaint });
+      await invitation.getByRole('button', { name: 'Прийняти' }).click();
+      await expect(personPage.getByText('Запрошень немає')).toBeVisible();
+    } finally {
+      await own.close();
+    }
+
+    await expect.poll(() => noticeTitles(request, asking.zvyazkovyi)).toContain('Запит підтверджено');
+    expect(await currentKurins(request, home.zvyazkovyi, person)).toEqual([home.kurinKey, senior.kurinKey].sort());
+  });
+
+  test('a senior kurin never takes a юнак from a youth kurin, and asks the youth kurin to take them in alongside', async ({ request }, testInfo) => {
+    const suffix = scenarioSuffix(testInfo);
+    const home = await freshKurin(request, suffix, 'junak');
+    const person = await personIn(request, home, suffix, 'junak');
+    const senior = await createSeniorKurin(request, suffix, 'User@12345');
+    const asking = { kurinKey: senior.kurinKey, zvyazkovyi: senior.founder };
+
+    expect(await askRaw(request, asking, person, 'Transfer')).toEqual({ status: 400, error: 'TransferAcrossLines' });
+    await askFor(request, asking, person, 'AlsoJoin');
+    await expect.poll(() => noticeTitles(request, home.zvyazkovyi)).toContain('Запит на перехід');
+    expect(await noticeTitles(request, person.user)).not.toContain('Запрошення до куреня');
   });
 });
 

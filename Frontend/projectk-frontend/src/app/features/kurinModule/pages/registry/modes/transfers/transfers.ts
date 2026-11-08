@@ -25,7 +25,16 @@ import {
   MembershipRequestStatus,
   MembershipService
 } from '../../../../services/membership-service/membership.service';
-import { MEMBERSHIP_KIND_OPTIONS, REQUEST_KIND_OPTIONS, kurinName, requestErrorText, requestSentMessage } from '../../membership-asks';
+import {
+  MEMBERSHIP_KIND_OPTIONS,
+  askButtonLabel,
+  defaultKind,
+  kindOptionsFor,
+  kurinName,
+  requestErrorText,
+  requestSentMessage
+} from '../../membership-asks';
+import { isSeniorBranch } from '../../../../models/enums/kurin-branch.enum';
 
 type TagSeverity = 'success' | 'secondary';
 
@@ -61,7 +70,6 @@ export class TransfersComponent implements OnInit {
   private readonly messages = inject(MessageService);
   private readonly route = inject(ActivatedRoute);
 
-  readonly kindOptions = REQUEST_KIND_OPTIONS;
   readonly membershipKindOptions = MEMBERSHIP_KIND_OPTIONS;
   protected readonly kurinName = kurinName;
 
@@ -79,17 +87,21 @@ export class TransfersComponent implements OnInit {
   readonly fromKurinKey = signal<string | null>(null);
   readonly sending = signal(false);
 
-  /** Людина ніде не стоїть: питати нікого, приймаємо одразу. */
+  /** Людина ніде не стоїть. */
   readonly standsNowhere = computed(() => (this.candidate()?.currentKurins.length ?? 0) === 0);
+  readonly offer = computed(() => this.candidate()?.offer ?? null);
+  readonly kindOptions = computed(() => kindOptionsFor(this.offer()));
+  readonly sendLabel = computed(() => askButtonLabel(this.offer(), 'Прийняти до куреня'));
   readonly askedKurin = computed<MembershipRequestKurinDto | null>(() => {
-    const kurins = this.candidate()?.currentKurins ?? [];
+    const kurins = this.offer()?.askKurins ?? [];
     return kurins.length === 1 ? kurins[0] : kurins.find(k => k.kurinKey === this.fromKurinKey()) ?? null;
   });
   readonly kurinOptions = computed(() =>
-    (this.candidate()?.currentKurins ?? []).map(k => ({ label: this.kurinName(k), value: k.kurinKey })));
+    (this.offer()?.askKurins ?? []).map(k => ({ label: this.kurinName(k), value: k.kurinKey })));
   readonly canSend = computed(() => {
     const candidate = this.candidate();
-    return !!candidate && !candidate.alreadyInThisKurin && (this.standsNowhere() || !!this.askedKurin());
+    const offer = candidate?.offer;
+    return !!candidate && !!offer && !candidate.alreadyInThisKurin && (offer.joinsAtOnce || offer.personAnswers || !!this.askedKurin());
   });
 
   private kurinKey = '';
@@ -119,11 +131,20 @@ export class TransfersComponent implements OnInit {
     return STATUS[request.status].severity;
   }
 
+  /** Старший курінь приймає лише членом: «як юнака / впорядника» тут не кажемо. */
+  isSeniorRequest(request: MembershipRequestDto): boolean {
+    return request.toKurin.branches.some(b => isSeniorBranch(b.branch));
+  }
+
   kindLine(request: MembershipRequestDto, incoming: boolean): string {
     if (incoming) {
       return request.kind === 'Transfer'
         ? `${kurinInText(request.toKurin.branches, request.toKurin.number)} просить перевести до себе`
         : `${kurinInText(request.toKurin.branches, request.toKurin.number)} просить прийняти ще й до себе`;
+    }
+
+    if (!request.fromKurin) {
+      return 'Запрошення людині';
     }
 
     return request.kind === 'Transfer'
@@ -144,7 +165,7 @@ export class TransfersComponent implements OnInit {
       next: candidate => {
         this.looking.set(false);
         this.candidate.set(candidate);
-        this.kind.set('Transfer');
+        this.kind.set(defaultKind(candidate.offer));
         this.membershipKind.set('Youth');
         this.fromKurinKey.set(null);
       },
@@ -181,7 +202,7 @@ export class TransfersComponent implements OnInit {
     this.memberships.createRequest(this.kurinKey, body).subscribe({
       next: sent => {
         this.sending.set(false);
-        this.messages.add(requestSentMessage(sent.joined, name, asked, joinedSummary));
+        this.messages.add(requestSentMessage(sent, name, asked, joinedSummary));
         done();
         this.load();
       },
@@ -229,7 +250,9 @@ export class TransfersComponent implements OnInit {
   confirmCancel(request: MembershipRequestDto): void {
     this.confirmation.confirm({
       header: 'Скасувати запит?',
-      message: `${request.memberName}: запит до ${kurinInText(request.fromKurin.branches, request.fromKurin.number)}.`,
+      message: request.fromKurin
+        ? `${request.memberName}: запит до ${kurinInText(request.fromKurin.branches, request.fromKurin.number)}.`
+        : `${request.memberName}: запрошення людині.`,
       icon: 'pi pi-times-circle',
       acceptButtonProps: { label: 'Скасувати запит', severity: 'danger' },
       rejectButtonProps: { label: 'Лишити', severity: 'secondary', outlined: true },

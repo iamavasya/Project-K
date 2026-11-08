@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Join;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.Membership.Lookup;
+using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
 using ProjectK.Common.Entities.KurinModule;
 using ProjectK.Common.Interfaces;
@@ -58,8 +59,9 @@ public class JoinKurinByPublicIdTests
             .ReturnsAsync(new MemberSummary(
                 _memberKey, Guid.NewGuid(), Guid.NewGuid(), null, "Оксана", "Тестова", "o@example.com", null));
 
+        _memberships.Setup(r => r.GetRecordsForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _join = new JoinKurinCommandHandler(_unitOfWork.Object, _members.Object, _accessChanges.Object, _journal.Audit);
-        _lookup = new FindMemberByPublicIdQueryHandler(_members.Object, _unitOfWork.Object);
+        _lookup = new FindMemberByPublicIdQueryHandler(_members.Object, _unitOfWork.Object, new MembershipAskRouting(_unitOfWork.Object, _members.Object));
     }
 
     [Fact]

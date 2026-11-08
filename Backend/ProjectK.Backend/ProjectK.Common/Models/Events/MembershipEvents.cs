@@ -30,8 +30,9 @@ public sealed record MembershipRequested(
     Guid MembershipRequestKey,
     MembershipRequestKind Kind,
     Guid MemberKey,
+    Guid? MemberUserKey,
     string MemberName,
-    Guid FromKurinKey,
+    Guid? FromKurinKey,
     Guid ToKurinKey,
     Guid? ActorUserKey) : IDomainEvent;
 
@@ -45,7 +46,7 @@ public sealed record MembershipRequestDecided(
     Guid MemberKey,
     Guid? MemberUserKey,
     string MemberName,
-    Guid FromKurinKey,
+    Guid? FromKurinKey,
     Guid ToKurinKey,
     bool Approved,
     Guid? ActorUserKey) : IDomainEvent;

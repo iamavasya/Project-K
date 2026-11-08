@@ -172,7 +172,8 @@ describe('KurinArchiveComponent', () => {
     const elsewhere = { kurinKey: 'k7', number: 7, namedAfter: null, branches: [{ branch: KurinBranch.UPYu, number: 7 }] };
     const person = (memberKey: string, standsIn: typeof elsewhere[] = []): FormerMemberStandingDto => ({
       former: { memberKey, firstName: 'Марко', lastName: 'Бойко', joinedAtUtc: '2017-09-12', leftAtUtc: '2023-06-30' },
-      standsIn
+      standsIn,
+      offer: { seniorKurin: false, joinsAtOnce: standsIn.length === 0, personAnswers: false, transferAllowed: true, askKurins: standsIn }
     });
     const button = (label: string) => Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
       .filter(b => b.textContent?.includes(label));

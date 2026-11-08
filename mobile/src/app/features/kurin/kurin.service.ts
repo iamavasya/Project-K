@@ -21,6 +21,7 @@ import {
   MemberDto,
   MemberDuesDto,
   MemberLookupDto,
+  MembershipInvitationDto,
   MembershipCandidateDto,
   FormerMemberStandingDto,
   MembershipRequestDto,
@@ -394,11 +395,21 @@ export class KurinApi {
   }
 
   /** Asks for a person; someone who stands nowhere is taken in at once (`joined`). */
+  /** Kurins waiting on the person's own answer (web MembershipService.myInvitations). */
+  myInvitations(): Promise<MembershipInvitationDto[]> {
+    return this.api.get<MembershipInvitationDto[]>('me/invitations');
+  }
+
+  async answerInvitation(membershipRequestKey: string, accept: boolean): Promise<void> {
+    await this.api.post(`me/invitations/${membershipRequestKey}/answer`, { accept });
+    if (accept) this.membersChanged.update((n) => n + 1);
+  }
+
   async requestMembership(
     kurinKey: string,
     body: { publicId?: string; memberKey?: string; kind: MembershipRequestKind; membershipKind: 'Youth' | 'Staff'; fromKurinKey: string | null },
-  ): Promise<{ membershipRequestKey: string | null; joined: boolean }> {
-    const sent = await this.api.post<{ membershipRequestKey: string | null; joined: boolean }>(`kurin/${kurinKey}/membership-requests`, body);
+  ): Promise<{ membershipRequestKey: string | null; joined: boolean; personAnswers?: boolean }> {
+    const sent = await this.api.post<{ membershipRequestKey: string | null; joined: boolean; personAnswers?: boolean }>(`kurin/${kurinKey}/membership-requests`, body);
     if (sent.joined) this.membersChanged.update((n) => n + 1);
     return sent;
   }

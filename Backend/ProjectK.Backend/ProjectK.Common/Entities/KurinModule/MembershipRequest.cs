@@ -22,8 +22,11 @@ public class MembershipRequest : Entity
     /// <summary>The person. A key, not a relationship: they live in another module.</summary>
     public Guid MemberKey { get; set; }
 
-    /// <summary>The kurin the person stands in, whose Звʼязковий answers.</summary>
-    public Guid FromKurinKey { get; set; }
+    /// <summary>
+    /// The kurin the person stands in, whose Звʼязковий answers. Null when the person answers for
+    /// themselves: a request across the youth and senior lines to someone who is no longer a юнак.
+    /// </summary>
+    public Guid? FromKurinKey { get; set; }
 
     /// <summary>The kurin that asks.</summary>
     public Guid ToKurinKey { get; set; }

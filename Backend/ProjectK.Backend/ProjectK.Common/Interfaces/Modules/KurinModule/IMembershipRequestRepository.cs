@@ -13,6 +13,9 @@ public interface IMembershipRequestRepository : IBaseEntityRepository<Membership
     /// <summary>The asking kurin's requests about one person that still wait for an answer.</summary>
     Task<IReadOnlyList<MembershipRequest>> GetPendingAsync(Guid memberKey, Guid toKurinKey, CancellationToken cancellationToken = default);
 
+    /// <summary>The open requests the person answers for themselves, newest first.</summary>
+    Task<IReadOnlyList<MembershipRequest>> GetOpenForPersonAsync(Guid memberKey, DateTime nowUtc, CancellationToken cancellationToken = default);
+
     /// <summary>How many requests to this kurin still wait for its answer and have not lapsed.</summary>
     Task<int> CountOpenToAnswerAsync(Guid fromKurinKey, DateTime nowUtc, CancellationToken cancellationToken = default);
 

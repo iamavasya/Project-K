@@ -19,7 +19,8 @@ function transfersApi(world: { incoming: Record<string, unknown>[]; outgoing: Re
     if (method === 'GET' && path === 'kurin/k1/membership-requests/former') return ok(world.former ?? []);
     if (method === 'GET' && path === 'kurin/k1/membership-requests') return ok(world);
     if (method === 'GET' && path === 'kurin/k1/memberships/candidate') {
-      return ok({ member: { memberKey: 'm9', publicId: 'PL-4F7A2-9D4A1', fullName: 'Віталій Романюк' }, alreadyInThisKurin: false, currentKurins: [k(1)] });
+      return ok({ member: { memberKey: 'm9', publicId: 'PL-4F7A2-9D4A1', fullName: 'Віталій Романюк' }, alreadyInThisKurin: false, currentKurins: [k(1)],
+        offer: { seniorKurin: false, joinsAtOnce: false, personAnswers: false, transferAllowed: true, askKurins: [k(1)] } });
     }
     if (method === 'POST' && path === 'kurin/k1/membership-requests') {
       world.outgoing.push(request({ membershipRequestKey: 'r2', memberName: 'Віталій Романюк', fromKurin: k(1), toKurin: k(7), ...(body as object) }));
@@ -87,6 +88,7 @@ test('asks back a former member who now stands in another kurin, «ще й до 
   const former = (memberKey: string, firstName: string, standsIn: ReturnType<typeof k>[]) => ({
     former: { memberKey, firstName, lastName: 'Коваль', groupName: 'Ведмеді', joinedAtUtc: '2022-10-05T00:00:00Z', leftAtUtc: '2026-10-30T00:00:00Z' },
     standsIn,
+    offer: { seniorKurin: false, joinsAtOnce: standsIn.length === 0, personAnswers: false, transferAllowed: true, askKurins: standsIn },
   });
   const world = {
     incoming: [] as Record<string, unknown>[],

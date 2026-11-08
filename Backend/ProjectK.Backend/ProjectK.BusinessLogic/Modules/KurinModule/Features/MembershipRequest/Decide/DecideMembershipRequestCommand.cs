@@ -77,7 +77,7 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
         {
             // Someone who has left since the request was sent — let go to another kurin, or released —
             // is no longer this kurin's to give.
-            var here = await _unitOfWork.Memberships.GetActiveAsync(asked.MemberKey, asked.FromKurinKey, cancellationToken);
+            var here = await _unitOfWork.Memberships.GetActiveAsync(asked.MemberKey, request.KurinKey, cancellationToken);
             if (here is null)
             {
                 asked.Lapse(now);
@@ -86,7 +86,7 @@ public sealed class DecideMembershipRequestCommandHandler : IRequestHandler<Deci
             }
 
             if (asked.Kind == MembershipRequestKind.Transfer
-                && await _moves.OwedToLeaveAsync(asked.MemberKey, asked.FromKurinKey, cancellationToken) > 0)
+                && await _moves.OwedToLeaveAsync(asked.MemberKey, request.KurinKey, cancellationToken) > 0)
             {
                 return ServiceResult<object>.Failure(
                     ResultType.Conflict,

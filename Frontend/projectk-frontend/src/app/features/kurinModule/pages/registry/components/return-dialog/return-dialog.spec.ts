@@ -15,7 +15,8 @@ describe('ReturnDialogComponent', () => {
   const kurin = (number: number): MembershipRequestKurinDto => ({ kurinKey: `k${number}`, number, namedAfter: null, branches: [{ branch: KurinBranch.UPYu, number }] });
   const formerPerson = (memberKey: string, standsIn: MembershipRequestKurinDto[]): FormerMemberStandingDto => ({
     former: { memberKey, firstName: 'Віталій', lastName: 'Бойко', groupName: 'Соколи', joinedAtUtc: '2023-09-01', leftAtUtc: '2026-10-01' },
-    standsIn
+    standsIn,
+    offer: { seniorKurin: false, joinsAtOnce: standsIn.length === 0, personAnswers: false, transferAllowed: true, askKurins: standsIn }
   });
 
   function create(person: FormerMemberStandingDto) {

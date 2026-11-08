@@ -31,10 +31,18 @@ describe('TransfersComponent', () => {
     owedToLeave: 0,
     ...over
   });
-  const candidate = (currentKurins: ReturnType<typeof kurin>[]): MembershipCandidateDto => ({
+  const candidate = (currentKurins: ReturnType<typeof kurin>[], offer: Partial<MembershipCandidateDto['offer']> = {}): MembershipCandidateDto => ({
     member: { memberKey: 'm1', publicId: 'PL-4F7A2-9D4A1', firstName: 'Назар', lastName: 'Коваль', fullName: 'Назар Коваль' },
     alreadyInThisKurin: false,
-    currentKurins
+    currentKurins,
+    offer: {
+      seniorKurin: false,
+      joinsAtOnce: currentKurins.length === 0,
+      personAnswers: false,
+      transferAllowed: true,
+      askKurins: currentKurins,
+      ...offer
+    }
   });
 
   function create(incoming: MembershipRequestDto[] = [], outgoing: MembershipRequestDto[] = []) {
@@ -123,6 +131,30 @@ describe('TransfersComponent', () => {
     expect(text(fixture)).toContain('Прийняти до куреня');
     component.send();
     expect(toast).toHaveBeenCalledWith(expect.objectContaining({ summary: 'Людину прийнято' }));
+  });
+
+  it('invites the person themself across the lines, only alongside and without юнак / впорядник', () => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    memberships.candidate.mockReturnValue(of(candidate([kurin(1)], {
+      seniorKurin: true, personAnswers: true, transferAllowed: false, askKurins: []
+    })));
+    memberships.createRequest.mockReturnValue(of({ membershipRequestKey: 'r1', joined: false, personAnswers: true }));
+    const toast = vi.spyOn(messages, 'add');
+
+    component.code.set('PL-4F7A2-9D4A1');
+    component.find();
+    fixture.detectChanges();
+
+    expect(text(fixture)).toContain('Відповідає сама людина');
+    expect(text(fixture)).toContain('Надіслати запрошення');
+    expect(text(fixture)).not.toContain('Що просимо');
+    expect(text(fixture)).not.toContain('У вашому курені як');
+    component.send();
+    expect(memberships.createRequest).toHaveBeenCalledWith('k15', {
+      publicId: 'PL-4F7A2-9D4A1', kind: 'AlsoJoin', membershipKind: 'Youth', fromKurinKey: null
+    });
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ summary: 'Запрошення надіслано' }));
   });
 
   it('needs the kurin to ask when the person stands in several', () => {

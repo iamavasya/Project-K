@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using ProjectK.API.Authorization;
 using ProjectK.API.Extensions;
 using ProjectK.API.Helpers;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Invitations;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.Card;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Disable;
 using ProjectK.BusinessLogic.Modules.MeModule.Features.CalendarFeed.Get;
@@ -197,6 +198,31 @@ public class MeController : ControllerBase
     {
         var result = await _mediator.Send(new GetMyTransferCodeQuery());
         return result.ToActionResult(this);
+    }
+
+    /// <summary>Kurins waiting on the person's own answer to their invitation.</summary>
+    [HttpGet("invitations")]
+    [ProducesResponseType(typeof(IReadOnlyList<MembershipInvitationDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetInvitations()
+    {
+        var result = await _mediator.Send(new GetMyInvitationsQuery());
+        return result.ToActionResult(this);
+    }
+
+    /// <summary>Accepts or declines one invitation; accepting adds a membership and closes nothing.</summary>
+    [HttpPost("invitations/{membershipRequestKey:guid}/answer")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AnswerInvitation(Guid membershipRequestKey, [FromBody] AnswerInvitationRequest request)
+    {
+        var result = await _mediator.Send(new AnswerMyInvitationCommand(membershipRequestKey, request.Accept));
+        return result.ToActionResult(this);
+    }
+
+    public sealed class AnswerInvitationRequest
+    {
+        public bool Accept { get; set; }
     }
 
     /// <summary>Where the calendar link stands. The link itself is shown only once, when issued.</summary>

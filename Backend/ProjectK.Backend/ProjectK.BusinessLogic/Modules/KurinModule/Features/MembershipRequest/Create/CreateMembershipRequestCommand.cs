@@ -15,8 +15,9 @@ namespace ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.
 
 /// <summary>
 /// The asking kurin's Звʼязковий asks for a person — by the code the person handed over, or by key
-/// for someone who once stood in the asking kurin. A person who stands in no kurin has nobody to
-/// ask and is taken in at once; anyone else waits for the Звʼязковий of their kurin.
+/// for someone who once stood in the asking kurin. Who answers is <see cref="MembershipAskRouting"/>'s:
+/// the Звʼязковий of a kurin of the same line, the person themself across the youth and senior lines,
+/// or nobody when they are taken in at once.
 /// </summary>
 /// <param name="FromKurinKey">
 /// The kurin to ask, needed only when the person stands in more than one.
@@ -47,6 +48,7 @@ public sealed class CreateMembershipRequestCommandHandler
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberDirectory _members;
     private readonly MembershipMoves _moves;
+    private readonly MembershipAskRouting _routing;
     private readonly IDomainEventPublisher _events;
     private readonly ICurrentUserContext _currentUser;
     private readonly IAccessChangeSignal _accessChanges;
@@ -56,6 +58,7 @@ public sealed class CreateMembershipRequestCommandHandler
         IUnitOfWork unitOfWork,
         IMemberDirectory members,
         MembershipMoves moves,
+        MembershipAskRouting routing,
         IDomainEventPublisher events,
         ICurrentUserContext currentUser,
         IAccessChangeSignal accessChanges,
@@ -64,6 +67,7 @@ public sealed class CreateMembershipRequestCommandHandler
         _unitOfWork = unitOfWork;
         _members = members;
         _moves = moves;
+        _routing = routing;
         _events = events;
         _currentUser = currentUser;
         _accessChanges = accessChanges;
@@ -92,7 +96,14 @@ public sealed class CreateMembershipRequestCommandHandler
                 ResultType.Conflict, "AlreadyAMember", "They already belong to this kurin.");
         }
 
-        if (standing.Count == 0)
+        var route = await _routing.ResolveAsync(person.MemberKey, request.ToKurinKey, cancellationToken);
+        if (route.ToSenior && request.MembershipKind != MembershipKind.Youth)
+        {
+            return ServiceResult<MembershipRequestSent>.Failure(
+                ResultType.BadRequest, "SeniorKurinTakesMembers", "A senior kurin takes people in only as members.");
+        }
+
+        if (route.JoinsAtOnce)
         {
             var joined = await _moves.OpenAsync(person, request.ToKurinKey, request.MembershipKind, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -104,25 +115,36 @@ public sealed class CreateMembershipRequestCommandHandler
             return new ServiceResult<MembershipRequestSent>(ResultType.Created, new MembershipRequestSent(null, Joined: true));
         }
 
-        Guid fromKurinKey;
-        if (request.FromKurinKey is { } chosen)
-        {
-            if (standing.All(m => m.KurinKey != chosen))
-            {
-                return ServiceResult<MembershipRequestSent>.Failure(
-                    ResultType.BadRequest, "NotInThatKurin", "They do not stand in that kurin.");
-            }
-
-            fromKurinKey = chosen;
-        }
-        else if (standing.Count == 1)
-        {
-            fromKurinKey = standing.First().KurinKey;
-        }
-        else
+        if (request.Kind == MembershipRequestKind.Transfer && !route.TransferAllowed)
         {
             return ServiceResult<MembershipRequestSent>.Failure(
-                ResultType.Conflict, "ChooseKurin", "They stand in several kurins; say which one to ask.");
+                ResultType.BadRequest,
+                "TransferAcrossLines",
+                "Youth and senior kurins do not take people from each other; ask to take them in alongside.");
+        }
+
+        Guid? fromKurinKey = null;
+        if (!route.PersonAnswers)
+        {
+            if (request.FromKurinKey is { } chosen)
+            {
+                if (!route.AskableKurinKeys.Contains(chosen))
+                {
+                    return ServiceResult<MembershipRequestSent>.Failure(
+                        ResultType.BadRequest, "NotInThatKurin", "That kurin does not answer for them.");
+                }
+
+                fromKurinKey = chosen;
+            }
+            else if (route.AskableKurinKeys.Count == 1)
+            {
+                fromKurinKey = route.AskableKurinKeys[0];
+            }
+            else
+            {
+                return ServiceResult<MembershipRequestSent>.Failure(
+                    ResultType.Conflict, "ChooseKurin", "They stand in several kurins; say which one to ask.");
+            }
         }
 
         var now = _time.GetUtcNow().UtcDateTime;
@@ -148,12 +170,12 @@ public sealed class CreateMembershipRequestCommandHandler
 
         await _events.PublishAsync(
             new MembershipRequested(
-                created.MembershipRequestKey, created.Kind, person.MemberKey, person.FullName,
+                created.MembershipRequestKey, created.Kind, person.MemberKey, person.UserKey, person.FullName,
                 fromKurinKey, request.ToKurinKey, _currentUser.UserId),
             cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new ServiceResult<MembershipRequestSent>(ResultType.Created, new MembershipRequestSent(created.MembershipRequestKey, Joined: false));
+        return new ServiceResult<MembershipRequestSent>(ResultType.Created, new MembershipRequestSent(created.MembershipRequestKey, Joined: false, route.PersonAnswers));
     }
 
     /// <summary>

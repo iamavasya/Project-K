@@ -114,6 +114,10 @@ export const routes: Routes = [
           { path: 'privacy', loadComponent: () => import('./features/account/privacy.page').then((m) => m.PrivacyPage) },
           { path: 'report', loadComponent: () => import('./features/account/report.page').then((m) => m.ReportPage) },
           { path: 'card', loadComponent: () => import('./features/account/card.page').then((m) => m.CardPage) },
+          {
+            path: 'invitations',
+            loadComponent: () => import('./features/account/invitations.page').then((m) => m.InvitationsPage),
+          },
           { path: 'scan', loadComponent: () => import('./features/account/scan.page').then((m) => m.ScanPage) },
           { path: 'waitlist', loadComponent: () => import('./features/admin/waitlist.page').then((m) => m.WaitlistPage) },
         ],

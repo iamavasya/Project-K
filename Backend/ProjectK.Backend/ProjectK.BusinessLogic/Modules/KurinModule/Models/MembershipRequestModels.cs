@@ -25,7 +25,7 @@ public sealed record MembershipRequestDto(
     string Status,
     Guid MemberKey,
     string MemberName,
-    MembershipRequestKurin FromKurin,
+    MembershipRequestKurin? FromKurin,
     MembershipRequestKurin ToKurin,
     MembershipKind MembershipKind,
     DateTime CreatedAtUtc,
@@ -42,10 +42,21 @@ public sealed record MembershipRequestsResponse(
 /// What sending a request did. A person who stands in no kurin has nobody to ask: they are taken in
 /// at once and <see cref="Joined"/> is true.
 /// </summary>
-public sealed record MembershipRequestSent(Guid? MembershipRequestKey, bool Joined);
+public sealed record MembershipRequestSent(Guid? MembershipRequestKey, bool Joined, bool PersonAnswers = false);
+
+/// <summary>
+/// What the asking kurin may offer a person and who will answer (<see cref="Services.MembershipAskRoute"/>):
+/// the kurins to choose from, or the person themself, or nobody when they are taken in at once.
+/// </summary>
+public sealed record MembershipAskOffer(
+    bool SeniorKurin,
+    bool JoinsAtOnce,
+    bool PersonAnswers,
+    bool TransferAllowed,
+    IReadOnlyList<MembershipRequestKurin> AskKurins);
 
 /// <summary>
 /// A former member and the kurins they stand in now, named only by number. Empty when they stand
 /// nowhere: then the kurin takes them back without asking anyone.
 /// </summary>
-public sealed record FormerMemberStanding(FormerMember Former, IReadOnlyList<MembershipRequestKurin> StandsIn);
+public sealed record FormerMemberStanding(FormerMember Former, IReadOnlyList<MembershipRequestKurin> StandsIn, MembershipAskOffer Offer);

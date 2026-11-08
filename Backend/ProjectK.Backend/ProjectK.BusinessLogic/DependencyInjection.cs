@@ -128,6 +128,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IMemberDirectory, MemberDirectory>();
         services.AddScoped<MembershipMoves>();
+        services.AddScoped<MembershipAskRouting>();
         services.AddScoped<IMemberProfileVerificationService, MemberProfileVerificationService>();
     }
 }

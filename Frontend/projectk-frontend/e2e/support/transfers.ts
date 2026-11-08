@@ -159,6 +159,28 @@ export async function withdraw(
   expect([204, 409]).toContain(response.status());
 }
 
+/** The person's membership becomes staff (впорядник): out of the kurin and straight back in as staff. */
+export async function asStaffIn(request: APIRequestContext, kurin: FreshKurin, person: FreshPerson): Promise<void> {
+  const headers = { Authorization: `Bearer ${await tokenOf(request, kurin.zvyazkovyi)}` };
+  await ok(await request.delete(`${e2eApiUrl}/kurin/${kurin.kurinKey}/memberships/${person.memberKey}`, { headers }), 'release');
+  await api(request, kurin.zvyazkovyi, 'POST', `kurin/${kurin.kurinKey}/memberships`, { memberKey: person.memberKey, publicId: null, kind: 'Staff' });
+}
+
+/** The asking kurin's request as the server answers it, unread: for the refusals. */
+export async function askRaw(
+  request: APIRequestContext,
+  asking: { kurinKey: string; zvyazkovyi: E2eUser },
+  person: FreshPerson,
+  kind: 'Transfer' | 'AlsoJoin'
+): Promise<{ status: number; error: string | undefined }> {
+  const response = await request.post(`${e2eApiUrl}/kurin/${asking.kurinKey}/membership-requests`, {
+    headers: { Authorization: `Bearer ${await tokenOf(request, asking.zvyazkovyi)}` },
+    data: { publicId: person.publicId, kind, membershipKind: 'Youth' }
+  });
+  const body = await response.json().catch(() => ({})) as { error?: string };
+  return { status: response.status(), error: body.error };
+}
+
 /** The kurin the seeded senior Звʼязковий stands in. */
 export async function seniorKurin(request: APIRequestContext): Promise<{ kurinKey: string; zvyazkovyi: E2eUser }> {
   const login = await loginViaApi(request, seniorZvyazkovyi);

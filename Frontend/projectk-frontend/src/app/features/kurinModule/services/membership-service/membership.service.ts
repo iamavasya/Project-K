@@ -44,7 +44,8 @@ export interface MembershipRequestDto {
   status: MembershipRequestStatus;
   memberKey: string;
   memberName: string;
-  fromKurin: MembershipRequestKurinDto;
+  /** Null — відповідає сама людина: запит між УПЮ та старшим куренем тому, хто вже не юнак. */
+  fromKurin: MembershipRequestKurinDto | null;
   toKurin: MembershipRequestKurinDto;
   membershipKind: MembershipKindName;
   createdAtUtc: string;
@@ -58,11 +59,35 @@ export interface MembershipRequestsDto {
   outgoing: MembershipRequestDto[];
 }
 
-/** Людина за кодом: картка й курені, де вона стоїть зараз (лише номери). */
+/**
+ * Що курінь може запропонувати людині і хто відповість: курінь тієї самої лінії (УПЮ чи старші),
+ * сама людина (через лінії, коли вона вже не юнак), або ніхто — приймаємо одразу.
+ */
+export interface MembershipAskOfferDto {
+  /** Старший курінь: приймає лише членом, без «юнак / впорядник». */
+  seniorKurin: boolean;
+  joinsAtOnce: boolean;
+  personAnswers: boolean;
+  /** «Перевести» — лише між куренями однієї лінії. */
+  transferAllowed: boolean;
+  askKurins: MembershipRequestKurinDto[];
+}
+
+/** Людина за кодом: картка, курені, де вона стоїть зараз (лише номери), і що можна запропонувати. */
 export interface MembershipCandidateDto {
   member: { memberKey: string; publicId: string; firstName: string; lastName: string; fullName: string };
   alreadyInThisKurin: boolean;
   currentKurins: MembershipRequestKurinDto[];
+  offer: MembershipAskOfferDto;
+}
+
+/** Запрошення, на яке людина відповідає сама. */
+export interface MembershipInvitationDto {
+  membershipRequestKey: string;
+  kurin: MembershipRequestKurinDto;
+  membershipKind: MembershipKindName;
+  createdAtUtc: string;
+  expiresAtUtc: string;
 }
 
 export interface CreateMembershipRequest {
@@ -77,12 +102,15 @@ export interface CreateMembershipRequest {
 export interface MembershipRequestSentDto {
   membershipRequestKey: string | null;
   joined: boolean;
+  /** Запрошення пішло самій людині. */
+  personAnswers?: boolean;
 }
 
 /** Колишній член і курені, де він стоїть зараз (лише номери). Порожньо — ніде: повертаємо без запиту. */
 export interface FormerMemberStandingDto {
   former: FormerMemberDto;
   standsIn: MembershipRequestKurinDto[];
+  offer: MembershipAskOfferDto;
 }
 
 /**
@@ -94,6 +122,16 @@ export class MembershipService {
   private readonly http = inject(HttpClient);
   private readonly cache = inject(ClientCacheService);
   private readonly apiUrl = `${environment.apiUrl}/kurin`;
+  private readonly meUrl = `${environment.apiUrl}/me`;
+
+  /** Запрошення до куренів, на які людина відповідає сама. */
+  myInvitations(): Observable<MembershipInvitationDto[]> {
+    return this.http.get<MembershipInvitationDto[]>(`${this.meUrl}/invitations`);
+  }
+
+  answerInvitation(membershipRequestKey: string, accept: boolean): Observable<unknown> {
+    return this.http.post(`${this.meUrl}/invitations/${membershipRequestKey}/answer`, { accept });
+  }
 
   /**
    * Прийняти назад того, кого курінь уже знає, — за ключем.

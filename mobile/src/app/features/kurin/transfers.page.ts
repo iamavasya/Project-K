@@ -28,7 +28,8 @@ import { apiErrorText } from '../../core/api';
 import { kurinInText } from '../../core/kurin-label';
 import { FAILED_TEXT, Loaded, settle, valueOf } from '../../core/loaded';
 import { Toasts } from '../../core/toast';
-import { FormerMemberStandingDto, MembershipCandidateDto, MembershipRequestDto, MembershipRequestKind, MembershipRequestKurinDto, MembershipRequestStatus } from './kurin.models';
+import { FormerMemberStandingDto, MembershipAskOfferDto,
+  MembershipCandidateDto, MembershipRequestDto, MembershipRequestKind, MembershipRequestKurinDto, MembershipRequestStatus } from './kurin.models';
 import { KurinApi } from './kurin.service';
 
 const STATUS: Record<MembershipRequestStatus, string> = {
@@ -49,7 +50,15 @@ const ERRORS: Record<string, string> = {
   RequestClosed: 'На цей запит уже відповіли, його скасовано або минув строк.',
   MemberNotHere: 'Людини вже немає в курені.',
   NoSuchCode: 'Такого коду немає. Перевір його з людиною.',
+  TransferAcrossLines: 'Між УПЮ і старшими куренями не переводять. Можна лише прийняти ще й до нас.',
+  SeniorKurinTakesMembers: 'Старший курінь приймає лише членом.',
 };
+
+/** The toast after asking: taken in at once, an invitation the person answers, or a request to a kurin. */
+function sentText(sent: { joined: boolean; personAnswers?: boolean }, joined: string): string {
+  if (sent.joined) return joined;
+  return sent.personAnswers ? 'Запрошення надіслано. Людина відповість сама, воно діє 14 днів.' : 'Запит надіслано. Він діє 14 днів.';
+}
 
 const kurinNo = (k: MembershipRequestKurinDto): string => kurinInText(k.branches, k.number);
 
@@ -125,31 +134,36 @@ const kurinNo = (k: MembershipRequestKurinDto): string => kurinInText(k.branches
               </ion-label>
             </ion-item>
             @if (!c.alreadyInThisKurin) {
-              @if (c.currentKurins.length) {
+              @if (c.offer.transferAllowed) {
                 <ion-item>
                   <ion-select label="Що просимо" interface="action-sheet" cancelText="Скасувати" [(ngModel)]="kind">
                     <ion-select-option value="Transfer">Перевести до нас</ion-select-option>
                     <ion-select-option value="AlsoJoin">Прийняти ще й до нас</ion-select-option>
                   </ion-select>
                 </ion-item>
-                @if (c.currentKurins.length > 1) {
+              }
+              @if (c.offer.askKurins.length > 1) {
                   <ion-item>
                     <ion-select label="Кого питати" interface="action-sheet" cancelText="Скасувати" [(ngModel)]="fromKurinKey">
-                      @for (k of c.currentKurins; track k.kurinKey) {
+                      @for (k of c.offer.askKurins; track k.kurinKey) {
                         <ion-select-option [value]="k.kurinKey">{{ kurinNo(k) }}</ion-select-option>
                       }
                     </ion-select>
                   </ion-item>
-                }
               }
-              <ion-item>
-                <ion-select label="У вашому курені як" interface="action-sheet" cancelText="Скасувати" [(ngModel)]="membershipKind">
-                  <ion-select-option value="Youth">Юнак</ion-select-option>
-                  <ion-select-option value="Staff">Впорядник</ion-select-option>
-                </ion-select>
-              </ion-item>
-              <ion-item [button]="true" [detail]="false" [disabled]="busy() || (c.currentKurins.length > 1 && !fromKurinKey)" (click)="send(c)" data-testid="send">
-                <ion-label color="primary">{{ c.currentKurins.length ? 'Надіслати запит' : 'Прийняти до куреня' }}</ion-label>
+              @if (c.offer.personAnswers) {
+                <ion-item><ion-label color="medium">Відповідає сама людина</ion-label></ion-item>
+              }
+              @if (!c.offer.seniorKurin) {
+                <ion-item>
+                  <ion-select label="У вашому курені як" interface="action-sheet" cancelText="Скасувати" [(ngModel)]="membershipKind">
+                    <ion-select-option value="Youth">Юнак</ion-select-option>
+                    <ion-select-option value="Staff">Впорядник</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              }
+              <ion-item [button]="true" [detail]="false" [disabled]="busy() || (c.offer.askKurins.length > 1 && !fromKurinKey)" (click)="send(c)" data-testid="send">
+                <ion-label color="primary">{{ sendLabel(c.offer) }}</ion-label>
               </ion-item>
             }
           }
@@ -217,6 +231,11 @@ const kurinNo = (k: MembershipRequestKurinDto): string => kurinInText(k.branches
   `,
 })
 export class TransfersPage implements OnInit {
+  protected sendLabel(offer: MembershipAskOfferDto): string {
+    if (offer.joinsAtOnce) return 'Прийняти до куреня';
+    return offer.personAnswers ? 'Надіслати запрошення' : 'Надіслати запит';
+  }
+
   private readonly auth = inject(AuthService);
   private readonly data = inject(KurinApi);
   private readonly sheets = inject(ActionSheetController);
@@ -274,6 +293,7 @@ export class TransfersPage implements OnInit {
     if (this.part() === 'incoming') {
       return r.kind === 'Transfer' ? `${kurinNo(r.toKurin)} просить перевести до себе` : `${kurinNo(r.toKurin)} просить прийняти ще й до себе`;
     }
+    if (!r.fromKurin) return 'Запрошення людині';
     return r.kind === 'Transfer' ? `Перевести з ${kurinNo(r.fromKurin)}` : `Ще й до нас, лишається в ${kurinNo(r.fromKurin)}`;
   }
 
@@ -282,7 +302,7 @@ export class TransfersPage implements OnInit {
     this.candidate.set(null);
     try {
       this.candidate.set(await this.data.membershipCandidate(this.kurinKey, this.code.trim().toUpperCase()));
-      this.kind = 'Transfer';
+      this.kind = this.candidate()?.offer.transferAllowed ? 'Transfer' : 'AlsoJoin';
       this.membershipKind = 'Youth';
       this.fromKurinKey = null;
     } catch (error) {
@@ -294,15 +314,15 @@ export class TransfersPage implements OnInit {
 
   protected async send(c: MembershipCandidateDto): Promise<void> {
     this.busy.set(true);
-    const asked = c.currentKurins.length === 1 ? c.currentKurins[0].kurinKey : this.fromKurinKey;
+    const asked = c.offer.askKurins.length === 1 ? c.offer.askKurins[0].kurinKey : c.offer.askKurins.length ? this.fromKurinKey : null;
     try {
       const sent = await this.data.requestMembership(this.kurinKey, {
         publicId: c.member.publicId,
-        kind: this.kind,
-        membershipKind: this.membershipKind,
+        kind: c.offer.transferAllowed ? this.kind : 'AlsoJoin',
+        membershipKind: c.offer.seniorKurin ? 'Youth' : this.membershipKind,
         fromKurinKey: asked,
       });
-      await this.toasts.show(sent.joined ? `${c.member.fullName} тепер у вашому курені.` : 'Запит надіслано. Він діє 14 днів.');
+      await this.toasts.show(sentText(sent, `${c.member.fullName} тепер у вашому курені.`));
       this.candidate.set(null);
       this.code = '';
       this.part.set('outgoing');
@@ -361,14 +381,15 @@ export class TransfersPage implements OnInit {
     if (this.askedFor().has(p.former.memberKey)) return;
     const name = this.formerName(p);
 
-    let from: MembershipRequestKurinDto | null = p.standsIn[0] ?? null;
-    if (p.standsIn.length > 1) {
-      from = await this.choose<MembershipRequestKurinDto>(name, 'Кого питати', p.standsIn.map((k) => ({ text: kurinNo(k), data: k })));
+    const offer = p.offer;
+    let from: MembershipRequestKurinDto | null = offer.askKurins[0] ?? null;
+    if (offer.askKurins.length > 1) {
+      from = await this.choose<MembershipRequestKurinDto>(name, 'Кого питати', offer.askKurins.map((k) => ({ text: kurinNo(k), data: k })));
       if (!from) return;
     }
 
-    let kind: MembershipRequestKind = 'Transfer';
-    if (from) {
+    let kind: MembershipRequestKind = 'AlsoJoin';
+    if (from && offer.transferAllowed) {
       const chosen = await this.choose<MembershipRequestKind>(name, `Зараз у ${kurinNo(from)}`, [
         { text: 'Перевести до нас', data: 'Transfer' },
         { text: 'Прийняти ще й до нас', data: 'AlsoJoin' },
@@ -377,10 +398,12 @@ export class TransfersPage implements OnInit {
       kind = chosen;
     }
 
-    const membershipKind = await this.choose<'Youth' | 'Staff'>(name, from ? 'У вашому курені як' : 'Ніде не стоїть. У курені як', [
-      { text: 'Юнак', data: 'Youth' },
-      { text: 'Впорядник', data: 'Staff' },
-    ]);
+    const membershipKind = offer.seniorKurin
+      ? 'Youth'
+      : await this.choose<'Youth' | 'Staff'>(name, offer.joinsAtOnce ? 'Ніде не стоїть. У курені як' : 'У вашому курені як', [
+          { text: 'Юнак', data: 'Youth' },
+          { text: 'Впорядник', data: 'Staff' },
+        ]);
     if (!membershipKind) return;
 
     this.busy.set(true);
@@ -391,7 +414,7 @@ export class TransfersPage implements OnInit {
         membershipKind,
         fromKurinKey: from?.kurinKey ?? null,
       });
-      await this.toasts.show(sent.joined ? `${name} знову у вашому курені.` : 'Запит надіслано. Він діє 14 днів.');
+      await this.toasts.show(sentText(sent, `${name} знову у вашому курені.`));
       await this.load();
     } catch (error) {
       await this.toasts.show(apiErrorText(error, 'Не вдалося. Спробуй ще раз.', ERRORS), 'danger');

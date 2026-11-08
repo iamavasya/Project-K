@@ -17,6 +17,9 @@ internal static class MembershipRequestNotices
 {
     public const string Route = "/kurin/registry/transfers";
 
+    /// <summary>Where a person answers a kurin's invitation themself.</summary>
+    public const string PersonRoute = "/invitations";
+
     public static async Task<IReadOnlyCollection<Guid>> ZvyazkoviAsync(IUnitOfWork unitOfWork, Guid kurinKey, CancellationToken cancellationToken)
     {
         var role = SystemRole.ForOffice(LeadershipType.KV, LeadershipRole.Zvyazkovyi);
@@ -34,7 +37,7 @@ internal static class MembershipRequestNotices
     }
 }
 
-/// <summary>A new request reaches the Звʼязковий who answers it.</summary>
+/// <summary>A new request reaches whoever answers it: the Звʼязковий of the person's kurin, or the person.</summary>
 public sealed class MembershipRequestedEventHandler : INotificationHandler<DomainEventNotification<MembershipRequested>>
 {
     private readonly INotificationService _notifications;
@@ -50,12 +53,34 @@ public sealed class MembershipRequestedEventHandler : INotificationHandler<Domai
     {
         var raised = notification.Event;
         var asking = await MembershipRequestNotices.KurinAsync(_unitOfWork, raised.ToKurinKey, cancellationToken);
+        if (raised.FromKurinKey is not { } fromKurinKey)
+        {
+            if (raised.MemberUserKey is { } person)
+            {
+                await _notifications.NotifyAsync(new NotificationRequest
+                {
+                    RecipientUserKey = person,
+                    Type = AppNotificationType.MembershipRequested,
+                    Severity = AppNotificationSeverity.Warn,
+                    Title = "Запрошення до куреня",
+                    Body = $"{asking} запрошує тебе до себе.",
+                    EntityType = "MembershipRequest",
+                    EntityKey = raised.MembershipRequestKey,
+                    Route = MembershipRequestNotices.PersonRoute,
+                    ActorUserKey = raised.ActorUserKey,
+                    DeduplicationKey = $"membership-request:{raised.MembershipRequestKey}"
+                }, cancellationToken);
+            }
+
+            return;
+        }
+
         var body = raised.Kind == MembershipRequestKind.Transfer
             ? $"{asking} просить перевести до себе: {raised.MemberName}."
             : $"{asking} просить прийняти ще й до себе: {raised.MemberName}.";
 
         await _notifications.NotifyManyAsync(
-            (await MembershipRequestNotices.ZvyazkoviAsync(_unitOfWork, raised.FromKurinKey, cancellationToken))
+            (await MembershipRequestNotices.ZvyazkoviAsync(_unitOfWork, fromKurinKey, cancellationToken))
             .Select(userKey => new NotificationRequest
             {
                 RecipientUserKey = userKey,
@@ -91,7 +116,10 @@ public sealed class MembershipRequestDecidedEventHandler : INotificationHandler<
     public async Task Handle(DomainEventNotification<MembershipRequestDecided> notification, CancellationToken cancellationToken)
     {
         var raised = notification.Event;
-        var from = await MembershipRequestNotices.KurinAsync(_unitOfWork, raised.FromKurinKey, cancellationToken);
+        var answeredByPerson = raised.FromKurinKey is null;
+        var from = raised.FromKurinKey is { } fromKurinKey
+            ? await MembershipRequestNotices.KurinAsync(_unitOfWork, fromKurinKey, cancellationToken)
+            : raised.MemberName;
         var to = await MembershipRequestNotices.KurinAsync(_unitOfWork, raised.ToKurinKey, cancellationToken);
 
         var requests = (await MembershipRequestNotices.ZvyazkoviAsync(_unitOfWork, raised.ToKurinKey, cancellationToken))
@@ -101,9 +129,13 @@ public sealed class MembershipRequestDecidedEventHandler : INotificationHandler<
                 Type = AppNotificationType.MembershipRequestDecided,
                 Severity = raised.Approved ? AppNotificationSeverity.Success : AppNotificationSeverity.Info,
                 Title = raised.Approved ? "Запит підтверджено" : "Запит відхилено",
-                Body = raised.Approved
-                    ? $"{from} підтвердив: {raised.MemberName} тепер у вашому курені."
-                    : $"{from} відхилив запит: {raised.MemberName} лишається там.",
+                Body = answeredByPerson
+                    ? raised.Approved
+                        ? $"{raised.MemberName} прийняв запрошення і тепер у вашому курені."
+                        : $"{raised.MemberName} відхилив запрошення."
+                    : raised.Approved
+                        ? $"{from} підтвердив: {raised.MemberName} тепер у вашому курені."
+                        : $"{from} відхилив запит: {raised.MemberName} лишається там.",
                 EntityType = "MembershipRequest",
                 EntityKey = raised.MembershipRequestKey,
                 Route = MembershipRequestNotices.Route,
@@ -112,7 +144,8 @@ public sealed class MembershipRequestDecidedEventHandler : INotificationHandler<
             })
             .ToList();
 
-        if (raised.Approved && raised.MemberUserKey is { } person)
+        // Whoever answered for themself already knows.
+        if (raised.Approved && !answeredByPerson && raised.MemberUserKey is { } person)
         {
             requests.Add(new NotificationRequest
             {

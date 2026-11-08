@@ -5,6 +5,7 @@ using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Canc
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Create;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Decide;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Former;
+using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Invitations;
 using ProjectK.BusinessLogic.Modules.KurinModule.Features.MembershipRequest.Waiting;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.BusinessLogic.Tests.TestHelpers;
@@ -41,6 +42,8 @@ public class MembershipRequestTests
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IMembershipRepository> _memberships = new();
     private readonly Mock<IMembershipRequestRepository> _requests = new();
+    private readonly Mock<IKurinRepository> _kurins = new();
+    private readonly Dictionary<Guid, KurinBranch> _branches = new();
     private readonly Mock<IMemberDirectory> _members = new();
     private readonly Mock<IDuesDirectory> _dues = new();
     private readonly Mock<IDomainEventPublisher> _events = new();
@@ -60,6 +63,9 @@ public class MembershipRequestTests
         _unitOfWork.SetupGet(u => u.Memberships).Returns(_memberships.Object);
         _unitOfWork.SetupGet(u => u.MembershipRequests).Returns(_requests.Object);
         _unitOfWork.SetupGet(u => u.Groups).Returns(Mock.Of<IGroupRepository>());
+        _unitOfWork.SetupGet(u => u.Kurins).Returns(_kurins.Object);
+        _kurins.Setup(r => r.GetByKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid key, CancellationToken _) => new Kurin(1, _branches.GetValueOrDefault(key, KurinBranch.UPYu)) { KurinKey = key });
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _memberships.Setup(r => r.GetActiveForMemberAsync(_person, It.IsAny<CancellationToken>()))
@@ -67,7 +73,7 @@ public class MembershipRequestTests
         _memberships.Setup(r => r.GetActiveAsync(_person, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid _, Guid kurin, CancellationToken _) => _standing.FirstOrDefault(m => m.KurinKey == kurin && m.LeftAtUtc is null));
         _memberships.Setup(r => r.GetRecordsForMemberAsync(_person, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => _standing.Select(m => new MembershipRecord(m.MembershipKey, m.KurinKey, 1, KurinBranch.UPYu, null, m.GroupKey, null, m.Kind, m.JoinedAtUtc, m.LeftAtUtc)).ToList());
+            .ReturnsAsync(() => _standing.Select(m => new MembershipRecord(m.MembershipKey, m.KurinKey, 1, _branches.GetValueOrDefault(m.KurinKey, KurinBranch.UPYu), null, m.GroupKey, null, m.Kind, m.JoinedAtUtc, m.LeftAtUtc)).ToList());
         _memberships.Setup(r => r.Open(It.IsAny<Membership>())).Callback<Membership>(m => { _opened.Add(m); _standing.Add(m); });
 
         _requests.Setup(r => r.Create(It.IsAny<MembershipRequest>(), It.IsAny<CancellationToken>()))
@@ -94,7 +100,9 @@ public class MembershipRequestTests
     private MembershipMoves Moves() => new(_unitOfWork.Object, _journal.Audit, _events.Object, _dues.Object, _time);
 
     private CreateMembershipRequestCommandHandler Create() =>
-        new(_unitOfWork.Object, _members.Object, Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeSignal>(), _time);
+        new(_unitOfWork.Object, _members.Object, Moves(), Routing(), _events.Object, _user.Object, Mock.Of<IAccessChangeSignal>(), _time);
+
+    private MembershipAskRouting Routing() => new(_unitOfWork.Object, _members.Object);
 
     private DecideMembershipRequestCommandHandler Decide() =>
         new(_unitOfWork.Object, _members.Object, Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeSignal>(), _time);
@@ -406,10 +414,11 @@ public class MembershipRequestTests
             new FormerMember(nowhere, "Віталій", null, "Бойко", null, null, Now.UtcDateTime.AddYears(-3), Now.UtcDateTime.AddMonths(-2))
         ]);
         _memberships.Setup(r => r.GetActiveForMemberAsync(nowhere, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _memberships.Setup(r => r.GetRecordsForMemberAsync(nowhere, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         _unitOfWork.SetupGet(u => u.Kurins).Returns(Mock.Of<IKurinRepository>(r =>
             r.GetByKeyAsync(_kurinA, It.IsAny<CancellationToken>()) == Task.FromResult<Kurin?>(new Kurin(1))));
 
-        var result = await new GetFormerStandingQueryHandler(_unitOfWork.Object, _user.Object).Handle(new GetFormerStandingQuery(_kurinB), default);
+        var result = await new GetFormerStandingQueryHandler(_unitOfWork.Object, _user.Object, Routing()).Handle(new GetFormerStandingQuery(_kurinB), default);
 
         result.Data!.Should().HaveCount(2);
         result.Data![0].StandsIn.Should().ContainSingle().Which.Number.Should().Be(1);
@@ -421,8 +430,152 @@ public class MembershipRequestTests
     {
         ActingIn(_kurinA);
 
-        var result = await new GetFormerStandingQueryHandler(_unitOfWork.Object, _user.Object).Handle(new GetFormerStandingQuery(_kurinB), default);
+        var result = await new GetFormerStandingQueryHandler(_unitOfWork.Object, _user.Object, Routing()).Handle(new GetFormerStandingQuery(_kurinB), default);
 
         result.Type.Should().Be(ResultType.Forbidden);
+    }
+
+    // ── Youth and senior lines ──────────────────────────────────────────────────────────────────
+
+    private void Senior(Guid kurinKey) => _branches[kurinKey] = KurinBranch.USP;
+
+    private Task<ProjectK.Common.Models.Records.ServiceResult<ProjectK.BusinessLogic.Modules.KurinModule.Models.MembershipRequestSent>> AskFromB(
+        MembershipRequestKind kind, MembershipKind as_ = MembershipKind.Youth, Guid? from = null) =>
+        Create().Handle(new CreateMembershipRequestCommand(_kurinB, Code, null, kind, as_, from), default);
+
+    [Fact]
+    public async Task ASeniorKurin_AsksTheYouthKurinOfAJunak_OnlyToTakeThemInAlongside()
+    {
+        Senior(_kurinB);
+        ActingIn(_kurinB);
+        StandsIn(_kurinA);
+
+        var transfer = await AskFromB(MembershipRequestKind.Transfer);
+        transfer.ErrorCode.Should().Be("TransferAcrossLines");
+
+        var alongside = await AskFromB(MembershipRequestKind.AlsoJoin);
+        alongside.Type.Should().Be(ResultType.Created);
+        _created.Should().ContainSingle().Which.FromKurinKey.Should().Be(_kurinA, "a юнак never answers for themselves");
+    }
+
+    [Fact]
+    public async Task ASeniorKurin_AsksAStaffMemberOfAYouthKurin_Themself()
+    {
+        Senior(_kurinB);
+        ActingIn(_kurinB);
+        StandsIn(_kurinA).Kind = MembershipKind.Staff;
+
+        var result = await AskFromB(MembershipRequestKind.AlsoJoin);
+
+        result.Data!.PersonAnswers.Should().BeTrue();
+        _created.Should().ContainSingle().Which.FromKurinKey.Should().BeNull();
+        _events.Verify(e => e.PublishAsync(
+            It.Is<MembershipRequested>(r => r.FromKurinKey == null && r.MemberUserKey == _account), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ASeniorKurin_AsksSomeoneWhoLeftEveryKurin_Themself()
+    {
+        Senior(_kurinB);
+        ActingIn(_kurinB);
+
+        var result = await AskFromB(MembershipRequestKind.AlsoJoin);
+
+        result.Data!.Joined.Should().BeFalse();
+        result.Data!.PersonAnswers.Should().BeTrue();
+        _opened.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ASeniorKurin_AsksTheOtherSeniorKurin_EvenWhenThePersonIsStillAJunakSomewhere()
+    {
+        Senior(_kurinB);
+        Senior(_kurinC);
+        ActingIn(_kurinB);
+        StandsIn(_kurinA);
+        StandsIn(_kurinC);
+
+        var result = await AskFromB(MembershipRequestKind.Transfer);
+
+        result.Type.Should().Be(ResultType.Created);
+        _created.Should().ContainSingle().Which.FromKurinKey.Should().Be(_kurinC);
+    }
+
+    [Fact]
+    public async Task ASeniorKurin_TakesNobodyInAsStaff()
+    {
+        Senior(_kurinB);
+        ActingIn(_kurinB);
+        StandsIn(_kurinA);
+
+        var result = await AskFromB(MembershipRequestKind.AlsoJoin, MembershipKind.Staff);
+
+        result.ErrorCode.Should().Be("SeniorKurinTakesMembers");
+        _created.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task AYouthKurin_AsksSomeoneOnlyInASeniorKurin_Themself_AndNeverTakesThemFromThere()
+    {
+        Senior(_kurinA);
+        ActingIn(_kurinB);
+        StandsIn(_kurinA);
+
+        (await AskFromB(MembershipRequestKind.Transfer)).ErrorCode.Should().Be("TransferAcrossLines");
+        var result = await AskFromB(MembershipRequestKind.AlsoJoin, MembershipKind.Staff);
+
+        result.Data!.PersonAnswers.Should().BeTrue();
+    }
+
+    // ── The person's own answer ─────────────────────────────────────────────────────────────────
+
+    private MembershipRequest Invitation()
+    {
+        var request = Asked(MembershipRequestKind.AlsoJoin);
+        request.FromKurinKey = null;
+        _user.SetupGet(u => u.UserId).Returns(_account);
+        _members.Setup(d => d.FindByAccountAsync(_account, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MemberSummary(_person, _account, _kurinA, null, "Назар", "Коваль", "n@x", null));
+        return request;
+    }
+
+    private AnswerMyInvitationCommandHandler Answer() =>
+        new(_unitOfWork.Object, _members.Object, Moves(), _events.Object, _user.Object, Mock.Of<IAccessChangeSignal>(), _time);
+
+    [Fact]
+    public async Task AcceptingAnInvitation_AddsAMembership_AndClosesNothing()
+    {
+        var kept = StandsIn(_kurinA);
+        var invitation = Invitation();
+
+        var result = await Answer().Handle(new AnswerMyInvitationCommand(invitation.MembershipRequestKey, Accept: true), default);
+
+        result.Type.Should().Be(ResultType.Success);
+        invitation.Status.Should().Be(MembershipRequestStatus.Approved);
+        _opened.Should().ContainSingle().Which.KurinKey.Should().Be(_kurinB);
+        kept.LeftAtUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DecliningAnInvitation_OpensNothing()
+    {
+        var invitation = Invitation();
+
+        await Answer().Handle(new AnswerMyInvitationCommand(invitation.MembershipRequestKey, Accept: false), default);
+
+        invitation.Status.Should().Be(MembershipRequestStatus.Declined);
+        _opened.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ARequestAKurinAnswers_IsNotThePersonsToAnswer()
+    {
+        var request = Invitation();
+        request.FromKurinKey = _kurinA;
+
+        var result = await Answer().Handle(new AnswerMyInvitationCommand(request.MembershipRequestKey, Accept: true), default);
+
+        result.Type.Should().Be(ResultType.NotFound);
+        _opened.Should().BeEmpty();
     }
 }

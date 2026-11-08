@@ -51,7 +51,7 @@ public sealed class GetMembershipRequestsQueryHandler
             .ToDictionary(m => m.MemberKey, m => m.FullName);
 
         var kurins = new Dictionary<Guid, MembershipRequestKurin>();
-        foreach (var kurinKey in requests.SelectMany(r => new[] { r.FromKurinKey, r.ToKurinKey }).Distinct())
+        foreach (var kurinKey in requests.SelectMany(r => r.FromKurinKey is { } from ? new[] { from, r.ToKurinKey } : new[] { r.ToKurinKey }).Distinct())
         {
             var kurin = await _unitOfWork.Kurins.GetByKeyAsync(kurinKey, cancellationToken);
             kurins[kurinKey] = MembershipRequestKurin.Of(kurinKey, kurin);
@@ -64,7 +64,7 @@ public sealed class GetMembershipRequestsQueryHandler
         {
             var answering = r.FromKurinKey == request.KurinKey;
             var owed = answering && r.Kind == MembershipRequestKind.Transfer && r.IsOpen(now)
-                ? await _moves.OwedToLeaveAsync(r.MemberKey, r.FromKurinKey, cancellationToken)
+                ? await _moves.OwedToLeaveAsync(r.MemberKey, request.KurinKey, cancellationToken)
                 : 0;
             var dto = new MembershipRequestDto(
                 r.MembershipRequestKey,
@@ -72,7 +72,7 @@ public sealed class GetMembershipRequestsQueryHandler
                 StatusOf(r, now),
                 r.MemberKey,
                 names.GetValueOrDefault(r.MemberKey, string.Empty),
-                kurins[r.FromKurinKey],
+                r.FromKurinKey is { } fromKey ? kurins[fromKey] : null,
                 kurins[r.ToKurinKey],
                 r.MembershipKind,
                 r.CreatedAtUtc,

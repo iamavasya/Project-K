@@ -216,6 +216,8 @@ public class AuthorizationBaselineMatrixTests
         yield return Endpoint<MeController>(nameof(MeController.DisableCardLink), "RequireUser");
         yield return Endpoint<MeController>(nameof(MeController.GetCardCheckCode), "RequireUser");
         yield return Endpoint<MeController>(nameof(MeController.GetTransferCode), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.GetInvitations), "RequireUser");
+        yield return Endpoint<MeController>(nameof(MeController.AnswerInvitation), "RequireUser");
         yield return Row<Action<MeController, CalendarFeedOptionsRequest>>(nameof(MeController.UpdateCalendarFeed), "RequireUser");
         yield return Row<Action<MeController>>(nameof(MeController.DisableCalendarFeed), "RequireUser");
         yield return Row<Action<MemberController, Guid>>(nameof(MemberController.GetByKey), "RequireUser");
