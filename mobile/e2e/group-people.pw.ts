@@ -107,7 +107,8 @@ test('lets the Звʼязковий add people from the kurin, move one on and t
   const log = await signIn(page, member, peopleApi({ canCreate: true, withLeadership: true }), ZVYAZKOVYI);
   await openGroup(page);
   await expect(page.getByTestId('group-new-member')).toBeVisible();
-  await expect(page.getByTestId('member-actions')).toHaveCount(2);
+  // The Звʼязковий (m1) stands in this гурток too: no move or take-out on their own row.
+  await expect(page.getByTestId('member-actions')).toHaveCount(1);
 
   // «Додати з куреня»: those in no гурток first, then those elsewhere, with where they are now.
   await page.getByTestId('add-from-kurin').click();
@@ -177,7 +178,7 @@ test('lets the Звʼязковий pick the виховники and seat the п�
   await page.getByTestId('setup-leadership').click();
   const form = page.locator('ion-modal app-leadership-sheet');
   await expect(form.getByTestId('seat-Hurtkoviy')).toContainText('Шевчук');
-  await expect(form.getByTestId('seat-Pysar')).toContainText('Не обсаджено');
+  await expect(form.getByTestId('seat-Pysar').locator('ion-note')).toHaveText('');
   await expect(form.getByTestId('save-leadership')).toHaveAttribute('disabled', '');
   await form.getByTestId('seat-Pysar').click();
   const seat = picker(page);
@@ -206,8 +207,8 @@ test('lets a Виховник seat a first провід and add a new member, bu
   await page.getByTestId('setup-leadership').click();
   const form = page.locator('ion-modal app-leadership-sheet');
   await form.getByTestId('seat-Hurtkoviy').click();
-  // «Не обсаджено» is ticked while nobody holds the office.
-  await expect(picker(page).getByTestId('pick-none')).toContainText('Не обсаджено');
+  // «Нікого» is ticked while nobody holds the office.
+  await expect(picker(page).getByTestId('pick-none')).toContainText('Нікого');
   await picker(page).getByTestId('pick-person').filter({ hasText: 'Шевчук' }).click();
   await form.getByTestId('save-leadership').click();
   await expect.poll(() => writes(log, 'POST', 'leadership')[0]?.body).toMatchObject({

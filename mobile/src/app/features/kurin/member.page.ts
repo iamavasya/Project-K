@@ -1045,7 +1045,7 @@ export class MemberPage implements OnInit {
    * the viewer acts in; another kurin's memberships are its own провід's.
    */
   protected canPlace(m: MembershipDto): boolean {
-    return this.canManagePlacement() && m.isCurrent && m.kurinKey === this.scopedKurin;
+    return this.canManagePlacement() && !this.isOwnCard() && m.isCurrent && m.kurinKey === this.scopedKurin;
   }
 
   /** Another гурток of the same kurin, or none (web «Гурток» dialog with «Поза гуртком»). */

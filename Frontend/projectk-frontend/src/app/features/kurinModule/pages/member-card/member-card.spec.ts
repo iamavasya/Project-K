@@ -1289,6 +1289,15 @@ describe('MemberCardComponent', () => {
       expect(component.canManageWarnings).toBe(false);
     });
 
+    it('lets the Звʼязковий place someone else, but not take themselves out or move their own гурток', () => {
+      createAsReviewer(member);
+      vi.spyOn(component.permissionService, 'canManageWholeKurin').mockReturnValue(true);
+      expect(component.canManagePlacement).toBe(true);
+
+      component.member = { ...member, memberKey: 'test-member-key' };
+      expect(component.canManagePlacement).toBe(false);
+    });
+
     it('offers neither to someone who may not edit the member', () => {
       entityServiceSpy.checkEntityAccess.mockReturnValue(of(false));
       memberServiceSpy.getAbilities.mockReturnValue(of(NO_ABILITIES));

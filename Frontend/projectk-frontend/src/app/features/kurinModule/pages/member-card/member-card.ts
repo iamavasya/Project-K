@@ -920,9 +920,9 @@ export class MemberCardComponent implements OnInit {
     return initials(this.member?.firstName, this.member?.lastName);
   }
 
-  /** Переводити в гурток і виводити з куреня — справа Звʼязкового, не впорядника. */
+  /** Переводити в гурток і виводити з куреня — справа Звʼязкового, не впорядника, і не над собою. */
   get canManagePlacement(): boolean {
-    return this.permissionService.canManageWholeKurin();
+    return this.permissionService.canManageWholeKurin() && !this.isOwnCard;
   }
 
   get profileVerifiedAtDisplay(): string | null {

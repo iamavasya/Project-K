@@ -2,6 +2,7 @@ using MediatR;
 using ProjectK.BusinessLogic.Modules.KurinModule.Services;
 using ProjectK.Common.Interfaces;
 using ProjectK.Common.Interfaces.Modules.AuthModule;
+using ProjectK.Common.Interfaces.Modules.InfrastructureModule;
 using ProjectK.Common.Interfaces.Modules.MemberModule;
 using ProjectK.Common.Models.Enums;
 using ProjectK.Common.Models.Records;
@@ -21,9 +22,11 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
     private readonly IAccessChangeSignal _accessChanges;
     private readonly IMemberDirectory _members;
     private readonly MembershipMoves _moves;
+    private readonly ICurrentUserContext _currentUser;
 
-    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork, IAccessChangeSignal accessChanges, IMemberDirectory members, MembershipMoves moves)
+    public LeaveKurinCommandHandler(IUnitOfWork unitOfWork, IAccessChangeSignal accessChanges, IMemberDirectory members, MembershipMoves moves, ICurrentUserContext currentUser)
     {
+        _currentUser = currentUser;
         _unitOfWork = unitOfWork;
         _accessChanges = accessChanges;
         _members = members;
@@ -47,6 +50,12 @@ public sealed class LeaveKurinCommandHandler : IRequestHandler<LeaveKurinCommand
         {
             return ServiceResult<object>.Failure(
                 ResultType.NotFound, "NotAMember", "They do not currently belong to this kurin.");
+        }
+
+        if (membership.UserKey is { } holder && holder == _currentUser.UserId)
+        {
+            return ServiceResult<object>.Failure(
+                ResultType.Forbidden, "OwnMembership", "Nobody takes themselves out of a kurin.");
         }
 
         if (await _moves.OwedToLeaveAsync(request.MemberKey, request.KurinKey, cancellationToken) > 0)
