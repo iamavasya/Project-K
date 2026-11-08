@@ -161,11 +161,13 @@ public sealed class MemberCards
         IReadOnlyList<PublicCardAward>? awards = null;
         if (fields.HasFlag(CardField.Awards))
         {
-            // A person in a УСП or УПС kurin shows the senior відзначення; their УПЮ ones are a closed
-            // youth record, which their own card hides too.
-            var senior = await _scope.StandsInSeniorKurinAsync(ResourceType.Member, memberKey, cancellationToken);
+            // By default the line the person stands in now: a УСП or УПС member shows the senior
+            // відзначення, a юнак the УПЮ ones. The whole way, every line marked, only when they chose it.
+            var whole = fields.HasFlag(CardField.AwardsHistory);
+            var senior = !whole && await _scope.StandsInSeniorKurinAsync(ResourceType.Member, memberKey, cancellationToken);
             awards = (await _members.GetConfirmedAwardsAsync(memberKey, cancellationToken))
-                .Where(a => senior ? a.CatalogId is not null : a.Level is not null)
+                .Where(a => whole || (senior ? a.CatalogId is not null : a.Level is not null))
+                .OrderByDescending(a => a.DateAcquired)
                 .Select(ToPublic)
                 .ToList();
         }
@@ -211,10 +213,19 @@ public sealed class MemberCards
     {
         if (award.Level is { } level)
         {
-            return new PublicCardAward((int)level, KurinReportTerminology.AwardLevel(level), null, award.DateAcquired);
+            return new PublicCardAward((int)level, KurinReportTerminology.AwardLevel(level), null, award.DateAcquired, "UPYu");
         }
 
         var item = _honours.GetById(award.CatalogId!);
-        return new PublicCardAward(null, item?.Title ?? award.CatalogId!, item?.ImageUrl, award.DateAcquired);
+        return new PublicCardAward(null, item?.Title ?? award.CatalogId!, item?.ImageUrl, award.DateAcquired, UladOf(item?.Ulad));
     }
+
+    /// <summary>The catalogue's ulad code as the card names it; a senior honour of both lines has none.</summary>
+    private static string? UladOf(string? ulad) => ulad?.Trim().ToLowerInvariant() switch
+    {
+        "usp" => "USP",
+        "ups" => "UPS",
+        "upyu" => "UPYu",
+        _ => null
+    };
 }

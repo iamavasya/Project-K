@@ -12,7 +12,9 @@ export const CARD_FIELD = {
   Level: 4,
   Awards: 8,
   Badges: 16,
-  Probes: 32
+  Probes: 32,
+  /** With Awards: відзначення з усього шляху — УПЮ, УСП, УПС — not only the line the person stands in now. */
+  AwardsHistory: 64
 } as const;
 export type CardFieldName = keyof typeof CARD_FIELD;
 
@@ -22,11 +24,14 @@ export const CARD_FIELDS: { name: CardFieldName; label: string }[] = [
   { name: 'Kurin', label: 'Курінь і гурток' },
   { name: 'Level', label: 'Ступінь' },
   { name: 'Awards', label: 'Відзначення' },
+  { name: 'AwardsHistory', label: 'Відзначення з усього шляху' },
   { name: 'Badges', label: 'Вмілості' },
   { name: 'Probes', label: 'Проби' }
 ];
 
 export const hasCardField = (fields: number, name: CardFieldName): boolean => (fields & CARD_FIELD[name]) !== 0;
+
+export type CardUlad = 'UPYu' | 'USP' | 'UPS';
 
 export interface CardAllowance {
   mayShare: boolean;
@@ -40,8 +45,11 @@ export interface PublicCardDto {
   photoUrl: string | null;
   kurins: { number: number | null; namedAfter: string | null; groupName: string | null; branches: KurinNumbering[] }[] | null;
   level: string | null;
-  /** An УПЮ відзначення by level; a senior one (no level) with the catalogue's title and picture. */
-  awards: { level: 1 | 2 | 3 | 4 | null; title: string; imageUrl: string | null; dateAcquired: string }[] | null;
+/**
+   * An УПЮ відзначення by level; a senior one (no level) with the catalogue's title and picture.
+   * `ulad` — where it was earned; null for a senior one the catalogue gives to both УСП and УПС.
+   */
+  awards: { level: 1 | 2 | 3 | 4 | null; title: string; imageUrl: string | null; dateAcquired: string; ulad?: CardUlad | null }[] | null;
   badges: { title: string; imagePath: string | null; confirmedAtUtc: string | null }[] | null;
   probes: { title: string; verifiedAtUtc: string | null }[] | null;
   checkedAtUtc: string | null;

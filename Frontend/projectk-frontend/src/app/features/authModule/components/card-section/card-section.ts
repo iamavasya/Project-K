@@ -41,7 +41,9 @@ export class CardSectionComponent implements OnInit {
   }
 
   protected allowed(name: CardFieldName): boolean {
-    return hasCardField(this.allowance()?.maxFields ?? 0, name);
+    const allowed = hasCardField(this.allowance()?.maxFields ?? 0, name);
+    // The whole way is a way of showing відзначення: off while they are hidden.
+    return name === 'AwardsHistory' ? allowed && hasCardField(this.card()?.fields ?? 0, 'Awards') : allowed;
   }
 
   /** On only when chosen and allowed: a part the kurin does not allow reads as off, whatever was chosen. */

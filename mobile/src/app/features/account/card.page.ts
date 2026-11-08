@@ -30,6 +30,7 @@ export const CARD_FIELDS: { bit: number; label: string }[] = [
   { bit: 2, label: 'Курінь і гурток' },
   { bit: 4, label: 'Ступінь' },
   { bit: 8, label: 'Відзначення' },
+  { bit: 64, label: 'Відзначення з усього шляху' },
   { bit: 16, label: 'Вмілості' },
   { bit: 32, label: 'Проби' },
 ];
@@ -243,7 +244,9 @@ export class CardPage implements OnInit, OnDestroy {
   }
 
   protected allowed(bit: number): boolean {
-    return ((this.card()?.allowance.maxFields ?? 0) & bit) !== 0;
+    const allowed = ((this.card()?.allowance.maxFields ?? 0) & bit) !== 0;
+    // The whole way (64) is a way of showing відзначення (8): off while they are hidden.
+    return bit === 64 ? allowed && ((this.card()?.fields ?? 0) & 8) !== 0 : allowed;
   }
 
   protected shown(bit: number): boolean {

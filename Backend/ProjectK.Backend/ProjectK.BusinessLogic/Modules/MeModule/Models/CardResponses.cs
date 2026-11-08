@@ -14,9 +14,10 @@ public sealed record PublicCardKurin(int? Number, string? NamedAfter, string? Gr
 
 /// <summary>
 /// One confirmed відзначення: an УПЮ one has <see cref="Level"/> 1 to 4 and its picture by level, a
-/// senior one the catalogue's title and picture.
+/// senior one the catalogue's title and picture. <see cref="Ulad"/> is where it was earned —
+/// <c>UPYu</c>, <c>USP</c> or <c>UPS</c> — or null for a senior one the catalogue gives to both.
 /// </summary>
-public sealed record PublicCardAward(int? Level, string Title, string? ImageUrl, DateTime DateAcquired);
+public sealed record PublicCardAward(int? Level, string Title, string? ImageUrl, DateTime DateAcquired, string? Ulad);
 
 public sealed record PublicCardBadge(string Title, string? ImagePath, DateTime? ConfirmedAtUtc);
 

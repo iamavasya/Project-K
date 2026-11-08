@@ -220,7 +220,7 @@ public class MemberCardsTests
 
         var card = await Cards().ReadAsync(_person, CardField.Awards, null, default);
 
-        card!.Awards.Should().Equal(new Modules.MeModule.Models.PublicCardAward(2, "2-е відзначення", null, new DateTime(2019, 5, 1)));
+        card!.Awards.Should().Equal(new Modules.MeModule.Models.PublicCardAward(2, "2-е відзначення", null, new DateTime(2019, 5, 1), "UPYu"));
     }
 
     [Fact]
@@ -232,6 +232,18 @@ public class MemberCardsTests
 
         var card = await Cards().ReadAsync(_person, CardField.Awards, null, default);
 
-        card!.Awards.Should().Equal(new Modules.MeModule.Models.PublicCardAward(null, "Грамота заслуги", "https://catalog.test/hramota.png", new DateTime(2025, 5, 1)));
+        card!.Awards.Should().Equal(new Modules.MeModule.Models.PublicCardAward(null, "Грамота заслуги", "https://catalog.test/hramota.png", new DateTime(2025, 5, 1), "USP"));
+    }
+
+    [Fact]
+    public async Task TheWholeWay_ShowsEveryLine_MarkedWhereItWasEarned_NewestFirst()
+    {
+        Born(25);
+        Earned();
+        _scope.Setup(s => s.StandsInSeniorKurinAsync(ResourceType.Member, _person, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var card = await Cards().ReadAsync(_person, CardField.Awards | CardField.AwardsHistory, null, default);
+
+        card!.Awards!.Select(a => a.Ulad).Should().Equal("USP", "UPYu");
     }
 }

@@ -20,17 +20,22 @@
     <section class="shared-card__part">
       <h3>Відзначення</h3>
       @if (awards.length) {
-        <ul class="shared-card__awards">
-          @for (award of awards; track $index) {
-            <li>
-              @if (awardImage(award); as src) {
-                <img [src]="src" alt="" />
-              }
-              <span>{{ awardName(award) }}</span>
-              <small>{{ award.dateAcquired | date:'dd.MM.yyyy' }}</small>
-            </li>
+        @for (group of awardGroups(); track $index) {
+          @if (group.label) {
+            <h4 class="shared-card__ulad" data-testid="award-ulad">{{ group.label }}</h4>
           }
-        </ul>
+          <ul class="shared-card__awards">
+            @for (award of group.awards; track $index) {
+              <li>
+                @if (awardImage(award); as src) {
+                  <img [src]="src" alt="" />
+                }
+                <span>{{ awardName(award) }}</span>
+                <small>{{ award.dateAcquired | date:'dd.MM.yyyy' }}</small>
+              </li>
+            }
+          </ul>
+        }
       } @else {
         <p class="shared-card__none">Ще немає.</p>
       }

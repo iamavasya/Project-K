@@ -27,5 +27,11 @@ public enum CardField
     /// <summary>Verified проби.</summary>
     Probes = 32,
 
-    All = Photo | Kurin | Level | Awards | Badges | Probes
+    /// <summary>
+    /// With <see cref="Awards"/>: відзначення from the whole Plast way — УПЮ, УСП, УПС — rather than
+    /// only the line the person stands in now.
+    /// </summary>
+    AwardsHistory = 64,
+
+    All = Photo | Kurin | Level | Awards | Badges | Probes | AwardsHistory
 }
